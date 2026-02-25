@@ -1,0 +1,48 @@
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    public class ARSTransform : ARSBehaviour
+    {
+        [Header("Light Settings")]
+        [Tooltip("Transform that will be controlled by the channel")]
+        [SerializeField] private Transform _transform;
+
+        [Tooltip("Translation applied locally controlled by the channel")]
+        [SerializeField] private Vector3 _translation = new (0.0f, 0.0f, 0.0f);
+        [Tooltip("Rotation applied locally controlled by the channel")]
+        [SerializeField] private Quaternion _rotation = Quaternion.identity;
+        [Tooltip("Scaling applied locally controlled by the channel")]
+        [SerializeField] private Vector3 _scaling = new (1.0f, 1.0f, 1.0f);
+
+        private Vector3 _baseLocalPosition;
+        private Quaternion _baseLocalRotation;
+        private Vector3 _baseLocalScale;
+
+        private void Awake()
+        {
+            _baseLocalPosition = _transform.localPosition;
+            _baseLocalRotation = _transform.localRotation;
+            _baseLocalScale = _transform.localScale;
+        }
+
+        // Called when the ARS system updates
+        public override void OnARSUpdate(float value)
+        {
+            if (_transform != null)
+            {
+                _transform.SetLocalPositionAndRotation(
+                    Vector3.Lerp(_baseLocalPosition, _baseLocalPosition + _translation, value),
+                    Quaternion.Lerp(_baseLocalRotation, _rotation, value));
+                _transform.localScale = Vector3.Scale(_baseLocalScale, Vector3.Lerp(Vector3.one, _scaling, value));
+            }
+        }
+
+        // Executed in editor, when a value is changed in the inspector, or when the component is added
+        private void OnValidate()
+        {
+            if(_transform == null)
+                _transform = transform;
+        }
+    }
+}

@@ -1,0 +1,51 @@
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    [HelpURL("https://incrediworlds.gitbook.io/somnium-space-dendoc/worlds-creation/community-modules/community-networking")]
+    public class NetworkAnimatorParameterSetter : MonoBehaviour
+    {
+        [Header("Alpha V2.0 [2025, 10, 07]")]
+        [SerializeField] private NetworkAnimator _networkedAnimator;
+        [Header("Used for setting parameter")]
+        [SerializeField] private string _parameterName = "Value";
+
+        // Use with unity events to change the current parameter name
+        public void ChangeParameterName(string parameterName)
+        {
+            _parameterName = parameterName;
+        }
+
+        public void SetTrigger()
+        {
+            if (_networkedAnimator != null)
+            {
+                _networkedAnimator.SetTrigger(_parameterName);
+            }
+        }
+
+        public void SetBool(bool value)
+        {
+            if (_networkedAnimator != null)
+            {
+                _networkedAnimator.SetBool(value, _parameterName);
+            }
+        }
+
+        public void SetInt(int value)
+        {
+            if (_networkedAnimator != null)
+            {
+                _networkedAnimator.SetInt(value, _parameterName);
+            }
+        }
+
+        public void SetFloat(float value)
+        {
+            if (_networkedAnimator != null)
+            {
+                _networkedAnimator.SetFloat(value, _parameterName);
+            }
+        }
+    }
+}

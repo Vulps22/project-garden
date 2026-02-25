@@ -1,0 +1,20 @@
+using UnityEngine;
+
+namespace CommunityScripts
+{
+    public class ARSAnimator : ARSBehaviour
+    {
+        [Header("Animator Settings")]
+        [SerializeField] private Animator _animator;
+        [Tooltip("Parameter name in the animator to be controlled")]
+        [SerializeField] string _floatParameterName = "ARS";
+
+        public override void OnARSUpdate(float value01)
+        {
+            if (_animator != null)
+            {
+                _animator.SetFloat(_floatParameterName, value01);
+            }
+        }
+    }
+}

@@ -1,0 +1,40 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace SomniumSpace.Worlds.GrowAGarden
+{
+    public class SeedPool : MonoBehaviour
+    {
+        [SerializeField] private SeedDefinition _seedDefinition;
+        public string _seedId => _seedDefinition.seedId;
+        private Queue<SeedObject> _available = new Queue<SeedObject>();
+
+        private void Awake()
+        {
+            Debug.Log("DELETE ME");
+            foreach (SeedObject seed in GetComponentsInChildren<SeedObject>(true))
+            {
+                _available.Enqueue(seed);
+            }
+        }
+
+        public string SeedId => _seedId;
+        public int Available => _available.Count;
+
+        public SeedObject Claim()
+        {
+            if (_available.Count == 0)
+            {
+                Debug.LogWarning($"[SeedPool] Pool empty for seed '{_seedId}'!");
+                return null;
+            }
+            SeedObject seed = _available.Dequeue();
+            return seed;
+        }
+
+        public void Return(SeedObject seed)
+        {
+            _available.Enqueue(seed);
+        }
+    }
+}

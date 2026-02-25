@@ -1,0 +1,21 @@
+using SomniumSpace.Bridge.Components;
+using UnityEngine;
+
+namespace CommunityScripts
+{
+    public class SomniumTriggerExample : MonoBehaviour
+    {
+        public void PlayerEnter(SomniumTriggerActionArgs args)
+        {
+            //args.Player.References.Body.Root;
+            Debug.Log("XXX A" + args.Player.References.Body.Root.name);
+            CharacterController cc = args.Player.References.Body.Root.gameObject.GetComponentInChildren<CharacterController>();
+            Debug.Log("XXX B" + cc.name);
+        }
+
+        public void PlayerExit(SomniumTriggerActionArgs args)
+        {
+        
+        }
+    }
+}

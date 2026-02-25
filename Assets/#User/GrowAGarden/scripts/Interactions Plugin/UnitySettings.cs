@@ -1,0 +1,31 @@
+using UnityEngine;
+using UnityEngine.Rendering.Universal;
+
+namespace GrowAGarden
+{
+    public class UnitySettings : MonoBehaviour
+    {
+        [Range(1,8)]
+        [SerializeField] int _maxLightCount = 3;
+        private int _lightCOuntBefore = 1;
+
+        private void Awake()
+        {
+            UniversalRenderPipelineAsset urpAsset = UniversalRenderPipeline.asset;
+            if (urpAsset != null)
+            {
+                _lightCOuntBefore = urpAsset.maxAdditionalLightsCount;
+                urpAsset.maxAdditionalLightsCount = _maxLightCount;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            UniversalRenderPipelineAsset urpAsset = UniversalRenderPipeline.asset;
+            if (urpAsset != null)
+            {
+                urpAsset.maxAdditionalLightsCount = _lightCOuntBefore;
+            }
+        }
+    }
+}

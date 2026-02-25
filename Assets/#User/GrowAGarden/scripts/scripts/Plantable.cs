@@ -1,0 +1,108 @@
+using System;
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+
+namespace GrowAGarden
+{
+    public abstract class Plantable : MonoBehaviour
+    {
+        public float growDurationSeconds;
+        public float maxScale;
+        public float scaleMultiplier = 1f;
+
+        private long _plantedTimestamp;
+        [SerializeField] private XRGrabInteractable _grabInteractable;
+
+        private void Start()
+        {
+            Debug.Log($"[Plantable] Start() on '{gameObject.name}' — growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}, grabInteractable={((_grabInteractable != null) ? _grabInteractable.name : "NULL")}");
+            ResetForPool();
+        }
+
+        /// <summary>
+        /// Resets runtime state so the plant can be reused from the pool.
+        /// Called from Start() and should be called by the pool on Return.
+        /// </summary>
+        public void ResetForPool()
+        {
+            if (_grabInteractable != null)
+            {
+                _grabInteractable.enabled = false;
+                Debug.Log($"[Plantable] Disabled grab interactable on '{gameObject.name}'");
+            }
+            else
+            {
+                Debug.LogWarning($"[Plantable] _grabInteractable is NULL on '{gameObject.name}' — harvesting via grab won't work!");
+            }
+            _lastLoggedCompletion = -1f;
+        }
+
+        public void OnPlanted()
+        {
+            _plantedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            Debug.Log($"[Plantable] OnPlanted() '{gameObject.name}' � timestamp={_plantedTimestamp}, growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}");
+            if (growDurationSeconds <= 0f)
+                Debug.LogError($"[Plantable] growDurationSeconds is {growDurationSeconds} on '{gameObject.name}' � plant will NEVER grow properly! (division by zero/negative)");
+            if (maxScale <= 0f)
+                Debug.LogWarning($"[Plantable] maxScale is {maxScale} on '{gameObject.name}' � plant will be invisible!");
+            if (scaleMultiplier <= 0f)
+                Debug.LogWarning($"[Plantable] scaleMultiplier is {scaleMultiplier} on '{gameObject.name}' � plant will be invisible!");
+            UpdateVisual(0f);
+        }
+
+        public void OnLoaded(long savedTimestamp)
+        {
+            _plantedTimestamp = savedTimestamp;
+            float completion = GetGrowthCompletion();
+            Debug.Log($"[Plantable] OnLoaded() '{gameObject.name}' � savedTimestamp={savedTimestamp}, growDuration={growDurationSeconds}s, completion={completion:F3}");
+            UpdateVisual(completion);
+        }
+
+        public float GetGrowthCompletion()
+        {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            float raw = (now - _plantedTimestamp) / growDurationSeconds;
+            float clamped = Mathf.Clamp01(raw);
+            return clamped;
+        }
+
+        public bool IsReadyToHarvest()
+        {
+            return GetGrowthCompletion() >= 1f;
+        }
+
+        private float _lastLoggedCompletion = -1f;
+
+        private void Update()
+        {
+            float completion = GetGrowthCompletion();
+
+            // Log growth progress every ~10% change
+            if (Mathf.Abs(completion - _lastLoggedCompletion) >= 0.1f)
+            {
+                Debug.Log($"[Plantable] Update() '{gameObject.name}' � completion={completion:F3}, scale={transform.localScale}, isReady={IsReadyToHarvest()}");
+                _lastLoggedCompletion = completion;
+            }
+
+            if (!IsReadyToHarvest())
+            {
+                UpdateVisual(completion);
+            }
+            else if (_grabInteractable != null && !_grabInteractable.enabled)
+            {
+                _grabInteractable.enabled = true;
+                Debug.Log($"[Plantable] '{gameObject.name}' is READY TO HARVEST � enabled grab interactable!");
+            }
+        }
+
+        private void UpdateVisual(float completion)
+        {
+            float scale = completion * maxScale * scaleMultiplier;
+            if (scale <= 0f && completion > 0f)
+                Debug.LogWarning($"[Plantable] UpdateVisual() '{gameObject.name}' � scale is {scale} despite completion={completion:F3}! Check maxScale={maxScale} and scaleMultiplier={scaleMultiplier}");
+            transform.localScale = Vector3.one * scale;
+        }
+
+        public abstract void OnHarvested();
+    }
+}

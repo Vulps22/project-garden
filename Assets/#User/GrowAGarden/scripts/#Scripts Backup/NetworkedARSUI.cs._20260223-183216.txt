@@ -1,0 +1,401 @@
+using SomniumSpace.Network.Bridge;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace CommunityScripts
+{
+    public class NetworkedARSUI : MonoBehaviour
+    {
+        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private ARSController _arsController;
+
+        [SerializeField] private ARSVideoPlayer _arsVideoPlayer;
+        [SerializeField] private ARSMicrophone _arsMicrophone;
+        [Header("UI")]
+        [SerializeField] private Slider _arsShaderGain;
+        [SerializeField] private Slider _arsGain1;
+        [SerializeField] private Slider _arsGain2;
+        [SerializeField] private Slider _arsGain3;
+        [SerializeField] private Slider _arsGain4;
+
+        [SerializeField] private Button _setSourceVideoPlayer;
+        [SerializeField] private Button _setSourceMicrophone;
+        [SerializeField] private TextMeshProUGUI _textARSSource;
+
+        [SerializeField] private Button _requestControl;
+
+        [SerializeField] private ARSSource _currentSource = ARSSource.VideoPlayer;
+
+        enum ARSSource
+        {
+            VideoPlayer=0,
+            Microphone=1,
+        }
+
+        enum NetID 
+        {
+            SetARSShaderGain = 0,
+            SetARSGain1 = 1,
+            SetARSGain2 = 2,
+            SetARSGain3 = 3,
+            SetARSGain4 = 4,
+            SetSourceVideoPlayer = 5,
+            SetSourceMic = 6,
+        }
+
+        enum NetFloatID
+        {
+            SetARSShaderGain = 0,
+            SetARSGain1 = 1,
+            SetARSGain2 = 2,
+            SetARSGain3 = 3,
+            SetARSGain4 = 4
+        }
+
+        enum NetByteID
+        {
+            Initialized = 0,
+            ARSSource = 1
+        }
+
+        void Start()
+        {
+            _networkBridge.OnMessageToAll += OnNetworkMessage;
+            _networkBridge.OnSpawned += OnNetworkReady;
+            _networkBridge.OnStateAuthorityChanged += OnReceiveStateAuthority;
+            _arsShaderGain.onValueChanged.AddListener(OnARSShaderGain);
+            _arsGain1.onValueChanged.AddListener(OnARSGain1);
+            _arsGain2.onValueChanged.AddListener(OnARSGain2);
+            _arsGain3.onValueChanged.AddListener(OnARSGain3);
+            _arsGain4.onValueChanged.AddListener(OnARSGain4);
+            _setSourceVideoPlayer.onClick.AddListener(OnARSSourceVideo);
+            _setSourceMicrophone.onClick.AddListener(OnARSSourceMic);
+            _requestControl.onClick.AddListener(OnRequestControl);
+
+            if (_arsVideoPlayer != null)
+                _arsVideoPlayer.OnAudioSourceChanged += OnVideoPlayerAudioSourceChanged;
+            else
+                _setSourceVideoPlayer.interactable = false;
+            if (_arsMicrophone != null)
+                _arsMicrophone.OnAudioSourceChanged += OnMicrophoneAudioSourceChanged;
+            else
+                _setSourceMicrophone.interactable = false;
+
+            // Set default Audio Source
+            UpdateAudioSource();
+        }
+
+        private void OnNetworkReady()
+        {
+            Debug.Log($"[{nameof(NetworkedARSUI)}] OnSpawned");
+
+            if (_networkBridge.Object.HasStateAuthority)
+            {
+                Debug.Log($"[{nameof(NetworkedARSUI)}] Local have state authority");
+
+                if (GetNetworkByte(NetByteID.Initialized) == 0)
+                {
+                    Debug.Log($"[{nameof(NetworkedARSUI)}] Not initialized, set default variables");
+                    SetNetworkByte(NetByteID.Initialized, 1);
+                    SetNetworkByte(NetByteID.ARSSource, (byte)_currentSource);
+                    // Init variables
+                    SetNetworkFloat(NetFloatID.SetARSShaderGain, 1.0f);
+                    SetNetworkFloat(NetFloatID.SetARSGain1, 1.0f);
+                    SetNetworkFloat(NetFloatID.SetARSGain2, 1.0f);
+                    SetNetworkFloat(NetFloatID.SetARSGain3, 1.0f);
+                    SetNetworkFloat(NetFloatID.SetARSGain4, 1.0f);
+                }
+            }
+
+            float gain = GetNetworkFloat(NetFloatID.SetARSShaderGain);
+            Debug.Log($"[{nameof(NetworkedARSUI)}] Get Sync ARS ShaderGain: {gain}");
+            SetShaderGain(gain);
+            gain = GetNetworkFloat(NetFloatID.SetARSGain1);
+            Debug.Log($"[{nameof(NetworkedARSUI)}] Get Sync ARSGain1: {gain}");
+            SetARSGain1(gain);
+            gain = GetNetworkFloat(NetFloatID.SetARSGain2);
+            Debug.Log($"[{nameof(NetworkedARSUI)}] Get Sync ARSGain2: {gain}");
+            SetARSGain2(gain);
+            gain = GetNetworkFloat(NetFloatID.SetARSGain3);
+            Debug.Log($"[{nameof(NetworkedARSUI)}] Get Sync ARSGain3: {gain}");
+            SetARSGain3(gain);
+            gain = GetNetworkFloat(NetFloatID.SetARSGain4);
+            Debug.Log($"[{nameof(NetworkedARSUI)}] Get Sync ARSGain4: {gain}");
+            SetARSGain4(gain);
+            byte arsSource = GetNetworkByte(NetByteID.ARSSource);
+            Debug.Log($"[{nameof(NetworkedARSUI)}] ARS Source is: {(ARSSource)arsSource}");
+            _currentSource = (ARSSource)arsSource;
+            SetInteractable(_networkBridge.Object.HasStateAuthority);
+        }
+
+        /////////////// Events
+
+        private void OnRequestControl()
+        {
+            _networkBridge.Object.RequestStateAuthority();
+        }
+
+        private void OnVideoPlayerAudioSourceChanged(AudioSource audioSource)
+        {
+            UpdateAudioSource();
+        }
+
+        private void OnMicrophoneAudioSourceChanged(AudioSource audioSource)
+        {
+            UpdateAudioSource();
+        }
+
+        private void OnARSShaderGain(float value)
+        {
+            SetNetworkFloat(NetFloatID.SetARSShaderGain, value);
+            SendARSShaderGain(value);
+        }
+
+        private void OnARSGain1(float value)
+        {
+            SetNetworkFloat(NetFloatID.SetARSGain1, value);
+            SendARSGain1(value);
+        }
+
+        private void OnARSGain2(float value)
+        {
+            SetNetworkFloat(NetFloatID.SetARSGain2, value);
+            SendARSGain2(value);
+        }
+
+        private void OnARSGain3(float value)
+        {
+            SetNetworkFloat(NetFloatID.SetARSGain3, value);
+            SendARSGain3(value);
+        }
+
+        private void OnARSGain4(float value)
+        {
+            SetNetworkFloat(NetFloatID.SetARSGain4, value);
+            SendARSGain4(value);
+        }
+
+        private void OnARSSourceVideo()
+        {
+            SetNetworkByte(NetByteID.ARSSource, (byte)ARSSource.VideoPlayer);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetSourceVideoPlayer, new byte[1]);
+        }
+
+        private void OnARSSourceMic()
+        {
+            SetNetworkByte(NetByteID.ARSSource, (byte)ARSSource.Microphone);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetSourceMic, new byte[1]);
+        }
+
+        ///////// network events
+
+        private void OnReceiveStateAuthority(bool hasAuthority)
+        {
+            Debug.Log($"[{nameof(NetworkedARSUI)}] StateAuthorityChanged: {hasAuthority}");
+            SetInteractable(hasAuthority);
+        }
+
+        private void OnNetworkMessage(byte id, byte[] message)
+        {
+            NetID bid = (NetID)id;
+            if (bid == NetID.SetSourceVideoPlayer)
+            {
+                SetARSSourceVideoPlayer();
+            }
+            else if (bid == NetID.SetSourceMic)
+            {
+                SetARSSourceMicrophone();
+            }
+            else if (bid == NetID.SetARSShaderGain)
+            {   
+                if (message.Length == 4)
+                {
+                    BytesReader bytes = new(message);
+                    SetShaderGain(bytes.NextFloat());
+                }
+            }
+            else if (bid == NetID.SetARSGain1)
+            {
+                if (message.Length == 4)
+                {
+                    BytesReader bytes = new(message);
+                    SetARSGain1(bytes.NextFloat());
+                }
+            }
+            else if (bid == NetID.SetARSGain2)
+            {
+                if (message.Length == 4)
+                {
+                    BytesReader bytes = new(message);
+                    SetARSGain2(bytes.NextFloat());
+                }
+            }
+            else if (bid == NetID.SetARSGain3)
+            {
+                if (message.Length == 4)
+                {
+                    BytesReader bytes = new(message);
+                    SetARSGain3(bytes.NextFloat());
+                }
+            }
+            else if (bid == NetID.SetARSGain4)
+            {
+                if (message.Length == 4)
+                {
+                    BytesReader bytes = new(message);
+                    SetARSGain4(bytes.NextFloat());
+                }
+            }
+        }
+
+        /////////////// Setters
+
+        private void SendARSShaderGain(float value)
+        {
+            BytesWriter bytes = new(sizeof(float));
+            bytes.AddFloat(value);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetARSShaderGain, bytes.Data);
+        }
+        private void SendARSGain1(float value)
+        {
+            BytesWriter bytes = new(sizeof(float));
+            bytes.AddFloat(value);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetARSGain1, bytes.Data);
+        }
+
+        private void SendARSGain2(float value)
+        {
+            BytesWriter bytes = new(sizeof(float));
+            bytes.AddFloat(value);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetARSGain2, bytes.Data);
+        }
+
+        private void SendARSGain3(float value)
+        {
+            BytesWriter bytes = new(sizeof(float));
+            bytes.AddFloat(value);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetARSGain3, bytes.Data);
+        }
+
+        private void SendARSGain4(float value)
+        {
+            BytesWriter bytes = new(sizeof(float));
+            bytes.AddFloat(value);
+            _networkBridge.RPC_SendMessageToAll((byte)NetID.SetARSGain4, bytes.Data);
+        }
+
+        ///////////////
+
+        private void SetInteractable(bool interactable)
+        {
+            _arsShaderGain.interactable = interactable;
+            _arsGain1.interactable = interactable;
+            _arsGain2.interactable = interactable;
+            _arsGain3.interactable = interactable;
+            _arsGain4.interactable = interactable;
+            _setSourceVideoPlayer.interactable = interactable;
+            _setSourceMicrophone.interactable = interactable;
+        }
+
+        private void SetShaderGain(float value)
+        {
+            _arsController.SetARSTextureGain(value);
+            _arsShaderGain.SetValueWithoutNotify(value);
+        }
+
+        private void SetARSGain1(float value)
+        {
+            _arsController.SetChannel1Gain(value);
+            _arsGain1.SetValueWithoutNotify(value);
+        }
+
+        private void SetARSGain2(float value)
+        {
+            _arsController.SetChannel2Gain(value);
+            _arsGain2.SetValueWithoutNotify(value);
+        }
+
+        private void SetARSGain3(float value)
+        {
+            _arsController.SetChannel3Gain(value);
+            _arsGain3.SetValueWithoutNotify(value);
+        }
+
+        private void SetARSGain4(float value)
+        {
+            _arsController.SetChannel4Gain(value);
+            _arsGain4.SetValueWithoutNotify(value);
+        }
+
+        private void SetARSSourceVideoPlayer()
+        {
+            if (_arsVideoPlayer.AudioSource == null)
+            {
+                Debug.LogError($"[{nameof(NetworkedARSUI)}]: Cant set ARS to VideoPlayer, audio source is null");
+                return;
+            }
+            Debug.Log($"[{nameof(NetworkedARSUI)}]: Setting ARS to AudioSource {_arsVideoPlayer.AudioSource.name}");
+            _currentSource = ARSSource.VideoPlayer;
+            UpdateAudioSource();
+        }
+
+        private void SetARSSourceMicrophone()
+        {
+            if (_arsMicrophone.AudioSource != null)
+                Debug.Log($"[{nameof(NetworkedARSUI)}]: Setting ARS to Mic AudioSource {_arsMicrophone.AudioSource.name}");
+            else
+                Debug.Log($"[{nameof(NetworkedARSUI)}]: Setting ARS to Mic AudioSource, no player present");
+
+            _currentSource = ARSSource.Microphone;
+            UpdateAudioSource();
+        }
+
+        private void UpdateAudioSource()
+        {
+            if (_currentSource == ARSSource.VideoPlayer)
+            {
+                if (_arsVideoPlayer.AudioSource == null) // Ok to be null
+                    return;
+
+                ARSController.SetAudioSource(_arsVideoPlayer.AudioSource);
+                _textARSSource.text = "VideoPlayer";
+            }
+            else
+            {
+                if (_arsMicrophone == null || _arsMicrophone.AmplifiedPlayer == null || _arsMicrophone.AudioSource == null) // Ok to be null
+                {
+                    _textARSSource.text = "Microphone: No Performer";
+                    ARSController.SetAudioSource(null);
+                    return;
+                }
+
+                if (_arsMicrophone.AmplifiedPlayer.Properties.IsLocal) 
+                    _textARSSource.text = "Microphone: Player local";
+                else
+                    _textARSSource.text = "Microphone: Player " + _arsMicrophone.AmplifiedPlayer.Properties.NickName;
+                ARSController.SetAudioSource(_arsMicrophone.AudioSource);
+            }
+        }
+
+        private float GetNetworkFloat(NetFloatID id)
+        {
+            return _networkBridge.SyncFloatArray.Get((int)id);
+        }
+
+        private void SetNetworkFloat(NetFloatID id, float value)
+        {
+            _networkBridge.SyncFloatArray.Set((int)id, value);
+        }
+
+        private byte GetNetworkByte(NetByteID id)
+        {
+            return _networkBridge.SyncByteArray.Get((int)id);
+        }
+
+        private void SetNetworkByte(NetByteID id, byte value)
+        {
+            _networkBridge.SyncByteArray.Set((int)id, value);
+        }
+    }
+}

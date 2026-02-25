@@ -1,0 +1,69 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    public class PoolManager : MonoBehaviour
+    {
+        public static PoolManager Instance { get; private set; }
+
+        private Dictionary<string, PlantPool> _plantPools = new Dictionary<string, PlantPool>();
+        private Dictionary<string, SeedPool> _seedPools = new Dictionary<string, SeedPool>();
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Debug.LogWarning($"[PoolManager] Duplicate PoolManager on '{gameObject.name}' — destroying this one.");
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            foreach (PlantPool pool in GetComponentsInChildren<PlantPool>(true))
+                _plantPools[pool.SeedId] = pool;
+
+            foreach (SeedPool pool in GetComponentsInChildren<SeedPool>(true))
+                _seedPools[pool.SeedId] = pool;
+        }
+
+        public int PlantAvailable(string seedId)
+        {
+            if (_plantPools.TryGetValue(seedId, out PlantPool pool))
+                return pool.Available;
+            return 0;
+        }
+
+        public Plantable ClaimPlant(string seedId)
+        {
+            if (_plantPools.TryGetValue(seedId, out PlantPool pool))
+                return pool.Claim();
+            Debug.LogWarning($"[PoolManager] No plant pool found for '{seedId}'");
+            return null;
+        }
+
+        public void ReturnPlant(string seedId, Plantable plant)
+        {
+            if (_plantPools.TryGetValue(seedId, out PlantPool pool))
+                pool.Return(plant);
+            else
+                Debug.LogWarning($"[PoolManager] No plant pool found for '{seedId}' — plant not returned!");
+        }
+
+        public SeedObject ClaimSeed(string seedId)
+        {
+            if (_seedPools.TryGetValue(seedId, out SeedPool pool))
+                return pool.Claim();
+            Debug.LogWarning($"[PoolManager] No seed pool found for '{seedId}'");
+            return null;
+        }
+
+        public void ReturnSeed(string seedId, SeedObject seed)
+        {
+            if (_seedPools.TryGetValue(seedId, out SeedPool pool))
+                pool.Return(seed);
+            else
+                Debug.LogWarning($"[PoolManager] No seed pool found for '{seedId}' — seed not returned!");
+        }
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "name": "GrowAGarden",
+    "rootNamespace": "GrowAGarden",
+    "references": [
+        "GUID:fe685ec1767f73d42b749ea8045bfe43",
+        "GUID:58de1d31e4aad8848b2afdda4b94c61b",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:1baf1ffff1031e948b3b228ab3453251",
+        "GUID:b59fae9c7ebc1574e8690f2570b29d6f",
+        "GUID:415d649162855d948bfd44d8c5f1e7a2",
+        "GUID:3ca842002c51d0a43b73e45298809a13",
+        "GUID:ee448cb1442054024b3c982e54100a6a",
+        "GUID:098768462d12ac048bbc131e541e734d",
+        "GUID:15fc0a57446b3144c949da3e2b9737a9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

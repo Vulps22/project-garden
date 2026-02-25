@@ -1,0 +1,109 @@
+using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
+
+namespace GrowAGarden
+{
+    public class HoverHighlight : MonoBehaviour
+    {
+        [Header("References")]
+        [SerializeField] private XRBaseInteractable _interactable;
+        [SerializeField] private Material _hoverMaterialRef;
+        [SerializeField] private MeshRenderer[] _highlightRenderers;
+        [Header("Settings")]
+        [SerializeField] private float _hoverSpeed = 4.0f;
+        [Header("Optional for auto-assign")]
+        [SerializeField] private GameObject _hoverObject;
+
+        private const string _shaderFloat = "_Oppacity";
+        private Material _hoverMaterial;
+        private float _hoverAlphaCurrent = 0.0f;
+        private float _hoverAlphaTarget = 0.0f;
+
+        void Start()
+        {
+            if(_interactable != null)
+            {
+                _interactable.hoverEntered.AddListener(OnHoverEnter);
+                _interactable.hoverExited.AddListener(OnHoverExit);
+            }
+
+            if (_hoverMaterialRef != null)
+            {
+                _hoverMaterial = new (_hoverMaterialRef);
+                _hoverMaterial.name = "HoverHighlightMaterial";
+                _hoverMaterial.SetFloat(_shaderFloat, 0.0f);
+                // Assign hover material
+                foreach (var renderer in _highlightRenderers)
+                {
+                    if (renderer != null)
+                    {
+                        Material[] materials = renderer.sharedMaterials;
+                        for (int i = 0; i < materials.Length; i++)
+                        {
+                            materials[i] = _hoverMaterial;
+                        }
+                        renderer.sharedMaterials = materials;
+                        renderer.enabled = false;
+                    }
+                }
+            }
+        }
+
+        private void OnHoverEnter(HoverEnterEventArgs args = null)
+        {
+            _hoverAlphaTarget = 1.0f;
+            SetRenderersEnabled(true);
+            _hoverMaterial.SetFloat(_shaderFloat, 0.0f);
+            CancelInvoke(nameof(HoverChangeLoop));
+            InvokeRepeating(nameof(HoverChangeLoop), 0.0f, Time.fixedDeltaTime);
+        }
+
+        private void OnHoverExit(HoverExitEventArgs args = null)
+        {
+            _hoverAlphaTarget = 0.0f;
+            CancelInvoke(nameof(HoverChangeLoop));
+            InvokeRepeating(nameof(HoverChangeLoop), 0.0f, Time.fixedDeltaTime);
+        }
+
+        private void HoverChangeLoop()
+        {
+            if (_hoverMaterial != null)
+            {
+                _hoverAlphaCurrent = Mathf.MoveTowards(_hoverAlphaCurrent, _hoverAlphaTarget, Time.fixedDeltaTime * _hoverSpeed);
+                _hoverMaterial.SetFloat(_shaderFloat, _hoverAlphaCurrent);
+                if (Mathf.Abs(_hoverAlphaCurrent - _hoverAlphaTarget) < 0.01f)
+                {
+                    if(_hoverAlphaTarget == 0.0f)
+                        SetRenderersEnabled(false);
+                    CancelInvoke(nameof(HoverChangeLoop));
+                }
+            }
+        }
+
+        private void SetRenderersEnabled(bool enabled)
+        {
+            foreach (var renderer in _highlightRenderers)
+            {
+                if (renderer != null)
+                {
+                    renderer.enabled = enabled;
+                }
+            }
+        }
+
+        [ContextMenu("- Assign Hover Renderers")]
+        private void GetAllChildernRenderers()
+        {
+            _highlightRenderers = _hoverObject.GetComponentsInChildren<MeshRenderer>();
+        }
+
+        private void OnValidate()
+        {
+            if (_interactable == null)
+            {
+                _interactable = GetComponent<XRSimpleInteractable>();
+            }
+        }
+    }
+}

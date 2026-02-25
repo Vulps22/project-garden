@@ -1,0 +1,50 @@
+using System.Runtime.CompilerServices;
+using UnityEngine;
+
+namespace CommunityScripts
+{
+    public class PullForce : MonoBehaviour
+    {
+        public Rigidbody TargetRB;
+        public Transform Anchor;
+
+        public float ForceMultiplier = 100.0f;
+
+        public float AccumulateError = 0.01f;
+        public float ErrorDecay = 0.99f;
+
+        public float ImprovementFactor = 1.0f;
+
+
+        private Vector3 _anchorLastPos;
+        private bool _initialized = false;
+
+        [SerializeField] private float _accumulatedError = 0.0f;
+
+        void FixedUpdate()
+        {
+            Vector3 distance = Anchor.position - transform.position;
+            float distanceDir = distance.magnitude;
+            Vector3 direction = distance.normalized;
+            Vector3 force = -direction * (distanceDir * ForceMultiplier);
+
+            // Improvement
+            Vector3 anchorDelta = Anchor.position - _anchorLastPos;
+            Vector3 anchorDeltaDir = anchorDelta.normalized;
+            float anchorDeltaMagnitude = anchorDelta.magnitude;
+            float improvement = Vector3.Dot(anchorDeltaDir, direction) * anchorDeltaMagnitude;
+
+            //force *= 1.0f + _accumulatedError;
+            //force = force + (improvement * force * ImprovementFactor);
+
+            //TargetRB.AddForceAtPosition(-anchorDeltaDir * ForceMultiplier, Anchor.position, ForceMode.Force);
+            TargetRB.AddForceAtPosition(force, Anchor.position, ForceMode.Force);
+
+            _accumulatedError += distanceDir * AccumulateError;
+            _accumulatedError *= ErrorDecay;
+            
+            Debug.Log($"Improvement: {improvement}, Anchor Delta: {anchorDelta}, Direction: {direction}");
+            _anchorLastPos = Anchor.position;
+        }
+    }
+}

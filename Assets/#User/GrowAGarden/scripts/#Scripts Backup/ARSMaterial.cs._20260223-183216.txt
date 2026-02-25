@@ -1,0 +1,25 @@
+using UnityEngine;
+
+namespace CommunityScripts
+{
+    public class ARSMaterial : ARSBehaviour
+    {
+        [Header("Material Settings")]
+        [SerializeField] private Material _material;
+        [Tooltip("The shader float parameter name that ARS will control")]
+        [SerializeField] string _colorName = "_EmissionColor";
+
+        [ColorUsage(false, true)]
+        [SerializeField] Color _colorMin = Color.black;
+        [ColorUsage(false, true)]
+        [SerializeField] Color _colorMax = Color.red;
+
+        public override void OnARSUpdate(float value01)
+        {
+            if (_material != null)
+            {
+                _material.SetColor(_colorName, Color.Lerp(_colorMin, _colorMax, value01));
+            }
+        }
+    }
+}

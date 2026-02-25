@@ -1,0 +1,43 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace SomniumSpace.Worlds.GrowAGarden
+{
+    public class PlantPool : MonoBehaviour
+    {
+        [SerializeField] private SeedDefinition _seedDefinition;
+        public string _seedId => _seedDefinition.seedId;
+        private Queue<Plantable> _available = new Queue<Plantable>();
+        private List<Plantable> _all = new List<Plantable>();
+
+        private void Awake()
+        {
+            foreach (Plantable plant in GetComponentsInChildren<Plantable>(true))
+            {
+                plant.gameObject.SetActive(false);
+                _available.Enqueue(plant);
+                _all.Add(plant);
+            }
+        }
+
+        public string SeedId => _seedId;
+
+        public Plantable Claim()
+        {
+            if (_available.Count == 0)
+            {
+                Debug.LogWarning($"[PlantPool] Pool empty for seed '{_seedId}'!");
+                return null;
+            }
+            Plantable plant = _available.Dequeue();
+            plant.gameObject.SetActive(true);
+            return plant;
+        }
+
+        public void Return(Plantable plant)
+        {
+            plant.gameObject.SetActive(false);
+            _available.Enqueue(plant);
+        }
+    }
+}

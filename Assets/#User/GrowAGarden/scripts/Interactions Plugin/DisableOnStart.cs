@@ -1,0 +1,22 @@
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    public class DisableOnStart : MonoBehaviour
+    {
+        [SerializeField] private GameObject _targetObject;
+        [SerializeField] private bool _destroyOnStart;
+
+        void Start()
+        {
+            if (_destroyOnStart)
+            {
+                Destroy(this.gameObject);
+            }
+            else
+            {
+                _targetObject.gameObject.SetActive(false);
+            }
+        }
+    }
+}

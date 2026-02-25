@@ -1,0 +1,82 @@
+using SomniumSpace.Bridge;
+using UnityEngine;
+
+namespace CommunityScripts
+{
+    [DefaultExecutionOrder(9999)] // Necessary to be updated before the PlayerController is moved
+    public class PlayerAnchor : MonoBehaviour
+    {
+        [SerializeField] private Transform _motionAnchor;
+        [SerializeField] private Transform _platformObject;
+        [SerializeField] private CharacterTrigger _trigger;
+        [SerializeField] private float _disconnectDistance = 10.0f;
+
+        private CharacterController _character;
+
+        private void Awake()
+        {
+            if (_motionAnchor == null || _trigger == null)
+            { 
+                Debug.LogError($"[{nameof(PlayerAnchor)}] Reference is missing in inspector.");
+                enabled = false;
+                return;
+            }
+            Debug.Log($"[{nameof(PlayerAnchor)}] Awake");
+            _trigger.OnCharacterEnter += OnCharacterEnter;
+            _trigger.OnCharacterExit += OnCharacterExit;
+        }
+
+        private void OnDestroy()
+        {
+            if (_trigger != null)
+            {
+                _trigger.OnCharacterEnter -= OnCharacterEnter;
+                _trigger.OnCharacterExit -= OnCharacterExit;
+            }
+        }
+
+        private void OnCharacterEnter(CharacterController character)
+        {
+            Debug.Log($"[{nameof(PlayerAnchor)}] Character entered platform: {character.name}", character.gameObject);
+            _character = character;
+        }
+
+        private void OnCharacterExit(CharacterController character)
+        {
+            Debug.Log($"[{nameof(PlayerAnchor)}] Character exited platform: {character.name}", character.gameObject);
+            _character = null;
+        }
+
+        void Update()
+        {
+            UpdateCharacter();
+        }
+
+        private void UpdateCharacter()
+        {
+            if (SomniumBridge.PlayersContainer == null)
+                return;
+
+            Transform root = SomniumBridge.PlayersContainer.LocalPlayer.References.Body.Root;
+
+            if (_platformObject != null)
+            {
+                _platformObject.position = _motionAnchor.position;
+                _platformObject.rotation = _motionAnchor.rotation;
+            }
+
+            if (_character == null)
+                return;
+
+            if (Vector3.Distance(_character.transform.position, _motionAnchor.position) > _disconnectDistance)
+            {
+                _character = null;
+                return;
+            }
+
+            Vector3 playerCenter = new Vector3(_character.center.x, 0, _character.center.z);
+            //_character.transform.rotation = _motionAnchor.rotation;
+            _character.transform.position = _motionAnchor.position - playerCenter;
+        }
+    }
+}
