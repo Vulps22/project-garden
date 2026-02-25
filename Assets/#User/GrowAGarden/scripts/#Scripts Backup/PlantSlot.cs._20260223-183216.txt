@@ -1,0 +1,60 @@
+using UnityEngine;
+
+namespace SomniumSpace.Worlds.GrowAGarden
+{
+    public class PlantSlot : MonoBehaviour
+    {
+        private Plantable _currentPlant = null;
+        private string _currentSeedId = null;
+
+        public bool IsOccupied() => _currentPlant != null;
+
+        public void Plant(SeedDefinition seed, float scaleOverride = 0f)
+        {
+            if (IsOccupied()) return;
+
+            _currentPlant = PoolManager.Instance.ClaimPlant(seed.seedId);
+            if (_currentPlant == null) return;
+
+            _currentSeedId = seed.seedId;
+            _currentPlant.transform.position = transform.position;
+            _currentPlant.growDurationSeconds = seed.growDurationSeconds;
+            _currentPlant.maxScale = scaleOverride > 0f ? scaleOverride : seed.maxScale;
+            _currentPlant.scaleMultiplier = seed.scaleMultiplier;
+            _currentPlant.OnPlanted();
+        }
+
+        public void Load(SeedDefinition seed, long savedTimestamp, float scaleOverride = 0f)
+        {
+            if (IsOccupied()) return;
+
+            _currentPlant = PoolManager.Instance.ClaimPlant(seed.seedId);
+            if (_currentPlant == null) return;
+
+            _currentSeedId = seed.seedId;
+            _currentPlant.transform.position = transform.position;
+            _currentPlant.growDurationSeconds = seed.growDurationSeconds;
+            _currentPlant.maxScale = scaleOverride > 0f ? scaleOverride : seed.maxScale;
+            _currentPlant.scaleMultiplier = seed.scaleMultiplier;
+            _currentPlant.OnLoaded(savedTimestamp);
+        }
+
+        public void Harvest()
+        {
+            if (!IsOccupied()) return;
+            _currentPlant.OnHarvested();
+            PoolManager.Instance.ReturnPlant(_currentSeedId, _currentPlant);
+            _currentPlant = null;
+            _currentSeedId = null;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (IsOccupied()) return;
+            SeedObject seed = other.GetComponentInParent<SeedObject>();
+            if (seed == null) return;
+            PoolManager.Instance.ReturnSeed(seed.seedDefinition.seedId, seed);
+            Plant(seed.seedDefinition, seed.scaleOverride);
+        }
+    }
+}

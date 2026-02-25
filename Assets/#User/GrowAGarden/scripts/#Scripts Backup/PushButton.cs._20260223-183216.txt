@@ -1,0 +1,105 @@
+using UnityEngine;
+using UnityEngine.Events;
+
+namespace CommunityScripts
+{
+    public class PushButton : MonoBehaviour
+    {
+        [Header("Version: [2025-11-12]")]
+        [Tooltip("Assigned button need a Rigidbody")]
+        [SerializeField] Collider _buttonCollider;
+        [SerializeField] float _delayBeforeRepeat = 0.25f;
+
+        [Header("Events")]
+        public UnityEvent OnPressedEnter;
+        public UnityEvent OnPressedExit;
+        public UnityEvent<bool> OnToggleChanged;
+
+        private bool _isPressed = false;
+        private bool _toggle = false;
+        private float _t0 = 0;
+
+        public void Start()
+        {
+            if (_buttonCollider == null)
+            {
+                Debug.LogError($"[{nameof(PushButton)}] No button assigned !.", this);
+            }
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            Enter(collision.collider);
+        }
+
+        private void OnCollisionExit(Collision collision)
+        {
+            Exit(collision.collider);
+        }
+
+        void OnTriggerEnter(Collider other)
+        {
+            Enter(other);
+        }
+
+        void OnTriggerExit(Collider other)
+        {
+            Exit(other);
+        }
+
+        private void Enter(Collider other)
+        {
+            if (_buttonCollider == other)
+            {
+                float t1 = Time.time;
+                if (t1 - _t0 > _delayBeforeRepeat)
+                {
+                    _isPressed = true;
+                    _toggle = !_toggle;
+                    OnToggleChanged?.Invoke(_toggle);
+                    OnPressedEnter?.Invoke();
+                }
+                _t0 = t1;
+            }
+        }
+
+        private void Exit(Collider other)
+        {
+            if(_buttonCollider == other)
+            {
+                if (_isPressed == true)
+                {
+                    _isPressed = false;
+                    OnPressedExit.Invoke();
+                }
+            }
+        }
+
+        private void OnValidate()
+        {
+            if (_buttonCollider == null)
+            {
+                Debug.LogWarning($"[{nameof(PushButton)}] No button assigned !.", this);
+            }
+            else
+            {
+                if(_buttonCollider == null)
+                    Debug.LogWarning($"[{nameof(PushButton)}] Assigned button don't have a Collider !", this);
+                Rigidbody r = _buttonCollider.GetComponent<Rigidbody>();
+                if (r == null)
+                    Debug.LogWarning($"[{nameof(PushButton)}] Assigned button don't have a Rigidbody !", this);
+            }
+
+            Collider selfCollider = GetComponent<Collider>();
+            if (selfCollider == null)
+            {
+                selfCollider = gameObject.AddComponent<BoxCollider>();
+            }
+
+            if (selfCollider == null)
+            {
+                Debug.LogWarning($"[{nameof(PushButton)}] No Collider on this GameObject !.", this);
+            }
+        }
+    }
+}

@@ -1,0 +1,396 @@
+using Fusion;
+using Fusion.Sockets;
+using Fusion.Statistics;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    /// <summary>
+    /// This class receive network events from photon and can register network objects in the scene.
+    /// There can only be one instance of this class in the scene.
+    /// </summary>
+    [HelpURL("https://incrediworlds.gitbook.io/somnium-space-dendoc/worlds-creation/community-modules/community-networking")]
+    public class SceneNetworking : MonoBehaviour, INetworkRunnerCallbacks
+    {
+        // Static Public
+        public static event Action OnLocalPlayerJoined; // Event when local player has joined
+        public static event Action OnBecomeWorldMaster; // Event when local player become master client
+        public static event Action<PlayerRef> OnOtherPlayerJoined;
+        public static event Action<PlayerRef> OnOtherPlayerLeft;
+        public static event Action<ReliableKey, byte[]> OnReliableMessageReceived; // Special message received from other player
+
+        // Recommended flags for NetworkObjects
+        public const NetworkObjectFlags NETWORK_OBJECT_DEFAULT_FLAGS = NetworkObjectFlags.V1 | NetworkObjectFlags.AllowStateAuthorityOverride;
+
+        // Serialized Private
+        [Header("Alpha V2.0 [2025, 10, 07]")]
+        [Tooltip("Enable if you want NetworkObjects to transfer authority when host quit")]
+        [SerializeField] private bool _autoTransferObjectsAuthority = true;
+
+        // Fields Private 
+        private bool _wasMasterClient = false;
+        private float _t0 = 0; // Time since start of the scene
+        private NetworkObject[] _sceneNetworkObjects = new NetworkObject[0];
+
+        // Properties Public 
+        public static SceneNetworking Instance { get; private set; } // Singleton instance
+        public static NetworkRunner NetworkRunnerRef { get; private set; }
+        /// <summary>
+        /// Check If Local Player Has Joined
+        /// </summary>
+        public static bool IsNetworkReady { get; private set; } = false; // Check if local player has joined
+        public SceneRef NetworkSceneRef { get; private set; }
+        public static bool IsMasterClient
+        {
+            get
+            {
+                if (NetworkRunnerRef == null)
+                    return false;
+                else
+                    return NetworkRunnerRef.IsSharedModeMasterClient;
+            }
+        }
+
+        private void Awake()
+        {
+            Instance = this;
+            _t0 = Time.time;
+            Log("Scene Loaded");
+
+            GetAllNetworkObjects();
+
+            InvokeRepeating(nameof(WaitForNetworkRunner), 0.0f, 0.05f);
+        }
+
+        private void WaitForNetworkRunner()
+        {
+            if (NetworkRunner.Instances.Count > 0)
+            {
+                CancelInvoke(nameof(WaitForNetworkRunner));
+                NetworkRunnerRef = NetworkRunner.Instances[0];
+                Log("NetworkRunner ready");
+                Setup(NetworkRunnerRef);
+            }
+        }
+
+        private void Setup(NetworkRunner runner)
+        {
+            runner.AddCallbacks(this);
+        }
+
+        private void InitScenePath()
+        {
+            NetworkSceneRef = SceneRef.FromPath(gameObject.scene.path);
+            if (!NetworkSceneRef.IsValid)
+                LogError($"Scene reference is not valid ! {gameObject.scene.name}, {gameObject.scene.path}");
+        }
+
+        private void GetAllNetworkObjects()
+        {
+            _sceneNetworkObjects = FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            Array.Sort(_sceneNetworkObjects, (a, b) => a.SortKey.CompareTo(b.SortKey));
+            Log($"GetAllNetworkObjects Found: {_sceneNetworkObjects.Length}");
+        }
+
+        private void RegisterAllNetworkObjects()
+        {
+            // Register the NetworkObjects
+            int r = NetworkRunnerRef.RegisterSceneObjects(NetworkSceneRef, _sceneNetworkObjects);
+            Log($"Network objects registered: {r}");
+        }
+
+        // DELETEME
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.T))
+            {
+                if (NetworkRunnerRef.TryGetFusionStatistics(out FusionStatisticsManager stats))
+                {
+                    Debug.Log($" Fusion Memory, MemoryUsed:{stats.CompleteSnapshot.ObjectsAllocMemoryUsedInBytes} / MemoryFree:{stats.CompleteSnapshot.ObjectsAllocMemoryFreeInBytes}");
+                }
+            }
+        }
+
+        private void ReassignNullObjectsAuthority()
+        {
+            foreach (NetworkObject obj in _sceneNetworkObjects)
+            {
+                if (obj != null)
+                {
+                    if (obj.StateAuthority.IsNone)
+                    {
+                        Log($"ReassignNullObjectsAuthority {obj.name}");
+                        obj.RequestStateAuthority();
+                    }
+                }
+            }
+        }
+
+        private void SlowLoop()
+        {
+            if (IsMasterClient)
+            {
+                ReassignNullObjectsAuthority();
+            }
+            UpdateMasterClientState();
+        }
+
+        private void UpdateMasterClientState()
+        {
+            if (IsMasterClient != _wasMasterClient)
+            {
+                _wasMasterClient = IsMasterClient;
+                if (IsMasterClient)
+                {
+                    Log("You are now the Master Client");
+
+                    SafeInvokeOnBecomeWorldMaster();
+                }
+                else
+                {
+                    Log("You are no longer the Master Client");
+                }
+            }
+        }
+
+        // Network Events
+        /// Called by photon, do not use.
+        public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
+        {
+            UpdateMasterClientState();
+
+            if (player == NetworkRunnerRef.LocalPlayer)
+            {
+                Log($"Local Player Joined");
+                Log($"Is Master Client={IsMasterClient}");
+                InitScenePath();
+                RegisterAllNetworkObjects();
+                IsNetworkReady = true;
+
+                SafeInvokeOnLocalPlayerJoined();
+
+                CancelInvoke(nameof(SlowLoop));
+                InvokeRepeating(nameof(SlowLoop), 1.0f, 1.0f);
+            }
+            else
+            {
+                SafeInvokeOnOtherPlayerJoined(player);
+                Log($"Remote Player Joined, id={player.PlayerId}");
+            }
+        }
+
+        /// Called by photon, do not use.
+        public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
+        {
+            Log($"OnPlayerLeft id:{player.PlayerId}");
+            if (_autoTransferObjectsAuthority && IsMasterClient)
+            {
+                Log($"OnPlayerLeft Transferring authority to local");
+                ReassignNullObjectsAuthority();
+            }
+
+            // Probably always true, but just in case
+            if (player != NetworkRunnerRef.LocalPlayer)
+            {
+                SafeInvokeOnOtherPlayerLeft(player);
+            }
+
+            UpdateMasterClientState();
+        }
+
+        /// Called by photon, do not use.
+        public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
+        {
+            SafeInvokeOnReliableMessageReceived(key, data.ToArray());
+        }
+
+        /// Called by photon, do not use.
+        public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
+        {
+            //Log("OnReliableDataProgress, " + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
+        {
+            //Log($"Object EnterAOI {obj.name}");
+        }
+
+        /// Called by photon, do not use.
+        public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
+        {
+            //Log($"Object ExitAOI {obj.name}");
+        }
+
+        /// Called by photon, do not use.
+        public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)
+        {
+            //Log($"UserSimulationMessage received");
+        }
+
+        /// Called by photon, do not use.
+        public void OnInput(NetworkRunner runner, NetworkInput input)
+        {
+            // Warning, called a lot !
+        }
+
+        /// Called by photon, do not use.
+        public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
+        {
+
+        }
+
+        /// Called by photon, do not use.
+        public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
+        {
+            Log($"OnShutdown");
+        }
+
+        /// Called by photon, do not use.
+        public void OnConnectedToServer(NetworkRunner runner)
+        {
+            Log("Connected To Server, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
+        {
+            Log("Disconnected From Server, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
+        {
+            Log("Connect Request, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
+        {
+            Log("Connect Failed, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
+        {
+            Log("Session List Updated, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data)
+        {
+            Log("Custom Authentication Response, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken)
+        {
+            Log("Host Migration, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnSceneLoadDone(NetworkRunner runner)
+        {
+            Log("Scene LoadDone, t=" + GetTime());
+        }
+
+        /// Called by photon, do not use.
+        public void OnSceneLoadStart(NetworkRunner runner)
+        {
+            Log("Scene Load Start, t=" + GetTime());
+        }
+
+        private void Log(string message)
+        {
+            Debug.Log($"[World] [{nameof(SceneNetworking)}] (t:{GetTime()}) {message}");
+        }
+
+        private void LogError(string message)
+        {
+            Debug.LogError($"[World] [{nameof(SceneNetworking)}] (t:{GetTime()}) {message}");
+        }
+
+        private string GetTime()
+        {
+            return (Time.time - _t0).ToString("F2") + "s";
+        }
+
+        // Non breaking invoking
+        private void SafeInvokeOnBecomeWorldMaster()
+        {
+            if (OnReliableMessageReceived != null)
+            {
+                foreach (Delegate d in OnBecomeWorldMaster.GetInvocationList())
+                {
+                    try
+                    { ((Action)d)(); }
+                    catch (Exception ex)
+                    { Debug.LogException(ex); }
+                }
+            }
+        }
+
+        // Non breaking invoking
+        private void SafeInvokeOnLocalPlayerJoined()
+        {
+            if (OnLocalPlayerJoined != null)
+            {
+                foreach (Delegate d in OnLocalPlayerJoined.GetInvocationList())
+                {
+                    try
+                    { ((Action)d)(); }
+                    catch (Exception ex)
+                    { Debug.LogException(ex); }
+                }
+            }
+        }
+
+        // Non breaking invoking
+        private void SafeInvokeOnOtherPlayerJoined(PlayerRef player)
+        {
+            if (OnOtherPlayerJoined != null)
+            {
+                foreach (Delegate d in OnOtherPlayerJoined.GetInvocationList())
+                {
+                    try
+                    { ((Action<PlayerRef>)d)(player); }
+                    catch (Exception ex)
+                    { Debug.LogException(ex); }
+                }
+            }
+        }
+
+        // Non breaking invoking
+        private void SafeInvokeOnOtherPlayerLeft(PlayerRef player)
+        {
+            if (OnOtherPlayerLeft != null)
+            {
+                foreach (Delegate d in OnOtherPlayerLeft.GetInvocationList())
+                {
+                    try
+                    { ((Action<PlayerRef>)d)(player); }
+                    catch (Exception ex)
+                    { Debug.LogException(ex); }
+                }
+            }
+        }
+
+        // Non breaking invoking
+        private void SafeInvokeOnReliableMessageReceived(ReliableKey key, byte[] data)
+        {
+            if (OnReliableMessageReceived != null)
+            {
+                foreach (Delegate d in OnReliableMessageReceived.GetInvocationList())
+                {
+                    try
+                    { ((Action<ReliableKey, byte[]>)d)(key, data.ToArray()); }
+                    catch (Exception ex)
+                    { Debug.LogException(ex); }
+                }
+            }
+        }
+    }
+}

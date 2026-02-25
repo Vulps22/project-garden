@@ -1,0 +1,33 @@
+using SomniumSpace.Bridge.Components;
+using UnityEngine;
+using UnityEngine.Events;
+
+namespace GrowAGarden
+{
+    public class PlayerPresenceTrigger : MonoBehaviour
+    {
+        public readonly UnityAction<SomniumTriggerActionArgs> OnPlayerEnter;
+        public readonly UnityAction<SomniumTriggerActionArgs> OnPlayerExit;
+
+        [SerializeField] bool _localPlayerOnly = true;
+
+        // Update is called once per frame
+        private void OnTriggerEnter(Collider other)
+        {
+            SomniumTriggerActionArgs args = new (other.gameObject);
+            if (!args.IsPlayer)
+                return;
+            if (! _localPlayerOnly || (_localPlayerOnly && args.IsLocal))
+                OnPlayerEnter?.Invoke(args);
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            SomniumTriggerActionArgs args = new(other.gameObject);
+            if (!args.IsPlayer)
+                return;
+            if (!_localPlayerOnly || (_localPlayerOnly && args.IsLocal))
+                OnPlayerEnter?.Invoke(args);
+        }
+    }
+}

@@ -1,0 +1,137 @@
+using SomniumSpace.Avatar.Holders.Handlers;
+using SomniumSpace.Bridge;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace CommunityScripts
+{
+    // default value 1
+    [DefaultExecutionOrder(1)] // Necessary to be updated before the PlayerController is moved
+    public class PlayerPlatform : MonoBehaviour
+    {
+        [SerializeField] private Transform _motionAnchor;
+        [SerializeField] private Transform _platformObject;
+        [SerializeField] private CharacterTrigger _trigger;
+        [SerializeField] private float _disconnectDistance = 10.0f;
+
+        private Vector3 _lastPosition;
+        private CharacterController _character;
+
+        private void Awake()
+        {
+            if (_motionAnchor == null || _trigger == null)
+            { 
+                Debug.LogError($"[{nameof(PlayerPlatform)}] Reference is missing in inspector.");
+                enabled = false;
+                return;
+            }
+            Debug.Log($"[{nameof(PlayerPlatform)}] Awake");
+            _trigger.OnCharacterEnter += OnCharacterEnter;
+            _trigger.OnCharacterExit += OnCharacterExit;
+            _lastPosition = _motionAnchor.position;
+        }
+
+        private void OnDestroy()
+        {
+            if (_trigger != null)
+            {
+                _trigger.OnCharacterEnter -= OnCharacterEnter;
+                _trigger.OnCharacterExit -= OnCharacterExit;
+            }
+        }
+
+        private void OnCharacterEnter(CharacterController character)
+        {
+            Debug.Log($"[{nameof(PlayerPlatform)}] Character entered platform: {character.name}", character.gameObject);
+            _lastPosition = _motionAnchor.position;
+            _character = character;
+            //GetLocalVRIK();
+        }
+
+        private void OnCharacterExit(CharacterController character)
+        {
+            Debug.Log($"[{nameof(PlayerPlatform)}] Character exited platform: {character.name}", character.gameObject);
+            _character = null;
+        }
+
+        void Update()
+        {
+            UpdateCharacter();
+        }
+
+        private void UpdateCharacter()
+        {
+            if (SomniumBridge.PlayersContainer == null)
+                return;
+
+            Transform root = SomniumBridge.PlayersContainer.LocalPlayer.References.Body.Root;
+
+            if (_platformObject != null)
+            {
+                _platformObject.position = _motionAnchor.position;
+                _platformObject.rotation = _motionAnchor.rotation;
+            }
+
+            if (_character == null)
+                return;
+
+            if (Vector3.Distance(_character.transform.position, _motionAnchor.position) > _disconnectDistance)
+            {
+                _character = null;
+                return;
+            }
+
+            Vector3 delta = _motionAnchor.position - _lastPosition;
+            _lastPosition = _motionAnchor.position;
+
+            // Test XXX
+            //Vector3 deltaX = (_motionAnchor.position) - _character.transform.position; //  + new Vector3(0, 1, 0)
+            //_character.Move(deltaX);
+            //Debug.Log($"[{nameof(DrivingPlatform)}] Moving character by deltaX: {deltaX}", _character.gameObject);
+            if (delta != Vector3.zero)
+            {
+                _character.Move(delta);
+            }
+
+            /*
+                deltaRot = Quaternion.Inverse(_lastRotation) * MotionRef.rotation;
+                _lastRotation = MotionRef.rotation;
+
+                        Vector3 relativePos = (((_motionFeature.PhysicBodyPosition + (_motionFeature.PhysicBodyRotation * _motionFeature.PhysicBodyCenter))) - MotionRef.position);
+            Vector3 rotationalMovement = ((deltaRot * relativePos) - relativePos);
+            _motionFeature.PhysicBodyPosition += rotationalMovement + deltaPos;
+             */
+        }
+
+        private VRIKHandler GetLocalVRIK()
+        {
+            string name = SomniumBridge.PlayersContainer.LocalPlayer.Properties.NickName;
+            Scene activeScene = SceneManager.GetActiveScene();
+            GameObject[] roots = activeScene.GetRootGameObjects();
+
+            GameObject found = null;
+            foreach (GameObject go in roots)
+            {
+                if (go.name.StartsWith("Avatar") && go.name.Contains("[" + name + "]"))
+                {
+                    found = go;
+                    break;
+                }
+            }
+
+            if (found == null)
+                return null;
+
+            Debug.Log($"[{nameof(PlayerPlatform)}] Found local avatar: {found.name}", found);
+
+            VRIKHandler vrik = found.GetComponentInChildren<VRIKHandler>();
+
+            Debug.Log($"[{nameof(PlayerPlatform)}] VRIK found={vrik!=null}", vrik);
+
+            if (vrik != null)
+                return vrik;
+            else
+                return null;
+        }
+    }
+}

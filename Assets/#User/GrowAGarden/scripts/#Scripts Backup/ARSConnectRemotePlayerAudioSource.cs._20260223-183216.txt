@@ -1,0 +1,143 @@
+using Photon.Voice.Fusion;
+using SomniumSpace.Bridge.Components;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using UnityEngine;
+
+namespace CommunityScripts
+{
+    public class ARSConnectRemotePlayerAudioSource : MonoBehaviour
+    {
+        [Header("Debug")]
+        [SerializeField] private List<int> _players = new();
+        [SerializeField] private List<AudioSource> _audioSources = new();
+        [SerializeField] private int _currentActivePlayer = -1;
+        [SerializeField] private AudioSource _currentAudioSource;
+
+        private void Start()
+        {
+            InvokeRepeating(nameof(CleanDeletedSources), 1.0f, 1.0f);
+        }
+
+        private void CleanDeletedSources()
+        {
+            for (int i = _audioSources.Count - 1; i >= 0; i--)
+            {
+                if (_audioSources[i] == null)
+                {
+                    _audioSources.RemoveAt(i);
+                    _players.RemoveAt(i);
+                }
+            }
+        }
+
+        public void PlayerEnter(SomniumTriggerActionArgs player)
+        {
+            if (!player.IsLocal)
+            {
+                CleanDeletedSources();
+
+                Transform bodyRoot = player.Player?.References?.Body?.Root;
+                if (bodyRoot == null)
+                {
+                    Debug.LogError($"[{nameof(ARSConnectRemotePlayerAudioSource)}] Player bodyRoot is null");
+                    return;
+                }
+                int photonPlayerId = GetPlayerID(bodyRoot.root.name);
+                if (photonPlayerId < 1)
+                {
+                    Debug.LogError($"[{nameof(ARSConnectRemotePlayerAudioSource)}] Player ID not found");
+                    return;
+                }
+                VoiceNetworkObject voiceNetworkObject = GetPlayerPhotonVoice(photonPlayerId);
+                if (voiceNetworkObject == null)
+                {
+                    Debug.LogError($"[{nameof(ARSConnectRemotePlayerAudioSource)}] VoiceNetworkObject not found for player ID {photonPlayerId}");
+                    return;
+                }
+                AudioSource audioSource = voiceNetworkObject.GetComponent<AudioSource>();
+                if (audioSource == null)
+                {
+                    Debug.LogError($"[{nameof(ARSConnectRemotePlayerAudioSource)}] audioSource not found for player ID");
+                    return;
+                }
+                if (!_players.Contains(photonPlayerId))
+                {
+                    _players.Add(photonPlayerId);
+                    _audioSources.Add(audioSource);
+                    if (_players.Count == 1)
+                    {
+                        _currentActivePlayer = photonPlayerId;
+                        _currentAudioSource = audioSource;
+                        ARSController.SetAudioSource(audioSource);
+                    }
+                }
+            }
+        }
+
+        public void PlayerExit(SomniumTriggerActionArgs player)
+        {
+            if (!player.IsLocal)
+            {
+                Transform bodyRoot = player.Player?.References?.Body?.Root;
+                if (bodyRoot == null)
+                {
+                    Debug.LogError($"[{nameof(ARSConnectRemotePlayerAudioSource)}] Player bodyRoot is null");
+                    return;
+                }
+                int photonPlayerId = GetPlayerID(bodyRoot.root.name);
+                if (photonPlayerId < 1)
+                {
+                    Debug.LogError($"[{nameof(ARSConnectRemotePlayerAudioSource)}] Player ID not found");
+                    return;
+                }
+                if (_players.Contains(photonPlayerId))
+                {
+                    int index = _players.IndexOf(photonPlayerId);
+                    _players.RemoveAt(index);
+                    _audioSources.RemoveAt(index);
+                    if (_currentActivePlayer == photonPlayerId && _audioSources.Count > 0)
+                    {
+                        if (_audioSources[0] != null)
+                        {
+                            ARSController.SetAudioSource(_audioSources[0]);
+                            _currentActivePlayer = _players[0];
+                            _currentAudioSource = _audioSources[0];
+                        }
+                    }
+                    else if (_audioSources.Count == 0)
+                    {
+                        _currentActivePlayer = -1;
+                        _currentAudioSource = null;
+                    }
+                }
+
+                CleanDeletedSources();
+            }
+        }
+
+        private VoiceNetworkObject GetPlayerPhotonVoice(int photonPlayerId)
+        {
+            VoiceNetworkObject[] voiceObjects = FindObjectsByType<VoiceNetworkObject>(FindObjectsSortMode.None);
+            VoiceNetworkObject voiceObject;
+            foreach (var obj in voiceObjects)
+            {
+                if (obj != null && obj.Object.StateAuthority.PlayerId == photonPlayerId)
+                {
+                    voiceObject = obj;
+                    return voiceObject;
+                }
+            }
+            return null;
+        }
+
+        private int GetPlayerID(string input)
+        {
+            int id = -1;
+            var match = Regex.Match(input, @"\[Player:(\d+)\]");
+            if (match.Success)
+                id = int.Parse(match.Groups[1].Value);
+            return id;
+        }
+    }
+}

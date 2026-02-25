@@ -1,0 +1,45 @@
+using System;
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    public class ARSDJSpot : MonoBehaviour
+    {
+        [SerializeField] private Transform _spotPivot0;
+        [SerializeField] private Transform _spotPivot1;
+
+        [SerializeField] private float _speedP0 = 1.0f;
+        [SerializeField] private float _speedP1 = 1.0f;
+        [SerializeField] private Vector2 _movementP0 = new Vector2(-45, 45.0f);
+        [SerializeField] private Vector2 _movementP1 = new Vector2(0.0f, -45.0f);
+
+        private ARSController _ars;
+
+        void Start()
+        {
+            _ars = ARSController.Instance;
+            if (_ars == null)
+            {
+                ARSController.ForceInit();
+            }
+            _ars.OnUpdate += OnUpdate;
+        }
+
+        private void OnUpdate()
+        {
+            float motion0 = Mathf.Lerp(_movementP0.x, _movementP0.y, Mathf.Sin(Time.time * _speedP0) * 0.5f + 0.5f);
+            _spotPivot0.localRotation = Quaternion.Euler(0, motion0, 0);
+            float motion1 = Mathf.Lerp(_movementP1.x, _movementP1.y, Mathf.Sin(Time.time * _speedP1) * 0.5f + 0.5f);
+            _spotPivot1.localRotation = Quaternion.Euler(motion1, 0, 0);
+        }
+
+        // Cleanup events
+        private void OnDestroy()
+        {
+            if (_ars != null)
+            {
+                _ars.OnUpdate -= OnUpdate;
+            }
+        }
+    }
+}

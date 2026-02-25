@@ -1,0 +1,90 @@
+using Fusion;
+using SomniumSpace.Network.Bridge;
+using UnityEngine;
+using UnityEngine.Events;
+
+namespace GrowAGarden
+{
+    public class NetworkFloat : MonoBehaviour
+    {
+        [Header("Version [2026, 01, 11]")]
+        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkObject _networkObject;
+        [Space]
+        [Range(0, 7)][Header("Each bridge can sync up to 8 unique floats")]
+        [SerializeField] private int _floatID = 0;
+        [SerializeField] private float _defaultValue = 0.0f;
+        [SerializeField] private UnityEvent<float> _syncedEvent;
+
+        void Start()
+        {
+            // 1. Connect events
+            _networkBridge.OnSpawned += OnSpawn;
+            _networkBridge.OnMessageToAll += OnMessageToAll;
+        }
+
+        // Public Setter
+        public void SetValue(float value)
+        {
+            BytesWriter writer = new(BytesWriter.FloatSize);
+            writer.AddFloat(value);
+            // 3. Send message to all
+            _networkBridge.RPC_SendMessageToAll((byte)_floatID, writer.Data);
+        }
+
+        private void OnSpawn()
+        {
+            // 2. On object spawn logic:
+            // Controller Write initial variable and setup state
+            if (_networkBridge.Object.HasStateAuthority)
+            {
+                ApplyFloat(_defaultValue);
+                SetVariable(_defaultValue);
+            }
+            // Proxies Read variable and setup state (Late joiner will sync with everyone)
+            else
+            {
+                ApplyFloat(GetVariable());
+            }
+        }
+
+        private void OnMessageToAll(byte id, byte[] data)
+        {
+            if (id == _floatID)
+            {
+                // 4. Receive message from caller
+                BytesReader reader = new(data);
+                float value = reader.NextFloat();
+                // Controller Write changed variable
+                if (_networkBridge.Object.HasStateAuthority)
+                {
+                    SetVariable(value);
+                }
+                ApplyFloat(value);
+            }
+        }
+
+        private void ApplyFloat(float value)
+        {
+            _syncedEvent?.Invoke(value);
+        }
+
+        private float GetVariable()
+        {
+            return _networkBridge.SyncFloatArray.Get(_floatID);
+        }
+
+        private void SetVariable(float value)
+        {
+            _networkBridge.SyncFloatArray.Set(_floatID, value);
+        }
+
+        private void OnValidate()
+        {
+            if(_networkBridge == null)
+                _networkBridge = GetComponent<NetworkBridge>();
+            if(_networkObject == null)  
+                _networkObject = GetComponent<NetworkObject>();
+        }
+    }
+}

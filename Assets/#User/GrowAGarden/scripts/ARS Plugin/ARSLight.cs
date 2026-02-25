@@ -1,0 +1,32 @@
+using UnityEngine;
+
+namespace GrowAGarden
+{
+    public class ARSLight : ARSBehaviour
+    {
+        [Header("Light Settings")]
+        [SerializeField] private Light _light;
+        [Tooltip("Color when the channel amplitude is close to 0")]
+        [SerializeField] private Color _colorMin = Color.black;
+        [Tooltip("Color when the channel amplitude is closer to 1")]
+        [SerializeField] private Color _colorMax = Color.white;
+
+        // Called when the ARS system updates
+        public override void OnARSUpdate(float value01 )
+        {
+            if (_light != null)
+            {
+                _light.color = Color.Lerp(_colorMin, _colorMax, value01);
+            }
+        }
+
+        // Executed in editor, when a value is changed in the inspector, or when the component is added
+        private void OnValidate()
+        {
+            if(_light == null)
+                _light = GetComponent<Light>();
+            if (!Application.isPlaying)
+                _light.color = Color.Lerp(_colorMin, _colorMax, 0.5f); // Set initial color based on the midpoint
+        }
+    }
+}
