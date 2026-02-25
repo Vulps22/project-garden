@@ -1,5 +1,5 @@
-using System.Collections;
 using Fusion;
+using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
@@ -7,50 +7,34 @@ namespace GrowAGarden
 {
     public class PlantSlot : MonoBehaviour
     {
+        [SerializeField] NetworkBridge _networkBridge;
         private Plantable _currentPlant = null;
         private string _currentSeedId = null;
-        private bool _planting = false;
         private const float TIMEOUT = 2f;
 
+        private void Start()
+        {
+            _networkBridge.OnMessageToAll += OnMessageToAll;
+        }
 
-        public bool IsOccupied() => _currentPlant != null || _planting;
+        public bool IsOccupied = false;
 
         public void Plant(SeedDefinition seed, float scaleOverride = 0f)
         {
-            if (IsOccupied()) return;
-            _planting = true;
+            if (IsOccupied) return;
+            if (!SceneNetworking.IsMasterClient) return;
+
+            IsOccupied = true; // Set immediately, don't wait for RPC
+
             Plantable plant = PoolManager.Instance.ClaimPlant(seed.seedId);
             if (plant == null)
             {
-                _planting = false;
+                IsOccupied = false; // Reset if failed
                 return;
-            }
-            StartCoroutine(PlantWithAuthority(plant, seed, scaleOverride));
-        }
-
-        private IEnumerator PlantWithAuthority(Plantable plant, SeedDefinition seed, float scaleOverride)
-        {
-            var networkObject = plant.GetComponent<NetworkObject>();
-            if (networkObject != null && !networkObject.HasStateAuthority)
-            {
-                networkObject.RequestStateAuthority();
-                float t = Time.time;
-                while (!networkObject.HasStateAuthority)
-                {
-                    if (Time.time - t > TIMEOUT)
-                    {
-                        Debug.LogWarning($"[PlantSlot] Timeout getting authority on {plant.name}");
-                        PoolManager.Instance.ReturnPlant(seed.seedId, plant);
-                        _planting = false;
-                        yield break;
-                    }
-                    yield return null;
-                }
             }
 
             _currentPlant = plant;
             _currentSeedId = seed.seedId;
-            _planting = false;
 
             plant.transform.position = transform.position;
             plant.transform.SetParent(transform);
@@ -58,11 +42,12 @@ namespace GrowAGarden
             plant.maxScale = scaleOverride > 0f ? scaleOverride : seed.maxScale;
             plant.scaleMultiplier = seed.scaleMultiplier;
             plant.OnPlanted();
+            _networkBridge.RPC_SendMessageToAll((byte)PlantSlotMessageType.Planted, new byte[0]);
         }
 
         public void Load(SeedDefinition seed, long savedTimestamp, float scaleOverride = 0f)
         {
-            if (IsOccupied()) return;
+            if (IsOccupied) return;
 
             _currentPlant = PoolManager.Instance.ClaimPlant(seed.seedId);
             if (_currentPlant == null) return;
@@ -77,7 +62,7 @@ namespace GrowAGarden
 
         public void Harvest()
         {
-            if (!IsOccupied()) return;
+            if (!IsOccupied) return;
             _currentPlant.OnHarvested();
             PoolManager.Instance.ReturnPlant(_currentSeedId, _currentPlant);
             _currentPlant = null;
@@ -86,17 +71,58 @@ namespace GrowAGarden
 
         private void OnTriggerEnter(Collider other)
         {
-            if (IsOccupied()) return;
+            if (IsOccupied) return;
+
             SeedObject seed = other.GetComponent<SeedObject>();
             if (seed == null) return;
 
-            // Force-drop the seed by disabling the grab interactable before returning to pool
-            var grab = seed.GetComponent<XRGrabInteractable>();
-            if (grab != null)
-                grab.enabled = false;
+            var seedNetworkObj = seed.GetComponent<NetworkObject>();
+            bool hasSeedAuthority = seedNetworkObj != null && seedNetworkObj.HasStateAuthority;
 
+            // Only master or seed holder processes this
+            if (!SceneNetworking.IsMasterClient && !hasSeedAuthority) return;
+
+            // If I'm holding the seed, disable grab
+            if (hasSeedAuthority)
+            {
+                var grab = seed.GetComponent<XRGrabInteractable>();
+                if (grab != null) grab.enabled = false;
+            }
+
+            // Both master and authority return seed (different purposes)
             PoolManager.Instance.ReturnSeed(seed.seedDefinition.seedId, seed);
+
+            // Master plants
             Plant(seed.seedDefinition, seed.scaleOverride);
+        }
+
+        private void OnMessageToAll(byte id, byte[] data)
+        {
+            switch ((PlantSlotMessageType)id)
+            {
+                case PlantSlotMessageType.Planted:
+                    {
+                        IsOccupied = true;
+                        break;
+                    }
+                case PlantSlotMessageType.Harvested:
+                    {
+                        IsOccupied = false;
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+
+
+        /// <summary>
+        /// Message IDs that could be recieved.
+        /// </summary>
+        enum PlantSlotMessageType : byte
+        {
+            Planted = 0,
+            Harvested = 1,
         }
     }
 }
