@@ -49,6 +49,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02f44bcc4a5289d4d86b1450a057d982, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlantSlot
+  _networkBridge: {fileID: 1812902384280269279}
+  IsOccupied: 0
 --- !u!64 &605552105126306851
 MeshCollider:
   m_ObjectHideFlags: 0

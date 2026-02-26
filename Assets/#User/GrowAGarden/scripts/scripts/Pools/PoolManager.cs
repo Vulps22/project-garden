@@ -14,17 +14,25 @@ namespace GrowAGarden
         {
             if (Instance != null && Instance != this)
             {
-                Debug.LogWarning($"[PoolManager] Duplicate PoolManager on '{gameObject.name}' � destroying this one.");
+                Logger.Warn($"Duplicate PoolManager on '{gameObject.name}' — destroying this one");
                 Destroy(gameObject);
                 return;
             }
             Instance = this;
 
             foreach (PlantPool pool in GetComponentsInChildren<PlantPool>(true))
+            {
                 _plantPools[pool.SeedId] = pool;
+                Logger.Info($"Registered PlantPool for seedId='{pool.SeedId}', available={pool.Available}");
+            }
 
             foreach (SeedPool pool in GetComponentsInChildren<SeedPool>(true))
+            {
                 _seedPools[pool.SeedId] = pool;
+                Logger.Info($"Registered SeedPool for seedId='{pool.SeedId}', available={pool.Available}");
+            }
+
+            Logger.Info($"Awake() complete — {_plantPools.Count} plant pool(s), {_seedPools.Count} seed pool(s)");
         }
 
         public int PlantAvailable(string seedId)
@@ -36,34 +44,56 @@ namespace GrowAGarden
 
         public Plantable ClaimPlant(string seedId)
         {
+            Logger.Log($"ClaimPlant('{seedId}') — available={PlantAvailable(seedId)}");
             if (_plantPools.TryGetValue(seedId, out PlantPool pool))
-                return pool.Claim();
-            Debug.LogWarning($"[PoolManager] No plant pool found for '{seedId}'");
+            {
+                Plantable plant = pool.Claim();
+                Logger.Info($"ClaimPlant('{seedId}') — returned '{(plant != null ? plant.name : "NULL")}', remaining={pool.Available}");
+                return plant;
+            }
+            Logger.Error($"ClaimPlant('{seedId}') — no PlantPool found for this seedId!");
             return null;
         }
 
         public void ReturnPlant(string seedId, Plantable plant)
         {
+            Logger.Log($"ReturnPlant('{seedId}', '{plant?.name}')");
             if (_plantPools.TryGetValue(seedId, out PlantPool pool))
+            {
                 pool.Return(plant);
+                Logger.Info($"ReturnPlant('{seedId}') — pool now has {pool.Available} available");
+            }
             else
-                Debug.LogWarning($"[PoolManager] No plant pool found for '{seedId}' � plant not returned!");
+            {
+                Logger.Error($"ReturnPlant('{seedId}') — no PlantPool found, plant NOT returned!");
+            }
         }
 
         public SeedObject ClaimSeed(string seedId)
         {
+            Logger.Log($"ClaimSeed('{seedId}') — available={(_seedPools.TryGetValue(seedId, out var p) ? p.Available : -1)}");
             if (_seedPools.TryGetValue(seedId, out SeedPool pool))
-                return pool.Claim();
-            Debug.LogWarning($"[PoolManager] No seed pool found for '{seedId}'");
+            {
+                SeedObject seed = pool.Claim();
+                Logger.Info($"ClaimSeed('{seedId}') — returned '{(seed != null ? seed.name : "NULL")}', remaining={pool.Available}");
+                return seed;
+            }
+            Logger.Error($"ClaimSeed('{seedId}') — no SeedPool found for this seedId!");
             return null;
         }
 
         public void ReturnSeed(string seedId, SeedObject seed)
         {
+            Logger.Log($"ReturnSeed('{seedId}', '{seed?.name}')");
             if (_seedPools.TryGetValue(seedId, out SeedPool pool))
+            {
                 pool.Return(seed);
+                Logger.Info($"ReturnSeed('{seedId}') — pool now has {pool.Available} available");
+            }
             else
-                Debug.LogWarning($"[PoolManager] No seed pool found for '{seedId}' � seed not returned!");
+            {
+                Logger.Error($"ReturnSeed('{seedId}') — no SeedPool found, seed NOT returned!");
+            }
         }
     }
 }
