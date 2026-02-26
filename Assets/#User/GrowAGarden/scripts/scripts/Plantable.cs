@@ -15,24 +15,20 @@ namespace GrowAGarden
 
         private void Start()
         {
-            Debug.Log($"[Plantable] Start() on '{gameObject.name}' — growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}, grabInteractable={((_grabInteractable != null) ? _grabInteractable.name : "NULL")}");
+            Logger.Info($"Start() '{gameObject.name}' — growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}, grabInteractable={(_grabInteractable != null ? _grabInteractable.name : "NULL")}");
             ResetForPool();
         }
 
-        /// <summary>
-        /// Resets runtime state so the plant can be reused from the pool.
-        /// Called from Start() and should be called by the pool on Return.
-        /// </summary>
         public void ResetForPool()
         {
             if (_grabInteractable != null)
             {
                 _grabInteractable.enabled = false;
-                Debug.Log($"[Plantable] Disabled grab interactable on '{gameObject.name}'");
+                Logger.Log($"ResetForPool() '{gameObject.name}' — grab interactable disabled");
             }
             else
             {
-                Debug.LogWarning($"[Plantable] _grabInteractable is NULL on '{gameObject.name}' — harvesting via grab won't work!");
+                Logger.Warn($"ResetForPool() '{gameObject.name}' — _grabInteractable is NULL, harvesting via grab won't work!");
             }
             _lastLoggedCompletion = -1f;
         }
@@ -40,13 +36,15 @@ namespace GrowAGarden
         public void OnPlanted()
         {
             _plantedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            Debug.Log($"[Plantable] OnPlanted() '{gameObject.name}' � timestamp={_plantedTimestamp}, growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}");
+            Logger.Info($"OnPlanted() '{gameObject.name}' — timestamp={_plantedTimestamp}, growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}");
+
             if (growDurationSeconds <= 0f)
-                Debug.LogError($"[Plantable] growDurationSeconds is {growDurationSeconds} on '{gameObject.name}' � plant will NEVER grow properly! (division by zero/negative)");
+                Logger.Error($"OnPlanted() '{gameObject.name}' — growDurationSeconds={growDurationSeconds}, plant will NEVER grow (division by zero/negative)!");
             if (maxScale <= 0f)
-                Debug.LogWarning($"[Plantable] maxScale is {maxScale} on '{gameObject.name}' � plant will be invisible!");
+                Logger.Warn($"OnPlanted() '{gameObject.name}' — maxScale={maxScale}, plant will be invisible!");
             if (scaleMultiplier <= 0f)
-                Debug.LogWarning($"[Plantable] scaleMultiplier is {scaleMultiplier} on '{gameObject.name}' � plant will be invisible!");
+                Logger.Warn($"OnPlanted() '{gameObject.name}' — scaleMultiplier={scaleMultiplier}, plant will be invisible!");
+
             UpdateVisual(0f);
         }
 
@@ -54,7 +52,13 @@ namespace GrowAGarden
         {
             _plantedTimestamp = savedTimestamp;
             float completion = GetGrowthCompletion();
-            Debug.Log($"[Plantable] OnLoaded() '{gameObject.name}' � savedTimestamp={savedTimestamp}, growDuration={growDurationSeconds}s, completion={completion:F3}");
+            Logger.Info($"OnLoaded() '{gameObject.name}' — savedTimestamp={savedTimestamp}, growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}, completion={completion:F3}");
+
+            if (growDurationSeconds <= 0f)
+                Logger.Error($"OnLoaded() '{gameObject.name}' — growDurationSeconds={growDurationSeconds}, plant will NEVER grow!");
+            if (maxScale <= 0f)
+                Logger.Warn($"OnLoaded() '{gameObject.name}' — maxScale={maxScale}, plant will be invisible!");
+
             UpdateVisual(completion);
         }
 
@@ -62,8 +66,7 @@ namespace GrowAGarden
         {
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             float raw = (now - _plantedTimestamp) / growDurationSeconds;
-            float clamped = Mathf.Clamp01(raw);
-            return clamped;
+            return Mathf.Clamp01(raw);
         }
 
         public bool IsReadyToHarvest()
@@ -77,21 +80,18 @@ namespace GrowAGarden
         {
             float completion = GetGrowthCompletion();
 
-            // Log growth progress every ~10% change
             if (Mathf.Abs(completion - _lastLoggedCompletion) >= 0.1f)
             {
-                Debug.Log($"[Plantable] Update() '{gameObject.name}' � completion={completion:F3}, scale={transform.localScale}, isReady={IsReadyToHarvest()}");
+                Logger.Log($"Update() '{gameObject.name}' — completion={completion:F3}, scale={transform.localScale}, isReady={IsReadyToHarvest()}");
                 _lastLoggedCompletion = completion;
             }
 
-            if (!IsReadyToHarvest())
-            {
-                UpdateVisual(completion);
-            }
-            else if (_grabInteractable != null && !_grabInteractable.enabled)
+            UpdateVisual(completion);
+
+            if (IsReadyToHarvest() && _grabInteractable != null && !_grabInteractable.enabled)
             {
                 _grabInteractable.enabled = true;
-                Debug.Log($"[Plantable] '{gameObject.name}' is READY TO HARVEST � enabled grab interactable!");
+                Logger.Info($"Update() '{gameObject.name}' — READY TO HARVEST, grab interactable enabled");
             }
         }
 
@@ -99,7 +99,7 @@ namespace GrowAGarden
         {
             float scale = completion * maxScale * scaleMultiplier;
             if (scale <= 0f && completion > 0f)
-                Debug.LogWarning($"[Plantable] UpdateVisual() '{gameObject.name}' � scale is {scale} despite completion={completion:F3}! Check maxScale={maxScale} and scaleMultiplier={scaleMultiplier}");
+                Logger.Warn($"UpdateVisual() '{gameObject.name}' — scale={scale} despite completion={completion:F3}! maxScale={maxScale}, scaleMultiplier={scaleMultiplier}");
             transform.localScale = Vector3.one * scale;
         }
 

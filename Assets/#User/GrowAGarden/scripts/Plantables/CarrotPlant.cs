@@ -6,14 +6,17 @@ namespace GrowAGarden
     {
         private void Awake()
         {
-            Debug.Log($"[CarrotPlant] Awake() on '{gameObject.name}' � growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}");
+            Logger.Info($"Awake() on '{gameObject.name}' — growDuration={growDurationSeconds}s, maxScale={maxScale}, scaleMultiplier={scaleMultiplier}");
         }
 
         public override void OnHarvested()
         {
-            Debug.Log($"[CarrotPlant] OnHarvested() '{gameObject.name}' � completion was {GetGrowthCompletion():F3}");
-            GetComponent<Rigidbody>().isKinematic = false;
-
+            Logger.Info($"OnHarvested() '{gameObject.name}' — completion was {GetGrowthCompletion():F3}");
+            var rb = GetComponent<Rigidbody>();
+            if (rb == null)
+                Logger.Error($"OnHarvested() '{gameObject.name}' — no Rigidbody found, cannot release physics!");
+            else
+                rb.isKinematic = false;
         }
     }
 }

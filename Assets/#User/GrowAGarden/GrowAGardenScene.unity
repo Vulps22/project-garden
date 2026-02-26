@@ -1197,7 +1197,7 @@ MonoBehaviour:
   AssetDescription: Test World Not Ready for Use
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: 87f14e3e868929641aa61e1b9708e8e3, type: 3}
-  LastBuildSizeBytes: 18544112
+  LastBuildSizeBytes: 18544144
   BoundsIsDisplay: 0
   World360PreviewPos: {x: 0, y: 0, z: 0}
   IsOpen360Preview: 0
@@ -1226,7 +1226,7 @@ MonoBehaviour:
     Free:
       Count: 1
       MaxCount: 10
-      AvailableSize: 296028688
+      AvailableSize: 296028656
     Paid:
       Entries: []
   OwnedTokens: []
@@ -2365,6 +2365,11 @@ PrefabInstance:
         type: 3}
       propertyPath: SortKey
       value: 3946728432
+      objectReference: {fileID: 0}
+    - target: {fileID: 8287946195203900098, guid: 4bd65765ba69b9340b8cc97ef50e83e8,
+        type: 3}
+      propertyPath: SyncScale
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

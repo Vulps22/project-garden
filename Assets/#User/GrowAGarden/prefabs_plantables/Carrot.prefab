@@ -274,7 +274,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Addons.Physics::Fusion.Addons.Physics.NetworkRigidbody3D
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  SyncScale: 0
+  SyncScale: 1
   SyncParent: 1
   _interpolationTarget: {fileID: 0}
   UsePreciseRotation: 0

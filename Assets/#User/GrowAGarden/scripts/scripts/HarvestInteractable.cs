@@ -20,17 +20,16 @@ namespace GrowAGarden
         private void Start()
         {
             _grabInteractable = GetComponent<XRGrabInteractable>();
+            Logger.Info($"Start() on '{gameObject.name}' — grabInteractable={(_grabInteractable != null ? "found" : "NULL")}, threshold={harvestRotationThreshold}");
 
-            Debug.Log($"[HarvestInteractable] Start() on '{gameObject.name}' — grabInteractable={(_grabInteractable != null ? "found" : "NULL")}, threshold={harvestRotationThreshold}, pos={_originalPosition}");
             if (_grabInteractable == null)
             {
-                Debug.LogError($"[HarvestInteractable] '{gameObject.name}' has NO XRGrabInteractable — harvesting won't work!");
+                Logger.Error($"'{gameObject.name}' has NO XRGrabInteractable — harvesting won't work!");
                 return;
             }
 
             _grabInteractable.selectEntered.AddListener(OnGrabbed);
             _grabInteractable.selectExited.AddListener(OnReleased);
-            Debug.Log($"[HarvestInteractable] Registered grab listeners on '{gameObject.name}'");
         }
 
         private void OnDestroy()
@@ -42,12 +41,9 @@ namespace GrowAGarden
             }
         }
 
-        /// <summary>
-        /// Call this when the plant is placed in a slot (or reclaimed from the pool)
-        /// to reset all harvest state and capture the new resting transform.
-        /// </summary>
         public void ResetState()
         {
+            Logger.Log($"ResetState() '{gameObject.name}' — clearing harvested/pulled flags");
             _originalPosition = transform.position;
             _originalRotation = transform.rotation;
             _harvested = false;
@@ -57,10 +53,9 @@ namespace GrowAGarden
 
         private void OnGrabbed(SelectEnterEventArgs args)
         {
-            Debug.Log($"[HarvestInteractable] OnGrabbed() '{gameObject.name}' — interactor='{args.interactorObject.transform.name}', harvested={_harvested}");
+            Logger.Info($"OnGrabbed() '{gameObject.name}' — interactor='{args.interactorObject.transform.name}', already harvested={_harvested}");
             _isBeingPulled = true;
             _currentInteractor = args.interactorObject;
-            // Capture resting transform at grab time so it is correct after pooling
             _originalPosition = transform.position;
             _originalRotation = transform.rotation;
         }
@@ -69,44 +64,37 @@ namespace GrowAGarden
         {
             if (!_isBeingPulled || _harvested) return;
 
-            // Lock position
             transform.position = _originalPosition;
 
-            // Rotate toward interactor direction
             Vector3 pullDirection = _currentInteractor.transform.position - _originalPosition;
             pullDirection.y = 0f;
             Quaternion targetRotation = Quaternion.FromToRotation(Vector3.up, pullDirection.normalized) * _originalRotation;
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
 
-            // Check threshold
             float angle = Quaternion.Angle(_originalRotation, transform.rotation);
-
-            // Log periodically (every ~0.5s equivalent via frame skip)
-            if (Time.frameCount % 30 == 0)
-                Debug.Log($"[HarvestInteractable] Pulling '{gameObject.name}' � angle={angle:F1}/{harvestRotationThreshold}, pullDir={pullDirection}");
 
             if (angle >= harvestRotationThreshold)
             {
-                Debug.Log($"[HarvestInteractable] HARVEST THRESHOLD REACHED on '{gameObject.name}' � angle={angle:F1} >= {harvestRotationThreshold}");
+                Logger.Info($"HARVEST THRESHOLD REACHED on '{gameObject.name}' — angle={angle:F1} >= {harvestRotationThreshold}");
                 _harvested = true;
                 _isBeingPulled = false;
+
                 var slot = GetComponentInParent<PlantSlot>();
                 if (slot == null)
-                    Debug.LogError($"[HarvestInteractable] '{gameObject.name}' has no PlantSlot in parents � Harvest() won't be called!");
+                    Logger.Error($"'{gameObject.name}' has no PlantSlot in parents — Harvest() won't be called!");
                 else
-                    Debug.Log($"[HarvestInteractable] Found PlantSlot '{slot.gameObject.name}' � calling Harvest()");
-                slot?.Harvest();
+                    slot.Harvest();
             }
         }
 
         private void OnReleased(SelectExitEventArgs args)
         {
-            Debug.Log($"[HarvestInteractable] OnReleased() '{gameObject.name}' — harvested={_harvested}");
+            Logger.Info($"OnReleased() '{gameObject.name}' — harvested={_harvested}");
             if (_harvested) return;
             _isBeingPulled = false;
             transform.position = _originalPosition;
             transform.rotation = _originalRotation;
-            Debug.Log($"[HarvestInteractable] Reset position/rotation on '{gameObject.name}'");
+            Logger.Log($"OnReleased() '{gameObject.name}' — reset to original position/rotation");
         }
     }
 }
