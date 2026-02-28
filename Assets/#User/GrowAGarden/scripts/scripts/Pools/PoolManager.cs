@@ -9,6 +9,7 @@ namespace GrowAGarden
 
         private Dictionary<string, PlantPool> _plantPools = new Dictionary<string, PlantPool>();
         private Dictionary<string, SeedPool> _seedPools = new Dictionary<string, SeedPool>();
+        private Dictionary<string, UnifiedPool> _UnifiedPools = new Dictionary<string, UnifiedPool>();
 
         private void Awake()
         {
@@ -30,6 +31,12 @@ namespace GrowAGarden
             {
                 _seedPools[pool.SeedId] = pool;
                 Logger.Info($"Registered SeedPool for seedId='{pool.SeedId}', available={pool.Available}");
+            }
+
+            foreach (UnifiedPool pool in GetComponentsInChildren<UnifiedPool>(true))
+            {
+                _UnifiedPools[pool.SeedId] = pool;
+                Logger.Info($"Registered UnifiedPool for seedId='{pool.SeedId}', available={pool.Available}");
             }
 
             Logger.Info($"Awake() complete — {_plantPools.Count} plant pool(s), {_seedPools.Count} seed pool(s)");
@@ -79,6 +86,27 @@ namespace GrowAGarden
                 return seed;
             }
             Logger.Error($"ClaimSeed('{seedId}') — no SeedPool found for this seedId!");
+            return null;
+        }
+
+        public UnifiedPlantSeed claimUnifiedPlantSeed(string seedId)
+        {
+            Logger.Log($"claimUnifiedPlantSeed('{seedId}') — available={(_UnifiedPools.TryGetValue(seedId, out var p) ? p.Available : -1)}");
+            if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
+            {
+                UnifiedPlantSeed plant = pool.Claim();
+                if (plant is UnifiedPlantSeed unifiedPlant)
+                {
+                    Logger.Info($"claimUnifiedPlantSeed('{seedId}') — returned '{unifiedPlant.name}', remaining={pool.Available}");
+                    return unifiedPlant;
+                }
+                else
+                {
+                    Logger.Warn($"claimUnifiedPlantSeed('{seedId}') — claimed plant '{plant?.name}' is not a UnifiedPlantSeed!");
+                    return null;
+                }
+            }
+            Logger.Error($"claimUnifiedPlantSeed('{seedId}') — no PlantPool found for this seedId!");
             return null;
         }
 

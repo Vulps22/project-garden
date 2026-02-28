@@ -55,6 +55,7 @@ MonoBehaviour:
   maxScale: 0
   scaleMultiplier: 1
   _grabInteractable: {fileID: -6192134830928603910}
+  networkObject: {fileID: 6992150774429448238}
 --- !u!54 &5033715764362604403
 Rigidbody:
   m_ObjectHideFlags: 0

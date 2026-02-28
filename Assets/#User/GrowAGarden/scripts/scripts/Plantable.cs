@@ -1,3 +1,4 @@
+using Fusion;
 using System;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -12,6 +13,7 @@ namespace GrowAGarden
 
         private long _plantedTimestamp;
         [SerializeField] private XRGrabInteractable _grabInteractable;
+        [SerializeField] public NetworkObject networkObject;
 
         private void Start()
         {
@@ -78,15 +80,19 @@ namespace GrowAGarden
 
         private void Update()
         {
-            float completion = GetGrowthCompletion();
-
-            if (Mathf.Abs(completion - _lastLoggedCompletion) >= 0.1f)
+            if (networkObject.HasStateAuthority)
             {
-                Logger.Log($"Update() '{gameObject.name}' — completion={completion:F3}, scale={transform.localScale}, isReady={IsReadyToHarvest()}");
-                _lastLoggedCompletion = completion;
-            }
 
-            UpdateVisual(completion);
+                float completion = GetGrowthCompletion();
+
+                if (Mathf.Abs(completion - _lastLoggedCompletion) >= 0.1f)
+                {
+                    Logger.Log($"Update() '{gameObject.name}' — completion={completion:F3}, scale={transform.localScale}, isReady={IsReadyToHarvest()}");
+                    _lastLoggedCompletion = completion;
+                }
+
+                UpdateVisual(completion);
+            }
 
             if (IsReadyToHarvest() && _grabInteractable != null && !_grabInteractable.enabled)
             {
