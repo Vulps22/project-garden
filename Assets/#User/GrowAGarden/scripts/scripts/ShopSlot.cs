@@ -8,7 +8,7 @@ namespace GrowAGarden
     public class ShopSlot : MonoBehaviour
     {
         [SerializeField] private SeedDefinition _seedDefinition;
-        private SeedObject _currentSeed;
+        private UnifiedPlantSeed _currentSeed;
         private const float TIMEOUT = 2f;
 
         private void Start()
@@ -36,7 +36,7 @@ namespace GrowAGarden
         private void OnDestroy()
         {
             Logger.Log($"OnDestroy() '{gameObject.name}'");
-            SceneNetworking.OnBecomeWorldMaster -= SpawnSeed;
+            SceneNetworking.OnLocalPlayerJoined -= SpawnSeed;
         }
 
         private void SpawnSeed()
@@ -49,7 +49,7 @@ namespace GrowAGarden
                 return;
             }
 
-            _currentSeed = PoolManager.Instance.ClaimSeed(_seedDefinition.seedId);
+            _currentSeed = PoolManager.Instance.claimUnifiedPlantSeed(_seedDefinition.seedId);
             if (_currentSeed == null)
             {
                 Logger.Warn($"'{gameObject.name}' — pool empty for '{_seedDefinition.seedId}', slot is empty");
@@ -61,21 +61,16 @@ namespace GrowAGarden
             _currentSeed.transform.position = transform.position;
             _currentSeed.transform.rotation = transform.rotation;
 
-            var rb = _currentSeed.GetComponent<Rigidbody>();
-            if (rb != null)
-                rb.isKinematic = true;
-            else
-                Logger.Warn($"'{gameObject.name}' — no Rigidbody on seed '{_currentSeed.name}'");
-
+            _currentSeed.SetState(true);
             Logger.Info($"SpawnSeed() complete — '{_currentSeed.name}' placed at {_currentSeed.transform.position}");
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out SeedObject seed))
+            if (other.TryGetComponent(out UnifiedPlantSeed seed))
             {
                 Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
-                if (SceneNetworking.IsMasterClient)
+                if (SceneNetworking.IsMasterClient && seed == _currentSeed)
                     SpawnSeed();
             }
         }

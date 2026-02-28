@@ -35,6 +35,12 @@ namespace GrowAGarden
             Logger.Log($"Start() '{gameObject.name}' — subscribed to OnMessageToAll");
         }
 
+
+        public void SetOccupied(bool occupied)
+        {
+            Logger.Info($"SetOccupied({occupied}) called on '{gameObject.name}'");
+            IsOccupied = occupied;
+        }
         public void Plant(SeedDefinition seed, float scaleOverride = 0f)
         {
             Logger.Info($"Plant() '{gameObject.name}' — seedId='{seed?.seedId}', IsOccupied={IsOccupied}, IsMasterClient={SceneNetworking.IsMasterClient}");
@@ -119,6 +125,7 @@ namespace GrowAGarden
 
         private void OnTriggerEnter(Collider other)
         {
+            return; // Disable trigger handling for now, relying on RPCs and Fusion transform sync to manage plant state. Re-enable if we want to support physical seed dropping again.
             // --- Seed dropped into slot ---
             SeedObject seed = other.GetComponent<SeedObject>();
             if (seed != null)
@@ -182,6 +189,24 @@ namespace GrowAGarden
                 else
                 {
                     Logger.Log($"OnTriggerEnter() '{gameObject.name}' — no pending config yet, waiting for RPC");
+                }
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if(!_networkBridge.HasStateAuthority)
+            {
+                return;
+            }
+            
+            if (other.TryGetComponent(out UnifiedPlantSeed plant))
+            {
+                if (!plant.IsSeed)
+                {
+                    Logger.Info($"OnTriggerExit() '{gameObject.name}' — Plantable '{plant.name}' exited trigger, clearing _currentPlant");
+                    SetOccupied(false);
+                    _networkBridge.RPC_SendMessageToAll((byte)PlantSlotMessageType.Harvested, new byte[0]);
                 }
             }
         }
