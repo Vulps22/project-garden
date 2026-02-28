@@ -949,7 +949,7 @@ MonoBehaviour:
   AssetDescription: Test World Not Ready for Use
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: 87f14e3e868929641aa61e1b9708e8e3, type: 3}
-  LastBuildSizeBytes: 18544496
+  LastBuildSizeBytes: 18544544
   BoundsIsDisplay: 0
   World360PreviewPos: {x: 0, y: 0, z: 0}
   IsOpen360Preview: 0
@@ -978,7 +978,7 @@ MonoBehaviour:
     Free:
       Count: 1
       MaxCount: 10
-      AvailableSize: 296028320
+      AvailableSize: 296028304
     Paid:
       Entries: []
   OwnedTokens: []
