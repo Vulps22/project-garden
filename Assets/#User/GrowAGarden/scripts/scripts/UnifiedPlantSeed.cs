@@ -1,3 +1,4 @@
+using Fusion;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -23,12 +24,31 @@ namespace GrowAGarden
         {
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnMessageToAll += OnMessageToAll;
+            networkBridge.OnMessageToProxies += OnMessageToProxies;
+            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+        }
+
+        private void OnDestroy()
+        {
+            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
         private void OnSpawned()
         {
             Logger.Info($"OnSpawned() '{gameObject.name}' — network object spawned, initializing plant seed");
-            SetState(true);
+            if (networkBridge.Object.HasStateAuthority)
+                SetState(true);
+        }
+
+        private void OnOtherPlayerJoined(PlayerRef player)
+        {
+            if (!networkBridge.Object.HasStateAuthority) return;
+
+            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize + BytesWriter.IntSize + BytesWriter.IntSize);
+            writer.AddByte(IsSeed ? (byte)1 : (byte)0);
+            writer.AddInt((int)(_plantedTimestamp >> 32));
+            writer.AddInt((int)(_plantedTimestamp & 0xFFFFFFFFL));
+            networkBridge.RPC_SendMessageToProxies((byte)PlantMessageType.stateSync, writer.Data);
         }
 
         void OnTriggerEnter(Collider other)
@@ -143,6 +163,25 @@ namespace GrowAGarden
             }
         }
 
+        private void OnMessageToProxies(byte id, byte[] data)
+        {
+            if ((PlantMessageType)id != PlantMessageType.stateSync) return;
+
+            BytesReader reader = new BytesReader(data);
+            bool isSeed = reader.NextByte() == 1;
+            long high = reader.NextInt();
+            long low = (uint)reader.NextInt();
+            _plantedTimestamp = (high << 32) | low;
+
+            SetState(isSeed);
+            if (isSeed)
+                _grabInteractable.enabled = true;
+            else
+                _grabInteractable.enabled = GetGrowthCompletion() >= 1f;
+
+            Logger.Info($"OnMessageToProxies() '{gameObject.name}' — stateSync received, isSeed={isSeed}, timestamp={_plantedTimestamp}");
+        }
+
         private void OnValidate()
         {
             if (networkBridge == null)
@@ -159,6 +198,7 @@ namespace GrowAGarden
     {
         enable,
         disable,
-        sold
+        sold,
+        stateSync
     }
 }
