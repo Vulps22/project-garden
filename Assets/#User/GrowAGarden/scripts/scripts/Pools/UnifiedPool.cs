@@ -19,7 +19,7 @@ namespace GrowAGarden
         private void Awake()
         {
             var plants = GetComponentsInChildren<UnifiedPlantSeed>();
-            Logger.Info($"Awake() '{gameObject.name}' — seedId='{SeedId}', found {plants.Length} plant(s) to restore");
+            Logger.Info($"Awake() '{gameObject.name}' ï¿½ seedId='{SeedId}', found {plants.Length} plant(s) to restore");
             foreach (UnifiedPlantSeed plant in plants)
                 Restore(plant);
 
@@ -31,36 +31,38 @@ namespace GrowAGarden
             UnifiedPlantSeed plant = GetComponentInChildren<UnifiedPlantSeed>();
             if (plant == null)
             {
-                Logger.Warn($"Claim() — pool empty for '{SeedId}'!");
+                Logger.Warn($"Claim() ï¿½ pool empty for '{SeedId}'!");
                 return null;
             }
-            Logger.Log($"Claim() '{SeedId}' — claiming '{plant.name}', remaining after={Available - 1}");
+            Logger.Log($"Claim() '{SeedId}' ï¿½ claiming '{plant.name}', remaining after={Available - 1}");
             plant.transform.SetParent(null);
             return plant;
         }
 
         public void Return(UnifiedPlantSeed plant)
         {
-            if(!plant.networkBridge.Object.HasStateAuthority)
+            if (!plant.networkBridge.Object.HasStateAuthority)
                 StartCoroutine(RequestAuthorityAndReturn(plant));
-
-            Logger.Log($"Return() '{SeedId}' — returning '{plant?.name}'");
-            Restore(plant);
+            else
+            {
+                Logger.Log($"Return() '{SeedId}' â€” returning '{plant?.name}'");
+                Restore(plant);
+            }
         }
 
         private IEnumerator RequestAuthorityAndReturn(UnifiedPlantSeed plant)
         {
             if (plant.networkBridge == null || plant.networkBridge.Object == null)
             {
-                Logger.Error($"RequestAuthorityAndReturn() '{SeedId}' — plant '{plant.name}' has no network bridge or object, cannot request authority");
+                Logger.Error($"RequestAuthorityAndReturn() '{SeedId}' ï¿½ plant '{plant.name}' has no network bridge or object, cannot request authority");
                 yield break;
             }
             NetworkObject plantNetObj = plant.networkBridge.Object;
             if (!plantNetObj.HasStateAuthority)
             {
-                Logger.Info($"RequestAuthorityAndReturn() '{SeedId}' — requesting authority on '{plant.name}', will wait up to 5s");
+                Logger.Info($"RequestAuthorityAndReturn() '{SeedId}' ï¿½ requesting authority on '{plant.name}', will wait up to 5s");
                 plantNetObj.RequestStateAuthority();
-                float timeout = 5f;
+                float timeout = 20f;
                 float timer = 0f;
                 while (!plantNetObj.HasStateAuthority && timer < timeout)
                 {
@@ -69,18 +71,22 @@ namespace GrowAGarden
                 }
                 if (!plantNetObj.HasStateAuthority)
                 {
-                    Logger.Error($"RequestAuthorityAndReturn() '{SeedId}' — failed to gain authority on '{plant.name}' after {timeout}s, cannot return to pool");
+                    Logger.Error($"RequestAuthorityAndReturn() '{SeedId}' ï¿½ failed to gain authority on '{plant.name}' after {timeout}s, cannot return to pool");
                     yield break;
                 }
             }
-            Logger.Info($"RequestAuthorityAndReturn() '{SeedId}' — gained authority on '{plant.name}', returning to pool");
+            Logger.Info($"RequestAuthorityAndReturn() '{SeedId}' ï¿½ gained authority on '{plant.name}', returning to pool");
             Return(plant);
         }
 
         private void Restore(UnifiedPlantSeed plant)
         {
-            if (!_networkObject.HasStateAuthority) return;
-            Logger.Log($"Restore() '{SeedId}' — restoring '{plant?.name}' to pool position {transform.position}");
+            if (!plant.networkBridge.HasStateAuthority)
+            {
+                Logger.Warn($"Restore() Pool '{SeedId}' ï¿½ no authority to restore '{plant?.name}', skipping");
+                return;
+            }
+            Logger.Log($"Restore() '{SeedId}' ï¿½ restoring '{plant?.name}' to pool position {transform.position}");
             plant.transform.SetParent(transform);
             plant.transform.position = transform.position;
             plant.transform.rotation = transform.rotation;
@@ -90,22 +96,20 @@ namespace GrowAGarden
             if (grab != null) grab.enabled = true;
             if (rb != null) rb.isKinematic = true;
 
-            //TODO: REFACTOR HARVEST LOGIC
-            //var harvest = plant.GetComponent<HarvestInteractable>();
-            //if (harvest != null) harvest.ResetState();
+            plant.SetState(true);
 
-            Logger.Log($"Restore() '{SeedId}' — '{plant?.name}' restore complete");
+            Logger.Log($"Restore() '{SeedId}' ï¿½ '{plant?.name}' restore complete");
         }
 
         private void OnMessageReceived(byte id, byte[] data)
         {
-            Logger.Info($"OnMessageReceived() '{gameObject.name}' — id={id} ({(PoolMessageType)id}), dataLength={data?.Length}");
+            Logger.Info($"OnMessageReceived() '{gameObject.name}' ï¿½ id={id} ({(PoolMessageType)id}), dataLength={data?.Length}");
 
             switch ((PoolMessageType)id)
             {
                 case PoolMessageType.Claim:
                     {
-                        Logger.Info($"OnMessageReceived() '{gameObject.name}' — Claim request received");
+                        Logger.Info($"OnMessageReceived() '{gameObject.name}' ï¿½ Claim request received");
                         Claim();
                         break;
                     }
@@ -115,7 +119,7 @@ namespace GrowAGarden
                         break;
                     }
                 default:
-                    Logger.Warn($"OnMessageReceived() '{gameObject.name}' — unknown messageId={id}");
+                    Logger.Warn($"OnMessageReceived() '{gameObject.name}' ï¿½ unknown messageId={id}");
                     break;
             }
         }
@@ -125,12 +129,12 @@ namespace GrowAGarden
             BytesReader reader = new BytesReader(data);
             if (!reader.IsValid)
             {
-                Logger.Error($"OnMessageReceived() '{gameObject.name}' — Return: invalid data");
+                Logger.Error($"OnMessageReceived() '{gameObject.name}' ï¿½ Return: invalid data");
                 return;
             }
 
             int networkId = reader.NextInt();
-            Logger.Info($"OnMessageReceived() '{gameObject.name}' — Return: looking for plant with NetworkId={networkId}");
+            Logger.Info($"OnMessageReceived() '{gameObject.name}' ï¿½ Return: looking for plant with NetworkId={networkId}");
 
             UnifiedPlantSeed target = null;
             foreach (var plant in PlantsInPool)
@@ -145,12 +149,12 @@ namespace GrowAGarden
 
             if (target != null)
             {
-                Logger.Info($"OnMessageReceived() '{gameObject.name}' — Return: found '{target.name}', restoring");
+                Logger.Info($"OnMessageReceived() '{gameObject.name}' ï¿½ Return: found '{target.name}', restoring");
                 Return(target);
             }
             else
             {
-                Logger.Error($"OnMessageReceived() '{gameObject.name}' — Return: no plant found with NetworkId={networkId}");
+                Logger.Error($"OnMessageReceived() '{gameObject.name}' ï¿½ Return: no plant found with NetworkId={networkId}");
             }
             
         }
