@@ -4,7 +4,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 namespace GrowAGarden
 {
-    
+
     public class UnifiedPlantSeed : MonoBehaviour
     {
 
@@ -18,6 +18,7 @@ namespace GrowAGarden
 
         public bool IsSeed = false;
         private long _plantedTimestamp;
+
         private void Start()
         {
             networkBridge.OnSpawned += OnSpawned;
@@ -26,19 +27,18 @@ namespace GrowAGarden
 
         private void OnSpawned()
         {
-            Logger.Info($"OnSpawned() '{gameObject.name}' � network object spawned, initializing plant seed");
+            Logger.Info($"OnSpawned() '{gameObject.name}' — network object spawned, initializing plant seed");
             SetState(true);
         }
 
-        /// <summary>
-        /// Handle collision with PlantSlot to trigger planting logic.
-        /// </summary>
-        /// <param name="collision"></param>
-         void OnTriggerEnter(Collider other)
+        void OnTriggerEnter(Collider other)
         {
-            if(!IsSeed)
-                return;
+            if (IsSeed)
+                OnTriggerEnterSeed(other);
+        }
 
+        private void OnTriggerEnterSeed(Collider other)
+        {
             if (!networkBridge.Object.HasStateAuthority) return;
 
             PlantSlot slot = other.GetComponent<PlantSlot>();
@@ -53,10 +53,17 @@ namespace GrowAGarden
 
             var grab = GetComponent<XRGrabInteractable>();
             if (grab != null) grab.enabled = false;
-            networkBridge.RPC_SendMessageToAll((byte)plantMessageType.disable, new byte[0]);
-
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.disable, new byte[0]);
         }
 
+        /// <summary>
+        /// Broadcast a sold RPC to all clients. The sold handler on each client applies
+        /// visual/state changes; the authority also teleports and returns to pool.
+        /// </summary>
+        public void ToBeSold()
+        {
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.sold, new byte[0]);
+        }
 
         private void Update()
         {
@@ -71,8 +78,8 @@ namespace GrowAGarden
             if (completion >= 1f && _grabInteractable != null && !_grabInteractable.enabled)
             {
                 _grabInteractable.enabled = true;
-                networkBridge.RPC_SendMessageToAll((byte)plantMessageType.enable, new byte[0]);
-                Logger.Info($"Update() '{gameObject.name}' � fully grown, grab interactable enabled");
+                networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.enable, new byte[0]);
+                Logger.Info($"Update() '{gameObject.name}' — fully grown, grab interactable enabled");
             }
         }
 
@@ -84,49 +91,57 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Set the state of this object to either seed or plant, enabling/disabling the appropriate model.
+        /// Set the visual/collider state of this object. Pure local operation — no broadcast.
         /// </summary>
-        /// <param name="isSeed">True to show the seed model, False to show the plant model</param>
         public void SetState(bool isSeed)
         {
             IsSeed = isSeed;
             if (IsSeed)
             {
-                Logger.Info($"SetState(true) '{gameObject.name}' � showing seed model");
+                Logger.Info($"SetState(true) '{gameObject.name}' — showing seed model");
                 _PlantModel.enabled = false;
                 _SeedModel.enabled = true;
                 _PlantCollider.enabled = false;
                 _SeedCollider.enabled = true;
-                networkBridge.RPC_SendMessageToAll((byte)plantMessageType.enable, new byte[0]);
             }
             else
             {
-                Logger.Info($"SetState(false) '{gameObject.name}' � showing plant model");
+                Logger.Info($"SetState(false) '{gameObject.name}' — showing plant model");
                 _PlantModel.enabled = true;
                 _SeedModel.enabled = false;
                 _PlantCollider.enabled = true;
                 _SeedCollider.enabled = false;
             }
-            
         }
 
         private void OnMessageToAll(byte id, byte[] data)
         {
-            switch ((plantMessageType)id)
+            switch ((PlantMessageType)id)
             {
-                case plantMessageType.enable:
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' � received enable message, setting grab on");
+                case PlantMessageType.enable:
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — received enable message, setting grab on");
                     _grabInteractable.enabled = true;
                     break;
-                case plantMessageType.disable:
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' � received disable message, setting grab off");
+                case PlantMessageType.disable:
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — received disable message, setting grab off");
                     SetState(false);
                     _grabInteractable.enabled = false;
                     break;
+                case PlantMessageType.sold:
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — received sold message, returning to seed state");
+                    SetState(true);
+                    _grabInteractable.enabled = false;
+                    if (networkBridge.Object.HasStateAuthority)
+                    {
+                        transform.position = new Vector3(transform.position.x, 3f, transform.position.z);
+                        PoolManager.Instance.returnUnifiedPlantSeed(seedDefinition.seedId, this);
+                    }
+                    break;
+                default:
+                    Logger.Warn($"OnMessageToAll() '{gameObject.name}' — received unknown message id={id}");
+                    break;
             }
-
         }
-
 
         private void OnValidate()
         {
@@ -140,9 +155,10 @@ namespace GrowAGarden
     /// <summary>
     /// All UnifiedPlantSeed RPC messages start with the number 1 to avoid conflicts with any future messages added to SeedObject or Plantable.
     /// </summary>
-    enum plantMessageType
+    enum PlantMessageType
     {
-        enable = 11,
-        disable = 12
+        enable,
+        disable,
+        sold
     }
 }
