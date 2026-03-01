@@ -84,6 +84,7 @@ namespace GrowAGarden
             );
         }
 
+        [System.Obsolete("Persistence is not yet implemented. Load() will be revisited once file save permissions are available.")]
         public void Load(SeedDefinition seed, long savedTimestamp, float scaleOverride = 0f)
         {
             Logger.Info($"Load() '{gameObject.name}' — seedId='{seed?.seedId}', savedTimestamp={savedTimestamp}");
