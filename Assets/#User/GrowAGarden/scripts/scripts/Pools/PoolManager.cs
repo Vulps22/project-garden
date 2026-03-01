@@ -89,6 +89,20 @@ namespace GrowAGarden
             return null;
         }
 
+        public void ReturnSeed(string seedId, SeedObject seed)
+        {
+            Logger.Log($"ReturnSeed('{seedId}', '{seed?.name}')");
+            if (_seedPools.TryGetValue(seedId, out SeedPool pool))
+            {
+                pool.Return(seed);
+                Logger.Info($"ReturnSeed('{seedId}') — pool now has {pool.Available} available");
+            }
+            else
+            {
+                Logger.Error($"ReturnSeed('{seedId}') — no SeedPool found, seed NOT returned!");
+            }
+        }
+
         public UnifiedPlantSeed claimUnifiedPlantSeed(string seedId)
         {
             Logger.Log($"claimUnifiedPlantSeed('{seedId}') — available={(_UnifiedPools.TryGetValue(seedId, out var p) ? p.Available : -1)}");
@@ -110,18 +124,19 @@ namespace GrowAGarden
             return null;
         }
 
-        public void ReturnSeed(string seedId, SeedObject seed)
+        public void returnUnifiedPlantSeed(string seedId, UnifiedPlantSeed plant)
         {
-            Logger.Log($"ReturnSeed('{seedId}', '{seed?.name}')");
-            if (_seedPools.TryGetValue(seedId, out SeedPool pool))
+            Logger.Log($"returnUnifiedPlantSeed('{seedId}', '{plant?.name}')");
+            if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
             {
-                pool.Return(seed);
-                Logger.Info($"ReturnSeed('{seedId}') — pool now has {pool.Available} available");
+                pool.Return(plant);
+                Logger.Info($"returnUnifiedPlantSeed('{seedId}') — pool now has {pool.Available} available");
             }
             else
             {
-                Logger.Error($"ReturnSeed('{seedId}') — no SeedPool found, seed NOT returned!");
+                Logger.Error($"returnUnifiedPlantSeed('{seedId}') — no PlantPool found, plant NOT returned!");
             }
+
         }
     }
 }
