@@ -39,6 +39,15 @@ namespace GrowAGarden
             SceneNetworking.OnLocalPlayerJoined -= SpawnSeed;
         }
 
+        private void Update()
+        {
+            if (_currentSeed == null && SceneNetworking.IsMasterClient)
+            {
+                Logger.Warn($"'{gameObject.name}' — no seed present, attempting to respawn");
+                SpawnSeed();
+            }
+        }
+
         private void SpawnSeed()
         {
             Logger.Info($"SpawnSeed() called on '{gameObject.name}' — IsMasterClient={SceneNetworking.IsMasterClient}, currentSeed={(_currentSeed != null ? _currentSeed.name : "null")}");
@@ -71,7 +80,10 @@ namespace GrowAGarden
             {
                 Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
                 if (SceneNetworking.IsMasterClient && seed == _currentSeed)
+                {
+                    _currentSeed = null;
                     SpawnSeed();
+                }
             }
         }
     }

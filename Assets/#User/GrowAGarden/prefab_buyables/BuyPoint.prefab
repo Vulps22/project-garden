@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -5139575569381887900}
   - component: {fileID: -4522127933129034046}
   m_Layer: 0
-  m_Name: SalePoint
+  m_Name: BuyPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
