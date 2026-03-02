@@ -526,6 +526,10 @@ GameObject:
   - component: {fileID: 163550763}
   - component: {fileID: 163550762}
   - component: {fileID: 163550765}
+  - component: {fileID: 163550769}
+  - component: {fileID: 163550768}
+  - component: {fileID: 163550767}
+  - component: {fileID: 163550766}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -589,6 +593,86 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::SomniumSpace.Worlds.GrowAGarden.PoolTester
   _seedId: carrot
+--- !u!114 &163550766
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 3497669231
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects:
+  - {fileID: 765704722}
+  - {fileID: 1334956289}
+  - {fileID: 1450502680}
+  - {fileID: 287777145}
+  - {fileID: 1255031808}
+  - {fileID: 2037371621}
+  - {fileID: 662445325}
+  - {fileID: 725483918}
+  - {fileID: 209185969}
+  - {fileID: 918359556}
+  - {fileID: 313778100}
+  - {fileID: 1497352748}
+  NetworkedBehaviours:
+  - {fileID: 163550767}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &163550767
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
+--- !u!114 &163550768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 456224aeaeed55249b6514f2677544ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.EconomyManager
+  _somniumPlayersContainer: {fileID: 163550769}
+  _bridge: {fileID: 163550767}
+  _balanceDisplayManager: {fileID: 2069335585}
+  _startingBalance: 10
+--- !u!114 &163550769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1787964940, guid: 6af85501506cb7f4db5388060eadf518, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Bridge.dll::SomniumSpace.Bridge.Components.SomniumPlayersContainer
+  LocalPlayerAdded:
+    m_PersistentCalls:
+      m_Calls: []
+  PlayerAdded:
+    m_PersistentCalls:
+      m_Calls: []
+  PlayerRemoved:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &183129657
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4191,6 +4275,227 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+--- !u!1001 &2069335584
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3072522701133923847}
+    m_Modifications:
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 2.675
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -0.9000006
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3115933796996908618, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: SortKey
+      value: 2503279869
+      objectReference: {fileID: 0}
+    - target: {fileID: 7149506393599241409, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      propertyPath: m_Name
+      value: BalanceBoard
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6120544877528110439, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 4933812608045835710, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8953052765726858037, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7833806220001962988, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 6118614066939718998, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 4927299031919123855, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 6903026356288579270, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 5711864688375059999, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 5544555610716034572, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 6663868112912049877, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 5050702081742099274, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 6241801646643110803, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 2548077250921100991, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 3734734837163738726, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8508897414949871174, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7394147885742272159, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 2777730306802871364, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 3892409362846473373, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8231252634682027478, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 7112221644977102095, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+  m_SourcePrefab: {fileID: 100100000, guid: a04bc0a61be7a3c41865d4c5c887c3f3, type: 3}
+--- !u!114 &2069335585 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1567149210286220599, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+    type: 3}
+  m_PrefabInstance: {fileID: 2069335584}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af059e65a3851a344bfe37bb271f9214, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.BalanceDisplayManager
+--- !u!224 &2069335586 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 2917049044066398741, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+    type: 3}
+  m_PrefabInstance: {fileID: 2069335584}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2109226295
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4329,9 +4634,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 3313695509118105165, guid: 828e87013a6a3164190665cdf93ec775,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2069335586}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 828e87013a6a3164190665cdf93ec775, type: 3}
+--- !u!4 &3072522701133923847 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3313695509118105165, guid: 828e87013a6a3164190665cdf93ec775,
+    type: 3}
+  m_PrefabInstance: {fileID: 3072522701133923846}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4285010746594505052
 PrefabInstance:
   m_ObjectHideFlags: 0
