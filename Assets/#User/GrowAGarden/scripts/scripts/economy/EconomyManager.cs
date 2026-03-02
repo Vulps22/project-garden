@@ -1,6 +1,7 @@
 using SomniumSpace.Bridge.Components;
 using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace GrowAGarden
         private const byte MESSAGE_ID = 0;
 
         public static EconomyManager Instance;
+        public static event Action<int, int> OnPlayerBalanceChanged;
 
         [SerializeField] private SomniumPlayersContainer _somniumPlayersContainer;
         [SerializeField] private NetworkBridge _bridge;
@@ -20,6 +22,7 @@ namespace GrowAGarden
         [SerializeField] private int _startingBalance;
 
         private Dictionary<string, PlayerBalance> _balances = new Dictionary<string, PlayerBalance>();
+        private string _localPlayerId;
 
         private void Awake()
         {
@@ -66,6 +69,7 @@ namespace GrowAGarden
 
         private void OnLocalPlayerJoined(ISomniumPlayer player)
         {
+            _localPlayerId = player.Properties.Id;
             Logger.Log($"[EconomyManager] OnLocalPlayerJoined - name={player.Properties.NickName}, id={player.Properties.Id}, _balances.Count={_balances.Count}");
             if (_balances.Count > 0) return;
             var balance = new PlayerBalance(player, _startingBalance);
@@ -159,6 +163,8 @@ namespace GrowAGarden
                 return;
             }
 
+            _balances.TryGetValue(_localPlayerId, out PlayerBalance oldBalance);
+
             var reader = new BytesReader(data);
             int count = reader.NextByte();
             Logger.Log($"[EconomyManager] OnMessageToAll - reading {count} entries");
@@ -175,6 +181,12 @@ namespace GrowAGarden
 
             Logger.Log($"[EconomyManager] OnMessageToAll - _balances rebuilt, calling UpdateDisplay");
             UpdateDisplay();
+            _balances.TryGetValue(_localPlayerId, out var localBalance);
+            if ((localBalance != null && oldBalance != null) && (localBalance != oldBalance))
+            {
+                Logger.Log($"[EconomyManager] OnMessageToAll - firing OnPlayerBalanceChanged, localBalance={localBalance.GetBalance()}");
+                OnPlayerBalanceChanged?.Invoke(localBalance.GetBalance(), oldBalance.GetBalance());
+            }
         }
 
         private void UpdateDisplay()
