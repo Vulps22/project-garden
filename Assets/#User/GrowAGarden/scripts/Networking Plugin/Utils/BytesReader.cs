@@ -157,6 +157,13 @@ namespace GrowAGarden
             return result;
         }
 
+        public string NextString()
+        {
+            short length = NextShort();
+            if (!_isValid) return string.Empty;
+            return NextString(length);
+        }
+
         public byte[] NextByteArray(int length)
         {
             int byteCount = sizeof(byte) * length;

@@ -321,7 +321,7 @@ namespace GrowAGarden
         // Non breaking invoking
         private void SafeInvokeOnBecomeWorldMaster()
         {
-            if (OnReliableMessageReceived != null)
+            if (OnBecomeWorldMaster != null)
             {
                 foreach (Delegate d in OnBecomeWorldMaster.GetInvocationList())
                 {
