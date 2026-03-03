@@ -16,7 +16,7 @@ namespace GrowAGarden
             UnifiedPlantSeed plant = other.GetComponent<UnifiedPlantSeed>();
             if (plant == null) return;
             if (plant.IsSeed) return; // Don't sell seeds, only plants
-                                      //TODO: Add economy logic to give player money for selling the plant
+            EconomyManager.Instance.AddBalance(plant.GetGrabber().GetID(), plant.seedDefinition.sellValue);
             plant.ToBeSold();
         }
     }

@@ -209,5 +209,17 @@ namespace GrowAGarden
             _balanceDisplayManager.Set(names, balances);
             Logger.Log($"[EconomyManager] UpdateDisplay - Set() called on BalanceDisplayManager");
         }
+
+        public PlayerBalance GetLocalPlayer()
+        {
+            _balances.TryGetValue(_localPlayerId, out PlayerBalance player);
+            return player;
+        }
+
+        public PlayerBalance GetPlayer(string id)
+        {
+            _balances.TryGetValue(id, out PlayerBalance player);
+            return player;
+        }
     }
 }
