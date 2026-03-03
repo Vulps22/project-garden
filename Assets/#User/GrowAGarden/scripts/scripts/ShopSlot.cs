@@ -9,7 +9,6 @@ namespace GrowAGarden
     {
         [SerializeField] private SeedDefinition _seedDefinition;
         private UnifiedPlantSeed _currentSeed;
-        private const float TIMEOUT = 2f;
 
         private void Start()
         {
@@ -71,19 +70,29 @@ namespace GrowAGarden
             _currentSeed.transform.rotation = transform.rotation;
 
             _currentSeed.SetState(true);
+            _currentSeed.InShop = true;
             Logger.Info($"SpawnSeed() complete — '{_currentSeed.name}' placed at {_currentSeed.transform.position}");
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.TryGetComponent(out UnifiedPlantSeed seed) && seed.IsSeed)
+            {
+                Logger.Info($"OnTriggerEnter() '{gameObject.name}' — seed '{seed.name}' entered shop");
+                _currentSeed = seed;
+            }
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out UnifiedPlantSeed seed))
+            if (other.TryGetComponent(out UnifiedPlantSeed seed) && seed == _currentSeed)
             {
                 Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
-                if (SceneNetworking.IsMasterClient && seed == _currentSeed)
-                {
-                    _currentSeed = null;
+                EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
+                _currentSeed.InShop = false;
+                _currentSeed = null;
+                if (SceneNetworking.IsMasterClient)
                     SpawnSeed();
-                }
             }
         }
     }

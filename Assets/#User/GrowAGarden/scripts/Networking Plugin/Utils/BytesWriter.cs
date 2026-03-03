@@ -237,13 +237,13 @@ namespace GrowAGarden
                 return;
             }
             int bytes = System.Text.Encoding.UTF8.GetByteCount(source);
-            if (!Validate(bytes))
+            if (!Validate(bytes + sizeof(short)))
                 return;
             short length = (short)bytes;
-            Span<byte> bufferSpan = _data.AsSpan(_position, bytes);
+            Span<byte> bufferSpan = _data.AsSpan(_position, bytes + sizeof(short));
             MemoryMarshal.Write(bufferSpan, ref length);
             System.Text.Encoding.UTF8.GetBytes(source, bufferSpan.Slice(sizeof(short)));
-            _position += bytes;
+            _position += bytes + sizeof(short);
         }
 
         // Privates
