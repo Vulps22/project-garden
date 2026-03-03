@@ -16,9 +16,9 @@ MonoBehaviour:
   displayName: Carrot
   plantPrefab: {fileID: 4269898991595574932, guid: 4bd65765ba69b9340b8cc97ef50e83e8,
     type: 3}
-  growDurationSeconds: 60
+  growDurationSeconds: 10
   maxScale: 1
   scaleMultiplier: 1
-  buyPrice: 0
-  sellValue: 0
+  buyPrice: 10
+  sellValue: 15
   icon: {fileID: 0}
