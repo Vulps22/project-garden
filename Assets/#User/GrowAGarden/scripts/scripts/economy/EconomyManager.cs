@@ -114,7 +114,6 @@ namespace GrowAGarden
         public void RemoveBalance(string playerId, int amount)
         {
             Logger.Log($"[EconomyManager] RemoveBalance - playerId={playerId}, amount={amount}, IsMasterClient={SceneNetworking.IsMasterClient}");
-            if (!SceneNetworking.IsMasterClient) return;
             if (!_balances.TryGetValue(playerId, out var balance))
             {
                 Logger.Warn($"[EconomyManager] RemoveBalance - playerId={playerId} not found in _balances");
@@ -122,7 +121,7 @@ namespace GrowAGarden
             }
             balance.RemoveBalance(amount);
             Logger.Log($"[EconomyManager] RemoveBalance - new balance for {balance.GetPlayerName()}={balance.GetBalance()}");
-            BroadcastBalances();
+            if(SceneNetworking.IsMasterClient) BroadcastBalances();
         }
 
         private void BroadcastBalances()
