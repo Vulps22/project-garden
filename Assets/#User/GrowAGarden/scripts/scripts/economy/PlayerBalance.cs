@@ -48,7 +48,6 @@ namespace GrowAGarden
         /// <param name="amount">The amount of Thatch to add.</param>
         public void AddBalance(int amount)
         {
-            if (!SceneNetworking.IsMasterClient) return;
             _balance += amount;
         }
 
@@ -58,7 +57,6 @@ namespace GrowAGarden
         /// <param name="amount">The amount of Thatch to deduct.</param>
         public void RemoveBalance(int amount)
         {
-            if (!SceneNetworking.IsMasterClient) return;
             _balance -= amount;
         }
     }
