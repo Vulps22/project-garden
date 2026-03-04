@@ -71,6 +71,7 @@ namespace GrowAGarden
 
             _currentSeed.SetState(true);
             _currentSeed.InShop = true;
+            _currentSeed.IsBought = false;
             Logger.Info($"SpawnSeed() complete — '{_currentSeed.name}' placed at {_currentSeed.transform.position}");
         }
 
@@ -79,7 +80,7 @@ namespace GrowAGarden
             if (other.TryGetComponent(out UnifiedPlantSeed seed) && seed.IsSeed)
             {
                 Logger.Info($"OnTriggerEnter() '{gameObject.name}' — seed '{seed.name}' entered shop");
-                _currentSeed = seed;
+                if(!seed.IsBought) _currentSeed = seed;
             }
         }
 
@@ -87,12 +88,16 @@ namespace GrowAGarden
         {
             if (other.TryGetComponent(out UnifiedPlantSeed seed) && seed == _currentSeed)
             {
-                Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
-                EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
-                _currentSeed.InShop = false;
-                _currentSeed = null;
-                if (SceneNetworking.IsMasterClient)
-                    SpawnSeed();
+                if (!seed.IsBought && seed.InShop)
+                {
+                    Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
+                    EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
+                    _currentSeed.InShop = false;
+                    _currentSeed.IsBought = true;
+                    _currentSeed = null;
+                    if (SceneNetworking.IsMasterClient)
+                        SpawnSeed();
+                }
             }
         }
     }
