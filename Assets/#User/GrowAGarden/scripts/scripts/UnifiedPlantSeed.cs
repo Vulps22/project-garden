@@ -22,6 +22,7 @@ namespace GrowAGarden
 
         public bool IsSeed = false;
         public bool InShop = false;
+        public bool IsBought = false;
         private long _plantedTimestamp;
         private PlayerBalance _grabber;
 
