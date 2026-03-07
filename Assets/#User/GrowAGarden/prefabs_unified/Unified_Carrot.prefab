@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7716587279672404688}
-  - component: {fileID: 969553898760773282}
   - component: {fileID: 1434875256084407990}
   - component: {fileID: 5103742716878842499}
   - component: {fileID: 1054046652925961132}
@@ -19,6 +18,7 @@ GameObject:
   - component: {fileID: 6570511697767294347}
   - component: {fileID: 5280306726041791827}
   - component: {fileID: -6513405909237204029}
+  - component: {fileID: 4964451483823346128}
   m_Layer: 0
   m_Name: Unified_Carrot
   m_TagString: Untagged
@@ -43,28 +43,6 @@ Transform:
   - {fileID: 7276143754108260179}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &969553898760773282
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 39a4d9daff279794f9304b9763876ebc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.UnifiedPlantSeed
-  _PlantModel: {fileID: 6932973717305585960}
-  _SeedModel: {fileID: 7252358533932005785}
-  _PlantCollider: {fileID: 6570511697767294347}
-  _SeedCollider: {fileID: 5280306726041791827}
-  seedDefinition: {fileID: 11400000, guid: 32330805fd987d04b9d02de1dd7e5c4c, type: 2}
-  networkBridge: {fileID: 1434875256084407990}
-  _grabInteractable: {fileID: 4248909366719016378}
-  IsSeed: 0
-  InShop: 0
-  IsBought: 0
 --- !u!114 &1434875256084407990
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -360,6 +338,29 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.25, y: 1, z: 0.31}
   m_Center: {x: 0, y: 0.12, z: 0}
+--- !u!114 &4964451483823346128
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163453513877751585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2719fe184350c4e4fb2c7bf09a258ac5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.RootedPlantSeed
+  _SeedModel: {fileID: 7252358533932005785}
+  _SeedCollider: {fileID: 5280306726041791827}
+  seedDefinition: {fileID: 11400000, guid: 32330805fd987d04b9d02de1dd7e5c4c, type: 2}
+  networkBridge: {fileID: 1434875256084407990}
+  _grabInteractable: {fileID: 4248909366719016378}
+  IsSeed: 0
+  InShop: 0
+  IsBought: 0
+  IsInPool: 0
+  _PlantModel: {fileID: 6932973717305585960}
+  _PlantCollider: {fileID: 6570511697767294347}
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -371,6 +372,18 @@ PrefabInstance:
     - target: {fileID: 1000014111768446, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
       propertyPath: m_Name
       value: Carrot_Fruit
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
       propertyPath: m_LocalPosition.x
@@ -451,6 +464,18 @@ PrefabInstance:
     - target: {fileID: 1000013410243764, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_Name
       value: Carrot_Plant
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalPosition.x

@@ -8,7 +8,7 @@ namespace GrowAGarden
     public class ShopSlot : MonoBehaviour
     {
         [SerializeField] private SeedDefinition _seedDefinition;
-        private UnifiedPlantSeed _currentSeed;
+        private PlantSeed _currentSeed;
 
         private void Start()
         {
@@ -40,9 +40,19 @@ namespace GrowAGarden
 
         private void Update()
         {
-            if (_currentSeed == null && SceneNetworking.IsMasterClient)
+            if (!SceneNetworking.IsMasterClient) return;
+
+            bool seedMissing = _currentSeed == null
+                            || _currentSeed.IsInPool   // planted, grown, sold — returned to pool
+                            || !_currentSeed.IsSeed;   // planted but not yet returned to pool
+
+            if (seedMissing)
             {
-                Logger.Warn($"'{gameObject.name}' — no seed present, attempting to respawn");
+                if (_currentSeed == null)
+                    Logger.Warn($"'{gameObject.name}' — no seed present, attempting to respawn");
+                else
+                    Logger.Info($"'{gameObject.name}' — seed '{_currentSeed.name}' no longer in shop (IsInPool={_currentSeed.IsInPool}, IsSeed={_currentSeed.IsSeed}), respawning");
+                _currentSeed = null;
                 SpawnSeed();
             }
         }
@@ -57,7 +67,7 @@ namespace GrowAGarden
                 return;
             }
 
-            _currentSeed = PoolManager.Instance.ClaimUnifiedPlantSeed(_seedDefinition.seedId);
+            _currentSeed = PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
             if (_currentSeed == null)
             {
                 Logger.Warn($"'{gameObject.name}' — pool empty for '{_seedDefinition.seedId}', slot is empty");
@@ -77,7 +87,7 @@ namespace GrowAGarden
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent(out UnifiedPlantSeed seed) && seed.IsSeed)
+            if (other.TryGetComponent(out PlantSeed seed) && seed.IsSeed)
             {
                 Logger.Info($"OnTriggerEnter() '{gameObject.name}' — seed '{seed.name}' entered shop");
                 if(!seed.IsBought) _currentSeed = seed;
@@ -86,7 +96,7 @@ namespace GrowAGarden
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out UnifiedPlantSeed seed) && seed == _currentSeed)
+            if (other.TryGetComponent(out PlantSeed seed) && seed == _currentSeed)
             {
                 if (!seed.IsBought && seed.InShop)
                 {
