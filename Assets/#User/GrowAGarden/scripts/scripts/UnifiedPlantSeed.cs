@@ -116,6 +116,14 @@ namespace GrowAGarden
             networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.disable, new byte[0]);
         }
 
+        void OnTriggerExit(Collider other)
+        {
+            if (IsSeed) return;
+            PlantSlot slot = other.GetComponent<PlantSlot>();
+            if (slot == null) return;
+            slot.SetOccupied(false);
+        }
+
         /// <summary>
         /// Broadcast a sold RPC to all clients. The sold handler on each client applies
         /// visual/state changes; the authority also teleports and returns to pool.
@@ -201,7 +209,7 @@ namespace GrowAGarden
                     if (networkBridge.Object.HasStateAuthority)
                     {
                         transform.position = new Vector3(transform.position.x, 3f, transform.position.z);
-                        PoolManager.Instance.returnUnifiedPlantSeed(seedDefinition.seedId, this);
+                        PoolManager.Instance.ReturnUnifiedPlantSeed(seedDefinition.seedId, this);
                     }
                     break;
                 default:
@@ -269,9 +277,6 @@ namespace GrowAGarden
         }
     }
 
-    /// <summary>
-    /// All UnifiedPlantSeed RPC messages start with the number 1 to avoid conflicts with any future messages added to SeedObject or Plantable.
-    /// </summary>
     enum PlantMessageType
     {
         enable,
