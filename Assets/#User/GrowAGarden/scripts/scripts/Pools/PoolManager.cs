@@ -29,28 +29,20 @@ namespace GrowAGarden
         }
 
 
-        public UnifiedPlantSeed claimUnifiedPlantSeed(string seedId)
+        public UnifiedPlantSeed ClaimUnifiedPlantSeed(string seedId)
         {
             Logger.Log($"claimUnifiedPlantSeed('{seedId}') — available={(_UnifiedPools.TryGetValue(seedId, out var p) ? p.Available : -1)}");
             if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
             {
                 UnifiedPlantSeed plant = pool.Claim();
-                if (plant is UnifiedPlantSeed unifiedPlant)
-                {
-                    Logger.Info($"claimUnifiedPlantSeed('{seedId}') — returned '{unifiedPlant.name}', remaining={pool.Available}");
-                    return unifiedPlant;
-                }
-                else
-                {
-                    Logger.Warn($"claimUnifiedPlantSeed('{seedId}') — claimed plant '{plant?.name}' is not a UnifiedPlantSeed!");
-                    return null;
-                }
+                Logger.Info($"claimUnifiedPlantSeed('{seedId}') — returned '{plant.name}', remaining={pool.Available}");
+                return plant;
             }
             Logger.Error($"claimUnifiedPlantSeed('{seedId}') — no PlantPool found for this seedId!");
             return null;
         }
 
-        public void returnUnifiedPlantSeed(string seedId, UnifiedPlantSeed plant)
+        public void ReturnUnifiedPlantSeed(string seedId, UnifiedPlantSeed plant)
         {
             Logger.Log($"returnUnifiedPlantSeed('{seedId}', '{plant?.name}')");
             if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))

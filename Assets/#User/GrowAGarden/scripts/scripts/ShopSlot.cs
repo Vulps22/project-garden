@@ -57,7 +57,7 @@ namespace GrowAGarden
                 return;
             }
 
-            _currentSeed = PoolManager.Instance.claimUnifiedPlantSeed(_seedDefinition.seedId);
+            _currentSeed = PoolManager.Instance.ClaimUnifiedPlantSeed(_seedDefinition.seedId);
             if (_currentSeed == null)
             {
                 Logger.Warn($"'{gameObject.name}' — pool empty for '{_seedDefinition.seedId}', slot is empty");
