@@ -91,9 +91,10 @@ namespace GrowAGarden
                 if (!seed.IsBought && seed.InShop)
                 {
                     Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
-                    EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
                     _currentSeed.InShop = false;
                     _currentSeed.IsBought = true;
+                    _currentSeed.broadcastState();
+                    EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
                     _currentSeed = null;
                     if (SceneNetworking.IsMasterClient)
                         SpawnSeed();

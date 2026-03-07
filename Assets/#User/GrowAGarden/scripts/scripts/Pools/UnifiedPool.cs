@@ -14,13 +14,12 @@ namespace GrowAGarden
         [SerializeField] private NetworkBridge _networkBridge;
         [SerializeField] public UnifiedPlantSeed[] PlantsInPool;
         public string SeedId => _seedDefinition.seedId;
-        public int Available => GetComponentsInChildren<UnifiedPlantSeed>().Length;
+        public int Available => System.Array.FindAll(PlantsInPool, p => p.IsInPool).Length;
 
         private void Awake()
         {
-            var plants = GetComponentsInChildren<UnifiedPlantSeed>();
-            Logger.Info($"Awake() '{gameObject.name}' � seedId='{SeedId}', found {plants.Length} plant(s) to restore");
-            foreach (UnifiedPlantSeed plant in plants)
+            Logger.Info($"Awake() '{gameObject.name}' — seedId='{SeedId}', found {PlantsInPool.Length} plant(s) to restore");
+            foreach (UnifiedPlantSeed plant in PlantsInPool)
                 Restore(plant);
 
             _networkBridge.OnMessageToController += OnMessageReceived;
@@ -28,14 +27,14 @@ namespace GrowAGarden
 
         public UnifiedPlantSeed Claim()
         {
-            UnifiedPlantSeed plant = GetComponentInChildren<UnifiedPlantSeed>();
+            UnifiedPlantSeed plant = System.Array.Find(PlantsInPool, p => p.IsInPool);
             if (plant == null)
             {
-                Logger.Warn($"Claim() � pool empty for '{SeedId}'!");
+                Logger.Warn($"Claim() — pool empty for '{SeedId}'!");
                 return null;
             }
-            Logger.Log($"Claim() '{SeedId}' � claiming '{plant.name}', remaining after={Available - 1}");
-            plant.transform.SetParent(null);
+            plant.IsInPool = false;
+            Logger.Log($"Claim() '{SeedId}' — claiming '{plant.name}', remaining after={Available}");
             return plant;
         }
 
@@ -83,13 +82,15 @@ namespace GrowAGarden
         {
             if (!plant.networkBridge.HasStateAuthority)
             {
-                Logger.Warn($"Restore() Pool '{SeedId}' � no authority to restore '{plant?.name}', skipping");
+                Logger.Warn($"Restore() Pool '{SeedId}' — no authority to restore '{plant?.name}', skipping");
                 return;
             }
-            Logger.Log($"Restore() '{SeedId}' � restoring '{plant?.name}' to pool position {transform.position}");
-            plant.transform.SetParent(transform);
+            Logger.Log($"Restore() '{SeedId}' — restoring '{plant?.name}'");
+
+            plant.IsInPool = true;
             plant.transform.position = transform.position;
             plant.transform.rotation = transform.rotation;
+            plant.transform.localScale = Vector3.one;
 
             var grab = plant.GetComponent<XRGrabInteractable>();
             var rb = plant.GetComponent<Rigidbody>();
@@ -98,7 +99,9 @@ namespace GrowAGarden
 
             plant.SetState(true);
 
-            Logger.Log($"Restore() '{SeedId}' � '{plant?.name}' restore complete");
+            plant.broadcastState();
+
+            Logger.Log($"Restore() '{SeedId}' — '{plant?.name}' restore complete");
         }
 
         private void OnMessageReceived(byte id, byte[] data)
