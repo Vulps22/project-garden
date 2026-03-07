@@ -1,6 +1,7 @@
 using Fusion;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
@@ -8,26 +9,44 @@ namespace GrowAGarden
 {
     public class UnifiedPool : MonoBehaviour
     {
-        
+
         [SerializeField] private SeedDefinition _seedDefinition;
         [SerializeField] private NetworkObject _networkObject;
         [SerializeField] private NetworkBridge _networkBridge;
-        [SerializeField] public UnifiedPlantSeed[] PlantsInPool;
+        [SerializeField] public PlantSeed[] PlantsInPool;
         public string SeedId => _seedDefinition.seedId;
         public int Available => System.Array.FindAll(PlantsInPool, p => p.IsInPool).Length;
+
+        private readonly List<PlantSeed> _pendingRestore = new List<PlantSeed>();
 
         private void Awake()
         {
             Logger.Info($"Awake() '{gameObject.name}' — seedId='{SeedId}', found {PlantsInPool.Length} plant(s) to restore");
-            foreach (UnifiedPlantSeed plant in PlantsInPool)
-                Restore(plant);
+            foreach (PlantSeed plant in PlantsInPool)
+            {
+                if (!Restore(plant))
+                    _pendingRestore.Add(plant);
+            }
 
             _networkBridge.OnMessageToController += OnMessageReceived;
         }
 
-        public UnifiedPlantSeed Claim()
+        private void Update()
         {
-            UnifiedPlantSeed plant = System.Array.Find(PlantsInPool, p => p.IsInPool);
+            if (_pendingRestore.Count == 0) return;
+            for (int i = _pendingRestore.Count - 1; i >= 0; i--)
+            {
+                if (Restore(_pendingRestore[i]))
+                {
+                    Logger.Info($"Update() '{gameObject.name}' — deferred restore succeeded for '{_pendingRestore[i].name}', available={Available}");
+                    _pendingRestore.RemoveAt(i);
+                }
+            }
+        }
+
+        public PlantSeed Claim()
+        {
+            PlantSeed plant = System.Array.Find(PlantsInPool, p => p.IsInPool);
             if (plant == null)
             {
                 Logger.Warn($"Claim() — pool empty for '{SeedId}'!");
@@ -38,7 +57,7 @@ namespace GrowAGarden
             return plant;
         }
 
-        public void Return(UnifiedPlantSeed plant)
+        public void Return(PlantSeed plant)
         {
             if (!plant.networkBridge.Object.HasStateAuthority)
                 StartCoroutine(RequestAuthorityAndReturn(plant));
@@ -49,7 +68,7 @@ namespace GrowAGarden
             }
         }
 
-        private IEnumerator RequestAuthorityAndReturn(UnifiedPlantSeed plant)
+        private IEnumerator RequestAuthorityAndReturn(PlantSeed plant)
         {
             if (plant.networkBridge == null || plant.networkBridge.Object == null)
             {
@@ -78,12 +97,12 @@ namespace GrowAGarden
             Return(plant);
         }
 
-        private void Restore(UnifiedPlantSeed plant)
+        private bool Restore(PlantSeed plant)
         {
             if (!plant.networkBridge.HasStateAuthority)
             {
                 Logger.Warn($"Restore() Pool '{SeedId}' — no authority to restore '{plant?.name}', skipping");
-                return;
+                return false;
             }
             Logger.Log($"Restore() '{SeedId}' — restoring '{plant?.name}'");
 
@@ -102,6 +121,7 @@ namespace GrowAGarden
             plant.broadcastState();
 
             Logger.Log($"Restore() '{SeedId}' — '{plant?.name}' restore complete");
+            return true;
         }
 
         private void OnMessageReceived(byte id, byte[] data)
@@ -139,7 +159,7 @@ namespace GrowAGarden
             int networkId = reader.NextInt();
             Logger.Info($"OnMessageReceived() '{gameObject.name}' � Return: looking for plant with NetworkId={networkId}");
 
-            UnifiedPlantSeed target = null;
+            PlantSeed target = null;
             foreach (var plant in PlantsInPool)
             {
                 var netObj = plant.networkBridge?.Object;
