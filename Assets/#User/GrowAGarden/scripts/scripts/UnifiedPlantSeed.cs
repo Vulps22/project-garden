@@ -23,6 +23,7 @@ namespace GrowAGarden
         public bool IsSeed = false;
         public bool InShop = false;
         public bool IsBought = false;
+        public bool IsInPool = false;
         private long _plantedTimestamp;
         private PlayerBalance _grabber;
 
@@ -35,6 +36,7 @@ namespace GrowAGarden
         /// </summary>
         public bool Process(IXRSelectInteractor interactor, IXRSelectInteractable interactable)
         {
+            if (IsBought) return true;
             PlayerBalance localPlayer = EconomyManager.Instance.GetLocalPlayer();
             bool isHolder = _grabber != null && _grabber.GetID() == localPlayer.GetID();
             bool grabberFree = _grabber == null || isHolder;
@@ -72,10 +74,18 @@ namespace GrowAGarden
 
         private void OnOtherPlayerJoined(PlayerRef player)
         {
+            broadcastState();   
+        }
+
+        public void broadcastState()
+        {
             if (!networkBridge.Object.HasStateAuthority) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize + BytesWriter.IntSize + BytesWriter.IntSize);
+            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize * 4 + BytesWriter.IntSize + BytesWriter.IntSize);
             writer.AddByte(IsSeed ? (byte)1 : (byte)0);
+            writer.AddByte(InShop ? (byte)1 : (byte)0);
+            writer.AddByte(IsBought ? (byte)1 : (byte)0);
+            writer.AddByte(IsInPool ? (byte)1 : (byte)0);
             writer.AddInt((int)(_plantedTimestamp >> 32));
             writer.AddInt((int)(_plantedTimestamp & 0xFFFFFFFFL));
             networkBridge.RPC_SendMessageToProxies((byte)PlantMessageType.stateSync, writer.Data);
@@ -206,6 +216,9 @@ namespace GrowAGarden
 
             BytesReader reader = new BytesReader(data);
             bool isSeed = reader.NextByte() == 1;
+            InShop = reader.NextByte() == 1;
+            IsBought = reader.NextByte() == 1;
+            IsInPool = reader.NextByte() == 1;
             long high = reader.NextInt();
             long low = (uint)reader.NextInt();
             _plantedTimestamp = (high << 32) | low;
@@ -216,7 +229,7 @@ namespace GrowAGarden
             else
                 _grabInteractable.enabled = GetGrowthCompletion() >= 1f;
 
-            Logger.Info($"OnMessageToProxies() '{gameObject.name}' — stateSync received, isSeed={isSeed}, timestamp={_plantedTimestamp}");
+            Logger.Info($"OnMessageToProxies() '{gameObject.name}' — stateSync received, isSeed={isSeed}, InShop={InShop}, IsBought={IsBought}, IsInPool={IsInPool}, timestamp={_plantedTimestamp}");
         }
 
         /// <summary>
@@ -227,7 +240,6 @@ namespace GrowAGarden
             if (_grabInteractable != null)
                 _grabInteractable.enabled = enabled;
         }
-
 
         public PlayerBalance GetGrabber() => _grabber;
 

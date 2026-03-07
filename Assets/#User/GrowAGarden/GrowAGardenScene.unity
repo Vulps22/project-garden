@@ -1177,7 +1177,7 @@ MonoBehaviour:
   AssetDescription: Now with Network Sync
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: 87f14e3e868929641aa61e1b9708e8e3, type: 3}
-  LastBuildSizeBytes: 19030112
+  LastBuildSizeBytes: 19031280
   BoundsIsDisplay: 0
   World360PreviewPos: {x: 0, y: 0, z: 0}
   IsOpen360Preview: 0
@@ -1206,7 +1206,7 @@ MonoBehaviour:
     Free:
       Count: 1
       MaxCount: 10
-      AvailableSize: 295542688
+      AvailableSize: 295541504
     Paid:
       Entries: []
   OwnedTokens: []
@@ -1274,7 +1274,7 @@ MonoBehaviour:
     SDKVersion:
       Major: 3
       Minor: 1
-      Patch: 2
+      Patch: 3
     UnityVersion: 6000.3.5f2
     PakagesInfo:
     - Type: 0
