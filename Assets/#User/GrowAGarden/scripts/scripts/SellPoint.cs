@@ -13,7 +13,7 @@ namespace GrowAGarden
         private void OnTriggerEnter(Collider other)
         {
             if (!SceneNetworking.IsMasterClient) return;
-            UnifiedPlantSeed plant = other.GetComponent<UnifiedPlantSeed>();
+            PlantSeed plant = other.GetComponent<PlantSeed>();
             if (plant == null) return;
             if (plant.IsSeed) return; // Don't sell seeds, only plants
             EconomyManager.Instance.AddBalance(plant.GetGrabber().GetID(), plant.seedDefinition.sellValue);

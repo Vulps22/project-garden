@@ -9,23 +9,23 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace GrowAGarden
 {
 
-    public class UnifiedPlantSeed : MonoBehaviour, IXRSelectFilter
+    public abstract class PlantSeed : MonoBehaviour, IXRSelectFilter
     {
 
-        [SerializeField] private MeshRenderer _PlantModel;
-        [SerializeField] private MeshRenderer _SeedModel;
-        [SerializeField] private Collider _PlantCollider;
-        [SerializeField] private Collider _SeedCollider;
+        [SerializeField] protected MeshRenderer _SeedModel;
+        [SerializeField] protected Collider _SeedCollider;
         [SerializeField] public SeedDefinition seedDefinition;
         [SerializeField] public NetworkBridge networkBridge;
-        [SerializeField] private XRGrabInteractable _grabInteractable;
+        [SerializeField] protected XRGrabInteractable _grabInteractable;
 
         public bool IsSeed = false;
         public bool InShop = false;
         public bool IsBought = false;
         public bool IsInPool = false;
-        private long _plantedTimestamp;
-        private PlayerBalance _grabber;
+        protected long _plantedTimestamp;
+        protected PlayerBalance _grabber;
+        protected PlantSlot _occupiedSlot;
+        private bool _justPlanted = false;
 
         public bool canProcess => true;
 
@@ -104,6 +104,7 @@ namespace GrowAGarden
             PlantSlot slot = other.GetComponent<PlantSlot>();
             if (slot == null || slot.IsOccupied) return;
 
+            _occupiedSlot = slot;
             gameObject.transform.position = slot.transform.position;
             transform.rotation = Quaternion.identity;
             transform.localScale = Vector3.zero;
@@ -118,7 +119,7 @@ namespace GrowAGarden
 
         void OnTriggerExit(Collider other)
         {
-            if (IsSeed) return;
+            if (IsSeed || GetGrowthCompletion() < 1f) return;
             PlantSlot slot = other.GetComponent<PlantSlot>();
             if (slot == null) return;
             slot.SetOccupied(false);
@@ -145,10 +146,15 @@ namespace GrowAGarden
 
             if (completion >= 1f && _grabInteractable != null && !_grabInteractable.enabled)
             {
-                _grabInteractable.enabled = true;
-                networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.enable, new byte[0]);
-                Logger.Info($"Update() '{gameObject.name}' — fully grown, grab interactable enabled");
+                OnFullyGrown();
             }
+        }
+
+        protected virtual void OnFullyGrown()
+        {
+            _grabInteractable.enabled = true;
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.enable, new byte[0]);
+            Logger.Info($"Update() '{gameObject.name}' — fully grown, grab interactable enabled");
         }
 
         public float GetGrowthCompletion()
@@ -164,23 +170,10 @@ namespace GrowAGarden
         public void SetState(bool isSeed)
         {
             IsSeed = isSeed;
-            if (IsSeed)
-            {
-                Logger.Info($"SetState(true) '{gameObject.name}' — showing seed model");
-                _PlantModel.enabled = false;
-                _SeedModel.enabled = true;
-                _PlantCollider.enabled = false;
-                _SeedCollider.enabled = true;
-            }
-            else
-            {
-                Logger.Info($"SetState(false) '{gameObject.name}' — showing plant model");
-                _PlantModel.enabled = true;
-                _SeedModel.enabled = false;
-                _PlantCollider.enabled = true;
-                _SeedCollider.enabled = false;
-            }
+            UpdateVisuals(isSeed);
         }
+
+        protected abstract void UpdateVisuals(bool IsSeed);
 
         private void OnMessageToAll(byte id, byte[] data)
         {
@@ -204,12 +197,13 @@ namespace GrowAGarden
                 case PlantMessageType.sold:
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — received sold message, returning to seed state");
                     _grabber = null;
+                    _occupiedSlot = null;
                     SetState(true);
                     _grabInteractable.enabled = false;
                     if (networkBridge.Object.HasStateAuthority)
                     {
                         transform.position = new Vector3(transform.position.x, 3f, transform.position.z);
-                        PoolManager.Instance.ReturnUnifiedPlantSeed(seedDefinition.seedId, this);
+                        PoolManager.Instance.ReturnPlantSeed(seedDefinition.seedId, this);
                     }
                     break;
                 default:

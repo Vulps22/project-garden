@@ -29,30 +29,30 @@ namespace GrowAGarden
         }
 
 
-        public UnifiedPlantSeed ClaimUnifiedPlantSeed(string seedId)
+        public PlantSeed ClaimPlantSeed(string seedId)
         {
-            Logger.Log($"claimUnifiedPlantSeed('{seedId}') — available={(_UnifiedPools.TryGetValue(seedId, out var p) ? p.Available : -1)}");
+            Logger.Log($"claimPlantSeed('{seedId}') — available={(_UnifiedPools.TryGetValue(seedId, out var p) ? p.Available : -1)}");
             if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
             {
-                UnifiedPlantSeed plant = pool.Claim();
-                Logger.Info($"claimUnifiedPlantSeed('{seedId}') — returned '{plant.name}', remaining={pool.Available}");
+                PlantSeed plant = pool.Claim();
+                Logger.Info($"claimPlantSeed('{seedId}') — returned '{plant.name}', remaining={pool.Available}");
                 return plant;
             }
-            Logger.Error($"claimUnifiedPlantSeed('{seedId}') — no PlantPool found for this seedId!");
+            Logger.Error($"claimPlantSeed('{seedId}') — no PlantPool found for this seedId!");
             return null;
         }
 
-        public void ReturnUnifiedPlantSeed(string seedId, UnifiedPlantSeed plant)
+        public void ReturnPlantSeed(string seedId, PlantSeed plant)
         {
-            Logger.Log($"returnUnifiedPlantSeed('{seedId}', '{plant?.name}')");
+            Logger.Log($"returnPlantSeed('{seedId}', '{plant?.name}')");
             if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
             {
                 pool.Return(plant);
-                Logger.Info($"returnUnifiedPlantSeed('{seedId}') — pool now has {pool.Available} available");
+                Logger.Info($"returnPlantSeed('{seedId}') — pool now has {pool.Available} available");
             }
             else
             {
-                Logger.Error($"returnUnifiedPlantSeed('{seedId}') — no PlantPool found, plant NOT returned!");
+                Logger.Error($"returnPlantSeed('{seedId}') — no PlantPool found, plant NOT returned!");
             }
 
         }
