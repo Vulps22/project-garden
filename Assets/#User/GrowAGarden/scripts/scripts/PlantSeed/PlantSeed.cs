@@ -42,7 +42,6 @@ namespace GrowAGarden
             bool grabberFree = _grabber == null || isHolder;
             bool canAfford = !InShop || localPlayer.GetBalance() >= seedDefinition.buyPrice;
             bool result = grabberFree && canAfford;
-            Logger.Info($"Process() '{gameObject.name}' — grabber={(_grabber != null ? _grabber.GetID() : "null")}, isHolder={isHolder}, InShop={InShop}, balance={localPlayer.GetBalance()}, buyPrice={seedDefinition.buyPrice}, canAfford={canAfford}, result={result}");
             return result;
         }
 
@@ -76,7 +75,6 @@ namespace GrowAGarden
         /// </summary>
         private void OnSpawned()
         {
-            Logger.Info($"OnSpawned() '{gameObject.name}' — network object spawned, initializing plant seed");
             if (networkBridge.Object.HasStateAuthority)
                 SetState(true);
         }
@@ -142,6 +140,7 @@ namespace GrowAGarden
             var grab = GetComponent<XRGrabInteractable>();
             if (grab != null) grab.enabled = false;
             networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.disable, new byte[0]);
+            broadcastState();
         }
 
         /// <summary>
@@ -172,10 +171,9 @@ namespace GrowAGarden
         {
             OnWillUpdate();
 
-            if (IsSeed) { Logger.Log($"Update() '{gameObject.name}' — GUARD: IsSeed=true, returning"); return; }
-            if (networkBridge.Object == null) { Logger.Log($"Update() '{gameObject.name}' — GUARD: networkBridge.Object==null, returning"); return; }
-            if (!networkBridge.Object.HasStateAuthority) { Logger.Log($"Update() '{gameObject.name}' — GUARD: no state authority, returning"); return; }
-            Logger.Log($"Update() '{gameObject.name}' — past guards, calling GetGrowthCompletion");
+            if (IsSeed) { return; }
+            if (networkBridge.Object == null) { return; }
+            if (!networkBridge.Object.HasStateAuthority) { return; }
 
             float completion = GetGrowthCompletion();
             float progress = seedDefinition.phases[_growthPhase].isDecay ? (1f - completion) : completion;
@@ -206,7 +204,6 @@ namespace GrowAGarden
         {
             _grabInteractable.enabled = true;
             networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.enable, new byte[0]);
-            Logger.Info($"Update() '{gameObject.name}' — fully grown, grab interactable enabled");
         }
 
         /// <summary>
@@ -214,7 +211,6 @@ namespace GrowAGarden
         /// </summary>
         public float GetGrowthCompletion()
         {
-            Logger.Log($"GetGrowthCompletion() '{gameObject.name}' — seedDefinition={seedDefinition != null}, phases={seedDefinition?.phases != null}, phaseCount={seedDefinition?.phases?.Count}, _growthPhase={_growthPhase}");
             long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             float raw = (now - _plantedTimestamp) / seedDefinition.phases[_growthPhase].duration;
             return Mathf.Clamp01(raw);
@@ -242,11 +238,9 @@ namespace GrowAGarden
             switch ((PlantMessageType)id)
             {
                 case PlantMessageType.enable:
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — received enable message, setting grab on");
                     _grabInteractable.enabled = true;
                     break;
                 case PlantMessageType.disable:
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — received disable message, setting grab off");
                     SetState(false);
                     _grabInteractable.enabled = false;
                     break;
@@ -254,10 +248,8 @@ namespace GrowAGarden
                     BytesReader grabReader = new BytesReader(data);
                     bool hasGrabber = grabReader.NextByte() == 1;
                     _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabReader.NextString()) : null;
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber updated: {(_grabber != null ? _grabber.GetID() : "null")}");
                     break;
                 case PlantMessageType.sold:
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — received sold message, returning to seed state");
                     _grabber = null;
                     _occupiedSlot = null;
                     SetState(true);
@@ -296,8 +288,6 @@ namespace GrowAGarden
                 _grabInteractable.enabled = true;
             else
                 _grabInteractable.enabled = GetGrowthCompletion() >= 1f;
-
-            Logger.Info($"OnMessageToProxies() '{gameObject.name}' — stateSync received, isSeed={isSeed}, InShop={InShop}, IsBought={IsBought}, IsInPool={IsInPool}, timestamp={_plantedTimestamp}");
         }
 
         /// <summary>
@@ -316,17 +306,13 @@ namespace GrowAGarden
         /// </summary>
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
-            Logger.Log($"OnGrabSelected() '{gameObject.name}' — interactorObject='{args.interactorObject}', EconomyManager.Instance={EconomyManager.Instance != null}");
             _grabber = EconomyManager.Instance.GetLocalPlayer();
-            Logger.Log($"OnGrabSelected() '{gameObject.name}' — _grabber set to '{_grabber?.GetID() ?? "null"}'");
             string id = _grabber.GetID();
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);
             writer.AddString(id);
-            Logger.Log($"OnGrabSelected() '{gameObject.name}' — sending grabber RPC with id='{id}'");
             networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.grabber, writer.Data);
-            Logger.Log($"OnGrabSelected() '{gameObject.name}' — done");
         }
 
         /// <summary>
