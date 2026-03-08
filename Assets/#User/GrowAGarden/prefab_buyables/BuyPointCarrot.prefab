@@ -9,8 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8758609547367661981}
-  - component: {fileID: 8566031281032271168}
   - component: {fileID: 3487002543605584581}
+  - component: {fileID: 2193746282181641532}
+  - component: {fileID: 351866997707089371}
   m_Layer: 0
   m_Name: Socket
   m_TagString: Untagged
@@ -33,19 +34,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8740853778601386656}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8566031281032271168
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2928842755511965046}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2a108b2b6f5a3b49bd9346fb714b687, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
-  _seedDefinition: {fileID: 11400000, guid: 32330805fd987d04b9d02de1dd7e5c4c, type: 2}
 --- !u!65 &3487002543605584581
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -67,6 +55,35 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &2193746282181641532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2928842755511965046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2a108b2b6f5a3b49bd9346fb714b687, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
+  _seedDefinition: {fileID: 351866997707089371}
+--- !u!114 &351866997707089371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2928842755511965046}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79d4529017e70be4a906f61d3e1272c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
+  seedId: 
+  displayName: 
+  buyPrice: 0
+  sellValue: 0
 --- !u!1 &7579675108711353300
 GameObject:
   m_ObjectHideFlags: 0
@@ -112,6 +129,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: SalePoint
+      objectReference: {fileID: 0}
+    - target: {fileID: 1123540765777463096, guid: 4a55a03c8b29c2a49bfab53de73c7906,
+        type: 3}
+      propertyPath: m_text
+      value: Carrot
       objectReference: {fileID: 0}
     - target: {fileID: 2905341716527164169, guid: 4a55a03c8b29c2a49bfab53de73c7906,
         type: 3}
@@ -162,6 +184,16 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3276109284240118949, guid: 4a55a03c8b29c2a49bfab53de73c7906,
+        type: 3}
+      propertyPath: m_text
+      value: 'B: 10'
+      objectReference: {fileID: 0}
+    - target: {fileID: 4193326595336203925, guid: 4a55a03c8b29c2a49bfab53de73c7906,
+        type: 3}
+      propertyPath: m_text
+      value: 'S: 15'
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 5270338515927244873, guid: 4a55a03c8b29c2a49bfab53de73c7906, type: 3}
