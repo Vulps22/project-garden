@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 5280306726041791827}
   - component: {fileID: -6513405909237204029}
   - component: {fileID: 4964451483823346128}
+  - component: {fileID: -1307947511273831759}
   m_Layer: 0
   m_Name: Unified_Carrot
   m_TagString: Untagged
@@ -244,7 +245,7 @@ MonoBehaviour:
   m_SmoothScale: 0
   m_SmoothScaleAmount: 8
   m_TightenScale: 0.1
-  m_ThrowOnDetach: 1
+  m_ThrowOnDetach: 0
   m_ThrowSmoothingDuration: 0.25
   m_ThrowSmoothingCurve:
     serializedVersion: 2
@@ -352,7 +353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.RootedPlantSeed
   _SeedModel: {fileID: 7252358533932005785}
   _SeedCollider: {fileID: 5280306726041791827}
-  seedDefinition: {fileID: 11400000, guid: 32330805fd987d04b9d02de1dd7e5c4c, type: 2}
+  seedDefinition: {fileID: -1307947511273831759}
   networkBridge: {fileID: 1434875256084407990}
   _grabInteractable: {fileID: 4248909366719016378}
   IsSeed: 0
@@ -361,6 +362,22 @@ MonoBehaviour:
   IsInPool: 0
   _PlantModel: {fileID: 6932973717305585960}
   _PlantCollider: {fileID: 6570511697767294347}
+--- !u!114 &-1307947511273831759
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163453513877751585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79d4529017e70be4a906f61d3e1272c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
+  seedId: 
+  displayName: 
+  buyPrice: 0
+  sellValue: 0
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0

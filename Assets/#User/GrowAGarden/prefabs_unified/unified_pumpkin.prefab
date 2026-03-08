@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 1089407052795254505}
   - component: {fileID: 5334422842976460031}
   - component: {fileID: 8105174715393343565}
+  - component: {fileID: 4706540214885818669}
   m_Layer: 0
   m_Name: unified_pumpkin
   m_TagString: Untagged
@@ -57,7 +58,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ViningPlantSeed
   _SeedModel: {fileID: 8012790060829181913}
   _SeedCollider: {fileID: 5334422842976460031}
-  seedDefinition: {fileID: 11400000, guid: 188f8df76c730e14d9df5c2579bd9523, type: 2}
+  seedDefinition: {fileID: 4706540214885818669}
   networkBridge: {fileID: 544014741469173732}
   _grabInteractable: {fileID: 4773445120126099651}
   IsSeed: 0
@@ -360,6 +361,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4706540214885818669
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2878792842855438303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 730773380ceafed43bc38ea080586a5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
+  seedId: 
+  displayName: 
+  buyPrice: 0
+  sellValue: 0
 --- !u!1001 &6982210231104125602
 PrefabInstance:
   m_ObjectHideFlags: 0

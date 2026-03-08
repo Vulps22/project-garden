@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7297317383324926382}
   - component: {fileID: 6868783266310726522}
   - component: {fileID: 5523914299885111811}
+  - component: {fileID: 6520559026116492647}
   m_Layer: 0
   m_Name: Socket
   m_TagString: Untagged
@@ -45,7 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2a108b2b6f5a3b49bd9346fb714b687, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
-  _seedDefinition: {fileID: 11400000, guid: 188f8df76c730e14d9df5c2579bd9523, type: 2}
+  _seedDefinition: {fileID: 6520559026116492647}
 --- !u!65 &5523914299885111811
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -67,6 +68,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &6520559026116492647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504413241770997251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 730773380ceafed43bc38ea080586a5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
+  seedId: pumpkin
+  displayName: Pumpkin
+  buyPrice: 60
+  sellValue: 110
 --- !u!1 &6674447652368485556
 GameObject:
   m_ObjectHideFlags: 0
@@ -176,7 +193,7 @@ PrefabInstance:
     - target: {fileID: 4193326595336203925, guid: 4a55a03c8b29c2a49bfab53de73c7906,
         type: 3}
       propertyPath: m_text
-      value: 'S: 28'
+      value: 'S: 110'
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 5270338515927244873, guid: 4a55a03c8b29c2a49bfab53de73c7906, type: 3}

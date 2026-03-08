@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 710292031075489383}
   - component: {fileID: 5565603803181003875}
   - component: {fileID: 222089623956227069}
+  - component: {fileID: 5179479689449831253}
   m_Layer: 0
   m_Name: Unified_turnip
   m_TagString: Untagged
@@ -57,7 +58,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.RootedPlantSeed
   _SeedModel: {fileID: 3723983379408222343}
   _SeedCollider: {fileID: 5565603803181003875}
-  seedDefinition: {fileID: 11400000, guid: 8491373049d3bda4ba67804957e1bd66, type: 2}
+  seedDefinition: {fileID: 5179479689449831253}
   networkBridge: {fileID: 1084810240955029992}
   _grabInteractable: {fileID: 739378399254163780}
   IsSeed: 0
@@ -225,7 +226,7 @@ MonoBehaviour:
   m_SmoothScale: 0
   m_SmoothScaleAmount: 8
   m_TightenScale: 0.1
-  m_ThrowOnDetach: 1
+  m_ThrowOnDetach: 0
   m_ThrowSmoothingDuration: 0.25
   m_ThrowSmoothingCurve:
     serializedVersion: 2
@@ -359,6 +360,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5179479689449831253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4293189722181000532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f730f8fe4306a604aa2a489e16f0f7b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TurnipSeed
+  seedId: 
+  displayName: 
+  buyPrice: 0
+  sellValue: 0
 --- !u!1001 &3118238609914766344
 PrefabInstance:
   m_ObjectHideFlags: 0
