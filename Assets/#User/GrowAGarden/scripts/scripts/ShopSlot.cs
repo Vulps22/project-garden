@@ -49,7 +49,7 @@ namespace GrowAGarden
             if (seedMissing)
             {
                 if (_currentSeed == null)
-                    Logger.Warn($"'{gameObject.name}' — no seed present, attempting to respawn");
+                Logger.Warn($"'{gameObject.name}' — no seed present, attempting to respawn");
                 else
                     Logger.Info($"'{gameObject.name}' — seed '{_currentSeed.name}' no longer in shop (IsInPool={_currentSeed.IsInPool}, IsSeed={_currentSeed.IsSeed}), respawning");
                 _currentSeed = null;
