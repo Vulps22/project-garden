@@ -21,7 +21,6 @@ namespace GrowAGarden
 
         private void Awake()
         {
-            Logger.Info($"Awake() '{gameObject.name}' — seedId='{SeedId}', found {PlantsInPool.Length} plant(s) to restore");
             foreach (PlantSeed plant in PlantsInPool)
             {
                 if (!Restore(plant))
@@ -38,7 +37,6 @@ namespace GrowAGarden
             {
                 if (Restore(_pendingRestore[i]))
                 {
-                    Logger.Info($"Update() '{gameObject.name}' — deferred restore succeeded for '{_pendingRestore[i].name}', available={Available}");
                     _pendingRestore.RemoveAt(i);
                 }
             }
@@ -49,11 +47,9 @@ namespace GrowAGarden
             PlantSeed plant = System.Array.Find(PlantsInPool, p => p.IsInPool);
             if (plant == null)
             {
-                Logger.Warn($"Claim() — pool empty for '{SeedId}'!");
                 return null;
             }
             plant.IsInPool = false;
-            Logger.Log($"Claim() '{SeedId}' — claiming '{plant.name}', remaining after={Available}");
             return plant;
         }
 
@@ -63,7 +59,6 @@ namespace GrowAGarden
                 StartCoroutine(RequestAuthorityAndReturn(plant));
             else
             {
-                Logger.Log($"Return() '{SeedId}' — returning '{plant?.name}'");
                 Restore(plant);
             }
         }
@@ -78,7 +73,6 @@ namespace GrowAGarden
             NetworkObject plantNetObj = plant.networkBridge.Object;
             if (!plantNetObj.HasStateAuthority)
             {
-                Logger.Info($"RequestAuthorityAndReturn() '{SeedId}' � requesting authority on '{plant.name}', will wait up to 5s");
                 plantNetObj.RequestStateAuthority();
                 float timeout = 20f;
                 float timer = 0f;
@@ -93,7 +87,6 @@ namespace GrowAGarden
                     yield break;
                 }
             }
-            Logger.Info($"RequestAuthorityAndReturn() '{SeedId}' � gained authority on '{plant.name}', returning to pool");
             Return(plant);
         }
 
@@ -101,10 +94,8 @@ namespace GrowAGarden
         {
             if (!plant.networkBridge.HasStateAuthority)
             {
-                Logger.Warn($"Restore() Pool '{SeedId}' — no authority to restore '{plant?.name}', skipping");
                 return false;
             }
-            Logger.Log($"Restore() '{SeedId}' — restoring '{plant?.name}'");
 
             plant.IsInPool = true;
             plant.transform.position = transform.position;
@@ -120,19 +111,16 @@ namespace GrowAGarden
 
             plant.broadcastState();
 
-            Logger.Log($"Restore() '{SeedId}' — '{plant?.name}' restore complete");
             return true;
         }
 
         private void OnMessageReceived(byte id, byte[] data)
         {
-            Logger.Info($"OnMessageReceived() '{gameObject.name}' � id={id} ({(PoolMessageType)id}), dataLength={data?.Length}");
 
             switch ((PoolMessageType)id)
             {
                 case PoolMessageType.Claim:
                     {
-                        Logger.Info($"OnMessageReceived() '{gameObject.name}' � Claim request received");
                         Claim();
                         break;
                     }
@@ -142,7 +130,6 @@ namespace GrowAGarden
                         break;
                     }
                 default:
-                    Logger.Warn($"OnMessageReceived() '{gameObject.name}' � unknown messageId={id}");
                     break;
             }
         }
@@ -152,12 +139,10 @@ namespace GrowAGarden
             BytesReader reader = new BytesReader(data);
             if (!reader.IsValid)
             {
-                Logger.Error($"OnMessageReceived() '{gameObject.name}' � Return: invalid data");
                 return;
             }
 
             int networkId = reader.NextInt();
-            Logger.Info($"OnMessageReceived() '{gameObject.name}' � Return: looking for plant with NetworkId={networkId}");
 
             PlantSeed target = null;
             foreach (var plant in PlantsInPool)
@@ -172,7 +157,6 @@ namespace GrowAGarden
 
             if (target != null)
             {
-                Logger.Info($"OnMessageReceived() '{gameObject.name}' � Return: found '{target.name}', restoring");
                 Return(target);
             }
             else
