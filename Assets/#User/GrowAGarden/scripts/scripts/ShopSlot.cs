@@ -96,18 +96,27 @@ namespace GrowAGarden
 
         private void OnTriggerExit(Collider other)
         {
+            Logger.Log($"OnTriggerExit() '{gameObject.name}' — collider='{other.name}' ({other.GetType().Name}), hasSeed={other.TryGetComponent(out PlantSeed dbgSeed)}, isCurrentSeed={dbgSeed == _currentSeed}, _currentSeed={(_currentSeed != null ? _currentSeed.name : "null")}");
             if (other.TryGetComponent(out PlantSeed seed) && seed == _currentSeed)
             {
+                Logger.Log($"OnTriggerExit() '{gameObject.name}' — seed matched. IsBought={seed.IsBought}, InShop={seed.InShop}, grabber={seed.GetGrabber()?.GetID() ?? "null"}, EconomyManager.Instance={EconomyManager.Instance != null}");
                 if (!seed.IsBought && seed.InShop)
                 {
                     Logger.Info($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' exited, IsMasterClient={SceneNetworking.IsMasterClient}");
                     _currentSeed.InShop = false;
                     _currentSeed.IsBought = true;
+                    Logger.Log($"OnTriggerExit() '{gameObject.name}' — calling broadcastState()");
                     _currentSeed.broadcastState();
+                    Logger.Log($"OnTriggerExit() '{gameObject.name}' — calling RemoveBalance, grabber={seed.GetGrabber()?.GetID() ?? "null"}, price={_seedDefinition.buyPrice}");
                     EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
+                    Logger.Log($"OnTriggerExit() '{gameObject.name}' — RemoveBalance complete, setting _currentSeed=null");
                     _currentSeed = null;
                     if (SceneNetworking.IsMasterClient)
                         SpawnSeed();
+                }
+                else
+                {
+                    Logger.Log($"OnTriggerExit() '{gameObject.name}' — skipped charge: IsBought={seed.IsBought}, InShop={seed.InShop}");
                 }
             }
         }
