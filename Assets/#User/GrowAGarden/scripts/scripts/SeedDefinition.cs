@@ -3,18 +3,26 @@ using UnityEngine;
 
 namespace GrowAGarden
 {
-    [CreateAssetMenu(fileName = "NewSeed", menuName = "Garden/Seed Definition")]
-    public class SeedDefinition : ScriptableObject
+    public abstract class SeedDefinition : MonoBehaviour
     {
         public string seedId;
         public string displayName;
-        public List<GrowthPhase> phases;
         public int buyPrice;
         public int sellValue;
+
+        public List<GrowthPhase> phases;
+
+        private void OnEnable()
+        {
+            Init();
+            Logger.Log($"SeedDefinition.OnEnable() '{seedId}' — phaseCount={phases?.Count ?? -1}");
+        }
+
+        protected abstract void Init();
     }
 
-    [System.Serializable]
-    public class GrowthPhase {
+    public class GrowthPhase
+    {
         public string name;
         public float duration;
         public float maxScale = 1f;
