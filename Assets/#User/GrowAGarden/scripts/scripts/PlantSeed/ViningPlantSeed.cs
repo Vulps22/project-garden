@@ -33,6 +33,54 @@ namespace GrowAGarden
             networkBridge.OnMessageToAll -= OnVineMessageToAll;
         }
 
+        protected override int GetExtraBroadcastStateSize() =>
+            BytesWriter.ByteSize * 3 + BytesWriter.Vector3Size + BytesWriter.QuaternionSize;
+
+        protected override void OnWriteBroadcastState(BytesWriter writer)
+        {
+            writer.AddByte((byte)_growthPhase);
+            writer.AddByte(_vineAnchored ? (byte)1 : (byte)0);
+            writer.AddByte(_isDecaying ? (byte)1 : (byte)0);
+            writer.AddVector3(_vineAnchoredWorldPos);
+            writer.AddQuaternion(_vineAnchoredWorldRot);
+        }
+
+        /// <summary>
+        /// Restores vine-specific state after the base stateSync is applied.
+        /// UpdateVisuals(false) resets _growthPhase=0 and all scales to zero, so we
+        /// re-apply the synced phase and compute the correct scale for the current moment.
+        /// </summary>
+        protected override void OnReadBroadcastState(BytesReader reader)
+        {
+            _growthPhase = reader.NextByte();
+            _vineAnchored = reader.NextByte() == 1;
+            _isDecaying = reader.NextByte() == 1;
+            _vineAnchoredWorldPos = reader.NextVector3();
+            _vineAnchoredWorldRot = reader.NextQuaternion();
+
+            if (IsSeed) return;
+
+            float completion = GetGrowthCompletion();
+            GrowthPhase phase = seedDefinition.phases[_growthPhase];
+            float progress = phase.isDecay ? (1f - completion) : completion;
+            float scale = Mathf.Max(0f, progress * phase.maxScale * phase.scaleMultiplier);
+
+            switch (_growthPhase)
+            {
+                case 0: // vine growing
+                    _SeedModel.transform.localScale = Vector3.one * scale;
+                    break;
+                case 1: // fruit growing — vine is at max, fruit scales up
+                    _SeedModel.transform.localScale = Vector3.one;
+                    _fruitModel.enabled = true;
+                    _fruitModel.transform.localScale = Vector3.one * scale;
+                    break;
+                case 2: // vine decaying — OnWillUpdate drives scale each frame
+                    _SeedModel.transform.localScale = Vector3.one * scale;
+                    break;
+            }
+        }
+
         /// <summary>
         /// Handles vine-specific RPCs: anchoring the vine in world space and starting decay.
         /// </summary>
