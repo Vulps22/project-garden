@@ -35,6 +35,11 @@ namespace GrowAGarden
             if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
             {
                 PlantSeed plant = pool.Claim();
+                if (plant == null)
+                {
+                    Logger.Warn($"claimPlantSeed('{seedId}') — pool empty, Claim() returned null");
+                    return null;
+                }
                 Logger.Info($"claimPlantSeed('{seedId}') — returned '{plant.name}', remaining={pool.Available}");
                 return plant;
             }
