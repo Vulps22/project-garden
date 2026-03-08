@@ -63,6 +63,7 @@ namespace GrowAGarden
         /// </summary>
         protected override void OnGrowthUpdated(float completion, float targetScale)
         {
+            Logger.Log($"OnGrowthUpdated() '{gameObject.name}' — phase={_growthPhase}, completion={completion:F3}, targetScale={targetScale:F3}, rootScale={transform.localScale}, seedModelScale={_SeedModel.transform.localScale}");
             switch (_growthPhase)
             {
                 case 0:
@@ -110,7 +111,7 @@ namespace GrowAGarden
         /// Detects when the PlantSeed root has moved away from the anchored vine (distance check),
         /// then drives vine decay. Runs on all clients once decay starts.
         /// </summary>
-        private void Update()
+        protected override void OnWillUpdate()
         {
             if (_vineAnchored && !_isDecaying)
             {
@@ -197,6 +198,7 @@ namespace GrowAGarden
                 _growthPhase = 0;
                 _vineAnchored = false;
                 _isDecaying = false;
+                transform.localScale = Vector3.one;
                 _SeedCollider.enabled = false;
                 _fruitCollider.enabled = true;
                 _SeedModel.transform.localPosition = _vineInitialLocalPos;
