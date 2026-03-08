@@ -373,10 +373,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 730773380ceafed43bc38ea080586a5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
-  seedId: 
-  displayName: 
-  buyPrice: 0
-  sellValue: 0
+  seedId: pumpkin
+  displayName: Pumpkin
+  buyPrice: 60
+  sellValue: 110
 --- !u!1001 &6982210231104125602
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -475,8 +475,16 @@ PrefabInstance:
       value: Pumpkin_Plant
       objectReference: {fileID: 0}
     - target: {fileID: 4000011223534310, guid: 30319199574ca3644bf3898bb5cac486, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000011223534310, guid: 30319199574ca3644bf3898bb5cac486, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.25
+      value: 0.25
+      objectReference: {fileID: 0}
+    - target: {fileID: 4000011223534310, guid: 30319199574ca3644bf3898bb5cac486, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 4000011223534310, guid: 30319199574ca3644bf3898bb5cac486, type: 3}
       propertyPath: m_LocalPosition.x
