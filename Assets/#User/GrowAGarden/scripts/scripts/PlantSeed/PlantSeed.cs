@@ -165,9 +165,12 @@ namespace GrowAGarden
         /// </summary>
         private void Update()
         {
-            if (IsSeed) return;
-            if (networkBridge.Object == null) return;
-            if (!networkBridge.Object.HasStateAuthority) return;
+            OnWillUpdate();
+
+            if (IsSeed) { Logger.Log($"Update() '{gameObject.name}' — GUARD: IsSeed=true, returning"); return; }
+            if (networkBridge.Object == null) { Logger.Log($"Update() '{gameObject.name}' — GUARD: networkBridge.Object==null, returning"); return; }
+            if (!networkBridge.Object.HasStateAuthority) { Logger.Log($"Update() '{gameObject.name}' — GUARD: no state authority, returning"); return; }
+            Logger.Log($"Update() '{gameObject.name}' — past guards, calling GetGrowthCompletion");
 
             float completion = GetGrowthCompletion();
             float progress = seedDefinition.phases[_growthPhase].isDecay ? (1f - completion) : completion;
@@ -178,6 +181,8 @@ namespace GrowAGarden
                 OnFullyGrown();
             }
         }
+
+        protected virtual void OnWillUpdate() { }
 
         /// <summary>
         /// Called each frame while growing. Default applies targetScale to the root transform.
@@ -204,6 +209,7 @@ namespace GrowAGarden
         /// </summary>
         public float GetGrowthCompletion()
         {
+            Logger.Log($"GetGrowthCompletion() '{gameObject.name}' — seedDefinition={seedDefinition != null}, phases={seedDefinition?.phases != null}, phaseCount={seedDefinition?.phases?.Count}, _growthPhase={_growthPhase}");
             long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             float raw = (now - _plantedTimestamp) / seedDefinition.phases[_growthPhase].duration;
             return Mathf.Clamp01(raw);
