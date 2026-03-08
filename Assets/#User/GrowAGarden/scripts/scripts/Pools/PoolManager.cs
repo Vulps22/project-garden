@@ -21,6 +21,7 @@ namespace GrowAGarden
 
             foreach (UnifiedPool pool in GetComponentsInChildren<UnifiedPool>(true))
             {
+                if (pool.SeedId == null) throw new System.Exception("Null Seed ID found in UnifiedPool: " + pool.name);
                 _UnifiedPools[pool.SeedId] = pool;
                 Logger.Info($"Registered UnifiedPool for seedId='{pool.SeedId}', available={pool.Available}");
             }
