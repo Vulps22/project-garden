@@ -96,15 +96,20 @@ namespace GrowAGarden
         {
             if (!networkBridge.Object.HasStateAuthority) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize * 4 + BytesWriter.IntSize + BytesWriter.IntSize);
+            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize * 4 + BytesWriter.IntSize * 2 + GetExtraBroadcastStateSize());
             writer.AddByte(IsSeed ? (byte)1 : (byte)0);
             writer.AddByte(InShop ? (byte)1 : (byte)0);
             writer.AddByte(IsBought ? (byte)1 : (byte)0);
             writer.AddByte(IsInPool ? (byte)1 : (byte)0);
             writer.AddInt((int)(_plantedTimestamp >> 32));
             writer.AddInt((int)(_plantedTimestamp & 0xFFFFFFFFL));
+            OnWriteBroadcastState(writer);
             networkBridge.RPC_SendMessageToProxies((byte)PlantMessageType.stateSync, writer.Data);
         }
+
+        protected virtual int GetExtraBroadcastStateSize() => 0;
+        protected virtual void OnWriteBroadcastState(BytesWriter writer) { }
+        protected virtual void OnReadBroadcastState(BytesReader reader) { }
 
         /// <summary>
         /// Routes trigger enter events — only handles planting when in seed state.
@@ -286,6 +291,7 @@ namespace GrowAGarden
             _plantedTimestamp = (high << 32) | low;
 
             SetState(isSeed);
+            OnReadBroadcastState(reader);
             if (isSeed)
                 _grabInteractable.enabled = true;
             else
