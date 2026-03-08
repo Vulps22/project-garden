@@ -11,8 +11,8 @@ namespace GrowAGarden
         {
             seedId      = "pumpkin";
             displayName = "Pumpkin";
-            buyPrice    = 1;
-            sellValue   = 10000000;
+            buyPrice    = 60;
+            sellValue   = 110;
             phases      = new List<GrowthPhase>
             {
                 new GrowthPhase { name = "vine",  duration = 360, maxScale = 1, scaleMultiplier = 1 },
