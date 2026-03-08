@@ -14,10 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::SeedDefinition
   seedId: pumpkin
   displayName: Pumpkin
-  plantPrefab: {fileID: 0}
-  growDurationSeconds: 720
-  maxScale: 1
-  scaleMultiplier: 1
-  buyPrice: 60
-  sellValue: 110
-  icon: {fileID: 0}
+  phases:
+  - name: vine
+    duration: 360
+    maxScale: 1
+    scaleMultiplier: 1
+    isDecay: 0
+  - name: fruit
+    duration: 360
+    maxScale: 1
+    scaleMultiplier: 1
+    isDecay: 0
+  - name: decay
+    duration: 30
+    maxScale: 1
+    scaleMultiplier: 1
+    isDecay: 1
+  buyPrice: 1
+  sellValue: 10000000
