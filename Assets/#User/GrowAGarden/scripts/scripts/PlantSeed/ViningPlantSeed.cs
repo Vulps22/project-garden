@@ -107,24 +107,14 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Scales the vine/_SeedModel (phase 0) or fruit (phase 1). Phase 2 decay is driven by Update.
+        /// Scale is driven by OnWillUpdate on all clients. This override prevents the base
+        /// class from incorrectly scaling the root transform.
         /// </summary>
-        protected override void OnGrowthUpdated(float completion, float targetScale)
-        {
-            Logger.Log($"OnGrowthUpdated() '{gameObject.name}' — phase={_growthPhase}, completion={completion:F3}, targetScale={targetScale:F3}, rootScale={transform.localScale}, seedModelScale={_SeedModel.transform.localScale}");
-            switch (_growthPhase)
-            {
-                case 0:
-                    _SeedModel.transform.localScale = Vector3.one * targetScale;
-                    break;
-                case 1:
-                    _fruitModel.transform.localScale = Vector3.one * targetScale;
-                    break;
-            }
-        }
+        protected override void OnGrowthUpdated(float completion, float targetScale) { }
 
         /// <summary>
-        /// Phase 0 complete: advance to fruit phase. Phase 1 complete: anchor vine and enable grab.
+        /// Phase 0 complete: advance to fruit phase and sync new timestamp to proxies.
+        /// Phase 1 complete: anchor vine and enable grab.
         /// </summary>
         protected override void OnFullyGrown()
         {
@@ -132,6 +122,7 @@ namespace GrowAGarden
             {
                 _growthPhase = 1;
                 _plantedTimestamp = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                broadcastState();
             }
             else
             {
@@ -156,37 +147,44 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Detects when the PlantSeed root has moved away from the anchored vine (distance check),
-        /// then drives vine decay. Runs on all clients once decay starts.
+        /// Drives vine/fruit/decay scale on all clients from _growthPhase and _plantedTimestamp.
+        /// Authority additionally checks for vine detachment to trigger decay.
         /// </summary>
         protected override void OnWillUpdate()
         {
-            if (_vineAnchored && !_isDecaying)
+            if (_vineAnchored && networkBridge.Object != null && networkBridge.Object.HasStateAuthority)
             {
-                if (networkBridge.Object != null && networkBridge.Object.HasStateAuthority)
-                {
-                    if (Vector3.Distance(transform.position, _vineAnchoredWorldPos) > _vineDetachRadius)
-                        StartDecay();
-                }
-                return;
+                if (!_isDecaying && Vector3.Distance(transform.position, _vineAnchoredWorldPos) > _vineDetachRadius)
+                    StartDecay();
             }
 
-            if (_isDecaying)
-            {
-                float completion = GetGrowthCompletion();
-                GrowthPhase decayPhase = seedDefinition.phases[_growthPhase];
-                float scale = (1f - completion) * decayPhase.maxScale * decayPhase.scaleMultiplier;
-                _SeedModel.transform.localScale = Vector3.one * Mathf.Max(0f, scale);
+            if (IsSeed) return;
 
-                if (completion >= 1f)
-                {
-                    _isDecaying = false;
-                    _vineAnchored = false;
-                    _growthPhase = 0;
-                    _SeedModel.transform.localPosition = _vineInitialLocalPos;
-                    _SeedModel.transform.localRotation = _vineInitialLocalRot;
-                    _SeedModel.transform.localScale = Vector3.one;
-                }
+            float completion = GetGrowthCompletion();
+            GrowthPhase phase = seedDefinition.phases[_growthPhase];
+            float progress = phase.isDecay ? (1f - completion) : completion;
+            float scale = Mathf.Max(0f, progress * phase.maxScale * phase.scaleMultiplier);
+
+            switch (_growthPhase)
+            {
+                case 0:
+                    _SeedModel.transform.localScale = Vector3.one * scale;
+                    break;
+                case 1:
+                    _fruitModel.transform.localScale = Vector3.one * scale;
+                    break;
+                case 2:
+                    _SeedModel.transform.localScale = Vector3.one * scale;
+                    if (completion >= 1f)
+                    {
+                        _isDecaying = false;
+                        _vineAnchored = false;
+                        _growthPhase = 0;
+                        _SeedModel.transform.localPosition = _vineInitialLocalPos;
+                        _SeedModel.transform.localRotation = _vineInitialLocalRot;
+                        _SeedModel.transform.localScale = Vector3.one;
+                    }
+                    break;
             }
         }
 
