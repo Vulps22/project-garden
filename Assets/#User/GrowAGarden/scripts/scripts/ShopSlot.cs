@@ -44,11 +44,8 @@ namespace GrowAGarden
 
             if (seedMissing)
             {
-                if (_currentSeed != null)
-                {
-                    _currentSeed = null;
-                    SpawnSeed();
-                }
+                _currentSeed = null;
+                SpawnSeed();
             }
         }
 
@@ -67,12 +64,7 @@ namespace GrowAGarden
             }
 
 
-            _currentSeed.transform.position = transform.position;
-            _currentSeed.transform.rotation = transform.rotation;
-
-            _currentSeed.SetState(true);
-            _currentSeed.InShop = true;
-            _currentSeed.IsBought = false;
+            _currentSeed.PlaceInShop(transform.position, transform.rotation);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -89,9 +81,7 @@ namespace GrowAGarden
             {
                 if (!seed.IsBought && seed.InShop)
                 {
-                    _currentSeed.InShop = false;
-                    _currentSeed.IsBought = true;
-                    _currentSeed.broadcastState();
+                    _currentSeed.Purchase();
                     EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
                     _currentSeed = null;
                     if (SceneNetworking.IsMasterClient)
