@@ -92,6 +92,7 @@ namespace GrowAGarden
         /// </summary>
         public void broadcastState()
         {
+            if (networkBridge.Object == null) return;
             if (!networkBridge.Object.HasStateAuthority) return;
 
             BytesWriter writer = new BytesWriter(BytesWriter.ByteSize * 4 + BytesWriter.IntSize * 2 + GetExtraBroadcastStateSize());
