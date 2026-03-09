@@ -120,7 +120,6 @@ namespace GrowAGarden
 
         /// <summary>
         /// Handles planting when the seed enters a PlantSlot trigger. Authority only.
-        /// Snaps to slot position, switches to plant state, starts growth timer, disables grab.
         /// </summary>
         private void OnTriggerEnterSeed(Collider other)
         {
@@ -129,18 +128,7 @@ namespace GrowAGarden
             PlantSlot slot = other.GetComponent<PlantSlot>();
             if (slot == null || slot.IsOccupied) return;
 
-            _occupiedSlot = slot;
-            gameObject.transform.position = slot.transform.position;
-            transform.rotation = Quaternion.identity;
-            transform.localScale = Vector3.zero;
-            SetState(false);
-            _plantedTimestamp = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            slot.SetOccupied(true);
-
-            var grab = GetComponent<XRGrabInteractable>();
-            if (grab != null) grab.enabled = false;
-            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.disable, new byte[0]);
-            broadcastState();
+            Plant(slot);
         }
 
         /// <summary>
@@ -161,6 +149,87 @@ namespace GrowAGarden
         public void ToBeSold()
         {
             networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.sold, new byte[0]);
+        }
+
+        // ── Lifecycle action methods ──────────────────────────────────────────────
+        // Each method owns its state changes and any required broadcast.
+        // External callers should use these instead of mutating fields directly.
+
+        /// <summary>
+        /// Marks this seed as claimed from the pool. Call before PlaceInShop().
+        /// </summary>
+        public void Claim()
+        {
+            IsInPool = false;
+        }
+
+        /// <summary>
+        /// Positions this seed in a shop display and broadcasts the state to all clients.
+        /// Master client only.
+        /// </summary>
+        public void PlaceInShop(Vector3 position, Quaternion rotation)
+        {
+            transform.position = position;
+            transform.rotation = rotation;
+            SetState(true);
+            InShop = true;
+            IsBought = false;
+            broadcastState();
+        }
+
+        /// <summary>
+        /// Marks this seed as purchased — removes it from shop ownership and broadcasts.
+        /// Master client only.
+        /// </summary>
+        public void Purchase()
+        {
+            InShop = false;
+            IsBought = true;
+            broadcastState();
+        }
+
+        /// <summary>
+        /// Plants this seed into a slot — transitions to plant state, starts growth timer,
+        /// disables grab, and notifies all clients. State authority only.
+        /// </summary>
+        public void Plant(PlantSlot slot)
+        {
+            _occupiedSlot = slot;
+            transform.position = slot.transform.position;
+            transform.rotation = Quaternion.identity;
+            transform.localScale = Vector3.zero;
+            SetState(false);
+            _plantedTimestamp = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            slot.SetOccupied(true);
+            _grabInteractable.enabled = false;
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.disable, new byte[0]);
+            broadcastState();
+        }
+
+        /// <summary>
+        /// Sells this plant — broadcasts to all clients. Each client resets local state;
+        /// the authority additionally returns it to the pool. Master client only.
+        /// </summary>
+        public void Sell()
+        {
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.sold, new byte[0]);
+        }
+
+        /// <summary>
+        /// Resets this plant back into the pool at the given position and broadcasts the reset.
+        /// State authority only.
+        /// </summary>
+        public void ReturnToPool(Vector3 position, Quaternion rotation)
+        {
+            IsInPool = true;
+            transform.position = position;
+            transform.rotation = rotation;
+            transform.localScale = Vector3.one;
+            _grabInteractable.enabled = true;
+            var rb = GetComponent<Rigidbody>();
+            if (rb != null) rb.isKinematic = true;
+            SetState(true);
+            broadcastState();
         }
 
         /// <summary>
