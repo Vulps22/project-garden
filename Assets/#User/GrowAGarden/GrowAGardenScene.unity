@@ -3573,10 +3573,10 @@ MonoBehaviour:
   DoCleanBuild: 0
   AssetName: Grow A Garden
   AssetDescription: Just a Chill world to grow and sell plants with your friends
-    =) \n v2026.3.1-0001
+    =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: 87f14e3e868929641aa61e1b9708e8e3, type: 3}
-  LastBuildSizeBytes: 19768640
+  LastBuildSizeBytes: 19768576
   BoundsIsDisplay: 0
   World360PreviewPos: {x: 0, y: 0, z: 0}
   IsOpen360Preview: 0
@@ -3603,9 +3603,9 @@ MonoBehaviour:
   SelectedIndexForSize: 0
   WorldLimitations:
     Free:
-      Count: 1
+      Count: 2
       MaxCount: 10
-      AvailableSize: 294804160
+      AvailableSize: 294288928
     Paid:
       Entries: []
   OwnedTokens: []
@@ -3614,7 +3614,8 @@ MonoBehaviour:
   UploadedWorlds:
   - Id: 9107
     Name: Grow A Garden
-    Description: Test World Not Ready for Use
+    Description: Just a Chill world to grow and sell plants with your friends =)
+      \n v2026.3.1-0001
     Creator:
       UserId: effa171e-b6a2-43c2-8b71-ee1a312e706d
       Nickname: Vulps22
@@ -3624,7 +3625,7 @@ MonoBehaviour:
       SDKVersion:
         Major: 3
         Minor: 1
-        Patch: 2
+        Patch: 3
       UnityVersion: 6000.3.5f2
       PakagesInfo:
       - Type: 1
@@ -3638,7 +3639,44 @@ MonoBehaviour:
       Value: 0
       VotersCount: 0
     ValidationRecords: []
-    FileSize: 7233808
+    FileSize: 19768640
+    Tags: 0
+    Subcategory: 1
+    WorldSize: 100
+    Length: 0
+    BlockchainType: 3
+    Scripting:
+      ScriptingEnabled: 1
+      AssemblyName: GrowAGarden
+      Version: 1.0.6
+    TipJarUsed: 0
+  - Id: 9409
+    Name: Academy World
+    Description: Homework be like
+    Creator:
+      UserId: effa171e-b6a2-43c2-8b71-ee1a312e706d
+      Nickname: Vulps22
+    IsPublic: 0
+    Version: 0
+    Framework:
+      SDKVersion:
+        Major: 3
+        Minor: 1
+        Patch: 3
+      UnityVersion: 6000.3.5f2
+      PakagesInfo:
+      - Type: 1
+        Version: 1.16.1
+      - Type: 0
+        Version: 17.3.0
+    Category: 5
+    RestrictionCount: 0
+    Attributes: []
+    Rating:
+      Value: 0
+      VotersCount: 0
+    ValidationRecords: []
+    FileSize: 515232
     Tags: 0
     Subcategory: 1
     WorldSize: 100
@@ -14335,6 +14373,136 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+--- !u!1 &1400594671
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1400594672}
+  - component: {fileID: 1400594673}
+  m_Layer: 22
+  m_Name: nature
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1400594672
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1400594671}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 3.5819, y: 0.5, z: 5.57313}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1830304809}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &1400594673
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1400594671}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 24300002, guid: 14c7c4ee6fa162f4690801c90d189592,
+    type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: d1deb11e60b8f0f419363603c4046a0f, type: 3}
+  m_PlayOnAwake: 1
+  m_Volume: 0.5
+  m_Pitch: 1
+  Loop: 1
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1001 &1415118352
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18150,6 +18318,7 @@ Transform:
   - {fileID: 650578205}
   - {fileID: 708881638}
   - {fileID: 877311752}
+  - {fileID: 1400594672}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1830304810
