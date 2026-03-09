@@ -18,10 +18,10 @@ namespace GrowAGarden
         [SerializeField] public NetworkBridge networkBridge;
         [SerializeField] protected XRGrabInteractable _grabInteractable;
 
-        public bool IsSeed = false;
-        public bool InShop = false;
-        public bool IsBought = false;
-        public bool IsInPool = false;
+        public bool IsSeed { get; private set; }
+        public bool InShop { get; private set; }
+        public bool IsBought { get; private set; }
+        public bool IsInPool { get; private set; }
         protected long _plantedTimestamp;
         protected PlayerBalance _grabber;
         protected PlantSlot _occupiedSlot;
