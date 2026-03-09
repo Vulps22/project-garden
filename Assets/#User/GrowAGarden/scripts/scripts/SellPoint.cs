@@ -17,7 +17,7 @@ namespace GrowAGarden
             if (plant == null) return;
             if (plant.IsSeed) return; // Don't sell seeds, only plants
             EconomyManager.Instance.AddBalance(plant.GetGrabber().GetID(), plant.seedDefinition.sellValue);
-            plant.ToBeSold();
+            plant.Sell();
         }
     }
 }
