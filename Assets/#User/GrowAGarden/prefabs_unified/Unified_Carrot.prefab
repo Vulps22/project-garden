@@ -23,7 +23,8 @@ GameObject:
   - component: {fileID: 9187799288020743522}
   - component: {fileID: 2940856061778804057}
   - component: {fileID: 2430608988058198762}
-  - component: {fileID: 4170068652358952383}
+  - component: {fileID: 2976554528717412535}
+  - component: {fileID: 8285347141462554932}
   m_Layer: 0
   m_Name: Unified_Carrot
   m_TagString: Untagged
@@ -423,7 +424,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.AuthorityController
   _networkBridge: {fileID: 1434875256084407990}
---- !u!114 &4170068652358952383
+--- !u!114 &2976554528717412535
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -432,14 +433,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 7163453513877751585}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 43b451e77796110799fc7d928620f209, type: 3}
+  m_Script: {fileID: 11500000, guid: 1e95b202dd8f012a28238d4bd702b328, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SlotTether
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ReturnableEntity
   _rigidbody: {fileID: 1054046652925961132}
   _networkBridge: {fileID: 1434875256084407990}
-  _spring: 60
-  _damper: 12
-  _rotationLerp: 8
+  _speed: 0.35
+  _arriveDistance: 0.1
+  _returnTo: {fileID: 0}
+  _autoRecall: 0
+  _grabInteractable: {fileID: 4248909366719016378}
+--- !u!114 &8285347141462554932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163453513877751585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a07887f059b8fe0a7bc1a678d6de02bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.AlignableEntity
+  _rigidbody: {fileID: 1054046652925961132}
+  _networkBridge: {fileID: 1434875256084407990}
+  _degreesPerSecond: 90
+  _arriveAngle: 5
+  _autoRealign: 0
+  _grabInteractable: {fileID: 4248909366719016378}
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0
