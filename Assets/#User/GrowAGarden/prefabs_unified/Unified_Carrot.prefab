@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: -1307947511273831759}
   - component: {fileID: 9187799288020743522}
   - component: {fileID: 2940856061778804057}
+  - component: {fileID: 2430608988058198762}
   m_Layer: 0
   m_Name: Unified_Carrot
   m_TagString: Untagged
@@ -408,6 +409,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: acd7c84790d7f5c84b01488034eac2af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SingleHolderFilter
+--- !u!114 &2430608988058198762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163453513877751585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a0d79c1544a24d928b67bb6d2676f69, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.AuthorityController
+  _networkBridge: {fileID: 1434875256084407990}
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0

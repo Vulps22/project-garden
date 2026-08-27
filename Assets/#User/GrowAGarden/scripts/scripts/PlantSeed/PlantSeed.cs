@@ -9,7 +9,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace GrowAGarden
 {
 
-    public abstract class PlantSeed : MonoBehaviour, IHeldObject, IKinematicSource, ILifecycleNotifier
+    public abstract class PlantSeed : MonoBehaviour, IHeldObject, IKinematicSource, IAuthoritySource, ILifecycleNotifier
     {
 
         [SerializeField] protected MeshRenderer _SeedModel;
@@ -41,6 +41,13 @@ namespace GrowAGarden
             }
         }
 
+        /// <summary>
+        /// Stock belongs to the world, not to whoever last touched it. A seed nobody is
+        /// holding, sitting in the pool or in a shop slot, should be owned by the master.
+        /// The holder check is what stops the master claiming a seed out of a player's hand.
+        /// </summary>
+        public bool ShouldMasterOwn => (IsInPool || InShop) && string.IsNullOrEmpty(HolderId);
+
         private Renderer[] _renderers;
         private Collider[] _colliders;
         protected long _plantedTimestamp;
@@ -69,6 +76,7 @@ namespace GrowAGarden
         protected virtual void Start()
         {
             networkBridge.OnSpawned += OnSpawned;
+            networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
             SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
@@ -79,8 +87,18 @@ namespace GrowAGarden
         /// <summary>
         /// Unsubscribes from all events to prevent memory leaks.
         /// </summary>
+        /// <summary>
+        /// broadcastState() is a no-op without authority, so anything that changed while this
+        /// client did not own the object was never sent. Re-send once the transfer lands.
+        /// </summary>
+        private void OnStateAuthorityChanged(bool hasAuthority)
+        {
+            if (hasAuthority) broadcastState();
+        }
+
         protected virtual void OnDestroy()
         {
+            networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
             SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
@@ -354,6 +372,10 @@ namespace GrowAGarden
                     BytesReader grabReader = new BytesReader(data);
                     bool hasGrabber = grabReader.NextByte() == 1;
                     _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabReader.NextString()) : null;
+                    // Who holds it is lifecycle. This is the one place _grabber changes on
+                    // every client, so raising here lets AuthorityController reclaim a shop
+                    // seed the moment it leaves a player's hand.
+                    LifecycleChanged?.Invoke();
                     break;
                 case PlantMessageType.sold:
                     _grabber = null;
