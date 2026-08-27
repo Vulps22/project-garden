@@ -16,7 +16,18 @@ namespace GrowAGarden
             PlantSeed plant = other.GetComponent<PlantSeed>();
             if (plant == null) return;
             if (plant.IsSeed) return; // Don't sell seeds, only plants
-            EconomyManager.Instance.AddBalance(plant.GetGrabber().GetID(), plant.seedDefinition.sellValue);
+
+            // Master only. A null grabber means we do not know who to pay, so abandon the
+            // sale rather than consuming the plant for nothing — it stays grabbable and the
+            // player can drop it in again once the grabber RPC has landed.
+            PlayerBalance seller = plant.GetGrabber();
+            if (seller == null)
+            {
+                Logger.Warn($"OnTriggerEnter() '{gameObject.name}' — plant '{plant.name}' has no known grabber, sale abandoned");
+                return;
+            }
+
+            EconomyManager.Instance.AddBalance(seller.GetID(), plant.seedDefinition.sellValue);
             plant.ToBeSold();
         }
     }

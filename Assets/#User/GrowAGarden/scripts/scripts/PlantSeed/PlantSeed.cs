@@ -37,12 +37,24 @@ namespace GrowAGarden
         public bool Process(IXRSelectInteractor interactor, IXRSelectInteractable interactable)
         {
             if (IsBought) return true;
-            PlayerBalance localPlayer = EconomyManager.Instance.GetLocalPlayer();
+
+            // The balance table is cleared and rebuilt from every broadcast, so the local
+            // entry can be transiently absent on a client that has not been registered by
+            // the master yet. Refuse the grab rather than throwing or handing out a free
+            // seed — the next broadcast restores it and the player can simply grab again.
+            PlayerBalance localPlayer = EconomyManager.Instance == null
+                ? null
+                : EconomyManager.Instance.GetLocalPlayer();
+            if (localPlayer == null)
+            {
+                Logger.Warn($"Process() '{gameObject.name}' — local balance unavailable, refusing grab");
+                return false;
+            }
+
             bool isHolder = _grabber != null && _grabber.GetID() == localPlayer.GetID();
             bool grabberFree = _grabber == null || isHolder;
             bool canAfford = !InShop || localPlayer.GetBalance() >= seedDefinition.buyPrice;
-            bool result = grabberFree && canAfford;
-            return result;
+            return grabberFree && canAfford;
         }
 
         /// <summary>
@@ -306,7 +318,18 @@ namespace GrowAGarden
         /// </summary>
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
-            _grabber = EconomyManager.Instance.GetLocalPlayer();
+            // Reachable even when Process() would have refused: bought seeds short-circuit
+            // the affordability check. Without a known local balance there is no id to
+            // broadcast, so leave _grabber null — the other call sites now tolerate that.
+            _grabber = EconomyManager.Instance == null
+                ? null
+                : EconomyManager.Instance.GetLocalPlayer();
+            if (_grabber == null)
+            {
+                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local balance unavailable, grabber not broadcast");
+                return;
+            }
+
             string id = _grabber.GetID();
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);

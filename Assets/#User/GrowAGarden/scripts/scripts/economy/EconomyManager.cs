@@ -84,6 +84,11 @@ namespace GrowAGarden
         public void AddBalance(string playerId, int amount)
         {
             if (!SceneNetworking.IsMasterClient) return;
+            if (string.IsNullOrEmpty(playerId))
+            {
+                Logger.Warn("[EconomyManager] AddBalance - null/empty playerId, ignoring");
+                return;
+            }
             if (!_balances.TryGetValue(playerId, out var balance))
             {
                 return;
@@ -98,6 +103,11 @@ namespace GrowAGarden
         /// </summary>
         public void RemoveBalance(string playerId, int amount)
         {
+            if (string.IsNullOrEmpty(playerId))
+            {
+                Logger.Warn("[EconomyManager] RemoveBalance - null/empty playerId, ignoring");
+                return;
+            }
             if (!_balances.TryGetValue(playerId, out var balance))
             {
                 Logger.Warn($"[EconomyManager] RemoveBalance - playerId={playerId} not found in _balances");
@@ -139,7 +149,7 @@ namespace GrowAGarden
                 return;
             }
 
-            _balances.TryGetValue(_localPlayerId, out PlayerBalance oldBalance);
+            PlayerBalance oldBalance = GetLocalPlayer();
 
             var reader = new BytesReader(data);
             int count = reader.NextByte();
@@ -154,10 +164,19 @@ namespace GrowAGarden
             }
 
             UpdateDisplay();
-            _balances.TryGetValue(_localPlayerId, out var localBalance);
-            if ((localBalance != null && oldBalance != null) && (localBalance != oldBalance))
+
+            // Compare by value, not by reference. The rebuild above replaces every
+            // PlayerBalance with a fresh instance, so a reference comparison is always
+            // unequal and would raise the event on every broadcast whether or not the
+            // balance actually moved. oldBalance still holds its pre-broadcast value —
+            // Clear() drops the dictionary entries, not the objects themselves.
+            PlayerBalance localBalance = GetLocalPlayer();
+            if (localBalance != null && oldBalance != null)
             {
-                OnPlayerBalanceChanged?.Invoke(localBalance.GetBalance(), oldBalance.GetBalance());
+                int newValue = localBalance.GetBalance();
+                int oldValue = oldBalance.GetBalance();
+                if (newValue != oldValue)
+                    OnPlayerBalanceChanged?.Invoke(newValue, oldValue);
             }
         }
 
@@ -179,14 +198,22 @@ namespace GrowAGarden
             _balanceDisplayManager.Set(names, balances);
         }
 
+        /// <summary>
+        /// Returns the local player's balance, or null if it is not currently known.
+        /// _localPlayerId is unset until OnLocalPlayerJoined fires, and Dictionary lookups
+        /// throw on a null key — so this must be guarded, not just null-checked by callers.
+        /// </summary>
         public PlayerBalance GetLocalPlayer()
         {
+            if (string.IsNullOrEmpty(_localPlayerId)) return null;
             _balances.TryGetValue(_localPlayerId, out PlayerBalance player);
             return player;
         }
 
+        /// <summary>Returns the balance for <paramref name="id"/>, or null if unknown.</summary>
         public PlayerBalance GetPlayer(string id)
         {
+            if (string.IsNullOrEmpty(id)) return null;
             _balances.TryGetValue(id, out PlayerBalance player);
             return player;
         }
