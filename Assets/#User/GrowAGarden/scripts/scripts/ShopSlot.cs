@@ -44,11 +44,12 @@ namespace GrowAGarden
 
             if (seedMissing)
             {
-                if (_currentSeed != null)
-                {
-                    _currentSeed = null;
-                    SpawnSeed();
-                }
+                // Must run even when _currentSeed is already null: the join-time SpawnSeed()
+                // fires from OnLocalPlayerJoined, before Fusion has spawned the pooled scene
+                // objects, so UnifiedPool.Restore() has not yet flagged anything IsInPool and
+                // Claim() returns null. This retry is what stocks the slot once it can.
+                _currentSeed = null;
+                SpawnSeed();
             }
         }
 
@@ -79,6 +80,10 @@ namespace GrowAGarden
         {
             if (other.TryGetComponent(out PlantSeed seed) && seed.IsSeed)
             {
+                // Only latch seeds this slot actually sells — a seed of another type carried
+                // through the trigger must not become this slot's _currentSeed.
+                if (seed.seedDefinition == null || seed.seedDefinition.seedId != _seedDefinition.seedId) return;
+
                 if(!seed.IsBought) _currentSeed = seed;
             }
         }
@@ -89,10 +94,29 @@ namespace GrowAGarden
             {
                 if (!seed.IsBought && seed.InShop)
                 {
+                    // Runs on every client; the deduction is optimistic (#39). A client that
+                    // has not yet received the grabber RPC has nobody to charge — skip the
+                    // local deduction and let the master's next broadcast reconcile it. On the
+                    // master itself this means the purchase goes uncharged, so log louder.
+                    PlayerBalance buyer = seed.GetGrabber();
+
                     _currentSeed.InShop = false;
                     _currentSeed.IsBought = true;
                     _currentSeed.broadcastState();
-                    EconomyManager.Instance.RemoveBalance(seed.GetGrabber().GetID(), _seedDefinition.buyPrice);
+
+                    if (buyer != null)
+                    {
+                        EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
+                    }
+                    else if (SceneNetworking.IsMasterClient)
+                    {
+                        Logger.Error($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' left the shop with no known grabber on the master; purchase NOT charged");
+                    }
+                    else
+                    {
+                        Logger.Warn($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' has no known grabber yet, skipping optimistic local deduction");
+                    }
+
                     _currentSeed = null;
                     if (SceneNetworking.IsMasterClient)
                         SpawnSeed();

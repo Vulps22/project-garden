@@ -24,7 +24,15 @@ namespace GrowAGarden
 
         public void OnGrabbed(SelectEnterEventArgs args)
         {
-            PlayerBalance player = EconomyManager.Instance.GetLocalPlayer();
+            PlayerBalance player = EconomyManager.Instance == null
+                ? null
+                : EconomyManager.Instance.GetLocalPlayer();
+            if (player == null)
+            {
+                // Leave 'used' false so the boost can be re-triggered once balances arrive.
+                Logger.Warn("[Debug_EconomyBoost] local balance unavailable, boost not applied");
+                return;
+            }
             EconomyManager.Instance.AddBalance(player.GetID(), 10000000);
             used = true;
         }
