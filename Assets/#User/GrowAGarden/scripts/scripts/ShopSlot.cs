@@ -87,6 +87,20 @@ namespace GrowAGarden
         }
 
         /// <summary>
+        /// Puts a seed back where it belongs without charging anyone. Used for every exit that
+        /// is not a genuine purchase; the slot keeps its seed, so nothing restocks.
+        /// </summary>
+        private void ReturnToSlot(PlantSeed seed, string why)
+        {
+            Logger.Warn($"ReturnToSlot() '{gameObject.name}' — seed '{seed.name}' {why}; not a sale");
+
+            seed.ForceRelease();
+            seed.PlaceInShop(transform.position, transform.rotation);
+            Tether(seed);
+            _currentSeed = seed;
+        }
+
+        /// <summary>
         /// Refuses a purchase the player cannot afford: drops it out of their hand and puts it
         /// back in the slot. The seed stays this slot's current seed, so no restock happens.
         /// </summary>
@@ -123,36 +137,45 @@ namespace GrowAGarden
             {
                 if (!seed.IsBought && seed.InShop)
                 {
-                    // Runs on every client. The buyer's balance comes from the replicated
-                    // table, so every client reaches the same verdict without a round trip --
-                    // the seed reacts to the hand immediately rather than travelling for
-                    // ~100ms and then snapping back.
+                    // A seed leaving the slot is only a purchase if someone is actually
+                    // carrying it away. Stock is physical now, so it can be shoved out by a
+                    // hand, an elbow or another seed -- none of which is a sale. Treating an
+                    // unheld exit as a purchase handed out free seeds and restocked the slot,
+                    // which is a straightforward way to print unlimited crops.
                     PlayerBalance buyer = seed.GetGrabber();
+
+                    if (!seed.IsHeld)
+                    {
+                        ReturnToSlot(seed, "was knocked out of the slot, not taken");
+                        return;
+                    }
 
                     if (buyer == null)
                     {
-                        // No known grabber yet: the grabber RPC has not landed here. Let it
-                        // leave rather than rejecting a purchase that may well be affordable;
-                        // the master's next broadcast reconciles.
-                        if (SceneNetworking.IsMasterClient)
-                            Logger.Error($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' left the shop with no known grabber on the master; purchase NOT charged");
-                        else
-                            Logger.Warn($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' has no known grabber yet, skipping optimistic local deduction");
+                        // Held, but we do not yet know by whom -- the grabber RPC has not
+                        // landed here. Refuse rather than guess: an uncharged sale cannot be
+                        // undone, whereas the player can simply pick it up again.
+                        ReturnToSlot(seed, "has no known grabber yet");
+                        return;
+                    }
 
-                        Untether(_currentSeed);
-                        _currentSeed.Purchase();
-                    }
-                    else if (buyer.GetBalance() >= _seedDefinition.buyPrice)
+                    if (!seed.HasKnownAuthority)
                     {
-                        Untether(_currentSeed);
-                        _currentSeed.Purchase();
-                        EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
+                        // Nobody owns the object, so Purchase()'s broadcast would reach no one
+                        // and the sale would exist only on this client.
+                        ReturnToSlot(seed, "has no state authority");
+                        return;
                     }
-                    else
+
+                    if (buyer.GetBalance() < _seedDefinition.buyPrice)
                     {
                         RejectPurchase(seed, buyer);
-                        return;   // slot keeps its seed; nothing to restock
+                        return;
                     }
+
+                    Untether(_currentSeed);
+                    _currentSeed.Purchase();
+                    EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
 
                     _currentSeed = null;
                     if (SceneNetworking.IsMasterClient)

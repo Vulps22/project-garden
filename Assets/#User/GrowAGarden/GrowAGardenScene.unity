@@ -3586,7 +3586,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: b0c80db92e9d16b228b4500d9158101d, type: 3}
-  LastBuildSizeBytes: 17406560
+  LastBuildSizeBytes: 14801312
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -3614,7 +3614,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 294743216
+      AvailableSize: 297348464
     Paid:
       Entries: []
   OwnedTokens: []
@@ -20319,6 +20319,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4101381880705874807, guid: 828e87013a6a3164190665cdf93ec775,
+        type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5878499844870590353, guid: 828e87013a6a3164190665cdf93ec775,
         type: 3}
