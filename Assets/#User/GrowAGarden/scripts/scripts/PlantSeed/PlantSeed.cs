@@ -37,7 +37,7 @@ namespace GrowAGarden
                 if (IsInPool) return true;   // parked out of the world
                 if (!IsSeed) return true;    // planted, growing or grown — anchored to its slot
                 if (InShop) return false;    // physical; recalled to the slot when asked
-                return true;                 // free seed — becomes false in Phase 4
+                return false;                // free seed — falls, lands and floats
             }
         }
 
@@ -47,7 +47,7 @@ namespace GrowAGarden
         /// else is kinematic, where gravity is ignored anyway.
         ///
         /// </summary>
-        public bool ShouldUseGravity => false;
+        public bool ShouldUseGravity => IsSeed && !IsInPool && !InShop;
 
         /// <summary>
         /// Stock belongs to the world, not to whoever last touched it. A seed nobody is
@@ -56,12 +56,41 @@ namespace GrowAGarden
         /// </summary>
         public bool ShouldMasterOwn => (IsInPool || InShop) && string.IsNullOrEmpty(HolderId);
 
+        private HoveringEntity _hovering;
         private Renderer[] _renderers;
         private Collider[] _colliders;
         protected long _plantedTimestamp;
         protected PlayerBalance _grabber;
         protected PlantSlot _occupiedSlot;
         protected int _growthPhase = 0;
+
+        /// <summary>
+        /// A bought seed loose in the world and nobody holding it. The one condition that
+        /// decides whether it floats.
+        /// </summary>
+        private bool IsLooseInWorld => IsSeed && !IsInPool && !InShop && !IsHeld;
+
+        /// <summary>
+        /// Drives the hovering component from lifecycle changes.
+        ///
+        /// PlantSeed decides because PlantSeed is the only thing that knows: it owns the
+        /// lifecycle flags and the grab callbacks. Doing it in one handler rather than sprinkling
+        /// Begin/Stop through Plant, Sell, ReturnToPool and the grab callbacks means there is a
+        /// single place that can be wrong, and no exit path that can forget.
+        /// </summary>
+        private void UpdateHovering()
+        {
+            if (_hovering == null) return;
+
+            if (IsLooseInWorld)
+            {
+                if (!_hovering.IsHovering) _hovering.BeginHovering(shouldFallFirst: true);
+            }
+            else if (_hovering.IsHovering)
+            {
+                _hovering.StopHovering();
+            }
+        }
 
         /// <summary>
         /// Who is holding this, for <see cref="SingleHolderFilter"/>. Null when free.
@@ -99,6 +128,9 @@ namespace GrowAGarden
         /// </summary>
         protected virtual void Start()
         {
+            _hovering = GetComponent<HoveringEntity>();
+            LifecycleChanged += UpdateHovering;
+
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
@@ -122,6 +154,7 @@ namespace GrowAGarden
 
         protected virtual void OnDestroy()
         {
+            LifecycleChanged -= UpdateHovering;
             networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
             SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
