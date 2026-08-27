@@ -71,6 +71,20 @@ namespace GrowAGarden
             _currentSeed.PlaceInShop(transform.position, transform.rotation);
         }
 
+        /// <summary>
+        /// Refuses a purchase the player cannot afford: drops it out of their hand and puts it
+        /// back in the slot. The seed stays this slot's current seed, so no restock happens.
+        /// </summary>
+        private void RejectPurchase(PlantSeed seed, PlayerBalance buyer)
+        {
+            Logger.Info($"RejectPurchase() '{gameObject.name}' — '{buyer.GetID()}' cannot afford {_seedDefinition.seedId} ({buyer.GetBalance()} < {_seedDefinition.buyPrice})");
+
+            seed.ForceRelease();
+            // PlaceInShop re-enables the grab and restores position, rotation and shop flags.
+            seed.PlaceInShop(transform.position, transform.rotation);
+            _currentSeed = seed;
+        }
+
         private void OnTriggerEnter(Collider other)
         {
             if (other.TryGetComponent(out PlantSeed seed) && seed.IsSeed)
@@ -89,25 +103,33 @@ namespace GrowAGarden
             {
                 if (!seed.IsBought && seed.InShop)
                 {
-                    // Runs on every client; the deduction is optimistic (#39). A client that
-                    // has not yet received the grabber RPC has nobody to charge — skip the
-                    // local deduction and let the master's next broadcast reconcile it. On the
-                    // master itself this means the purchase goes uncharged, so log louder.
+                    // Runs on every client. The buyer's balance comes from the replicated
+                    // table, so every client reaches the same verdict without a round trip --
+                    // the seed reacts to the hand immediately rather than travelling for
+                    // ~100ms and then snapping back.
                     PlayerBalance buyer = seed.GetGrabber();
 
-                    _currentSeed.Purchase();
+                    if (buyer == null)
+                    {
+                        // No known grabber yet: the grabber RPC has not landed here. Let it
+                        // leave rather than rejecting a purchase that may well be affordable;
+                        // the master's next broadcast reconciles.
+                        if (SceneNetworking.IsMasterClient)
+                            Logger.Error($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' left the shop with no known grabber on the master; purchase NOT charged");
+                        else
+                            Logger.Warn($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' has no known grabber yet, skipping optimistic local deduction");
 
-                    if (buyer != null)
-                    {
-                        EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
+                        _currentSeed.Purchase();
                     }
-                    else if (SceneNetworking.IsMasterClient)
+                    else if (buyer.GetBalance() >= _seedDefinition.buyPrice)
                     {
-                        Logger.Error($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' left the shop with no known grabber on the master; purchase NOT charged");
+                        _currentSeed.Purchase();
+                        EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
                     }
                     else
                     {
-                        Logger.Warn($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' has no known grabber yet, skipping optimistic local deduction");
+                        RejectPurchase(seed, buyer);
+                        return;   // slot keeps its seed; nothing to restock
                     }
 
                     _currentSeed = null;

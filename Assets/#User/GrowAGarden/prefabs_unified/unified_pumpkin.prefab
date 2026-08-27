@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 8105174715393343565}
   - component: {fileID: 4706540214885818669}
   - component: {fileID: 3039449304181889444}
+  - component: {fileID: 2126718143703774169}
   m_Layer: 0
   m_Name: unified_pumpkin
   m_TagString: Untagged
@@ -378,6 +379,18 @@ MonoBehaviour:
   _rigidbody: {fileID: 3238997438953549519}
   _networkBridge: {fileID: 544014741469173732}
   _grabInteractable: {fileID: 4773445120126099651}
+--- !u!114 &2126718143703774169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2878792842855438303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acd7c84790d7f5c84b01488034eac2af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SingleHolderFilter
 --- !u!1001 &6982210231104125602
 PrefabInstance:
   m_ObjectHideFlags: 0
