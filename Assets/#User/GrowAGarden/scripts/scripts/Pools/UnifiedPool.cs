@@ -3,7 +3,6 @@ using SomniumSpace.Network.Bridge;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 namespace GrowAGarden
 {
@@ -49,7 +48,7 @@ namespace GrowAGarden
             {
                 return null;
             }
-            plant.IsInPool = false;
+            plant.Claim();
             return plant;
         }
 
@@ -97,19 +96,7 @@ namespace GrowAGarden
                 return false;
             }
 
-            plant.IsInPool = true;
-            plant.transform.position = transform.position;
-            plant.transform.rotation = transform.rotation;
-            plant.transform.localScale = Vector3.one;
-
-            var grab = plant.GetComponent<XRGrabInteractable>();
-            var rb = plant.GetComponent<Rigidbody>();
-            if (grab != null) grab.enabled = true;
-            if (rb != null) rb.isKinematic = true;
-
-            plant.SetState(true);
-
-            plant.broadcastState();
+            plant.ReturnToPool(transform.position, transform.rotation);
 
             return true;
         }

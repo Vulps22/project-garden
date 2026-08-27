@@ -68,12 +68,7 @@ namespace GrowAGarden
             }
 
 
-            _currentSeed.transform.position = transform.position;
-            _currentSeed.transform.rotation = transform.rotation;
-
-            _currentSeed.SetState(true);
-            _currentSeed.InShop = true;
-            _currentSeed.IsBought = false;
+            _currentSeed.PlaceInShop(transform.position, transform.rotation);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -100,9 +95,7 @@ namespace GrowAGarden
                     // master itself this means the purchase goes uncharged, so log louder.
                     PlayerBalance buyer = seed.GetGrabber();
 
-                    _currentSeed.InShop = false;
-                    _currentSeed.IsBought = true;
-                    _currentSeed.broadcastState();
+                    _currentSeed.Purchase();
 
                     if (buyer != null)
                     {

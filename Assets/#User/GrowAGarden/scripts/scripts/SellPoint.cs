@@ -28,7 +28,7 @@ namespace GrowAGarden
             }
 
             EconomyManager.Instance.AddBalance(seller.GetID(), plant.seedDefinition.sellValue);
-            plant.ToBeSold();
+            plant.Sell();
         }
     }
 }
