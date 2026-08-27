@@ -480,6 +480,8 @@ MonoBehaviour:
   _riseSpeed: 0.6
   _rotateWhileHovering: 1
   _spinDegreesPerSecond: 20
+  _keepUpright: 1
+  _uprightDegreesPerSecond: 90
   _bobAmplitude: 0.03
   _bobSpeed: 1.2
 --- !u!1001 &6946636119321826000
