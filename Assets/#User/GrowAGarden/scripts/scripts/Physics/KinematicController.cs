@@ -69,14 +69,29 @@ namespace GrowAGarden
         public void Apply()
         {
             if (_source == null || _rigidbody == null) return;
-            if (_networkBridge == null || _networkBridge.Object == null) return;
-            if (!_networkBridge.Object.HasStateAuthority) return;
+
+            // Gravity is applied on EVERY client, unlike isKinematic.
+            //
+            // NetworkRigidbody3D.GetFlags() packs useGravity into NetworkRigidbodyFlags and
+            // sends it, but nothing on the receiving side ever reads it back out -- isKinematic
+            // is applied to proxies, useGravity is not. So a proxy keeps whatever the prefab
+            // shipped with, which is true. Once shop stock became non-kinematic that left every
+            // non-master client with a seed that had weight and no tether to hold it, and the
+            // stock fell out of the barrows on load.
+            //
+            // The lifecycle flags this derives from are replicated (broadcastState), and the
+            // proxy state-sync path raises LifecycleChanged, so every client can work out the
+            // right answer for itself.
+            bool wantGravity = _source.ShouldUseGravity;
+            if (_rigidbody.useGravity != wantGravity) _rigidbody.useGravity = wantGravity;
+
+            // isKinematic IS replicated from the authority, so writing it on a proxy would be
+            // undone on the next sync. Only the owner sets it.
+            var obj = _networkBridge == null ? null : _networkBridge.Object;
+            if (obj == null || !obj.HasStateAuthority) return;
 
             bool wantKinematic = _source.ShouldBeKinematic;
             if (_rigidbody.isKinematic != wantKinematic) _rigidbody.isKinematic = wantKinematic;
-
-            bool wantGravity = _source.ShouldUseGravity;
-            if (_rigidbody.useGravity != wantGravity) _rigidbody.useGravity = wantGravity;
 
             // A body that went to sleep while kinematic will not respond to the tether's
             // forces until something wakes it.

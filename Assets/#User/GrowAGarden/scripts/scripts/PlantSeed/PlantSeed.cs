@@ -37,14 +37,15 @@ namespace GrowAGarden
                 if (IsInPool) return true;   // parked out of the world
                 if (!IsSeed) return true;    // planted, growing or grown — anchored to its slot
                 if (InShop) return false;    // physical, held in place by SlotTether
-                return true;                 // free seed — becomes false when seeds get gravity
+                return true;                 // free seed — becomes false in Phase 4
             }
         }
 
         /// <summary>
-        /// Shop stock hangs at its slot rather than resting on it, so the tether is holding
-        /// position rather than fighting a constant downward pull. Everything else is either
-        /// kinematic, where gravity is ignored anyway, or not yet given weight.
+        /// Only a bought seed loose in the world has weight. Shop stock hangs at its slot, so
+        /// the tether holds position instead of fighting a constant downward pull; everything
+        /// else is kinematic, where gravity is ignored anyway.
+        ///
         /// </summary>
         public bool ShouldUseGravity => false;
 
@@ -66,6 +67,22 @@ namespace GrowAGarden
         /// Who is holding this, for <see cref="SingleHolderFilter"/>. Null when free.
         /// </summary>
         public string HolderId => _grabber?.GetID();
+
+        /// <summary>
+        /// True while an interactor actually has hold of this. A seed that merely got knocked
+        /// out of a slot is not held, and must not be treated as a purchase.
+        /// </summary>
+        public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
+
+        /// <summary>
+        /// True when some client owns this object. Authority is None between the owner leaving
+        /// and SceneNetworking reassigning it, and state changes made in that window go
+        /// nowhere, so a sale decided there would not be broadcast to anyone.
+        /// </summary>
+        public bool HasKnownAuthority =>
+            networkBridge != null
+            && networkBridge.Object != null
+            && !networkBridge.Object.StateAuthority.IsNone;
 
         /// <summary>
         /// Cancels an in-progress grab. Disabling the interactable makes XRI end the select,
