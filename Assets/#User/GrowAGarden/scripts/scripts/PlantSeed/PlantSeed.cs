@@ -36,7 +36,7 @@ namespace GrowAGarden
             {
                 if (IsInPool) return true;   // parked out of the world
                 if (!IsSeed) return true;    // planted, growing or grown — anchored to its slot
-                if (InShop) return false;    // physical, held in place by SlotTether
+                if (InShop) return false;    // physical; recalled to the slot when asked
                 return true;                 // free seed — becomes false in Phase 4
             }
         }
@@ -222,6 +222,16 @@ namespace GrowAGarden
         {
             transform.position = position;
             transform.rotation = rotation;
+            RestoreToShop();
+        }
+
+        /// <summary>
+        /// Puts this back into shop-stock state where it currently stands, without moving it.
+        /// Used when a seed is being returned to its slot under its own steam — teleporting it
+        /// would defeat the point of gliding it back.
+        /// </summary>
+        public void RestoreToShop()
+        {
             SetState(true);
             _grabInteractable.enabled = true;   // HideForPool() disabled it on the way in
             InShop = true;
