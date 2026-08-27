@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 5565603803181003875}
   - component: {fileID: 222089623956227069}
   - component: {fileID: 5179479689449831253}
+  - component: {fileID: 6710853812882293672}
   m_Layer: 0
   m_Name: Unified_turnip
   m_TagString: Untagged
@@ -61,10 +62,6 @@ MonoBehaviour:
   seedDefinition: {fileID: 5179479689449831253}
   networkBridge: {fileID: 1084810240955029992}
   _grabInteractable: {fileID: 739378399254163780}
-  IsSeed: 0
-  InShop: 0
-  IsBought: 0
-  IsInPool: 0
   _PlantModel: {fileID: 3105094630313381368}
   _PlantCollider: {fileID: 710292031075489383}
 --- !u!114 &1084810240955029992
@@ -381,6 +378,21 @@ MonoBehaviour:
   displayName: Turnip
   buyPrice: 18
   sellValue: 28
+--- !u!114 &6710853812882293672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4293189722181000532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c0ca45723e194d3b83a4a1c2c3b0268, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.KinematicController
+  _rigidbody: {fileID: 5872620870947861903}
+  _networkBridge: {fileID: 1084810240955029992}
+  _grabInteractable: {fileID: 739378399254163780}
 --- !u!1001 &3118238609914766344
 PrefabInstance:
   m_ObjectHideFlags: 0
