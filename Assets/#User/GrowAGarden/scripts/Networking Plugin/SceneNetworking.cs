@@ -1,6 +1,5 @@
 using Fusion;
 using Fusion.Sockets;
-using Fusion.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +15,9 @@ namespace GrowAGarden
     public class SceneNetworking : MonoBehaviour, INetworkRunnerCallbacks
     {
         // Static Public
+        public static event Action OnNetworkRunnerCreated;
         public static event Action OnLocalPlayerJoined; // Event when local player has joined
-        public static event Action OnBecomeWorldMaster; // Event when local player become master client
+        public static event Action OnBecomeWorldMaster; // Event when local player become shared mode master
         public static event Action<PlayerRef> OnOtherPlayerJoined;
         public static event Action<PlayerRef> OnOtherPlayerLeft;
         public static event Action<ReliableKey, byte[]> OnReliableMessageReceived; // Special message received from other player
@@ -26,23 +26,32 @@ namespace GrowAGarden
         public const NetworkObjectFlags NETWORK_OBJECT_DEFAULT_FLAGS = NetworkObjectFlags.V1 | NetworkObjectFlags.AllowStateAuthorityOverride;
 
         // Serialized Private
-        [Header("Alpha V2.0 [2025, 10, 07]")]
+        [Header("Alpha V3.0 [2026, 05, 01]")]
         [Tooltip("Enable if you want NetworkObjects to transfer authority when host quit")]
         [SerializeField] private bool _autoTransferObjectsAuthority = true;
+        [Header("Editor Testing Mode")]
+        [Tooltip("Enable if you want to use real photon server in editor mode")]
+        [SerializeField] private bool _editorConnectPhotonNetwork = false;
+        [Header("Network Prefabs")]
+        [SerializeField] private NetworkObject[] _networkPrefabs;
+        [SerializeField] private string[] _networkPrefabsGuid;
 
         // Fields Private 
         private bool _wasMasterClient = false;
         private float _t0 = 0; // Time since start of the scene
         private NetworkObject[] _sceneNetworkObjects = new NetworkObject[0];
+        private Guid[] _networkPrefabsGuidConverted;
+        private Dictionary<NetworkObject, NetworkPrefabId> _networkPrefabsID = new();
+        private List<(NetworkPrefabId, INetworkPrefabSource)> _prefabTableSnapshot = null; // DANGER, DO NOT CHANGE, COULD BREAKE SOMNIUM
+        private bool _isNetworkRunnerSetup = false;
 
         // Properties Public 
         public static SceneNetworking Instance { get; private set; } // Singleton instance
         public static NetworkRunner NetworkRunnerRef { get; private set; }
-        /// <summary>
-        /// Check If Local Player Has Joined
-        /// </summary>
         public static bool IsNetworkReady { get; private set; } = false; // Check if local player has joined
-        public SceneRef NetworkSceneRef { get; private set; }
+        public static bool IsConnected => NetworkRunnerRef != null || NetworkRunnerRef.IsRunning; // Networking is connected
+        public static bool IsDebugMode => !IsConnected; // Networking is not connected
+
         public static bool IsMasterClient
         {
             get
@@ -54,31 +63,123 @@ namespace GrowAGarden
             }
         }
 
+        public IReadOnlyDictionary<NetworkObject, NetworkPrefabId> NetworkPrefabs => _networkPrefabsID;
+        public SceneRef NetworkSceneRef { get; private set; }
+
         private void Awake()
         {
             Instance = this;
             _t0 = Time.time;
-            Log("Scene Loaded");
 
             GetAllNetworkObjects();
 
+            if (_editorConnectPhotonNetwork && Application.isEditor)
+                Editor_CreateDebugNetworkRunner();
+            
             InvokeRepeating(nameof(WaitForNetworkRunner), 0.0f, 0.05f);
+        }
+
+        private void OnDestroy()
+        {
+            RestorePrefabTable(); // Critical, do not remove
+            Instance = null;
+            NetworkRunnerRef = null;
+            IsNetworkReady = false;
+            OnNetworkRunnerCreated = null;
+            OnLocalPlayerJoined = null;
+            OnBecomeWorldMaster = null;
+            OnOtherPlayerJoined = null;
+            OnOtherPlayerLeft = null;
+            OnReliableMessageReceived = null;
+        }
+
+        // Play mode, debug Network Runner
+        private void Editor_CreateDebugNetworkRunner()
+        {
+            Log("Debug mode, create debug NetworkRunner");
+            var runnerGO = new GameObject("NetworkRunner");
+            NetworkRunnerRef = runnerGO.AddComponent<NetworkRunner>();
+            NetworkRunnerSetup(NetworkRunnerRef);
+
+            NetworkRunnerRef.StartGame(new StartGameArgs
+            {
+                GameMode = GameMode.Shared,
+                SessionName = "TestSession",
+            });
+        }
+
+        private void RegisterNetworkPrefabs()
+        {
+            // DANGER, DO NOT CHANGE, COULD BREAKE SOMNIUM
+            if (_prefabTableSnapshot == null)
+                _prefabTableSnapshot = NetworkProjectConfig.Global.PrefabTable.GetEntries().ToList();
+            // Prepare and validate prefabs list as well as Guid list
+            if (!PrepareNetworkPrefabs())
+            {
+                Debug.LogError("[SceneNetworking] Network major error, prefab list in not conformal, check inspector config");
+                return;
+            }
+            // Register network prefab from list
+            _networkPrefabsID = new Dictionary<NetworkObject, NetworkPrefabId>();
+            for (int n = 0; n < _networkPrefabs.Length; n ++)
+            {
+                var source = new NetworkPrefabSourceStatic
+                {
+                    Object = _networkPrefabs[n],
+                    AssetGuid = _networkPrefabsGuidConverted[n]
+                };
+                if (NetworkProjectConfig.Global.PrefabTable.TryAddSource(source, out NetworkPrefabId prefabId))
+                {
+                    _networkPrefabsID[_networkPrefabs[n]] = prefabId;
+                    Debug.Log($"[SceneNetworking] Registering network prefab: {_networkPrefabs[n].gameObject.name}");
+                }
+                else
+                {
+                    _networkPrefabsID.Clear();
+                    RestorePrefabTable();
+                    Debug.LogError($"[SceneNetworking] Failed to register network prefab: {_networkPrefabs[n].gameObject.name}");
+                    return;
+                }
+            }
+        }
+
+        // DANGER, DO NOT CHANGE, COULD BREAKE SOMNIUM
+        private void RestorePrefabTable()
+        {
+            if (_prefabTableSnapshot == null)
+                return;
+
+            // Recover original prefab table
+            Debug.Log($"[SceneNetworking] Recover Prefab table");
+            NetworkProjectConfig.Global.PrefabTable.Clear();
+            foreach (var (id, source) in _prefabTableSnapshot)
+            {
+                Debug.Log($"[SceneNetworking] PrefabTable AddSource {source}");
+                NetworkProjectConfig.Global.PrefabTable.AddSource(source);
+            }
         }
 
         private void WaitForNetworkRunner()
         {
             if (NetworkRunner.Instances.Count > 0)
             {
-                CancelInvoke(nameof(WaitForNetworkRunner));
-                NetworkRunnerRef = NetworkRunner.Instances[0];
-                Log("NetworkRunner ready");
-                Setup(NetworkRunnerRef);
+                if (NetworkRunner.Instances[0].IsRunning)
+                {
+                    Log("NetworkRunner ready");
+                    CancelInvoke(nameof(WaitForNetworkRunner));
+                    NetworkRunnerRef = NetworkRunner.Instances[0];
+                    if (!_isNetworkRunnerSetup)
+                        NetworkRunnerSetup(NetworkRunnerRef);
+                }
             }
         }
 
-        private void Setup(NetworkRunner runner)
+        private void NetworkRunnerSetup(NetworkRunner runner)
         {
+            _isNetworkRunnerSetup = true;
             runner.AddCallbacks(this);
+            RegisterNetworkPrefabs();
+            OnNetworkRunnerCreated?.Invoke();
         }
 
         private void InitScenePath()
@@ -92,26 +193,13 @@ namespace GrowAGarden
         {
             _sceneNetworkObjects = FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             Array.Sort(_sceneNetworkObjects, (a, b) => a.SortKey.CompareTo(b.SortKey));
-            Log($"GetAllNetworkObjects Found: {_sceneNetworkObjects.Length}");
+            Log($"Scene Network Objects Found: {_sceneNetworkObjects.Length}");
         }
 
         private void RegisterAllNetworkObjects()
         {
-            // Register the NetworkObjects
             int r = NetworkRunnerRef.RegisterSceneObjects(NetworkSceneRef, _sceneNetworkObjects);
-            Log($"Network objects registered: {r}");
-        }
-
-        // DELETEME
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.T))
-            {
-                if (NetworkRunnerRef.TryGetFusionStatistics(out FusionStatisticsManager stats))
-                {
-                    Debug.Log($" Fusion Memory, MemoryUsed:{stats.CompleteSnapshot.ObjectsAllocMemoryUsedInBytes} / MemoryFree:{stats.CompleteSnapshot.ObjectsAllocMemoryFreeInBytes}");
-                }
-            }
+            Log($"Scene Network Objects registered: {r}");
         }
 
         private void ReassignNullObjectsAuthority()
@@ -146,7 +234,6 @@ namespace GrowAGarden
                 if (IsMasterClient)
                 {
                     Log("You are now the Master Client");
-
                     SafeInvokeOnBecomeWorldMaster();
                 }
                 else
@@ -156,12 +243,9 @@ namespace GrowAGarden
             }
         }
 
-        // Network Events
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
         {
-            UpdateMasterClientState();
-
             if (player == NetworkRunnerRef.LocalPlayer)
             {
                 Log($"Local Player Joined");
@@ -171,6 +255,7 @@ namespace GrowAGarden
                 IsNetworkReady = true;
 
                 SafeInvokeOnLocalPlayerJoined();
+                UpdateMasterClientState();
 
                 CancelInvoke(nameof(SlowLoop));
                 InvokeRepeating(nameof(SlowLoop), 1.0f, 1.0f);
@@ -178,11 +263,12 @@ namespace GrowAGarden
             else
             {
                 SafeInvokeOnOtherPlayerJoined(player);
+                UpdateMasterClientState();
                 Log($"Remote Player Joined, id={player.PlayerId}");
             }
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
         {
             Log($"OnPlayerLeft id:{player.PlayerId}");
@@ -201,103 +287,113 @@ namespace GrowAGarden
             UpdateMasterClientState();
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ArraySegment<byte> data)
         {
-            SafeInvokeOnReliableMessageReceived(key, data.ToArray());
+            if (OnReliableMessageReceived != null)
+            {
+                byte[] dataBytes = data.ToArray();
+                foreach (Delegate d in OnReliableMessageReceived.GetInvocationList())
+                {
+                    try
+                    { ((Action<ReliableKey, byte[]>)d)(key, dataBytes); }
+                    catch (Exception ex)
+                    { Debug.LogException(ex); }
+                }
+            }
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
         {
             //Log("OnReliableDataProgress, " + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
         {
             //Log($"Object EnterAOI {obj.name}");
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
         {
             //Log($"Object ExitAOI {obj.name}");
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)
         {
             //Log($"UserSimulationMessage received");
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnInput(NetworkRunner runner, NetworkInput input)
         {
             // Warning, called a lot !
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input)
         {
 
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
         {
             Log($"OnShutdown");
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnConnectedToServer(NetworkRunner runner)
         {
             Log("Connected To Server, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
         {
             Log("Disconnected From Server, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
         {
             Log("Connect Request, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
         {
             Log("Connect Failed, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
         {
             Log("Session List Updated, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnCustomAuthenticationResponse(NetworkRunner runner, Dictionary<string, object> data)
         {
             Log("Custom Authentication Response, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnHostMigration(NetworkRunner runner, HostMigrationToken hostMigrationToken)
         {
             Log("Host Migration, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnSceneLoadDone(NetworkRunner runner)
         {
             Log("Scene LoadDone, t=" + GetTime());
         }
 
-        /// Called by photon, do not use.
+        /// Used by photon, do not call.
         public void OnSceneLoadStart(NetworkRunner runner)
         {
             Log("Scene Load Start, t=" + GetTime());
@@ -333,7 +429,7 @@ namespace GrowAGarden
             }
         }
 
-        // Non breaking invoking
+        // Error resistant invoking
         private void SafeInvokeOnLocalPlayerJoined()
         {
             if (OnLocalPlayerJoined != null)
@@ -348,7 +444,7 @@ namespace GrowAGarden
             }
         }
 
-        // Non breaking invoking
+        // Error resistant invoking
         private void SafeInvokeOnOtherPlayerJoined(PlayerRef player)
         {
             if (OnOtherPlayerJoined != null)
@@ -363,7 +459,7 @@ namespace GrowAGarden
             }
         }
 
-        // Non breaking invoking
+        // Error resistant invoking
         private void SafeInvokeOnOtherPlayerLeft(PlayerRef player)
         {
             if (OnOtherPlayerLeft != null)
@@ -378,19 +474,98 @@ namespace GrowAGarden
             }
         }
 
-        // Non breaking invoking
-        private void SafeInvokeOnReliableMessageReceived(ReliableKey key, byte[] data)
+        // Assure all network prefab are conformal, and prepare the GUID list
+        private bool PrepareNetworkPrefabs()
         {
-            if (OnReliableMessageReceived != null)
+            // Check if Network prefabs and guid list are same size
+            if (_networkPrefabsGuid.Length != _networkPrefabs.Length)
             {
-                foreach (Delegate d in OnReliableMessageReceived.GetInvocationList())
+                Debug.LogError($"[SceneNetworking] ValidateNetworkPrefabs, Prefab list and Guid list size do not match, check Inspector config");
+                return false;
+            }
+            // Check if no network prefabs are null
+            foreach (NetworkObject no in _networkPrefabs)
+            {
+                if (no == null)
                 {
-                    try
-                    { ((Action<ReliableKey, byte[]>)d)(key, data.ToArray()); }
-                    catch (Exception ex)
-                    { Debug.LogException(ex); }
+                    Debug.LogError($"[SceneNetworking] ValidateNetworkPrefabs, Null network prefab, check Inspector config");
+                    return false;
+                }
+            }
+            // Check if all Guid string are valid
+            _networkPrefabsGuidConverted = new Guid[_networkPrefabsGuid.Length];
+            for (int n = 0; n < _networkPrefabsGuid.Length; n++)
+            {
+                if (!Guid.TryParse(_networkPrefabsGuid[n], out Guid guid) || guid == Guid.Empty)
+                {
+                    Debug.LogError($"[SceneNetworking] ValidateNetworkPrefabs, A network prefab GUID is invalid, check Inspector config");
+                    return false;
+                }
+                _networkPrefabsGuidConverted[n] = guid;
+            }
+            // Check if there is no duplicated guid
+            HashSet<Guid> guidHashSet = new(_networkPrefabsGuidConverted);
+            if (guidHashSet.Count != _networkPrefabsGuidConverted.Length)
+            {
+                Debug.LogError("[SceneNetworking] ValidateNetworkPrefabs, duplicated network prefab guid found, check Inspector config");
+                return false;
+            }
+            // Check if there is no duplicated prefabs
+            HashSet<NetworkObject> networkPrefabH = new(_networkPrefabs);
+            if (networkPrefabH.Count != _networkPrefabs.Length)
+            {
+                Debug.LogError("[SceneNetworking] ValidateNetworkPrefabs, duplicated network prefab found, check Inspector config");
+                return false;
+            }
+
+            return true;
+        }
+
+        #if UNITY_EDITOR
+        private void OnValidate()
+        {
+            // Validate network prefab list
+            bool isDirty = false;
+            HashSet<NetworkObject> validPrefabs = new();
+            foreach (NetworkObject no in _networkPrefabs)
+            {
+                // Runtime-safe equivalent of PrefabUtility.IsPartOfPrefabAsset(no): a prefab
+                // asset has no valid scene, a scene instance does. The editor-namespace call it
+                // replaces was rejected by the Somnium uploader, which scans this assembly for
+                // editor-only code — and the #if guard does not help, since the Editor-compiled
+                // assembly still carries the reference.
+                if (no != null && !no.gameObject.scene.IsValid())
+                {
+                    validPrefabs.Add(no);
+                }
+            }
+            if (_networkPrefabs.Length != validPrefabs.Count)
+            {
+                _networkPrefabs = validPrefabs.ToArray();
+                isDirty = true;
+            }
+
+            // Regenerate GUID list
+            if (isDirty || _networkPrefabsGuid.Length != _networkPrefabs.Length)
+            {
+                isDirty = false;
+                _networkPrefabsGuid = new string[_networkPrefabs.Length];
+                for (int n = 0; n < _networkPrefabsGuid.Length; n++)
+                {
+                    _networkPrefabsGuid[n] = Guid.NewGuid().ToString();
+                }
+            }
+
+            // Validate GUID list
+            for (int n = 0; n < _networkPrefabsGuid.Length; n++)
+            {
+                string guid = _networkPrefabsGuid[n];
+                if (!Guid.TryParse(guid, out Guid _))
+                {
+                    _networkPrefabsGuid[n] = Guid.NewGuid().ToString();
                 }
             }
         }
+        #endif
     }
 }

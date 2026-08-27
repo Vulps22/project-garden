@@ -1,10 +1,8 @@
-using Fusion;
 using Fusion.Addons.Physics;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
 
 namespace GrowAGarden
 {
@@ -14,12 +12,10 @@ namespace GrowAGarden
     [HelpURL("https://incrediworlds.gitbook.io/somnium-space-dendoc/worlds-creation/community-modules/community-networking")]
     public class NetworkGrabbable : MonoBehaviour
     {
-        [Header("Alpha V2.0 [2025, 10, 07]")]
+        [Header("Version [2026, 04, 23]")]
         [SerializeField] private XRGrabInteractable _grabInteracable;
-        [SerializeField] private Rigidbody _rigidbody;
-        [SerializeField] private NetworkObject _networkObject;
         [SerializeField] private NetworkRigidbody3D _networkRigidbody;
-        [SerializeField] bool _isKinematic = false;
+        [SerializeField] private Rigidbody _rigidbody;
 
         private const float TIMEOUT = 2.0f;
 
@@ -27,6 +23,7 @@ namespace GrowAGarden
         private Vector3 _lastPosition;
         private Quaternion _lastRotation;
         private Vector3 _lastScale;
+        private bool _isKinematic;
 
         private void Awake()
         {
@@ -35,21 +32,21 @@ namespace GrowAGarden
                 Debug.LogError($"[{nameof(NetworkGrabbable)}] GrabInteracable reference is Null.");
                 return;
             }
+
             // Get components in case they have not been assigned in the inspector
-            if (_rigidbody == null)
-                _rigidbody = _grabInteracable.GetComponent<Rigidbody>();
-            if (_networkObject == null)
-                _networkObject = _grabInteracable.GetComponent<NetworkObject>();
             if (_networkRigidbody == null)
                 _networkRigidbody = _grabInteracable.GetComponent<NetworkRigidbody3D>();
-            //_networkRigidbody.Teleport(null, null); // Why did i put this here?
 
             // Validate components
-            if (_rigidbody == null || _networkObject == null || _networkRigidbody == null)
+            if (_rigidbody == null || _networkRigidbody == null)
             {
-                Debug.LogError($"[{nameof(NetworkGrabbable)}] A component is missing, check inspector.");
+                Debug.LogError($"[{nameof(NetworkGrabbable)}] An inspector reference is Null.");
                 return;
             }
+
+            _lastPosition = _rigidbody.transform.position;
+            _lastRotation = _rigidbody.transform.rotation;
+            _isKinematic = _rigidbody.isKinematic;
 
             // Connect Grab event
             _grabInteracable.firstSelectEntered.AddListener(OnGrabbed);
@@ -71,7 +68,7 @@ namespace GrowAGarden
         // Request control of the object over networking
         public void RequestControl()
         {
-            if (_networkObject != null && !_networkObject.HasStateAuthority)
+            if (_networkRigidbody != null && !_networkRigidbody.HasStateAuthority)
             {
                 StartCoroutine(GetStateAuthority());
             }
@@ -79,12 +76,12 @@ namespace GrowAGarden
 
         private IEnumerator GetStateAuthority()
         {
-            _networkObject.RequestStateAuthority();
+            _networkRigidbody.Object.RequestStateAuthority();
             _rigidbody.isKinematic = _isKinematic;
 
             // # Setup to correct the non kinematic state
             float startTime = Time.time;
-            while (!_networkObject.HasStateAuthority && Time.time - startTime < TIMEOUT)
+            while (!_networkRigidbody.HasStateAuthority && Time.time - startTime < TIMEOUT)
             {
                 _rigidbody.isKinematic = _isKinematic;
                 if (!_ungrabbed)
@@ -104,8 +101,7 @@ namespace GrowAGarden
             _rigidbody.isKinematic = _isKinematic;
             if (_ungrabbed)
             {
-                _rigidbody.transform.position = _lastPosition;
-                _rigidbody.transform.rotation = _lastRotation;
+                _rigidbody.transform.SetPositionAndRotation(_lastPosition, _lastRotation);
                 _rigidbody.transform.localScale = _lastScale;
             }
             Debug.Log($"[{nameof(NetworkGrabbable)}] Object control received");
@@ -113,7 +109,7 @@ namespace GrowAGarden
 
         private void OnHover(HoverEnterEventArgs arg)
         {
-            if (!_networkObject.HasStateAuthority)
+            if (!_networkRigidbody.HasStateAuthority)
             {
                 _rigidbody.isKinematic = _isKinematic; // Sketchy but fix kinematic issue // TODO: Find better solution
             }
@@ -126,7 +122,7 @@ namespace GrowAGarden
 
         private void OnGrabbed(SelectEnterEventArgs arg)
         {
-            if (!_networkObject.HasStateAuthority)
+            if (!_networkRigidbody.HasStateAuthority)
             {
                 _rigidbody.isKinematic = _isKinematic;
                 RequestControl();
@@ -137,25 +133,18 @@ namespace GrowAGarden
         // Executed in editor to ensure that the required components are assigned.
         private void OnValidate()
         {
-            if (_networkObject == null) 
-            {
-                _networkObject = GetComponent<NetworkObject>();
-            }
             if (_grabInteracable == null)
             {
                 _grabInteracable = GetComponent<XRGrabInteractable>();
-            }
-            if (_rigidbody == null)
-            {
-                _rigidbody = GetComponent<Rigidbody>();
             }
             if (_networkRigidbody == null)
             {
                 _networkRigidbody = GetComponent<NetworkRigidbody3D>();
             }
-
-            if (_rigidbody != null)
-                _isKinematic = _rigidbody.isKinematic;
+            if (_rigidbody == null)
+            {
+                _rigidbody = GetComponent<Rigidbody>();
+            }
         }
     }
 }
