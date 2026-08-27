@@ -8,6 +8,14 @@ namespace GrowAGarden
 {
     /// <summary>
     ///     This component is used to transfer network control of an object to the last player that grabbed it.
+    ///
+    ///     DIVERGES from the CommunityModules original: the isKinematic caching has been removed.
+    ///     CM captured Rigidbody.isKinematic once in Awake and re-asserted that value on hover, on
+    ///     grab, and every physics frame while waiting for authority, to stop Fusion overwriting it
+    ///     on a proxy. That works only while the intended value never changes after startup. Seeds
+    ///     change physical mode as they move through their lifecycle, so the cached value became a
+    ///     lie that got written into live grabs. KinematicController now owns isKinematic and asks
+    ///     an IKinematicSource for the live answer. Re-apply this deletion if CM is ever re-vendored.
     /// </summary>
     [HelpURL("https://incrediworlds.gitbook.io/somnium-space-dendoc/worlds-creation/community-modules/community-networking")]
     public class NetworkGrabbable : MonoBehaviour
@@ -23,7 +31,6 @@ namespace GrowAGarden
         private Vector3 _lastPosition;
         private Quaternion _lastRotation;
         private Vector3 _lastScale;
-        private bool _isKinematic;
 
         private void Awake()
         {
@@ -46,7 +53,6 @@ namespace GrowAGarden
 
             _lastPosition = _rigidbody.transform.position;
             _lastRotation = _rigidbody.transform.rotation;
-            _isKinematic = _rigidbody.isKinematic;
 
             // Connect Grab event
             _grabInteracable.firstSelectEntered.AddListener(OnGrabbed);
@@ -77,13 +83,10 @@ namespace GrowAGarden
         private IEnumerator GetStateAuthority()
         {
             _networkRigidbody.Object.RequestStateAuthority();
-            _rigidbody.isKinematic = _isKinematic;
 
-            // # Setup to correct the non kinematic state
             float startTime = Time.time;
             while (!_networkRigidbody.HasStateAuthority && Time.time - startTime < TIMEOUT)
             {
-                _rigidbody.isKinematic = _isKinematic;
                 if (!_ungrabbed)
                 {
                     _lastPosition = _rigidbody.transform.position;
@@ -98,7 +101,6 @@ namespace GrowAGarden
                 yield return new WaitForFixedUpdate();
             }
 
-            _rigidbody.isKinematic = _isKinematic;
             if (_ungrabbed)
             {
                 _rigidbody.transform.SetPositionAndRotation(_lastPosition, _lastRotation);
@@ -109,10 +111,7 @@ namespace GrowAGarden
 
         private void OnHover(HoverEnterEventArgs arg)
         {
-            if (!_networkRigidbody.HasStateAuthority)
-            {
-                _rigidbody.isKinematic = _isKinematic; // Sketchy but fix kinematic issue // TODO: Find better solution
-            }
+            // Was re-asserting the cached kinematic value here; KinematicController owns that now.
         }
 
         private void OnUngrabbed(SelectExitEventArgs arg)
@@ -124,7 +123,6 @@ namespace GrowAGarden
         {
             if (!_networkRigidbody.HasStateAuthority)
             {
-                _rigidbody.isKinematic = _isKinematic;
                 RequestControl();
             }
         }

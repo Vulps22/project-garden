@@ -9,7 +9,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace GrowAGarden
 {
 
-    public abstract class PlantSeed : MonoBehaviour, IXRSelectFilter
+    public abstract class PlantSeed : MonoBehaviour, IXRSelectFilter, IKinematicSource, ILifecycleNotifier
     {
 
         [SerializeField] protected MeshRenderer _SeedModel;
@@ -22,6 +22,25 @@ namespace GrowAGarden
         public bool InShop { get; private set; }
         public bool IsBought { get; private set; }
         public bool IsInPool { get; private set; }
+        /// <summary>Raised after any lifecycle transition so behaviours can re-evaluate.</summary>
+        public event System.Action LifecycleChanged;
+
+        /// <summary>
+        /// The seed's physical mode, derived from its lifecycle rather than remembered.
+        /// Every state is kinematic today, so this changes no behaviour yet — the shop and
+        /// free-seed cases are what later phases flip, and they flip here, once.
+        /// </summary>
+        public bool ShouldBeKinematic
+        {
+            get
+            {
+                if (IsInPool) return true;   // parked out of the world
+                if (!IsSeed) return true;    // planted, growing or grown — anchored to its slot
+                if (InShop) return true;     // becomes false when shop seeds get spring-tethered
+                return true;                 // free seed — becomes false when seeds get gravity
+            }
+        }
+
         private Renderer[] _renderers;
         private Collider[] _colliders;
         protected long _plantedTimestamp;
@@ -167,6 +186,7 @@ namespace GrowAGarden
         public void Claim()
         {
             IsInPool = false;
+            LifecycleChanged?.Invoke();
         }
 
         /// <summary>
@@ -181,6 +201,7 @@ namespace GrowAGarden
             _grabInteractable.enabled = true;   // HideForPool() disabled it on the way in
             InShop = true;
             IsBought = false;
+            LifecycleChanged?.Invoke();
             broadcastState();
         }
 
@@ -192,6 +213,7 @@ namespace GrowAGarden
         {
             InShop = false;
             IsBought = true;
+            LifecycleChanged?.Invoke();
             broadcastState();
         }
 
@@ -232,9 +254,7 @@ namespace GrowAGarden
             transform.position = position;
             transform.rotation = rotation;
             transform.localScale = Vector3.one;
-            var rb = GetComponent<Rigidbody>();
-            if (rb != null) rb.isKinematic = true;
-            SetState(true);
+            SetState(true);                     // KinematicController owns isKinematic now
             broadcastState();
         }
 
@@ -304,6 +324,8 @@ namespace GrowAGarden
             // rather than relying on each of them to remember.
             if (IsInPool) HideForPool();
             else UpdateVisuals(isSeed);
+
+            LifecycleChanged?.Invoke();
         }
 
         /// <summary>
