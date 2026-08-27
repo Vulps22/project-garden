@@ -17,3 +17,4 @@ Assets/#User/*
 !/.gitignore
 !/.gitattributes
 !/README.md
+!/CLAUDE.md
