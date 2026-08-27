@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 4740644536384459298}
   - component: {fileID: 8417775281062889414}
   - component: {fileID: 7577703959851600261}
+  - component: {fileID: 8194635327734308780}
   m_Layer: 0
   m_Name: Unified_turnip
   m_TagString: Untagged
@@ -459,6 +460,26 @@ MonoBehaviour:
   _arriveAngle: 5
   _autoRealign: 0
   _grabInteractable: {fileID: 739378399254163780}
+--- !u!114 &8194635327734308780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4293189722181000532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c3771aa6bbee2a6ba0e9e49d2a94d9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.HoveringEntity
+  _rigidbody: {fileID: 5872620870947861903}
+  _networkBridge: {fileID: 1084810240955029992}
+  _hoverHeight: 0.5
+  _riseSpeed: 0.6
+  _rotateWhileHovering: 1
+  _spinDegreesPerSecond: 20
+  _bobAmplitude: 0.03
+  _bobSpeed: 1.2
 --- !u!1001 &3118238609914766344
 PrefabInstance:
   m_ObjectHideFlags: 0
