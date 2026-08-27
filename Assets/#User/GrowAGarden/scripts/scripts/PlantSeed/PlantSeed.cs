@@ -22,6 +22,8 @@ namespace GrowAGarden
         public bool InShop { get; private set; }
         public bool IsBought { get; private set; }
         public bool IsInPool { get; private set; }
+        private Renderer[] _renderers;
+        private Collider[] _colliders;
         protected long _plantedTimestamp;
         protected PlayerBalance _grabber;
         protected PlantSlot _occupiedSlot;
@@ -176,6 +178,7 @@ namespace GrowAGarden
             transform.position = position;
             transform.rotation = rotation;
             SetState(true);
+            _grabInteractable.enabled = true;   // HideForPool() disabled it on the way in
             InShop = true;
             IsBought = false;
             broadcastState();
@@ -229,7 +232,6 @@ namespace GrowAGarden
             transform.position = position;
             transform.rotation = rotation;
             transform.localScale = Vector3.one;
-            _grabInteractable.enabled = true;
             var rb = GetComponent<Rigidbody>();
             if (rb != null) rb.isKinematic = true;
             SetState(true);
@@ -295,7 +297,31 @@ namespace GrowAGarden
         public void SetState(bool isSeed)
         {
             IsSeed = isSeed;
-            UpdateVisuals(isSeed);
+
+            // UpdateVisuals only distinguishes seed from plant — it has no notion of a seed
+            // that should not be in the world at all. Hooking the pool case in here catches
+            // every path that changes visual state (authority, proxy sync, spawn, sale)
+            // rather than relying on each of them to remember.
+            if (IsInPool) HideForPool();
+            else UpdateVisuals(isSeed);
+        }
+
+        /// <summary>
+        /// A pooled seed is not present in the world: no visuals, no colliders, no grab.
+        /// Without this the pools are visible piles of grabbable seeds sitting at the pool
+        /// transforms, which breaks the invariant that a seed outside a shop slot has been
+        /// bought — and would leave them free-falling once seeds get gravity.
+        /// Leaving the pool goes back through UpdateVisuals(), which re-derives the correct
+        /// renderer and collider set for the subclass.
+        /// </summary>
+        private void HideForPool()
+        {
+            _renderers ??= GetComponentsInChildren<Renderer>(true);
+            _colliders ??= GetComponentsInChildren<Collider>(true);
+
+            foreach (Renderer r in _renderers) if (r != null) r.enabled = false;
+            foreach (Collider c in _colliders) if (c != null) c.enabled = false;
+            if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
         /// <summary>
@@ -311,7 +337,9 @@ namespace GrowAGarden
             switch ((PlantMessageType)id)
             {
                 case PlantMessageType.enable:
-                    _grabInteractable.enabled = true;
+                    // Never re-arm a pooled seed. A proxy whose state briefly disagrees with
+                    // the authority could otherwise be handed a grabbable invisible object.
+                    _grabInteractable.enabled = !IsInPool;
                     break;
                 case PlantMessageType.disable:
                     SetState(false);
@@ -357,7 +385,9 @@ namespace GrowAGarden
 
             SetState(isSeed);
             OnReadBroadcastState(reader);
-            if (isSeed)
+            if (IsInPool)
+                _grabInteractable.enabled = false;   // SetState() already hid it; do not undo that
+            else if (isSeed)
                 _grabInteractable.enabled = true;
             else
                 _grabInteractable.enabled = GetGrowthCompletion() >= 1f;
