@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 642779343923591044}
   - component: {fileID: 2637539085011416152}
   - component: {fileID: 544014741469173732}
-  - component: {fileID: 2192028120948269271}
   - component: {fileID: 3238997438953549519}
   - component: {fileID: 4773445120126099651}
   - component: {fileID: 8533820553166843648}
@@ -100,23 +99,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
---- !u!114 &2192028120948269271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2878792842855438303}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8f14f1198a49cb418d604114edc06a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
-  _grabInteracable: {fileID: 4773445120126099651}
-  _rigidbody: {fileID: 3238997438953549519}
-  _networkObject: {fileID: 2637539085011416152}
-  _networkRigidbody: {fileID: 8533820553166843648}
-  _isKinematic: 1
+  _SyncByteArray: 
+  _SyncIntArray: 
+  _SyncFloatArray: []
+  _SyncVector2Array: []
+  _SyncVector3Array: []
+  _SyncVector4Array: []
+  _SyncStringArray: []
 --- !u!54 &3238997438953549519
 Rigidbody:
   m_ObjectHideFlags: 0

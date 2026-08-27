@@ -56,6 +56,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
+  _SyncByteArray: 
+  _SyncIntArray: 
+  _SyncFloatArray: []
+  _SyncVector2Array: []
+  _SyncVector3Array: []
+  _SyncVector4Array: []
+  _SyncStringArray: []
 --- !u!114 &5103742716878842499
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -135,14 +142,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7163453513877751585}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8f14f1198a49cb418d604114edc06a7, type: 3}
+  m_Script: {fileID: 11500000, guid: 715daecd0cbb4c62b26f59418853ef09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
   _grabInteracable: {fileID: 4248909366719016378}
-  _rigidbody: {fileID: 1054046652925961132}
-  _networkObject: {fileID: 5103742716878842499}
   _networkRigidbody: {fileID: 4860296978931391558}
-  _isKinematic: 1
+  _rigidbody: {fileID: 1054046652925961132}
 --- !u!114 &4248909366719016378
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -374,10 +379,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79d4529017e70be4a906f61d3e1272c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
-  seedId: 
-  displayName: 
-  buyPrice: 0
-  sellValue: 0
+  seedId: carrot
+  displayName: Carrot
+  buyPrice: 10
+  sellValue: 15
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0
