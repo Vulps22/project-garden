@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 222089623956227069}
   - component: {fileID: 5179479689449831253}
   - component: {fileID: 6710853812882293672}
+  - component: {fileID: 4638241410524651319}
   m_Layer: 0
   m_Name: Unified_turnip
   m_TagString: Untagged
@@ -393,6 +394,18 @@ MonoBehaviour:
   _rigidbody: {fileID: 5872620870947861903}
   _networkBridge: {fileID: 1084810240955029992}
   _grabInteractable: {fileID: 739378399254163780}
+--- !u!114 &4638241410524651319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4293189722181000532}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acd7c84790d7f5c84b01488034eac2af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SingleHolderFilter
 --- !u!1001 &3118238609914766344
 PrefabInstance:
   m_ObjectHideFlags: 0

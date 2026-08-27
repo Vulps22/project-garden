@@ -9,7 +9,7 @@ using UnityEngine.XR.Interaction.Toolkit.Interactors;
 namespace GrowAGarden
 {
 
-    public abstract class PlantSeed : MonoBehaviour, IXRSelectFilter, IKinematicSource, ILifecycleNotifier
+    public abstract class PlantSeed : MonoBehaviour, IHeldObject, IKinematicSource, ILifecycleNotifier
     {
 
         [SerializeField] protected MeshRenderer _SeedModel;
@@ -48,34 +48,19 @@ namespace GrowAGarden
         protected PlantSlot _occupiedSlot;
         protected int _growthPhase = 0;
 
-        public bool canProcess => true;
+        /// <summary>
+        /// Who is holding this, for <see cref="SingleHolderFilter"/>. Null when free.
+        /// </summary>
+        public string HolderId => _grabber?.GetID();
 
         /// <summary>
-        /// IXRSelectFilter — called before a grab is committed. Returning false prevents the grab entirely.
-        /// Used to block steal attempts: if _grabber is already set, someone else is holding this object.
-        /// And to prevent users buying seeds they cannot afford
+        /// Cancels an in-progress grab. Disabling the interactable makes XRI end the select,
+        /// which raises selectExited and so clears and re-broadcasts the grabber through the
+        /// normal path. Whoever calls this is responsible for re-enabling the grab.
         /// </summary>
-        public bool Process(IXRSelectInteractor interactor, IXRSelectInteractable interactable)
+        public void ForceRelease()
         {
-            if (IsBought) return true;
-
-            // The balance table is cleared and rebuilt from every broadcast, so the local
-            // entry can be transiently absent on a client that has not been registered by
-            // the master yet. Refuse the grab rather than throwing or handing out a free
-            // seed — the next broadcast restores it and the player can simply grab again.
-            PlayerBalance localPlayer = EconomyManager.Instance == null
-                ? null
-                : EconomyManager.Instance.GetLocalPlayer();
-            if (localPlayer == null)
-            {
-                Logger.Warn($"Process() '{gameObject.name}' — local balance unavailable, refusing grab");
-                return false;
-            }
-
-            bool isHolder = _grabber != null && _grabber.GetID() == localPlayer.GetID();
-            bool grabberFree = _grabber == null || isHolder;
-            bool canAfford = !InShop || localPlayer.GetBalance() >= seedDefinition.buyPrice;
-            return grabberFree && canAfford;
+            if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
         /// <summary>
@@ -89,7 +74,6 @@ namespace GrowAGarden
             SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
-            _grabInteractable.selectFilters.Add(this);
         }
 
         /// <summary>
@@ -100,7 +84,6 @@ namespace GrowAGarden
             SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
-            _grabInteractable.selectFilters.Remove(this);
         }
 
         /// <summary>
