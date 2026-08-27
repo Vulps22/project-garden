@@ -15,5 +15,12 @@ namespace GrowAGarden
     {
         /// <summary>True when the object should not be simulated by physics right now.</summary>
         bool ShouldBeKinematic { get; }
+
+        /// <summary>
+        /// True when gravity should pull on it. Only meaningful while non-kinematic. Kept here
+        /// rather than written by whichever behaviour happens to want it, so gravity does not
+        /// repeat the multiple-stale-writers problem that isKinematic had.
+        /// </summary>
+        bool ShouldUseGravity { get; }
     }
 }

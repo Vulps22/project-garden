@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 9187799288020743522}
   - component: {fileID: 2940856061778804057}
   - component: {fileID: 2430608988058198762}
+  - component: {fileID: 4170068652358952383}
   m_Layer: 0
   m_Name: Unified_Carrot
   m_TagString: Untagged
@@ -422,6 +423,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.AuthorityController
   _networkBridge: {fileID: 1434875256084407990}
+--- !u!114 &4170068652358952383
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163453513877751585}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43b451e77796110799fc7d928620f209, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SlotTether
+  _rigidbody: {fileID: 1054046652925961132}
+  _networkBridge: {fileID: 1434875256084407990}
+  _spring: 60
+  _damper: 12
+  _rotationLerp: 8
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0
