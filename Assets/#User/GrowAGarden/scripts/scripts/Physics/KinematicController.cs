@@ -72,8 +72,15 @@ namespace GrowAGarden
             if (_networkBridge == null || _networkBridge.Object == null) return;
             if (!_networkBridge.Object.HasStateAuthority) return;
 
-            bool wanted = _source.ShouldBeKinematic;
-            if (_rigidbody.isKinematic != wanted) _rigidbody.isKinematic = wanted;
+            bool wantKinematic = _source.ShouldBeKinematic;
+            if (_rigidbody.isKinematic != wantKinematic) _rigidbody.isKinematic = wantKinematic;
+
+            bool wantGravity = _source.ShouldUseGravity;
+            if (_rigidbody.useGravity != wantGravity) _rigidbody.useGravity = wantGravity;
+
+            // A body that went to sleep while kinematic will not respond to the tether's
+            // forces until something wakes it.
+            if (!wantKinematic && _rigidbody.IsSleeping()) _rigidbody.WakeUp();
         }
 
         private void OnValidate()

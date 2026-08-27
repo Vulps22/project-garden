@@ -36,10 +36,17 @@ namespace GrowAGarden
             {
                 if (IsInPool) return true;   // parked out of the world
                 if (!IsSeed) return true;    // planted, growing or grown — anchored to its slot
-                if (InShop) return true;     // becomes false when shop seeds get spring-tethered
+                if (InShop) return false;    // physical, held in place by SlotTether
                 return true;                 // free seed — becomes false when seeds get gravity
             }
         }
+
+        /// <summary>
+        /// Shop stock hangs at its slot rather than resting on it, so the tether is holding
+        /// position rather than fighting a constant downward pull. Everything else is either
+        /// kinematic, where gravity is ignored anyway, or not yet given weight.
+        /// </summary>
+        public bool ShouldUseGravity => false;
 
         /// <summary>
         /// Stock belongs to the world, not to whoever last touched it. A seed nobody is

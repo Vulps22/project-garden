@@ -69,6 +69,21 @@ namespace GrowAGarden
 
 
             _currentSeed.PlaceInShop(transform.position, transform.rotation);
+            Tether(_currentSeed);
+        }
+
+        /// <summary>Points the seed's tether at this slot, so a bumped seed drifts back.</summary>
+        private void Tether(PlantSeed seed)
+        {
+            var tether = seed.GetComponent<SlotTether>();
+            if (tether != null) tether.Attach(transform);
+        }
+
+        /// <summary>Releases the seed from this slot once it belongs to a player.</summary>
+        private void Untether(PlantSeed seed)
+        {
+            var tether = seed.GetComponent<SlotTether>();
+            if (tether != null) tether.Detach();
         }
 
         /// <summary>
@@ -82,6 +97,7 @@ namespace GrowAGarden
             seed.ForceRelease();
             // PlaceInShop re-enables the grab and restores position, rotation and shop flags.
             seed.PlaceInShop(transform.position, transform.rotation);
+            Tether(seed);
             _currentSeed = seed;
         }
 
@@ -93,7 +109,11 @@ namespace GrowAGarden
                 // through the trigger must not become this slot's _currentSeed.
                 if (seed.seedDefinition == null || seed.seedDefinition.seedId != _seedDefinition.seedId) return;
 
-                if(!seed.IsBought) _currentSeed = seed;
+                if (!seed.IsBought)
+                {
+                    _currentSeed = seed;
+                    Tether(seed);
+                }
             }
         }
 
@@ -119,10 +139,12 @@ namespace GrowAGarden
                         else
                             Logger.Warn($"OnTriggerExit() '{gameObject.name}' — seed '{seed.name}' has no known grabber yet, skipping optimistic local deduction");
 
+                        Untether(_currentSeed);
                         _currentSeed.Purchase();
                     }
                     else if (buyer.GetBalance() >= _seedDefinition.buyPrice)
                     {
+                        Untether(_currentSeed);
                         _currentSeed.Purchase();
                         EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
                     }
