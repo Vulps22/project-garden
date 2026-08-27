@@ -5,7 +5,7 @@ namespace GrowAGarden
 {
     /// <summary>
     /// Makes an object float: it falls, lands, then rises to hover a set distance above whatever
-    /// it came down on, bobbing gently and turning slowly on the spot.
+    /// it came down on, bobbing gently, turning slowly on the spot and righting itself.
     ///
     /// Told when to start and stop rather than working it out for itself, because the thing that
     /// owns the object already knows whether it is loose and unheld — re-deriving that here would
@@ -29,6 +29,11 @@ namespace GrowAGarden
         [Header("Idle motion")]
         [SerializeField] private bool _rotateWhileHovering = true;
         [SerializeField] private float _spinDegreesPerSecond = 20f;
+
+        [Tooltip("Right itself while hovering, keeping the spin free. Corrects a tumble from the fall.")]
+        [SerializeField] private bool _keepUpright = true;
+        [Tooltip("Righting rate, in degrees per second.")]
+        [SerializeField] private float _uprightDegreesPerSecond = 90f;
         [Tooltip("How far it drifts above and below the hover height.")]
         [SerializeField] private float _bobAmplitude = 0.03f;
         [SerializeField] private float _bobSpeed = 1.2f;
@@ -100,9 +105,24 @@ namespace GrowAGarden
             velocity.y = (nextY - _rigidbody.position.y) / Time.fixedDeltaTime;
             _rigidbody.linearVelocity = velocity;
 
+            // Angular velocity is world space, so a Y-only spin turns about world up and cannot
+            // introduce a tilt of its own. It also cancels whatever tumble the fall produced.
             _rigidbody.angularVelocity = _rotateWhileHovering
                 ? new Vector3(0f, _spinDegreesPerSecond * Mathf.Deg2Rad, 0f)
                 : Vector3.zero;
+
+            // Righting lives here rather than in AlignableEntity because the spin is this
+            // component's doing, so the conflict it creates is this component's to resolve.
+            // Aligning the up vector leaves yaw untouched, so it never fights the spin — which
+            // is also why this is not a per-axis mask: rotations do not decompose into
+            // independent axes, and an euler-based "align X and Z but not Y" misbehaves once
+            // something is tipped a long way over.
+            if (!_keepUpright) return;
+
+            Quaternion upright = Quaternion.FromToRotation(_rigidbody.transform.up, Vector3.up)
+                                 * _rigidbody.rotation;
+            _rigidbody.rotation = Quaternion.RotateTowards(_rigidbody.rotation, upright,
+                                                           _uprightDegreesPerSecond * Time.fixedDeltaTime);
         }
 
         private void OnValidate()
