@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 3313695509118105165}
   - component: {fileID: 333834422306979035}
   - component: {fileID: 2208384793766301172}
+  - component: {fileID: 9007863502847404369}
+  - component: {fileID: 4659970642434972318}
   m_Layer: 0
   m_Name: SellPoint
   m_TagString: Untagged
@@ -77,6 +79,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1d72724fff174e469a9d7a897c46129, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SellPoint
+  _networkBridge: {fileID: 4659970642434972318}
+  _authorityTimeout: 2
+--- !u!114 &9007863502847404369
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5878499844870590353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 154463026
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects:
+  - {fileID: 6245934846598810041}
+  NetworkedBehaviours:
+  - {fileID: 4659970642434972318}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &4659970642434972318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5878499844870590353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
+  _SyncByteArray: 
+  _SyncIntArray: 
+  _SyncFloatArray: []
+  _SyncVector2Array: []
+  _SyncVector3Array: []
+  _SyncVector4Array: []
+  _SyncStringArray: []
 --- !u!1001 &605638872191656104
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -928,7 +971,7 @@ PrefabInstance:
     - target: {fileID: 3115933796996908618, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
         type: 3}
       propertyPath: SortKey
-      value: 2503279869
+      value: 2316111832
       objectReference: {fileID: 0}
     - target: {fileID: 7149506393599241409, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
         type: 3}
@@ -946,3 +989,15 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 9047733717340196851}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6245934846598810041 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3115933796996908618, guid: a04bc0a61be7a3c41865d4c5c887c3f3,
+    type: 3}
+  m_PrefabInstance: {fileID: 9047733717340196851}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
