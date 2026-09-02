@@ -171,8 +171,14 @@ namespace GrowAGarden
 
         /// <summary>
         /// Subscribes to network and interaction events.
+        ///
+        /// Awake, not Start, because of runtime spawn. Fusion raises Spawned() as part of
+        /// instantiating a networked prefab, which is the same frame the object is created —
+        /// before Unity gets round to Start. A seed that subscribed in Start therefore missed
+        /// its own OnSpawned and never set its initial state. Scene objects hid this: they are
+        /// spawned by the runner long after every Start in the scene has run.
         /// </summary>
-        protected virtual void Start()
+        protected virtual void Awake()
         {
             _hovering = GetComponent<HoveringEntity>();
             LifecycleChanged += UpdateHovering;

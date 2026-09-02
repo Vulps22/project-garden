@@ -40,17 +40,24 @@ namespace GrowAGarden
             return null;
         }
 
-        public void ReturnPlantSeed(string seedId, PlantSeed plant)
+        /// <summary>
+        /// Hands a seed back to storage. False means no pool owns this instance — it was spawned
+        /// at runtime, and whoever is holding it has to dispose of it themselves. Not an error:
+        /// while both stocking routes exist side by side, the caller cannot tell them apart and
+        /// is not meant to guess.
+        /// </summary>
+        public bool ReturnPlantSeed(string seedId, PlantSeed plant)
         {
             if (_UnifiedPools.TryGetValue(seedId, out UnifiedPool pool))
             {
-                pool.Return(plant);
-            }
-            else
-            {
-                Logger.Error($"returnPlantSeed('{seedId}') — no PlantPool found, plant NOT returned!");
+                return pool.Return(plant);
             }
 
+            // No pool at all for this crop is worth saying out loud — it means the scene is
+            // missing one, not that the seed was spawned. A spawned seed of a crop that does
+            // still have a pool is refused quietly by the pool itself.
+            Logger.Warn($"ReturnPlantSeed('{seedId}') — no UnifiedPool for this seed; caller must dispose of '{plant.name}' itself");
+            return false;
         }
     }
 }

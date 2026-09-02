@@ -15,15 +15,16 @@ namespace GrowAGarden
         private Vector3 _vineInitialLocalPos;
         private Quaternion _vineInitialLocalRot;
 
-        private void Awake()
+        /// <summary>
+        /// Both halves of setup run here rather than split across Awake and Start: the vine's
+        /// own message handler has to be subscribed before Fusion can raise Spawned(), which for
+        /// a runtime-spawned prefab is the frame it is created. See PlantSeed.Awake().
+        /// </summary>
+        protected override void Awake()
         {
+            base.Awake();
             _vineInitialLocalPos = _SeedModel.transform.localPosition;
             _vineInitialLocalRot = _SeedModel.transform.localRotation;
-        }
-
-        protected override void Start()
-        {
-            base.Start();
             networkBridge.OnMessageToAll += OnVineMessageToAll;
         }
 

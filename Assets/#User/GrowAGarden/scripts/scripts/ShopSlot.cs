@@ -8,6 +8,12 @@ namespace GrowAGarden
     public class ShopSlot : MonoBehaviour
     {
         [SerializeField] private SeedDefinition _seedDefinition;
+
+        [Tooltip("Set this to stock the slot by spawning a fresh seed instead of claiming one " +
+                 "from a pool. The prefab must also be listed on the SceneNetworking component, " +
+                 "or Fusion has no id to spawn it by. Leave empty to keep using the pool.")]
+        [SerializeField] private NetworkObject _seedPrefab;
+
         private PlantSeed _currentSeed;
         private Collider[] _propColliders;
         private Collider _slotTrigger;
@@ -68,18 +74,114 @@ namespace GrowAGarden
                 return;
             }
 
-            PlantSeed claimed = PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
-            if (claimed == null)
+            // The runner reports IsSharedModeMasterClient as soon as it is running — several
+            // seconds before the local player actually joins the session. Fusion cannot allocate
+            // an object id in that window: Runner.Spawn() instantiates the prefab, then throws
+            // NullReferenceException out of Simulation.GetNextId(), leaving an orphaned
+            // GameObject in the scene that no one owns and nothing will ever sync. Those orphans
+            // render every mesh their prefab was authored with, which is why a shop slot showed
+            // a seed and a grown carrot at the same time.
+            //
+            // Guarded here rather than in Update() so no caller can bypass it. Start() already
+            // waited for OnLocalPlayerJoined; the master-only restock in Update() did not, and
+            // it runs every frame, so the alarm fired before the world had finished loading.
+            if (!SceneNetworking.IsNetworkReady)
             {
-                Logger.Warn($"SpawnSeed() '{gameObject.name}' — pool for '{_seedDefinition.seedId}' had nothing to claim; slot left empty");
                 return;
             }
 
-            Logger.Info($"SpawnSeed() '{gameObject.name}' — claimed '{claimed.name}' authority={claimed.HasLocalAuthority} at {transform.position}");
+            PlantSeed claimed = _seedPrefab != null
+                ? SpawnFreshSeed()
+                : PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
+
+            if (claimed == null)
+            {
+                Logger.Warn($"SpawnSeed() '{gameObject.name}' — no seed available for '{_seedDefinition.seedId}'; slot left empty, will retry");
+                return;
+            }
+
+            Logger.Info($"SpawnSeed() '{gameObject.name}' — stocked '{claimed.name}' authority={claimed.HasLocalAuthority} at {transform.position}");
 
             SetCurrentSeed(claimed);
             claimed.PlaceInShop(transform.position, transform.rotation);
             AssignSlot(claimed);
+
+            // Spawned stock only. A pooled seed already exists on every client, so repeating its
+            // state would change the behaviour of the very path this phase is measuring against.
+            if (_seedPrefab != null) StartCoroutine(AnnounceStock(claimed));
+        }
+
+        /// <summary>
+        /// Makes a new seed rather than reusing one.
+        ///
+        /// SharedModeStateAuthMasterClient is the point of the exercise: the master owns the
+        /// stock from the instant it exists, so the client that decides what stock is is also
+        /// the client that can broadcast it. Under pooling those were routinely different
+        /// machines, and broadcastState() self-gates on authority, so the master's decisions
+        /// silently went nowhere. The flag only works from the master, which SpawnSeed() has
+        /// already established.
+        ///
+        /// Returns null rather than throwing when the prefab table has not been built yet —
+        /// registration happens at runner setup, and a slot can reach here first. Update()
+        /// retries every frame, which is the same retry that already covered a cold pool.
+        /// </summary>
+        private PlantSeed SpawnFreshSeed()
+        {
+            SceneNetworking net = SceneNetworking.Instance;
+            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+            if (net == null || runner == null) return null;
+
+            if (!net.NetworkPrefabs.TryGetValue(_seedPrefab, out NetworkPrefabId prefabId))
+            {
+                Logger.Warn($"SpawnFreshSeed() '{gameObject.name}' — '{_seedPrefab.name}' is not registered on SceneNetworking yet");
+                return null;
+            }
+
+            NetworkObject spawned = runner.Spawn(prefabId, transform.position, transform.rotation,
+                                                 null, null,
+                                                 NetworkSpawnFlags.SharedModeStateAuthMasterClient);
+            if (spawned == null)
+            {
+                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion refused to spawn '{_seedPrefab.name}'");
+                return null;
+            }
+
+            PlantSeed seed = spawned.GetComponent<PlantSeed>();
+            if (seed == null)
+                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — spawned '{spawned.name}' has no PlantSeed component");
+
+            return seed;
+        }
+
+        /// <summary>
+        /// Says what fresh stock is, more than once.
+        ///
+        /// A spawned object exists on the spawner immediately but reaches everyone else a few
+        /// ticks later, so the RestoreToShop() that follows a spawn can be about an object the
+        /// other clients do not have yet, and an RPC with nowhere to land is simply dropped.
+        /// Pooling never had this problem: every seed existed on every client from scene load,
+        /// so no message about one could outrun the object it described.
+        ///
+        /// Repeating the state broadcast is the crude fix, and deliberately so — this is the
+        /// one thing about runtime spawn that cannot be settled by reading the SDK, so phase A
+        /// exists partly to find out whether it was needed at all. If the logs show proxies
+        /// were already in step, delete the loop and keep a single broadcast.
+        /// </summary>
+        private IEnumerator AnnounceStock(PlantSeed seed)
+        {
+            // Gaps, not timestamps — these land at 0.25 s, 1 s and 2 s after the spawn.
+            float[] gaps = { 0.25f, 0.75f, 1f };
+            foreach (float gap in gaps)
+            {
+                yield return new WaitForSeconds(gap);
+
+                // Only while it is still ours and still stock — a seed bought in the meantime
+                // has moved on, and re-asserting shop state over it is exactly the bug the
+                // purchase-authority work removed.
+                if (seed == null || seed != _currentSeed || !seed.InShop) yield break;
+
+                seed.broadcastState();
+            }
         }
 
         /// <summary>
