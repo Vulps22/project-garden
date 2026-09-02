@@ -68,6 +68,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
   _seedDefinition: {fileID: 351866997707089371}
+  _seedPrefab: {fileID: 5103742716878842499, guid: ff01cf40f2f79064f9156203b6026c9a,
+    type: 3}
+  _authorityTimeout: 2
 --- !u!114 &351866997707089371
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -80,10 +83,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 79d4529017e70be4a906f61d3e1272c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
-  seedId: 
-  displayName: 
-  buyPrice: 0
-  sellValue: 0
+  seedId: carrot
+  displayName: Carrot
+  buyPrice: 10
+  sellValue: 15
 --- !u!1 &7579675108711353300
 GameObject:
   m_ObjectHideFlags: 0

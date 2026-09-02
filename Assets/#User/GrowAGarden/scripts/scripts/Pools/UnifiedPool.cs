@@ -86,14 +86,29 @@ namespace GrowAGarden
             return plant;
         }
 
-        public void Return(PlantSeed plant)
+        /// <summary>
+        /// Takes a seed back, if it is one of ours.
+        ///
+        /// Returns false for anything this pool did not lend out. PlantsInPool is the pool's
+        /// entire stock — the scene instances wired up in the Inspector — so a seed that is not
+        /// in it was spawned at runtime and has no bed here to go back to. Restoring one anyway
+        /// would teleport a spawned seed onto the pool transform and hide it forever.
+        ///
+        /// The membership test is exact and needs no network state: the array is scene data, so
+        /// every client answers identically. It disappears along with the pools themselves.
+        /// </summary>
+        public bool Return(PlantSeed plant)
         {
+            if (System.Array.IndexOf(PlantsInPool, plant) < 0) return false;
+
             if (!plant.networkBridge.Object.HasStateAuthority)
                 StartCoroutine(RequestAuthorityAndReturn(plant));
             else
             {
                 Restore(plant);
             }
+
+            return true;
         }
 
         private IEnumerator RequestAuthorityAndReturn(PlantSeed plant)

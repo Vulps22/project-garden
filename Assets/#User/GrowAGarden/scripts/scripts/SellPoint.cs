@@ -208,10 +208,24 @@ namespace GrowAGarden
             }
 
             EconomyManager.Instance.AddBalance(_pendingSellerId, _pendingValue);
-            plant.Sell();                                                   // tell everyone it is sold
-            PoolManager.Instance.ReturnPlantSeed(plant.seedDefinition.seedId, plant);   // hand to storage
 
-            Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'");
+            // Storage first, because only storage knows whether this instance is one of its own.
+            if (PoolManager.Instance.ReturnPlantSeed(plant.seedDefinition.seedId, plant))
+            {
+                plant.Sell();   // tell everyone it is sold; the pooled instance lives on
+                Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold pooled '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'");
+            }
+            else
+            {
+                // Spawned stock. Despawning *is* the announcement — it destroys the object on
+                // every client, so there is no state left for a sold RPC to describe, and
+                // sending one into the same frame as the despawn only risks a message arriving
+                // for an object that no longer exists. The shop already owns it by this point,
+                // which is what Despawn requires.
+                Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold spawned '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'; despawning");
+                SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            }
+
             ClearPending();
         }
 
