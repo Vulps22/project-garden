@@ -47,6 +47,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
   _seedDefinition: {fileID: 6520559026116492647}
+  _seedPrefab: {fileID: 2637539085011416152, guid: 02d1fa4c46150c84a9e976ae4bf9148f,
+    type: 3}
+  _authorityTimeout: 2
 --- !u!65 &5523914299885111811
 BoxCollider:
   m_ObjectHideFlags: 0

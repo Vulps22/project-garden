@@ -83,26 +83,6 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Clears decay on the way into the pool.
-        ///
-        /// OnWillUpdate returns early on `if (IsSeed) return;` and a pooled seed *is* a seed, so
-        /// the phase-2 branch that clears _isDecaying can never run once this instance is parked.
-        /// A pumpkin sold part-way through decay therefore kept the flag forever, and
-        /// UpdateVisuals(isSeed:true) deliberately skips resetting the vine while it is set — so
-        /// every later claim of this instance came back with a vine still scaled to near zero:
-        /// buyable, grabbable and invisible. A pooled plant has no decay left to finish.
-        /// </summary>
-        protected override void OnReturnedToPool()
-        {
-            _isDecaying = false;
-            _vineAnchored = false;
-            _growthPhase = 0;
-            _SeedModel.transform.localPosition = _vineInitialLocalPos;
-            _SeedModel.transform.localRotation = _vineInitialLocalRot;
-            _SeedModel.transform.localScale = Vector3.one;
-        }
-
-        /// <summary>
         /// Handles vine-specific RPCs: anchoring the vine in world space and starting decay.
         /// </summary>
         private void OnVineMessageToAll(byte id, byte[] data)
@@ -239,7 +219,7 @@ namespace GrowAGarden
         /// <summary>
         /// isSeed=true: vine (_SeedModel) shown at scale 1, fruit hidden.
         /// isSeed=false: vine resets to scale 0 and grows, fruit enabled at scale 0.
-        /// If returning to pool mid-decay, vine is left alone so it can finish decaying.
+        /// Mid-decay the vine is left alone so it can finish decaying.
         /// </summary>
         protected override void UpdateVisuals(bool isSeed)
         {

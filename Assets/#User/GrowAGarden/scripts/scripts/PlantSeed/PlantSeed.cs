@@ -21,7 +21,6 @@ namespace GrowAGarden
         public bool IsSeed { get; private set; }
         public bool InShop { get; private set; }
         public bool IsBought { get; private set; }
-        public bool IsInPool { get; private set; }
 
         /// <summary>
         /// True from the moment this is offered over a sell point counter until the sale
@@ -55,7 +54,6 @@ namespace GrowAGarden
         {
             get
             {
-                if (IsInPool) return true;   // parked out of the world
                 if (!IsSeed) return true;    // planted, growing or grown — anchored to its slot
                 if (InShop) return false;    // physical; recalled to the slot when asked
                 return false;                // free seed — falls, lands and floats
@@ -68,14 +66,17 @@ namespace GrowAGarden
         /// else is kinematic, where gravity is ignored anyway.
         ///
         /// </summary>
-        public bool ShouldUseGravity => IsSeed && !IsInPool && !InShop;
+        public bool ShouldUseGravity => IsSeed && !InShop;
 
         /// <summary>
         /// Stock belongs to the world, not to whoever last touched it. A seed nobody is
-        /// holding, sitting in the pool or in a shop slot, should be owned by the master.
-        /// The holder check is what stops the master claiming a seed out of a player's hand.
+        /// holding, sitting in a shop slot, should be owned by the master. The holder check is
+        /// what stops the master claiming a seed out of a player's hand.
+        ///
+        /// Rarely needed now: the master spawns stock with SharedModeStateAuthMasterClient, so it
+        /// owns it from birth. This is what recovers a seed that was carried and put back.
         /// </summary>
-        public bool ShouldMasterOwn => (IsInPool || InShop) && string.IsNullOrEmpty(HolderId);
+        public bool ShouldMasterOwn => InShop && string.IsNullOrEmpty(HolderId);
 
         private HoveringEntity _hovering;
         private Renderer[] _renderers;
@@ -89,14 +90,14 @@ namespace GrowAGarden
         /// A bought seed loose in the world and nobody holding it. The one condition that
         /// decides whether it floats.
         /// </summary>
-        private bool IsLooseInWorld => IsSeed && !IsInPool && !InShop && !IsHeld;
+        private bool IsLooseInWorld => IsSeed && !InShop && !IsHeld;
 
         /// <summary>
         /// Drives the hovering component from lifecycle changes.
         ///
         /// PlantSeed decides because PlantSeed is the only thing that knows: it owns the
         /// lifecycle flags and the grab callbacks. Doing it in one handler rather than sprinkling
-        /// Begin/Stop through Plant, Sell, ReturnToPool and the grab callbacks means there is a
+        /// Begin/Stop through Plant, Sell and the grab callbacks means there is a
         /// single place that can be wrong, and no exit path that can forget.
         /// </summary>
         private void UpdateHovering()
@@ -248,11 +249,10 @@ namespace GrowAGarden
             if (networkBridge.Object == null) return;
             if (!networkBridge.Object.HasStateAuthority) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize * 4 + BytesWriter.IntSize * 2 + GetExtraBroadcastStateSize());
+            BytesWriter writer = new BytesWriter(BytesWriter.ByteSize * 3 + BytesWriter.IntSize * 2 + GetExtraBroadcastStateSize());
             writer.AddByte(IsSeed ? (byte)1 : (byte)0);
             writer.AddByte(InShop ? (byte)1 : (byte)0);
             writer.AddByte(IsBought ? (byte)1 : (byte)0);
-            writer.AddByte(IsInPool ? (byte)1 : (byte)0);
             writer.AddInt((int)(_plantedTimestamp >> 32));
             writer.AddInt((int)(_plantedTimestamp & 0xFFFFFFFFL));
             OnWriteBroadcastState(writer);
@@ -324,22 +324,13 @@ namespace GrowAGarden
             SalePending = pending;
             SetState(IsSeed);          // re-derives visibility through the rule in SetState
 
-            // HideForPool() turned the grab off on the way in and UpdateVisuals() does not turn it
-            // back on, so without this a refused sale hands back a plant that is visible and
+            // HideFromWorld() turned the grab off on the way in and UpdateVisuals() does not turn
+            // it back on, so without this a refused sale hands back a plant that is visible and
             // completely untouchable. Derived rather than remembered: grabbable is exactly
-            // "present in the world, and either a seed or a finished plant".
+            // "either a seed or a finished plant".
             if (!pending && _grabInteractable != null)
-                _grabInteractable.enabled = !IsInPool && (IsSeed || GetGrowthCompletion() >= 1f);
+                _grabInteractable.enabled = IsSeed || GetGrowthCompletion() >= 1f;
 
-            LifecycleChanged?.Invoke();
-        }
-
-        /// <summary>
-        /// Marks this seed as claimed from the pool. Call before PlaceInShop().
-        /// </summary>
-        public void Claim()
-        {
-            IsInPool = false;
             LifecycleChanged?.Invoke();
         }
 
@@ -389,7 +380,7 @@ namespace GrowAGarden
             var ret = GetComponent<ReturnableEntity>();
             if (ret == null || !ret.IsReturning) _grabInteractable.enabled = true;
 
-            Logger.Info($"ApplyRestoreToShop() '{gameObject.name}' — InShop={InShop} IsSeed={IsSeed} IsInPool={IsInPool} grab={_grabInteractable.enabled} authority={HasLocalAuthority}");
+            Logger.Info($"ApplyRestoreToShop() '{gameObject.name}' — InShop={InShop} IsSeed={IsSeed} grab={_grabInteractable.enabled} authority={HasLocalAuthority}");
 
             LifecycleChanged?.Invoke();
             broadcastState();   // resync for whoever owns it; a no-op everywhere else
@@ -474,39 +465,6 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Sells this plant — broadcasts to all clients. Each client resets local state;
-        /// the authority additionally returns it to the pool. Master client only.
-        /// </summary>
-        public void Sell()
-        {
-            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.sold, new byte[0]);
-        }
-
-        /// <summary>
-        /// Resets this plant back into the pool at the given position and broadcasts the reset.
-        /// State authority only.
-        /// </summary>
-        public void ReturnToPool(Vector3 position, Quaternion rotation)
-        {
-            IsInPool = true;
-            transform.position = position;
-            transform.rotation = rotation;
-            transform.localScale = Vector3.one;
-            OnReturnedToPool();                 // before SetState: it may change what visuals see
-            ClearShopClaim();
-            SalePending = false;                // the counter is clear; IsInPool hides it from here
-            SetState(true);                     // KinematicController owns isKinematic now
-            broadcastState();
-        }
-
-        /// <summary>
-        /// Last chance to reset anything a subclass carries that outlives one life.
-        /// Called before the pooled state is applied, so what is written here is what the next
-        /// claim of this instance starts from.
-        /// </summary>
-        protected virtual void OnReturnedToPool() { }
-
-        /// <summary>
         /// Drives growth scaling each frame. Authority only. Calls OnGrowthUpdated for subclass scale logic,
         /// and OnFullyGrown when the current phase completes.
         /// </summary>
@@ -566,29 +524,28 @@ namespace GrowAGarden
         {
             IsSeed = isSeed;
 
-            // UpdateVisuals only distinguishes seed from plant — it has no notion of a seed
-            // that should not be in the world at all. Hooking the pool case in here catches
-            // every path that changes visual state (authority, proxy sync, spawn, sale)
-            // rather than relying on each of them to remember.
-            // Pooled and sale-pending are both "not present in the world", and both have to beat
-            // UpdateVisuals. Without the SalePending term the sold RPC's SetState(true) would run
-            // UpdateVisuals and pop the plant back into view as a seed for the couple of hundred
-            // milliseconds until it reaches the pool.
-            if (IsInPool || SalePending) HideForPool();
+            // UpdateVisuals only distinguishes seed from plant — it has no notion of a plant
+            // that should not be on screen at all. Hooking that in here catches every path that
+            // changes visual state (authority, proxy sync, spawn, sale) rather than relying on
+            // each of them to remember. Without the SalePending term the sold RPC's
+            // SetState(true) would run UpdateVisuals and pop the plant back into view as a seed
+            // for the couple of hundred milliseconds before it is despawned.
+            if (SalePending) HideFromWorld();
             else UpdateVisuals(isSeed);
 
             LifecycleChanged?.Invoke();
         }
 
         /// <summary>
-        /// A pooled seed is not present in the world: no visuals, no colliders, no grab.
-        /// Without this the pools are visible piles of grabbable seeds sitting at the pool
-        /// transforms, which breaks the invariant that a seed outside a shop slot has been
-        /// bought — and would leave them free-falling once seeds get gravity.
-        /// Leaving the pool goes back through UpdateVisuals(), which re-derives the correct
-        /// renderer and collider set for the subclass.
+        /// Takes this out of the world without destroying it: no visuals, no colliders, no grab.
+        ///
+        /// Used for the moments an object exists but must not be seen — today only the window
+        /// between a plant being offered over the sell counter and the sale completing, so the
+        /// plant leaves the seller's hands at once instead of hanging in mid-air for the round
+        /// trip. Coming back goes through UpdateVisuals(), which re-derives the correct renderer
+        /// and collider set for the subclass.
         /// </summary>
-        private void HideForPool()
+        private void HideFromWorld()
         {
             _renderers ??= GetComponentsInChildren<Renderer>(true);
             _colliders ??= GetComponentsInChildren<Collider>(true);
@@ -611,9 +568,7 @@ namespace GrowAGarden
             switch ((PlantMessageType)id)
             {
                 case PlantMessageType.enable:
-                    // Never re-arm a pooled seed. A proxy whose state briefly disagrees with
-                    // the authority could otherwise be handed a grabbable invisible object.
-                    _grabInteractable.enabled = !IsInPool;
+                    _grabInteractable.enabled = true;
                     break;
                 case PlantMessageType.disable:
                     SetState(false);
@@ -642,15 +597,6 @@ namespace GrowAGarden
                 case PlantMessageType.restoredToShop:
                     ApplyRestoreToShop();
                     break;
-                case PlantMessageType.sold:
-                    // Resets local state only. Getting the plant into storage is the sell point's
-                    // job now — it is the client that owns the object by this point, and a plant
-                    // walking itself into the back room was how the authority split got hidden.
-                    _grabber = null;
-                    _occupiedSlot = null;
-                    SetState(true);
-                    _grabInteractable.enabled = false;
-                    break;
                 default:
                     Logger.Warn($"OnMessageToAll() '{gameObject.name}' — received unknown message id={id}");
                     break;
@@ -668,19 +614,13 @@ namespace GrowAGarden
             bool isSeed = reader.NextByte() == 1;
             InShop = reader.NextByte() == 1;
             IsBought = reader.NextByte() == 1;
-            IsInPool = reader.NextByte() == 1;
             long high = reader.NextInt();
             long low = (uint)reader.NextInt();
             _plantedTimestamp = (high << 32) | low;
 
             SetState(isSeed);
             OnReadBroadcastState(reader);
-            if (IsInPool)
-                _grabInteractable.enabled = false;   // SetState() already hid it; do not undo that
-            else if (isSeed)
-                _grabInteractable.enabled = true;
-            else
-                _grabInteractable.enabled = GetGrowthCompletion() >= 1f;
+            _grabInteractable.enabled = isSeed || GetGrowthCompletion() >= 1f;
         }
 
         /// <summary>
@@ -745,6 +685,9 @@ namespace GrowAGarden
     {
         enable,
         disable,
+        // Retired: a sale is now completed by despawning the plant, which needs no message —
+        // the object's disappearance is the announcement. Left in place as a reserved hole,
+        // because these are wire ids and renumbering makes two builds disagree.
         sold,
         stateSync,
         grabber,
