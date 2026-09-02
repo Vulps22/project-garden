@@ -476,14 +476,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.HoveringEntity
   _rigidbody: {fileID: 1054046652925961132}
   _networkBridge: {fileID: 1434875256084407990}
-  _hoverHeight: 0.5
+  _hoverHeight: 0.25
   _riseSpeed: 0.6
+  _fallGravityScale: 0.35
+  _maxFallSpeed: 2.5
   _rotateWhileHovering: 1
   _spinDegreesPerSecond: 20
   _keepUpright: 1
   _uprightDegreesPerSecond: 90
   _bobAmplitude: 0.03
   _bobSpeed: 1.2
+  _settleSeconds: 2
 --- !u!1001 &6946636119321826000
 PrefabInstance:
   m_ObjectHideFlags: 0
