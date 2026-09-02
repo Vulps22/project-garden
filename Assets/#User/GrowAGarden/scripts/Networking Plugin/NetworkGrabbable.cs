@@ -28,6 +28,7 @@ namespace GrowAGarden
         private const float TIMEOUT = 2.0f;
 
         private bool _ungrabbed = false;
+        private IHeldObject _held;
         private Vector3 _lastPosition;
         private Quaternion _lastRotation;
         private Vector3 _lastScale;
@@ -53,6 +54,7 @@ namespace GrowAGarden
 
             _lastPosition = _rigidbody.transform.position;
             _lastRotation = _rigidbody.transform.rotation;
+            _held = GetComponent<IHeldObject>();
 
             // Connect Grab event
             _grabInteracable.firstSelectEntered.AddListener(OnGrabbed);
@@ -109,9 +111,23 @@ namespace GrowAGarden
             Debug.Log($"[{nameof(NetworkGrabbable)}] Object control received");
         }
 
+        /// <summary>
+        /// Asks for control as the hand comes near, rather than waiting for the grab.
+        ///
+        /// The transfer is a network round trip — about 200ms from Edinburgh to a Central US
+        /// master. Until it lands the grabber is still a Fusion proxy, so NetworkRigidbody3D
+        /// keeps applying the owner's replicated pose every tick: the hand moves the object and
+        /// the network puts it back, which reads as the object flickering or vanishing out of
+        /// the hand. Asking on hover spends that trip during the reach, so the object is already
+        /// this client's by the time the hand closes.
+        ///
+        /// Skipped when someone else is holding it — SingleHolderFilter will refuse that grab
+        /// anyway, so taking control off the holder would achieve nothing but disruption.
+        /// </summary>
         private void OnHover(HoverEnterEventArgs arg)
         {
-            // Was re-asserting the cached kinematic value here; KinematicController owns that now.
+            if (_held != null && !string.IsNullOrEmpty(_held.HolderId)) return;
+            RequestControl();
         }
 
         private void OnUngrabbed(SelectExitEventArgs arg)

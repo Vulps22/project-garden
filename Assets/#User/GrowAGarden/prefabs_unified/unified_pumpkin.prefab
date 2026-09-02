@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 5549071607930426120}
   - component: {fileID: 1162811589366028084}
   - component: {fileID: 6667446470134639661}
+  - component: {fileID: 5340220352820746062}
   m_Layer: 0
   m_Name: unified_pumpkin
   m_TagString: Untagged
@@ -427,6 +428,7 @@ MonoBehaviour:
   _returnTo: {fileID: 0}
   _autoRecall: 0
   _grabInteractable: {fileID: 4773445120126099651}
+  _recallTimeout: 20
 --- !u!114 &1162811589366028084
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -459,14 +461,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.HoveringEntity
   _rigidbody: {fileID: 3238997438953549519}
   _networkBridge: {fileID: 544014741469173732}
-  _hoverHeight: 0.5
+  _hoverHeight: 0.25
   _riseSpeed: 0.6
+  _fallGravityScale: 0.35
+  _maxFallSpeed: 2.5
   _rotateWhileHovering: 1
   _spinDegreesPerSecond: 20
   _keepUpright: 1
   _uprightDegreesPerSecond: 90
   _bobAmplitude: 0.03
   _bobSpeed: 1.2
+  _settleSeconds: 2
+--- !u!114 &5340220352820746062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2878792842855438303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 715daecd0cbb4c62b26f59418853ef09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
+  _grabInteracable: {fileID: 4773445120126099651}
+  _networkRigidbody: {fileID: 8533820553166843648}
+  _rigidbody: {fileID: 3238997438953549519}
 --- !u!1001 &6982210231104125602
 PrefabInstance:
   m_ObjectHideFlags: 0
