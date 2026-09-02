@@ -9,9 +9,8 @@ namespace GrowAGarden
     {
         [SerializeField] private SeedDefinition _seedDefinition;
 
-        [Tooltip("Set this to stock the slot by spawning a fresh seed instead of claiming one " +
-                 "from a pool. The prefab must also be listed on the SceneNetworking component, " +
-                 "or Fusion has no id to spawn it by. Leave empty to keep using the pool.")]
+        [Tooltip("The seed this slot sells. Must also be listed on the SceneNetworking " +
+                 "component, or Fusion has no id to spawn it by.")]
         [SerializeField] private NetworkObject _seedPrefab;
 
         private PlantSeed _currentSeed;
@@ -21,6 +20,10 @@ namespace GrowAGarden
         [Tooltip("How long the shop waits to be given ownership of a seed before giving up on " +
                  "bringing it home. A safety net, not a normal path.")]
         [SerializeField] private float _authorityTimeout = 2f;
+
+        /// <summary>How long to wait before trying to stock an empty slot again.</summary>
+        private const float RESTOCK_RETRY_SECONDS = 0.5f;
+        private float _lastStockAttempt = float.NegativeInfinity;
 
         private void Start()
         {
@@ -51,19 +54,21 @@ namespace GrowAGarden
         {
             if (!SceneNetworking.IsMasterClient) return;
 
-            bool seedMissing = _currentSeed == null
-                            || _currentSeed.IsInPool   // planted, grown, sold — returned to pool
-                            || !_currentSeed.IsSeed;   // planted but not yet returned to pool
+            // Sold stock is despawned, so a Unity-null _currentSeed is the normal way a slot
+            // learns it is empty. !IsSeed catches one that was planted without passing through
+            // here.
+            bool seedMissing = _currentSeed == null || !_currentSeed.IsSeed;
+            if (!seedMissing) return;
 
-            if (seedMissing)
-            {
-                // Must run even when _currentSeed is already null: the join-time SpawnSeed()
-                // fires from OnLocalPlayerJoined, before Fusion has spawned the pooled scene
-                // objects, so UnifiedPool.Restore() has not yet flagged anything IsInPool and
-                // Claim() returns null. This retry is what stocks the slot once it can.
-                SetCurrentSeed(null);
-                SpawnSeed();
-            }
+            // Restocking is a retry, not a per-frame job. Spawning is the one thing here that
+            // can fail for reasons outside this slot — the session not being ready, the prefab
+            // table not built — and at 90 Hz a failing retry becomes hundreds of attempts and,
+            // if Fusion throws rather than refusing, hundreds of orphans.
+            if (Time.time - _lastStockAttempt < RESTOCK_RETRY_SECONDS) return;
+            _lastStockAttempt = Time.time;
+
+            SetCurrentSeed(null);
+            SpawnSeed();
         }
 
         private void SpawnSeed()
@@ -74,26 +79,12 @@ namespace GrowAGarden
                 return;
             }
 
-            // The runner reports IsSharedModeMasterClient as soon as it is running — several
-            // seconds before the local player actually joins the session. Fusion cannot allocate
-            // an object id in that window: Runner.Spawn() instantiates the prefab, then throws
-            // NullReferenceException out of Simulation.GetNextId(), leaving an orphaned
-            // GameObject in the scene that no one owns and nothing will ever sync. Those orphans
-            // render every mesh their prefab was authored with, which is why a shop slot showed
-            // a seed and a grown carrot at the same time.
-            //
-            // Guarded here rather than in Update() so no caller can bypass it. Start() already
-            // waited for OnLocalPlayerJoined; the master-only restock in Update() did not, and
-            // it runs every frame, so the alarm fired before the world had finished loading.
-            if (!SceneNetworking.IsNetworkReady)
+            if (!CanSpawn())
             {
                 return;
             }
 
-            PlantSeed claimed = _seedPrefab != null
-                ? SpawnFreshSeed()
-                : PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
-
+            PlantSeed claimed = SpawnFreshSeed();
             if (claimed == null)
             {
                 Logger.Warn($"SpawnSeed() '{gameObject.name}' — no seed available for '{_seedDefinition.seedId}'; slot left empty, will retry");
@@ -105,10 +96,31 @@ namespace GrowAGarden
             SetCurrentSeed(claimed);
             claimed.PlaceInShop(transform.position, transform.rotation);
             AssignSlot(claimed);
+            StartCoroutine(AnnounceStock(claimed));
+        }
 
-            // Spawned stock only. A pooled seed already exists on every client, so repeating its
-            // state would change the behaviour of the very path this phase is measuring against.
-            if (_seedPrefab != null) StartCoroutine(AnnounceStock(claimed));
+        /// <summary>
+        /// Whether Fusion can actually create an object right now.
+        ///
+        /// Asks the runner, not our own bookkeeping. IsSharedModeMasterClient goes true as soon
+        /// as the peer is in a room, and SceneNetworking.IsNetworkReady is a static that outlives
+        /// the scene it describes — during a world transition the old value is still standing
+        /// while the new scene's Update loops are already running. Either one alone said "go"
+        /// while Fusion's simulation had no player index yet, and Runner.Spawn() in that window
+        /// instantiates the prefab and *then* throws out of Simulation.GetNextId(), leaving an
+        /// orphaned GameObject that is never networked and never told what it is. Those orphans
+        /// are what put two seeds in one slot.
+        ///
+        /// LocalPlayer.IsRealPlayer is the question that actually matters — it is false until
+        /// this peer has a player index, which is precisely what GetNextId() needs.
+        /// </summary>
+        private bool CanSpawn()
+        {
+            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+            return runner != null
+                && runner.IsRunning
+                && runner.LocalPlayer.IsRealPlayer
+                && SceneNetworking.IsNetworkReady;
         }
 
         /// <summary>
@@ -122,8 +134,8 @@ namespace GrowAGarden
         /// already established.
         ///
         /// Returns null rather than throwing when the prefab table has not been built yet —
-        /// registration happens at runner setup, and a slot can reach here first. Update()
-        /// retries every frame, which is the same retry that already covered a cold pool.
+        /// registration happens at runner setup, and a slot can reach here first. Update() tries
+        /// again shortly afterwards.
         /// </summary>
         private PlantSeed SpawnFreshSeed()
         {
@@ -137,9 +149,27 @@ namespace GrowAGarden
                 return null;
             }
 
-            NetworkObject spawned = runner.Spawn(prefabId, transform.position, transform.rotation,
-                                                 null, null,
-                                                 NetworkSpawnFlags.SharedModeStateAuthMasterClient);
+            NetworkObject spawned;
+            try
+            {
+                spawned = runner.Spawn(prefabId, transform.position, transform.rotation,
+                                       null, null,
+                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
+            }
+            catch (System.Exception e)
+            {
+                // Fusion instantiates the prefab before it allocates an id, so a throw in here
+                // has already left a GameObject in the scene that will never be networked. There
+                // is no handle to clean it up with — the only real defence is CanSpawn() above,
+                // and the retry interval that stops a bad frame becoming a hundred of them.
+                //
+                // Caught rather than left to propagate because ExceptionAlarm blacks the world
+                // out on any exception from this assembly, and a shop that cannot restock is not
+                // worth making the garden unplayable for. The error still says so, loudly.
+                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion threw spawning '{_seedPrefab.name}': {e.Message}");
+                return null;
+            }
+
             if (spawned == null)
             {
                 Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion refused to spawn '{_seedPrefab.name}'");
@@ -301,7 +331,7 @@ namespace GrowAGarden
         /// a layer-based rule would work in the Editor and quietly do nothing in-world.
         ///
         /// Re-applied on every AssignSlot() because Unity drops ignored pairs when a collider is
-        /// disabled and re-enabled, which is exactly what pooling does.
+        /// disabled and re-enabled, which UpdateVisuals does on every state change.
         /// </summary>
         private void IgnorePropCollisions(PlantSeed seed, bool ignore)
         {

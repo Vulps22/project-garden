@@ -7,8 +7,8 @@ namespace GrowAGarden
 {
     /// <summary>
     /// The counter. A player puts a grown plant down on it and the shop handles everything from
-    /// there: it takes the plant out of their hands, pays them, takes ownership of it, and passes
-    /// it to storage to be cleaned up for resale.
+    /// there: it takes the plant out of their hands, pays them, takes ownership of it, and
+    /// destroys it.
     ///
     /// The seller *offers*; the shop *accepts*. It used to be the other way round — the master
     /// watched its own copy of a plant it did not own cross this trigger and inferred a sale from
@@ -18,7 +18,7 @@ namespace GrowAGarden
     ///
     /// This has its own NetworkBridge rather than riding the plant's, because the seller is
     /// addressing the shop, not the plant. The plant is named by its NetworkId inside the
-    /// payload, the way UnifiedPool already addresses a plant it is told to take back.
+    /// payload, so the message survives whatever is happening to the plant itself.
     /// </summary>
     public class SellPoint : MonoBehaviour
     {
@@ -144,7 +144,7 @@ namespace GrowAGarden
                 return;
             }
 
-            if (plant.IsSeed || plant.IsInPool || plant.GetGrowthCompletion() < 1f)
+            if (plant.IsSeed || plant.GetGrowthCompletion() < 1f)
             {
                 Reject(plant, "is not a grown plant");
                 return;
@@ -172,11 +172,10 @@ namespace GrowAGarden
         /// <summary>
         /// Takes the plant off the seller and completes the sale.
         ///
-        /// Ownership is not optional here: paying and pooling both write state, and pooling moves
-        /// the transform — which a client that does not hold Fusion authority cannot do, because
-        /// NetworkRigidbody3D overwrites a proxy's position on the next tick. Announcing the sale
-        /// by RPC is enough to change flags everywhere, but it cannot carry the plant into
-        /// storage. So the shop takes ownership first and acts second.
+        /// Ownership is not optional here: Runner.Despawn silently does nothing unless the caller
+        /// holds state authority, so a shop that has not taken the plant off the seller would pay
+        /// out and leave the plant standing there. So the shop takes ownership first and acts
+        /// second.
         ///
         /// Latency is free here — the plant is already out of the seller's hands and invisible, so
         /// nothing anybody is looking at is waiting on this.
@@ -209,22 +208,12 @@ namespace GrowAGarden
 
             EconomyManager.Instance.AddBalance(_pendingSellerId, _pendingValue);
 
-            // Storage first, because only storage knows whether this instance is one of its own.
-            if (PoolManager.Instance.ReturnPlantSeed(plant.seedDefinition.seedId, plant))
-            {
-                plant.Sell();   // tell everyone it is sold; the pooled instance lives on
-                Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold pooled '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'");
-            }
-            else
-            {
-                // Spawned stock. Despawning *is* the announcement — it destroys the object on
-                // every client, so there is no state left for a sold RPC to describe, and
-                // sending one into the same frame as the despawn only risks a message arriving
-                // for an object that no longer exists. The shop already owns it by this point,
-                // which is what Despawn requires.
-                Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold spawned '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'; despawning");
-                SceneNetworking.NetworkRunnerRef.Despawn(obj);
-            }
+            // Despawning *is* the announcement: it destroys the object on every client, so there
+            // is no state left for a sold RPC to describe, and sending one into the same frame as
+            // the despawn only risks a message arriving for an object that no longer exists. The
+            // shop already owns it by this point, which is what Despawn requires.
+            Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'; despawning");
+            SceneNetworking.NetworkRunnerRef.Despawn(obj);
 
             ClearPending();
         }

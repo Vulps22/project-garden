@@ -1,6 +1,7 @@
 # Runtime spawn — what it changes
 
-Status: **design only, nothing implemented.** Written 2026-09-02 against `main` @ 53abd4f, tree clean.
+Status: **phases A and B implemented.** Written 2026-09-02 against `main` @ 53abd4f; updated as each
+phase landed.
 
 Companion to `bearing-plants-and-produce.md`, which was designed against the pooled world and is
 **revised by this** (see §7). Read `CLAUDE.md` first; this assumes its Architecture section.
@@ -145,6 +146,15 @@ deliberately crude probe; the playtest decides whether anything of the sort is n
 long-term answer, if it is, is to put birth state in the spawn snapshot rather than chasing it with
 messages — `NetworkBridge` already exposes `[Networked] SyncByteArray` for precisely that.
 
+**i. Do not ask our own statics whether the session is ready.** The first fix for §4f's orphan
+problem gated spawning on `SceneNetworking.IsNetworkReady`, and it did not work: the NRE came back
+unchanged. `IsNetworkReady` is a **static that outlives the scene it describes** — during a world
+transition the previous scene's `true` is still standing while the new scene's `Update` loops are
+already running, and `IsSharedModeMasterClient` goes true as soon as the peer is in a room, which is
+earlier still. Neither says anything about whether Fusion's simulation has a player index yet, which
+is exactly what `GetNextId()` needs. Ask the runner: `runner.LocalPlayer.IsRealPlayer`. The general
+lesson is worth keeping — **our own bookkeeping is not evidence about Fusion's internal state.**
+
 **h. Proxies instantiate at the prefab's own transform.** The `position`/`rotation` arguments are
 local-only; the correct pose reaches proxies on the next `NetworkRigidbody3D` tick. Expect a
 one-frame pop at spawn. If it reads badly, the fix is spawning invisible and revealing on the first
@@ -184,8 +194,8 @@ every client computes scale forever. No new sync.
 
 | | Change | What the in-world test proves |
 |---|---|---|
-| **A** | Register `Unified_Carrot` in `SceneNetworking._networkPrefabs`. `ShopSlot.SpawnSeed()` spawns it master-authored instead of claiming from the pool, **carrot only**; `SellPoint` despawns a spawned plant instead of pooling it. Turnip and pumpkin keep pooling untouched, as the control. | The mechanism itself: does registration survive export, does a spawned object replicate, does a **late joiner** see it, does the master hold authority, does a carrot still buy and sell |
-| **B** | All three crops spawn. Delete `UnifiedPool`, `PoolManager`, `IsInPool`, `HideForPool()`, the 153 scene instances and the `ShopSlot.Update()` retry. | Nothing regressed with the scaffolding gone; shop restock under multiple clients |
+| **A** ✅ | Register `Unified_Carrot`; the carrot slot spawns, `SellPoint` despawns, turnip and pumpkin keep pooling as the control | **Done 2026-09-02.** Spawning works in an exported world: buy → grow → sell → despawn → restock all completed. Two defects found, see §4f/§4i |
+| **B** ✅ | All three crops spawn. `UnifiedPool`, `PoolManager`, `IsInPool`, `HideForPool()`, `PlantSeed.Sell()`, the 153 scene instances and their three pool containers all deleted. Scene went from 20,093 lines to 1,696, and from 255 scene NetworkObjects to 99 | untested in-world |
 | **C** | Seed and plant become separate prefabs. `RequestPlant` → master spawns the plant, seed authority despawns the seed. Deletes `IsSeed`, `SetState(bool)`, `UpdateVisuals(bool)`. Pumpkin gets a real seed prefab while it is open. | The full buy → plant → grow → sell loop, and that planting is decided in one place |
 | **D** | `Produce` and the bearing-plant split — `bearing-plants-and-produce.md` phases A–D, minus everything pool-shaped | as that doc describes |
 

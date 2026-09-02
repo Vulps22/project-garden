@@ -5,7 +5,7 @@ namespace GrowAGarden
 {
     /// <summary>
     /// Returns state authority to the master client for objects that belong to the world rather
-    /// than to a player — stock sitting in a shop slot, and seeds parked in the pool.
+    /// than to a player — stock sitting in a shop slot.
     ///
     /// Only the master ever requests, and only when its <see cref="IAuthoritySource"/> says the
     /// object is unowned by any player. That holder check is what keeps this from fighting
