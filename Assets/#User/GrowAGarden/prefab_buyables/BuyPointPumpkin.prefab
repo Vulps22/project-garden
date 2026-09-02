@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
   _seedDefinition: {fileID: 6520559026116492647}
-  _seedPrefab: {fileID: 2637539085011416152, guid: 02d1fa4c46150c84a9e976ae4bf9148f,
+  _seedPrefab: {fileID: 7457805046529267251, guid: 2089c0feed826f538bac5fec0978e4be,
     type: 3}
   _authorityTimeout: 2
 --- !u!65 &5523914299885111811
@@ -87,6 +87,9 @@ MonoBehaviour:
   displayName: Pumpkin
   buyPrice: 60
   sellValue: 110
+  growthDuration: 60
+  ripenDuration: 60
+  witherDuration: 30
 --- !u!1 &6674447652368485556
 GameObject:
   m_ObjectHideFlags: 0
