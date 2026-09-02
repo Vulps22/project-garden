@@ -528,6 +528,7 @@ GameObject:
   - component: {fileID: 163550768}
   - component: {fileID: 163550767}
   - component: {fileID: 163550766}
+  - component: {fileID: 163550770}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -550,13 +551,25 @@ MonoBehaviour:
   _autoTransferObjectsAuthority: 1
   _editorConnectPhotonNetwork: 0
   _networkPrefabs:
-  - {fileID: 5103742716878842499, guid: ff01cf40f2f79064f9156203b6026c9a, type: 3}
-  - {fileID: 2724614351551449642, guid: 09e9c737ce2aece4390f4365b6666a7c, type: 3}
-  - {fileID: 2637539085011416152, guid: 02d1fa4c46150c84a9e976ae4bf9148f, type: 3}
+  - {fileID: 4360997998222114339, guid: 17da2c2486b0ce26894a3e906bc69759, type: 3}
+  - {fileID: 8889210848319893590, guid: af83123bd613b1048aae31891e4bc91d, type: 3}
+  - {fileID: 5724602667579792080, guid: 1199ec2a21cc592959a9ca077c2f1703, type: 3}
+  - {fileID: 4238708424358438818, guid: 56add58f7a7cd95a8ba2beceb37fdaec, type: 3}
+  - {fileID: 2465927474794732699, guid: a424a8b55e0f09fd3a7fe733a500e376, type: 3}
+  - {fileID: 2504699797468376865, guid: 7ddda7a39daf773e7a95f0d49cfc8e2f, type: 3}
+  - {fileID: 7457805046529267251, guid: 2089c0feed826f538bac5fec0978e4be, type: 3}
+  - {fileID: 8075810893608712117, guid: af85332b863bfb112a2457847ebed4c8, type: 3}
+  - {fileID: 848182256679900965, guid: 63f388150445280beb6dbae4752ab728, type: 3}
   _networkPrefabsGuid:
-  - edc67a49-76fa-457d-92dd-ec5782ce728d
-  - 91283cac-e3be-4616-8500-3a8393d807fc
-  - 97cc5430-df18-4180-847a-922d9afe054e
+  - cdd3f584-b98a-417d-a2bd-5c9636942ed4
+  - b9ad836e-c027-470d-9a4d-166cf56f845c
+  - 6665c5ec-49b2-462d-80c5-ff9cf9520629
+  - f2743202-7ae2-44ea-843f-4e7641b5d53e
+  - 7a2611e9-69c4-4683-b539-013be19602ad
+  - c256b72a-61a3-418d-974e-48353a6b1eee
+  - 5ee8f96e-1997-41f9-b7d8-1e38f7bd0581
+  - 8b5c9575-23d9-4174-b2c0-0c060f859593
+  - 95f44235-2b59-4cd5-a980-77a6546a2c2d
 --- !u!4 &163550764
 Transform:
   m_ObjectHideFlags: 0
@@ -647,6 +660,20 @@ MonoBehaviour:
   PlayerRemoved:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &163550770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd91c580e136f05aa95498a001e9448f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.GardenLease
+  _players: {fileID: 163550769}
+  _leaseSeconds: 120
 --- !u!1001 &183129657
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -845,7 +872,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: b0c80db92e9d16b228b4500d9158101d, type: 3}
-  LastBuildSizeBytes: 14789424
+  LastBuildSizeBytes: 14765024
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -873,7 +900,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 297360288
+      AvailableSize: 297360352
     Paid:
       Entries: []
   OwnedTokens: []

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &7163453513877751585
+--- !u!1 &7865445560042903941
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,55 +8,53 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7716587279672404688}
-  - component: {fileID: 1434875256084407990}
-  - component: {fileID: 5103742716878842499}
-  - component: {fileID: 1054046652925961132}
-  - component: {fileID: 4860296978931391558}
-  - component: {fileID: 9221425232880620340}
-  - component: {fileID: 4248909366719016378}
-  - component: {fileID: 6570511697767294347}
-  - component: {fileID: 5280306726041791827}
-  - component: {fileID: -6513405909237204029}
-  - component: {fileID: 4964451483823346128}
-  - component: {fileID: -1307947511273831759}
-  - component: {fileID: 9187799288020743522}
-  - component: {fileID: 2940856061778804057}
-  - component: {fileID: 2430608988058198762}
-  - component: {fileID: 2976554528717412535}
-  - component: {fileID: 8285347141462554932}
-  - component: {fileID: 2492842725368153679}
+  - component: {fileID: 5602771404213870912}
+  - component: {fileID: 1872664296389260042}
+  - component: {fileID: 4360997998222114339}
+  - component: {fileID: 1686967113499795618}
+  - component: {fileID: 5547742860702557159}
+  - component: {fileID: 5200472926570274245}
+  - component: {fileID: 7802783851439514983}
+  - component: {fileID: 8817429224528844882}
+  - component: {fileID: 2029201865052126567}
+  - component: {fileID: 4854113166815372293}
+  - component: {fileID: 3030109200838806176}
+  - component: {fileID: 4316227619687725779}
+  - component: {fileID: 1989054682946905515}
+  - component: {fileID: 2170367869351469793}
+  - component: {fileID: 3683215358484958959}
+  - component: {fileID: 5343519784740636641}
+  - component: {fileID: 270004820687563866}
   m_Layer: 0
-  m_Name: Unified_Carrot
+  m_Name: Seed_Carrot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7716587279672404688
+--- !u!4 &5602771404213870912
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.25, y: 0.25, z: 0.25}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6947186438679193654}
-  - {fileID: 7276143754108260179}
+  - {fileID: 3317096938108392646}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1434875256084407990
+--- !u!114 &1872664296389260042
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
@@ -69,33 +67,33 @@ MonoBehaviour:
   _SyncVector3Array: []
   _SyncVector4Array: []
   _SyncStringArray: []
---- !u!114 &5103742716878842499
+--- !u!114 &4360997998222114339
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
-  SortKey: 112997154
+  SortKey: 3430655846
   ObjectInterest: 1
   Flags: 524289
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 1434875256084407990}
-  - {fileID: 4860296978931391558}
+  - {fileID: 1872664296389260042}
+  - {fileID: 5547742860702557159}
   ForceRemoteRenderTimeframe: 0
---- !u!54 &1054046652925961132
+--- !u!54 &1686967113499795618
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   serializedVersion: 5
   m_Mass: 1
   m_LinearDamping: 0
@@ -116,13 +114,13 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &4860296978931391558
+--- !u!114 &5547742860702557159
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a591d221a634417e9827eb58e17de84, type: 3}
@@ -139,28 +137,28 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 0.01
     Scale: 0.01
---- !u!114 &9221425232880620340
+--- !u!114 &5200472926570274245
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 715daecd0cbb4c62b26f59418853ef09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
-  _grabInteracable: {fileID: 4248909366719016378}
-  _networkRigidbody: {fileID: 4860296978931391558}
-  _rigidbody: {fileID: 1054046652925961132}
---- !u!114 &4248909366719016378
+  _grabInteracable: {fileID: 7802783851439514983}
+  _networkRigidbody: {fileID: 5547742860702557159}
+  _rigidbody: {fileID: 1686967113499795618}
+--- !u!114 &7802783851439514983
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ad34abafad169848a38072baa96cdb2, type: 3}
@@ -168,8 +166,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
   m_InteractionManager: {fileID: 0}
   m_Colliders:
-  - {fileID: 6570511697767294347}
-  - {fileID: 5280306726041791827}
+  - {fileID: 0}
+  - {fileID: 8817429224528844882}
   m_InteractionLayers:
     m_Bits: 8
   m_DistanceCalculationMode: 1
@@ -285,35 +283,13 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!64 &6570511697767294347
+--- !u!64 &8817429224528844882
 MeshCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 0
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300022, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
---- !u!64 &5280306726041791827
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -329,13 +305,13 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300024, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
---- !u!65 &-6513405909237204029
+--- !u!65 &2029201865052126567
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -350,32 +326,13 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.25, y: 1, z: 0.31}
   m_Center: {x: 0, y: 0.12, z: 0}
---- !u!114 &4964451483823346128
+--- !u!114 &4854113166815372293
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2719fe184350c4e4fb2c7bf09a258ac5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.RootedPlantSeed
-  _SeedModel: {fileID: 7252358533932005785}
-  _SeedCollider: {fileID: 5280306726041791827}
-  seedDefinition: {fileID: -1307947511273831759}
-  networkBridge: {fileID: 1434875256084407990}
-  _grabInteractable: {fileID: 4248909366719016378}
-  _PlantModel: {fileID: 6932973717305585960}
-  _PlantCollider: {fileID: 6570511697767294347}
---- !u!114 &-1307947511273831759
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79d4529017e70be4a906f61d3e1272c9, type: 3}
@@ -385,98 +342,101 @@ MonoBehaviour:
   displayName: Carrot
   buyPrice: 10
   sellValue: 15
---- !u!114 &9187799288020743522
+  growthDuration: 10
+  ripenDuration: 1
+  witherDuration: 0
+--- !u!114 &3030109200838806176
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c0ca45723e194d3b83a4a1c2c3b0268, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.KinematicController
-  _rigidbody: {fileID: 1054046652925961132}
-  _networkBridge: {fileID: 1434875256084407990}
-  _grabInteractable: {fileID: 4248909366719016378}
---- !u!114 &2940856061778804057
+  _rigidbody: {fileID: 1686967113499795618}
+  _networkBridge: {fileID: 1872664296389260042}
+  _grabInteractable: {fileID: 7802783851439514983}
+--- !u!114 &4316227619687725779
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: acd7c84790d7f5c84b01488034eac2af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SingleHolderFilter
---- !u!114 &2430608988058198762
+--- !u!114 &1989054682946905515
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a0d79c1544a24d928b67bb6d2676f69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.AuthorityController
-  _networkBridge: {fileID: 1434875256084407990}
---- !u!114 &2976554528717412535
+  _networkBridge: {fileID: 1872664296389260042}
+--- !u!114 &2170367869351469793
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e95b202dd8f012a28238d4bd702b328, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ReturnableEntity
-  _rigidbody: {fileID: 1054046652925961132}
-  _networkBridge: {fileID: 1434875256084407990}
+  _rigidbody: {fileID: 1686967113499795618}
+  _networkBridge: {fileID: 1872664296389260042}
   _speed: 0.35
   _arriveDistance: 0.1
   _returnTo: {fileID: 0}
   _autoRecall: 0
-  _grabInteractable: {fileID: 4248909366719016378}
+  _grabInteractable: {fileID: 7802783851439514983}
   _recallTimeout: 20
---- !u!114 &8285347141462554932
+--- !u!114 &3683215358484958959
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a07887f059b8fe0a7bc1a678d6de02bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.AlignableEntity
-  _rigidbody: {fileID: 1054046652925961132}
-  _networkBridge: {fileID: 1434875256084407990}
+  _rigidbody: {fileID: 1686967113499795618}
+  _networkBridge: {fileID: 1872664296389260042}
   _degreesPerSecond: 90
   _arriveAngle: 5
   _autoRealign: 0
-  _grabInteractable: {fileID: 4248909366719016378}
---- !u!114 &2492842725368153679
+  _grabInteractable: {fileID: 7802783851439514983}
+--- !u!114 &5343519784740636641
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7163453513877751585}
+  m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c3771aa6bbee2a6ba0e9e49d2a94d9b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.HoveringEntity
-  _rigidbody: {fileID: 1054046652925961132}
-  _networkBridge: {fileID: 1434875256084407990}
+  _rigidbody: {fileID: 1686967113499795618}
+  _networkBridge: {fileID: 1872664296389260042}
   _hoverHeight: 0.25
   _riseSpeed: 0.6
   _fallGravityScale: 0.35
@@ -488,110 +448,30 @@ MonoBehaviour:
   _bobAmplitude: 0.03
   _bobSpeed: 1.2
   _settleSeconds: 2
---- !u!1001 &6946636119321826000
+--- !u!114 &270004820687563866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0740b7751f25043129342cbeb51b3214, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.Seed
+  seedDefinition: {fileID: 4854113166815372293}
+  networkBridge: {fileID: 1872664296389260042}
+  _grabInteractable: {fileID: 7802783851439514983}
+  _plantPrefab: {fileID: 8889210848319893590, guid: af83123bd613b1048aae31891e4bc91d,
+    type: 3}
+--- !u!1001 &3316487622308164166
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 7716587279672404688}
-    m_Modifications:
-    - target: {fileID: 1000014111768446, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_Name
-      value: Carrot_Fruit
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 23000013408642040, guid: 2cf13a738fc434c46bda5ebf7ca44756,
-        type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 64000013701434876, guid: 2cf13a738fc434c46bda5ebf7ca44756,
-        type: 3}
-      propertyPath: m_Convex
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64000013701434876, guid: 2cf13a738fc434c46bda5ebf7ca44756,
-        type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 64000013701434876, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
---- !u!23 &6932973717305585960 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 23000013408642040, guid: 2cf13a738fc434c46bda5ebf7ca44756,
-    type: 3}
-  m_PrefabInstance: {fileID: 6946636119321826000}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &6947186438679193654 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756,
-    type: 3}
-  m_PrefabInstance: {fileID: 6946636119321826000}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &7274505051821320659
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 7716587279672404688}
+    m_TransformParent: {fileID: 5602771404213870912}
     m_Modifications:
     - target: {fileID: 1000013410243764, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_Name
@@ -665,15 +545,9 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
---- !u!23 &7252358533932005785 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 23000013933252682, guid: 56b36da289d9a9e4cb37c5f588e23748,
-    type: 3}
-  m_PrefabInstance: {fileID: 7274505051821320659}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &7276143754108260179 stripped
+--- !u!4 &3317096938108392646 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748,
     type: 3}
-  m_PrefabInstance: {fileID: 7274505051821320659}
+  m_PrefabInstance: {fileID: 3316487622308164166}
   m_PrefabAsset: {fileID: 0}

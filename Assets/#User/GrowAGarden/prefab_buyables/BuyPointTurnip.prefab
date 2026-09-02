@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
   _seedDefinition: {fileID: 2541940465109095118}
-  _seedPrefab: {fileID: 2724614351551449642, guid: 09e9c737ce2aece4390f4365b6666a7c,
+  _seedPrefab: {fileID: 4238708424358438818, guid: 56add58f7a7cd95a8ba2beceb37fdaec,
     type: 3}
   _authorityTimeout: 2
 --- !u!65 &5523914299885111811
@@ -86,7 +86,10 @@ MonoBehaviour:
   seedId: turnip
   displayName: Turnip
   buyPrice: 18
-  sellValue: 28
+  sellValue: 25
+  growthDuration: 15
+  ripenDuration: 1
+  witherDuration: 0
 --- !u!1 &6674447652368485556
 GameObject:
   m_ObjectHideFlags: 0
