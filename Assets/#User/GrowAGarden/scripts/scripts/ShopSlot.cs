@@ -12,6 +12,10 @@ namespace GrowAGarden
         private Collider[] _propColliders;
         private Collider _slotTrigger;
 
+        [Tooltip("How long the shop waits to be given ownership of a seed before giving up on " +
+                 "bringing it home. A safety net, not a normal path.")]
+        [SerializeField] private float _authorityTimeout = 2f;
+
         private void Start()
         {
 
@@ -67,8 +71,11 @@ namespace GrowAGarden
             PlantSeed claimed = PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
             if (claimed == null)
             {
+                Logger.Warn($"SpawnSeed() '{gameObject.name}' — pool for '{_seedDefinition.seedId}' had nothing to claim; slot left empty");
                 return;
             }
+
+            Logger.Info($"SpawnSeed() '{gameObject.name}' — claimed '{claimed.name}' authority={claimed.HasLocalAuthority} at {transform.position}");
 
             SetCurrentSeed(claimed);
             claimed.PlaceInShop(transform.position, transform.rotation);
@@ -113,7 +120,11 @@ namespace GrowAGarden
         {
             if (_currentSeed == null || _currentSeed.InShop) return;
 
-            IgnorePropCollisions(_currentSeed, false);
+            // ReleaseSlot rather than just un-ignoring collisions: it also clears the recall and
+            // realign targets, which used to happen only on the successful-purchase path. Now
+            // that InShop is replicated on every client (Purchase() is announced by RPC), every
+            // client can drop its own claim off the same fact.
+            ReleaseSlot(_currentSeed);
             SetCurrentSeed(null);
         }
 
@@ -227,18 +238,55 @@ namespace GrowAGarden
         {
             Logger.Warn($"ReturnToSlot() '{gameObject.name}' — seed '{seed.name}' {why}; not a sale");
 
-            seed.ForceRelease();
+            // No ForceRelease() here: RestoreToShop() now cancels the grab on every client, which
+            // is the only way to get it out of a remote player's hand. Releasing it locally first
+            // also stopped ReturnableEntity recording that it was the one that suspended the
+            // grab, so nothing ever re-enabled it and the seed became permanently untouchable.
             seed.RestoreToShop();      // shop state, but leave it where it stands
             SendHome(seed);
             SetCurrentSeed(seed);
         }
 
-        /// <summary>Asks the seed to come back to this slot.</summary>
+        /// <summary>
+        /// Brings the seed home — but takes ownership of it first.
+        ///
+        /// Recall is a local operation that moves a rigidbody, and a client without state
+        /// authority cannot move a networked rigidbody: ReturnableEntity.FixedUpdate bails at
+        /// `if (!hasAuthority) return;`. So the master used to suspend the seed's collisions and
+        /// grab on its own copy, wait for a trip that could never start, and time out after 20
+        /// seconds — during which its copy was untouchable while the buyer carried the real one
+        /// away. The shop has to own the thing it is putting back on the shelf.
+        /// </summary>
         private void SendHome(PlantSeed seed)
         {
             var ret = seed.GetComponent<ReturnableEntity>();
             if (ret == null) return;
             ret.SetReturnTarget(transform);
+            StartCoroutine(TakeOwnershipAndRecall(seed, ret));
+        }
+
+        private IEnumerator TakeOwnershipAndRecall(PlantSeed seed, ReturnableEntity ret)
+        {
+            NetworkObject obj = seed.networkBridge == null ? null : seed.networkBridge.Object;
+            if (obj == null) yield break;
+
+            if (!obj.HasStateAuthority)
+            {
+                obj.RequestStateAuthority();
+                float waited = 0f;
+                while (!obj.HasStateAuthority && waited < _authorityTimeout)
+                {
+                    yield return null;
+                    waited += Time.deltaTime;
+                }
+            }
+
+            if (!obj.HasStateAuthority)
+            {
+                Logger.Warn($"TakeOwnershipAndRecall() '{gameObject.name}' — could not take ownership of '{seed.name}' within {_authorityTimeout}s; leaving it where it is");
+                yield break;
+            }
+
             ret.Recall(shouldIgnoreCollisions: true);
 
             var align = seed.GetComponent<AlignableEntity>();
@@ -253,7 +301,6 @@ namespace GrowAGarden
         {
             Logger.Info($"RejectPurchase() '{gameObject.name}' — '{buyer.GetID()}' cannot afford {_seedDefinition.seedId} ({buyer.GetBalance()} < {_seedDefinition.buyPrice})");
 
-            seed.ForceRelease();
             seed.RestoreToShop();      // shop state, but leave it where it stands
             SendHome(seed);
             SetCurrentSeed(seed);
@@ -325,6 +372,17 @@ namespace GrowAGarden
             // seeds and restocked the slot, which is a straightforward way to print crops.
             if (!SceneNetworking.IsMasterClient) return;
             if (!string.IsNullOrEmpty(seed.HolderId)) return;   // someone has it; wait for their request
+
+            // An empty HolderId is not proof that nobody took it — only that this client has not
+            // been told yet. The grabber RPC is tick-aligned and crosses the same distance as the
+            // player, so on a transatlantic connection the master watches the seed leave the slot
+            // a good fraction of a second before it hears who is carrying it, and called all 19
+            // purchases in one playtest a knock-out.
+            //
+            // Ownership is the reliable tell, because grabbing takes state authority immediately
+            // and locally: if this client still owns the seed, nobody has picked it up. If a peer
+            // owns it, somebody has, and their request is on its way.
+            if (!seed.HasLocalAuthority) return;
 
             ReturnToSlot(seed, "was knocked out of the slot, not taken");
         }
