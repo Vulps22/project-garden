@@ -40,6 +40,9 @@ namespace GrowAGarden
         private Quaternion _alignTo;
         private bool _hasAlignTarget;
         private bool _realigning;
+        private IHeldObject _holder;
+
+        private void Awake() => _holder = GetComponent<IHeldObject>();
 
         /// <summary>The rotation this rights itself to, or null if it has none.</summary>
         public Quaternion? AlignTarget => _hasAlignTarget ? _alignTo : (Quaternion?)null;
@@ -83,8 +86,19 @@ namespace GrowAGarden
             _rigidbody.angularVelocity = Vector3.zero;
         }
 
-        /// <summary>True while something has hold of it, when an interactable is wired up.</summary>
-        private bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
+        /// <summary>
+        /// True while a player has hold of this. Uses the replicated holder where there is one:
+        /// isSelected is local to the grabbing machine, so other clients would see a carried
+        /// object as free and try to right it in that player's hands.
+        /// </summary>
+        private bool IsHeld
+        {
+            get
+            {
+                if (_holder != null) return !string.IsNullOrEmpty(_holder.HolderId);
+                return _grabInteractable != null && _grabInteractable.isSelected;
+            }
+        }
 
         private void FixedUpdate()
         {
@@ -103,21 +117,27 @@ namespace GrowAGarden
 
             if (_rigidbody == null || !_hasAlignTarget) { _realigning = false; return; }
 
-            // Rotation replicates from the state authority, so only the owner turns it and
-            // everyone else receives the result.
+            // Arrival is judged on every client and the turn is driven only by the owner, so a
+            // client that loses authority mid-realign still clears its own _realigning flag
+            // instead of sitting inert forever. Same rule as ReturnableEntity.
             var obj = _networkBridge == null ? null : _networkBridge.Object;
-            if (obj == null || !obj.HasStateAuthority) return;
+            bool hasAuthority = obj != null && obj.HasStateAuthority;
 
             if (Quaternion.Angle(_rigidbody.rotation, _alignTo) <= _arriveAngle)
             {
                 // Land exactly on the target. The arrive angle says when to stop turning, not
                 // where it may come to rest — stopping short leaves it permanently askew, and
                 // auto-realign uses the same threshold so nothing would ever correct it.
-                _rigidbody.rotation = _alignTo;
-                _rigidbody.angularVelocity = Vector3.zero;
+                if (hasAuthority)
+                {
+                    _rigidbody.rotation = _alignTo;
+                    _rigidbody.angularVelocity = Vector3.zero;
+                }
                 _realigning = false;
                 return;
             }
+
+            if (!hasAuthority) return;   // proxies wait for the owner's rotation to replicate
 
             _rigidbody.rotation = Quaternion.RotateTowards(_rigidbody.rotation, _alignTo,
                                                            _degreesPerSecond * Time.fixedDeltaTime);

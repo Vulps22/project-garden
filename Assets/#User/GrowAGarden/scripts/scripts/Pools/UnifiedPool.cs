@@ -29,12 +29,46 @@ namespace GrowAGarden
             _networkBridge.OnMessageToController += OnMessageReceived;
         }
 
+        /// <summary>
+        /// Finishes stocking the pool once Fusion has actually spawned the scene objects.
+        ///
+        /// Awake runs before that, so nothing has state authority yet and every seed fails its
+        /// first Restore() and lands in _pendingRestore. On the master that list drains a moment
+        /// later, which is the whole point of the retry.
+        ///
+        /// On a peer it never drained, because a peer is not supposed to own these at all — and
+        /// the retry then sat waiting for the one thing that *does* hand a peer authority over a
+        /// seed: picking it up. The first time a player touched a carrot, a turnip or a pumpkin,
+        /// the next frame's Restore() succeeded and teleported it out of the shop and into the
+        /// pool. Once per seed type, on first contact, on every peer.
+        ///
+        /// Stocking the pool is the world owner's job. Peers are told what is pooled by the
+        /// master's state sync and have no business deciding it for themselves.
+        /// </summary>
         private void Update()
         {
             if (_pendingRestore.Count == 0) return;
+            if (!SceneNetworking.IsNetworkReady) return;
+
+            if (!SceneNetworking.IsMasterClient)
+            {
+                _pendingRestore.Clear();
+                return;
+            }
+
             for (int i = _pendingRestore.Count - 1; i >= 0; i--)
             {
-                if (Restore(_pendingRestore[i]))
+                PlantSeed plant = _pendingRestore[i];
+
+                // It reached the world while we were waiting to park it — stocked into a shop
+                // slot, or in somebody's hands. Either way it is no longer the pool's to place.
+                if (plant == null || plant.InShop || !string.IsNullOrEmpty(plant.HolderId))
+                {
+                    _pendingRestore.RemoveAt(i);
+                    continue;
+                }
+
+                if (Restore(plant))
                 {
                     _pendingRestore.RemoveAt(i);
                 }

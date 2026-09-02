@@ -34,9 +34,17 @@ namespace GrowAGarden
         [Tooltip("Optional. While this is held, auto-recall is suppressed.")]
         [SerializeField] private XRGrabInteractable _grabInteractable;
 
+        [Tooltip("Give up on a recall that has not arrived within this many seconds and release " +
+                 "whatever it suspended. A safety net, not a normal path.")]
+        [SerializeField] private float _recallTimeout = 20f;
+
         private bool _returning;
         private bool _collisionsSuspended;
         private bool _grabSuspended;
+        private float _recallStartedAt;
+        private IHeldObject _holder;
+
+        private void Awake() => _holder = GetComponent<IHeldObject>();
 
         /// <summary>Where this will go when recalled, or null if it has nowhere to be.</summary>
         public Transform ReturnTarget => _returnTo;
@@ -63,8 +71,30 @@ namespace GrowAGarden
         /// </summary>
         public void SetAutoRecall(bool enabled) => _autoRecall = enabled;
 
-        /// <summary>True while something has hold of it, when an interactable is wired up.</summary>
-        private bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
+        /// <summary>
+        /// True while a player has hold of this.
+        ///
+        /// Prefers the replicated holder over the local interactable. isSelected is only ever
+        /// true on the machine whose hand did the grabbing, so every other client sees a carried
+        /// object as free and tries to tidy it out of that player's hands.
+        /// </summary>
+        private bool IsHeld
+        {
+            get
+            {
+                if (_holder != null) return !string.IsNullOrEmpty(_holder.HolderId);
+                return _grabInteractable != null && _grabInteractable.isSelected;
+            }
+        }
+
+        private bool HasStateAuthority
+        {
+            get
+            {
+                var obj = _networkBridge == null ? null : _networkBridge.Object;
+                return obj != null && obj.HasStateAuthority;
+            }
+        }
 
         /// <summary>
         /// Come home. Does nothing without a target.
@@ -82,6 +112,7 @@ namespace GrowAGarden
             if (_returnTo == null || _rigidbody == null) return;
 
             _returning = true;
+            _recallStartedAt = Time.time;
             _rigidbody.linearVelocity = Vector3.zero;
             _rigidbody.angularVelocity = Vector3.zero;
 
@@ -143,10 +174,14 @@ namespace GrowAGarden
 
             if (_rigidbody == null || _returnTo == null) { StopReturning(); return; }
 
-            // Position replicates from the state authority, so only the owner drives the trip
-            // and everyone else receives the result.
-            var obj = _networkBridge == null ? null : _networkBridge.Object;
-            if (obj == null || !obj.HasStateAuthority) return;
+            // Arrival is judged on every client, not only the owner.
+            //
+            // An enforced recall suspends collisions and the grab *locally*, but only the state
+            // authority can drive the trip. Gating the whole state machine on authority meant a
+            // client that lost authority mid-return could never reach StopReturning, and was
+            // left with an object it could neither move nor touch, permanently. Position
+            // replicates, so a proxy can see it arrive and release its own suspension.
+            bool hasAuthority = HasStateAuthority;
 
             if (Vector3.Distance(_rigidbody.position, _returnTo.position) <= _arriveDistance)
             {
@@ -155,10 +190,20 @@ namespace GrowAGarden
                 // to come to rest -- stopping short leaves it parked up to that far off centre,
                 // and since auto-recall uses the same threshold nothing ever corrects it. The
                 // object drifts a little further from centre with every nudge.
-                _rigidbody.position = _returnTo.position;
+                if (hasAuthority) _rigidbody.position = _returnTo.position;
                 StopReturning();
                 return;
             }
+
+            // Last resort: a recall that never arrives still has to give back what it took.
+            if (_recallTimeout > 0f && Time.time - _recallStartedAt > _recallTimeout)
+            {
+                Logger.Warn($"FixedUpdate() '{gameObject.name}' — recall did not arrive within {_recallTimeout}s; releasing it");
+                StopReturning();
+                return;
+            }
+
+            if (!hasAuthority) return;   // proxies wait for the owner's position to replicate
 
             _rigidbody.position = Vector3.MoveTowards(_rigidbody.position, _returnTo.position,
                                                       _speed * Time.fixedDeltaTime);

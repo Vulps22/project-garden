@@ -22,8 +22,29 @@ namespace GrowAGarden
         public bool InShop { get; private set; }
         public bool IsBought { get; private set; }
         public bool IsInPool { get; private set; }
+
+        /// <summary>
+        /// True from the moment this is offered over a sell point counter until the sale
+        /// completes or is refused. It is not a lifecycle state of its own — it only suppresses
+        /// rendering, so the plant leaves the world the instant it is handed over instead of
+        /// dangling in mid-air for the round trips the sale takes.
+        ///
+        /// Deliberately kept out of the stateSync payload: it lives for well under a second, and
+        /// adding it would change the wire size of every seed broadcast for a window a late
+        /// joiner would have to be extraordinarily unlucky to land in.
+        /// </summary>
+        public bool SalePending { get; private set; }
+
+        /// <summary>Fusion's id for this object, for addressing it in another object's RPC.</summary>
+        public uint NetworkId => networkBridge?.Object == null ? 0u : networkBridge.Object.Id.Raw;
         /// <summary>Raised after any lifecycle transition so behaviours can re-evaluate.</summary>
         public event System.Action LifecycleChanged;
+
+        /// <summary>
+        /// Raised on every client when the holder asks to buy this seed. Only the master acts
+        /// on it; see <see cref="RequestPurchase"/>.
+        /// </summary>
+        public event System.Action<PlantSeed> PurchaseRequested;
 
         /// <summary>
         /// The seed's physical mode, derived from its lifecycle rather than remembered.
@@ -108,6 +129,15 @@ namespace GrowAGarden
         /// and SceneNetworking reassigning it, and state changes made in that window go
         /// nowhere, so a sale decided there would not be broadcast to anyone.
         /// </summary>
+        /// <summary>
+        /// True when THIS client is the object's state authority. Distinct from
+        /// <see cref="HasKnownAuthority"/>, which only says somebody owns it.
+        /// </summary>
+        public bool HasLocalAuthority =>
+            networkBridge != null
+            && networkBridge.Object != null
+            && networkBridge.Object.HasStateAuthority;
+
         public bool HasKnownAuthority =>
             networkBridge != null
             && networkBridge.Object != null
@@ -118,6 +148,22 @@ namespace GrowAGarden
         /// which raises selectExited and so clears and re-broadcasts the grabber through the
         /// normal path. Whoever calls this is responsible for re-enabling the grab.
         /// </summary>
+        /// <summary>
+        /// Asks the master to sell this seed to whoever is holding it.
+        ///
+        /// Called by the holder's own client, because the holder is the only one that *knows*
+        /// the seed was deliberately taken rather than knocked loose. The master used to infer
+        /// that from replicated state and got it wrong whenever the grab had not replicated
+        /// yet — an explicit request has no such race.
+        ///
+        /// Sent to all rather than to the controller: the controller of a held seed is the
+        /// holder itself, and it is the master that has to decide. Everyone else ignores it.
+        /// </summary>
+        public void RequestPurchase()
+        {
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.purchaseRequest, new byte[0]);
+        }
+
         public void ForceRelease()
         {
             if (_grabInteractable != null) _grabInteractable.enabled = false;
@@ -144,12 +190,22 @@ namespace GrowAGarden
         /// Unsubscribes from all events to prevent memory leaks.
         /// </summary>
         /// <summary>
-        /// broadcastState() is a no-op without authority, so anything that changed while this
-        /// client did not own the object was never sent. Re-send once the transfer lands.
+        /// Re-sends state once a transfer lands, but only on the master.
+        ///
+        /// The client that has just *gained* authority is the client that knows least about the
+        /// object: it was a proxy a moment ago, and its lifecycle flags are whatever last
+        /// reached it. Letting it broadcast made it assert that stale copy over everyone else's
+        /// — a buyer taking authority on grab pushed InShop=true back to the master and undid
+        /// the sale before it was even requested, and OnOtherPlayerJoined re-ran that for every
+        /// carried seed on every join.
+        ///
+        /// The master is the one client whose lifecycle view is authoritative, so it is the only
+        /// one allowed to re-assert. Everyone else adopts what it is given; growth state needs no
+        /// re-send, because it is derived from a timestamp the new authority already received.
         /// </summary>
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority) broadcastState();
+            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
         }
 
         protected virtual void OnDestroy()
@@ -229,14 +285,48 @@ namespace GrowAGarden
         void OnTriggerExit(Collider other)
         {
             if (IsSeed || GetGrowthCompletion() < 1f) return;
+
+            // Authority only, to match planting. SetOccupied broadcasts to everyone, so without
+            // this any client whose local physics raised an exit could free a slot for the whole
+            // world — and Unity raises phantom exits whenever isKinematic, detectCollisions or a
+            // collider's enabled state changes, with the plant standing still.
+            var obj = networkBridge == null ? null : networkBridge.Object;
+            if (obj == null || !obj.HasStateAuthority) return;
+
             PlantSlot slot = other.GetComponent<PlantSlot>();
             if (slot == null) return;
+
+            // Free the slot this plant is actually in, not whichever one it was carried past.
+            // _occupiedSlot is unknown after an authority transfer, so fall back to trusting the
+            // trigger rather than risk a slot that can never be freed again.
+            if (_occupiedSlot != null && slot != _occupiedSlot) return;
+
             slot.SetOccupied(false);
         }
 
         // ── Lifecycle action methods ──────────────────────────────────────────────
         // Each method owns its state changes and any required broadcast.
         // External callers should use these instead of mutating fields directly.
+
+        /// <summary>
+        /// Puts this on, or takes it off, the sell point's counter. Every client runs this so the
+        /// plant disappears everywhere at once; SellPoint drives it from its own RPCs.
+        /// </summary>
+        public void SetSalePending(bool pending)
+        {
+            if (SalePending == pending) return;
+            SalePending = pending;
+            SetState(IsSeed);          // re-derives visibility through the rule in SetState
+
+            // HideForPool() turned the grab off on the way in and UpdateVisuals() does not turn it
+            // back on, so without this a refused sale hands back a plant that is visible and
+            // completely untouchable. Derived rather than remembered: grabbable is exactly
+            // "present in the world, and either a seed or a finished plant".
+            if (!pending && _grabInteractable != null)
+                _grabInteractable.enabled = !IsInPool && (IsSeed || GetGrowthCompletion() >= 1f);
+
+            LifecycleChanged?.Invoke();
+        }
 
         /// <summary>
         /// Marks this seed as claimed from the pool. Call before PlaceInShop().
@@ -265,24 +355,97 @@ namespace GrowAGarden
         /// </summary>
         public void RestoreToShop()
         {
-            SetState(true);
-            _grabInteractable.enabled = true;   // HideForPool() disabled it on the way in
-            InShop = true;
-            IsBought = false;
-            LifecycleChanged?.Invoke();
-            broadcastState();
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.restoredToShop, new byte[0]);
         }
 
         /// <summary>
-        /// Marks this seed as purchased — removes it from shop ownership and broadcasts.
-        /// Master client only.
+        /// Applies shop-stock state locally. Runs on every client from the RPC above, including
+        /// the sender — see <see cref="Purchase"/> for why this is not done at the call site.
+        /// </summary>
+        private void ApplyRestoreToShop()
+        {
+            // Flags first. SetState() raises LifecycleChanged itself, so setting them
+            // afterwards published one event describing a seed that was neither in the shop
+            // nor bought — a free seed, as far as every listener could tell. KinematicController
+            // and AuthorityController both act on that, and ShopSlot now does too.
+            InShop = true;
+            IsBought = false;
+            SetState(true);
+
+            // A seed that is stock again is, by definition, in nobody's hand. Disabling the
+            // interactable cancels any select in progress, and because this runs from an RPC it
+            // runs on the holder's machine too — which is what actually takes it back. Doing it
+            // master-side only moved the master's own copy and left the buyer still carrying it.
+            _grabInteractable.enabled = false;
+
+            // Then re-derive: grabbable unless an enforced recall is carrying it home, in which
+            // case ReturnableEntity owns the interactable until it arrives.
+            var ret = GetComponent<ReturnableEntity>();
+            if (ret == null || !ret.IsReturning) _grabInteractable.enabled = true;
+
+            Logger.Info($"ApplyRestoreToShop() '{gameObject.name}' — InShop={InShop} IsSeed={IsSeed} IsInPool={IsInPool} grab={_grabInteractable.enabled} authority={HasLocalAuthority}");
+
+            LifecycleChanged?.Invoke();
+            broadcastState();   // resync for whoever owns it; a no-op everywhere else
+        }
+
+        /// <summary>
+        /// Marks this seed as sold to whoever is holding it. Master client only.
+        ///
+        /// Announced by RPC rather than written locally and pushed with broadcastState(), because
+        /// the master is almost never this object's state authority when it decides a sale:
+        /// NetworkGrabbable requests authority the moment a player grabs, so by the time the seed
+        /// leaves the slot the buyer owns it. broadcastState() self-gates on HasStateAuthority,
+        /// so the master's three flag writes stayed on the master — silently, with no log and no
+        /// throw. The seed went on reading InShop=true, IsBought=false everywhere, which is what
+        /// let a paid-for seed be re-latched as shop stock and dragged back out of a plot.
+        ///
+        /// RPC_SendMessageToAll is RpcSources.All, so any client may send it regardless of
+        /// authority. Sell() has always worked this way; this is the same pattern.
         /// </summary>
         public void Purchase()
         {
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.purchased, new byte[0]);
+        }
+
+        /// <summary>Applies purchased state locally. Runs on every client from the RPC above.</summary>
+        private void ApplyPurchase()
+        {
             InShop = false;
             IsBought = true;
+            ClearShopClaim();
             LifecycleChanged?.Invoke();
-            broadcastState();
+            broadcastState();   // resync for whoever owns it; a no-op everywhere else
+        }
+
+        /// <summary>
+        /// Lets go of any shop slot's claim on this seed.
+        ///
+        /// ReturnableEntity and AlignableEntity are armed by ShopSlot.AssignSlot on the master
+        /// alone, and ShopSlot.ReleaseSlot was the only thing that ever cleared them — on the
+        /// successful-purchase path only. Every other way a seed stops being stock (planting,
+        /// above all) left _autoRecall true and a live return target pointing at the shop, so
+        /// the slot would drag the seed back out of the plot it had just been planted in, and
+        /// keep doing it.
+        ///
+        /// Runs on every client because each one has to undo its own local components, and it is
+        /// idempotent so the paths that overlap can both call it.
+        /// </summary>
+        private void ClearShopClaim()
+        {
+            var ret = GetComponent<ReturnableEntity>();
+            if (ret != null)
+            {
+                ret.SetAutoRecall(false);
+                ret.ClearReturnTarget();
+            }
+
+            var align = GetComponent<AlignableEntity>();
+            if (align != null)
+            {
+                align.SetAutoRealign(false);
+                align.ClearAlignTarget();
+            }
         }
 
         /// <summary>
@@ -299,6 +462,7 @@ namespace GrowAGarden
             _plantedTimestamp = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             slot.SetOccupied(true);
             _grabInteractable.enabled = false;
+            ClearShopClaim();
             networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.disable, new byte[0]);
             broadcastState();
         }
@@ -322,9 +486,19 @@ namespace GrowAGarden
             transform.position = position;
             transform.rotation = rotation;
             transform.localScale = Vector3.one;
+            OnReturnedToPool();                 // before SetState: it may change what visuals see
+            ClearShopClaim();
+            SalePending = false;                // the counter is clear; IsInPool hides it from here
             SetState(true);                     // KinematicController owns isKinematic now
             broadcastState();
         }
+
+        /// <summary>
+        /// Last chance to reset anything a subclass carries that outlives one life.
+        /// Called before the pooled state is applied, so what is written here is what the next
+        /// claim of this instance starts from.
+        /// </summary>
+        protected virtual void OnReturnedToPool() { }
 
         /// <summary>
         /// Drives growth scaling each frame. Authority only. Calls OnGrowthUpdated for subclass scale logic,
@@ -390,7 +564,11 @@ namespace GrowAGarden
             // that should not be in the world at all. Hooking the pool case in here catches
             // every path that changes visual state (authority, proxy sync, spawn, sale)
             // rather than relying on each of them to remember.
-            if (IsInPool) HideForPool();
+            // Pooled and sale-pending are both "not present in the world", and both have to beat
+            // UpdateVisuals. Without the SalePending term the sold RPC's SetState(true) would run
+            // UpdateVisuals and pop the plant back into view as a seed for the couple of hundred
+            // milliseconds until it reaches the pool.
+            if (IsInPool || SalePending) HideForPool();
             else UpdateVisuals(isSeed);
 
             LifecycleChanged?.Invoke();
@@ -434,6 +612,10 @@ namespace GrowAGarden
                 case PlantMessageType.disable:
                     SetState(false);
                     _grabInteractable.enabled = false;
+                    // The shop's recall is armed on the master, and Plant() runs on the state
+                    // authority — usually the buyer. Clearing it here is what actually reaches
+                    // the machine holding the claim.
+                    ClearShopClaim();
                     break;
                 case PlantMessageType.grabber:
                     BytesReader grabReader = new BytesReader(data);
@@ -444,16 +626,24 @@ namespace GrowAGarden
                     // seed the moment it leaves a player's hand.
                     LifecycleChanged?.Invoke();
                     break;
+                case PlantMessageType.purchaseRequest:
+                    // Raised everywhere; ShopSlot only listens on the master.
+                    PurchaseRequested?.Invoke(this);
+                    break;
+                case PlantMessageType.purchased:
+                    ApplyPurchase();
+                    break;
+                case PlantMessageType.restoredToShop:
+                    ApplyRestoreToShop();
+                    break;
                 case PlantMessageType.sold:
+                    // Resets local state only. Getting the plant into storage is the sell point's
+                    // job now — it is the client that owns the object by this point, and a plant
+                    // walking itself into the back room was how the authority split got hidden.
                     _grabber = null;
                     _occupiedSlot = null;
                     SetState(true);
                     _grabInteractable.enabled = false;
-                    if (networkBridge.Object.HasStateAuthority)
-                    {
-                        transform.position = new Vector3(transform.position.x, 3f, transform.position.z);
-                        PoolManager.Instance.ReturnPlantSeed(seedDefinition.seedId, this);
-                    }
                     break;
                 default:
                     Logger.Warn($"OnMessageToAll() '{gameObject.name}' — received unknown message id={id}");
@@ -553,6 +743,11 @@ namespace GrowAGarden
         stateSync,
         grabber,
         vineAnchor,
-        vineDecayStart
+        vineDecayStart,
+        // Appended rather than inserted: these are wire ids, so renumbering an existing
+        // value would make two builds disagree about what a message means.
+        purchaseRequest,
+        purchased,
+        restoredToShop
     }
 }
