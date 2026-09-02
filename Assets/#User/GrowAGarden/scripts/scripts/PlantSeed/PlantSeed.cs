@@ -26,6 +26,12 @@ namespace GrowAGarden
         public event System.Action LifecycleChanged;
 
         /// <summary>
+        /// Raised on every client when the holder asks to buy this seed. Only the master acts
+        /// on it; see <see cref="RequestPurchase"/>.
+        /// </summary>
+        public event System.Action<PlantSeed> PurchaseRequested;
+
+        /// <summary>
         /// The seed's physical mode, derived from its lifecycle rather than remembered.
         /// Every state is kinematic today, so this changes no behaviour yet — the shop and
         /// free-seed cases are what later phases flip, and they flip here, once.
@@ -118,6 +124,22 @@ namespace GrowAGarden
         /// which raises selectExited and so clears and re-broadcasts the grabber through the
         /// normal path. Whoever calls this is responsible for re-enabling the grab.
         /// </summary>
+        /// <summary>
+        /// Asks the master to sell this seed to whoever is holding it.
+        ///
+        /// Called by the holder's own client, because the holder is the only one that *knows*
+        /// the seed was deliberately taken rather than knocked loose. The master used to infer
+        /// that from replicated state and got it wrong whenever the grab had not replicated
+        /// yet — an explicit request has no such race.
+        ///
+        /// Sent to all rather than to the controller: the controller of a held seed is the
+        /// holder itself, and it is the master that has to decide. Everyone else ignores it.
+        /// </summary>
+        public void RequestPurchase()
+        {
+            networkBridge.RPC_SendMessageToAll((byte)PlantMessageType.purchaseRequest, new byte[0]);
+        }
+
         public void ForceRelease()
         {
             if (_grabInteractable != null) _grabInteractable.enabled = false;
@@ -265,10 +287,14 @@ namespace GrowAGarden
         /// </summary>
         public void RestoreToShop()
         {
-            SetState(true);
-            _grabInteractable.enabled = true;   // HideForPool() disabled it on the way in
+            // Flags first. SetState() raises LifecycleChanged itself, so setting them
+            // afterwards published one event describing a seed that was neither in the shop
+            // nor bought — a free seed, as far as every listener could tell. KinematicController
+            // and AuthorityController both act on that, and ShopSlot now does too.
             InShop = true;
             IsBought = false;
+            SetState(true);
+            _grabInteractable.enabled = true;   // HideForPool() disabled it on the way in
             LifecycleChanged?.Invoke();
             broadcastState();
         }
@@ -444,6 +470,10 @@ namespace GrowAGarden
                     // seed the moment it leaves a player's hand.
                     LifecycleChanged?.Invoke();
                     break;
+                case PlantMessageType.purchaseRequest:
+                    // Raised everywhere; ShopSlot only listens on the master.
+                    PurchaseRequested?.Invoke(this);
+                    break;
                 case PlantMessageType.sold:
                     _grabber = null;
                     _occupiedSlot = null;
@@ -553,6 +583,9 @@ namespace GrowAGarden
         stateSync,
         grabber,
         vineAnchor,
-        vineDecayStart
+        vineDecayStart,
+        // Appended rather than inserted: these are wire ids, so renumbering an existing
+        // value would make two builds disagree about what a message means.
+        purchaseRequest
     }
 }

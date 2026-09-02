@@ -34,6 +34,7 @@ namespace GrowAGarden
         private void OnDestroy()
         {
             SceneNetworking.OnLocalPlayerJoined -= SpawnSeed;
+            SetCurrentSeed(null);   // drops the PurchaseRequested subscription
         }
 
         private void Update()
@@ -50,7 +51,7 @@ namespace GrowAGarden
                 // fires from OnLocalPlayerJoined, before Fusion has spawned the pooled scene
                 // objects, so UnifiedPool.Restore() has not yet flagged anything IsInPool and
                 // Claim() returns null. This retry is what stocks the slot once it can.
-                _currentSeed = null;
+                SetCurrentSeed(null);
                 SpawnSeed();
             }
         }
@@ -63,20 +64,77 @@ namespace GrowAGarden
                 return;
             }
 
-            _currentSeed = PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
-            if (_currentSeed == null)
+            PlantSeed claimed = PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
+            if (claimed == null)
             {
                 return;
             }
 
-
-            _currentSeed.PlaceInShop(transform.position, transform.rotation);
-            AssignSlot(_currentSeed);
+            SetCurrentSeed(claimed);
+            claimed.PlaceInShop(transform.position, transform.rotation);
+            AssignSlot(claimed);
         }
 
-        /// <summary>Tells the seed this slot is where it belongs.</summary>
+        /// <summary>
+        /// Points this slot at a seed, or at nothing.
+        ///
+        /// The purchase request arrives on the seed, so the master has to be listening to
+        /// whichever seed is currently its stock — and must stop listening when it is not, or a
+        /// sold seed could be bought a second time from the slot it no longer occupies.
+        /// </summary>
+        private void SetCurrentSeed(PlantSeed seed)
+        {
+            if (_currentSeed == seed) return;
+
+            if (_currentSeed != null)
+            {
+                _currentSeed.PurchaseRequested -= OnPurchaseRequested;
+                _currentSeed.LifecycleChanged -= OnCurrentSeedLifecycleChanged;
+            }
+
+            _currentSeed = seed;
+
+            if (_currentSeed != null)
+            {
+                _currentSeed.PurchaseRequested += OnPurchaseRequested;
+                _currentSeed.LifecycleChanged += OnCurrentSeedLifecycleChanged;
+            }
+        }
+
+        /// <summary>
+        /// Lets go of a seed that has stopped being stock, on every client.
+        ///
+        /// Driven by lifecycle rather than by the purchase path because the purchase is decided
+        /// on the master alone, while ignoring prop collisions is a local physics setting that
+        /// every client applied for itself and so every client has to undo. InShop is replicated,
+        /// so this fires everywhere off the same fact instead of each client guessing.
+        /// </summary>
+        private void OnCurrentSeedLifecycleChanged()
+        {
+            if (_currentSeed == null || _currentSeed.InShop) return;
+
+            IgnorePropCollisions(_currentSeed, false);
+            SetCurrentSeed(null);
+        }
+
+        /// <summary>
+        /// Tells the seed this slot is where it belongs.
+        ///
+        /// Split by ownership. Recall and realign are bookkeeping about where a seed *should*
+        /// be, so the master arms them and the master alone — armed on every client, each one
+        /// independently decides a seed has wandered and only the clearing half is authority
+        /// gated, which is how a bought seed ends up being dragged back to the shop.
+        ///
+        /// Ignoring prop collisions is not bookkeeping. Physics.IgnoreCollision is a local
+        /// setting on every client, so it has to run on all of them or the stock bounces around
+        /// inside the barrow on everyone else's screen.
+        /// </summary>
         private void AssignSlot(PlantSeed seed)
         {
+            IgnorePropCollisions(seed, true);
+
+            if (!SceneNetworking.IsMasterClient) return;
+
             var ret = seed.GetComponent<ReturnableEntity>();
             if (ret != null)
             {
@@ -92,13 +150,15 @@ namespace GrowAGarden
                 align.CaptureAlignTarget();
                 align.SetAutoRealign(true);
             }
-
-            IgnorePropCollisions(seed, true);
         }
 
         /// <summary>The seed belongs to a player now; it is no longer this slot's business.</summary>
         private void ReleaseSlot(PlantSeed seed)
         {
+            IgnorePropCollisions(seed, false);
+
+            if (!SceneNetworking.IsMasterClient) return;
+
             var ret = seed.GetComponent<ReturnableEntity>();
             if (ret != null)
             {
@@ -112,8 +172,6 @@ namespace GrowAGarden
                 align.SetAutoRealign(false);
                 align.ClearAlignTarget();
             }
-
-            IgnorePropCollisions(seed, false);
         }
 
         /// <summary>
@@ -172,7 +230,7 @@ namespace GrowAGarden
             seed.ForceRelease();
             seed.RestoreToShop();      // shop state, but leave it where it stands
             SendHome(seed);
-            _currentSeed = seed;
+            SetCurrentSeed(seed);
         }
 
         /// <summary>Asks the seed to come back to this slot.</summary>
@@ -198,7 +256,7 @@ namespace GrowAGarden
             seed.ForceRelease();
             seed.RestoreToShop();      // shop state, but leave it where it stands
             SendHome(seed);
-            _currentSeed = seed;
+            SetCurrentSeed(seed);
         }
 
         private void OnTriggerEnter(Collider other)
@@ -211,7 +269,7 @@ namespace GrowAGarden
 
                 if (!seed.IsBought)
                 {
-                    _currentSeed = seed;
+                    SetCurrentSeed(seed);
                     AssignSlot(seed);
                 }
             }
@@ -237,60 +295,82 @@ namespace GrowAGarden
             return !_slotTrigger.bounds.Contains(seed.transform.position);
         }
 
+        /// <summary>
+        /// A seed has left the slot. Two clients care, for two different reasons.
+        ///
+        /// The holder asks to buy it, because only the holder knows its own hand is on the seed
+        /// — XRGrabInteractable.isSelected is true on exactly one machine, and reading it
+        /// anywhere else is what made every other client believe the seed had been knocked
+        /// loose. Here it is read on the one machine where it means something.
+        ///
+        /// The master handles everything that is not a purchase, using the replicated holder id
+        /// rather than the local interactable, so it agrees with the holder about what happened.
+        /// </summary>
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent(out PlantSeed seed) && seed == _currentSeed)
+            if (!other.TryGetComponent(out PlantSeed seed) || seed != _currentSeed) return;
+
+            // Still inside: the event came from a physics-state toggle, not from movement.
+            if (!HasLeftSlot(seed)) return;
+            if (seed.IsBought || !seed.InShop) return;
+
+            if (seed.IsHeld)
             {
-                // Still inside: the event came from a physics-state toggle, not from movement.
-                if (!HasLeftSlot(seed)) return;
-
-                if (!seed.IsBought && seed.InShop)
-                {
-                    // A seed leaving the slot is only a purchase if someone is actually
-                    // carrying it away. Stock is physical now, so it can be shoved out by a
-                    // hand, an elbow or another seed -- none of which is a sale. Treating an
-                    // unheld exit as a purchase handed out free seeds and restocked the slot,
-                    // which is a straightforward way to print unlimited crops.
-                    PlayerBalance buyer = seed.GetGrabber();
-
-                    if (!seed.IsHeld)
-                    {
-                        ReturnToSlot(seed, "was knocked out of the slot, not taken");
-                        return;
-                    }
-
-                    if (buyer == null)
-                    {
-                        // Held, but we do not yet know by whom -- the grabber RPC has not
-                        // landed here. Refuse rather than guess: an uncharged sale cannot be
-                        // undone, whereas the player can simply pick it up again.
-                        ReturnToSlot(seed, "has no known grabber yet");
-                        return;
-                    }
-
-                    if (!seed.HasKnownAuthority)
-                    {
-                        // Nobody owns the object, so Purchase()'s broadcast would reach no one
-                        // and the sale would exist only on this client.
-                        ReturnToSlot(seed, "has no state authority");
-                        return;
-                    }
-
-                    if (buyer.GetBalance() < _seedDefinition.buyPrice)
-                    {
-                        RejectPurchase(seed, buyer);
-                        return;
-                    }
-
-                    ReleaseSlot(_currentSeed);
-                    _currentSeed.Purchase();
-                    EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
-
-                    _currentSeed = null;
-                    if (SceneNetworking.IsMasterClient)
-                        SpawnSeed();
-                }
+                seed.RequestPurchase();
+                return;
             }
+
+            // Nobody anywhere is holding it, so it was shoved out by a hand, an elbow or
+            // another seed. Stock is physical, and treating that as a sale handed out free
+            // seeds and restocked the slot, which is a straightforward way to print crops.
+            if (!SceneNetworking.IsMasterClient) return;
+            if (!string.IsNullOrEmpty(seed.HolderId)) return;   // someone has it; wait for their request
+
+            ReturnToSlot(seed, "was knocked out of the slot, not taken");
+        }
+
+        /// <summary>
+        /// The holder has asked to buy this seed. Master client only — it owns the economy, and
+        /// deciding this in more than one place is what let a purchase commit on the buyer's
+        /// machine while the seed was sent home on everyone else's.
+        /// </summary>
+        private void OnPurchaseRequested(PlantSeed seed)
+        {
+            if (!SceneNetworking.IsMasterClient) return;
+            if (seed != _currentSeed) return;
+            if (seed.IsBought || !seed.InShop) return;
+
+            PlayerBalance buyer = seed.GetGrabber();
+
+            if (buyer == null)
+            {
+                // The request came from the holder, so somebody has it — but this client has
+                // not been told who. Refuse rather than guess: an uncharged sale cannot be
+                // undone, whereas the player can simply pick it up again.
+                ReturnToSlot(seed, "was requested by a buyer this client does not know yet");
+                return;
+            }
+
+            if (!seed.HasKnownAuthority)
+            {
+                // Nobody owns the object, so Purchase()'s broadcast would reach no one and the
+                // sale would exist only on this client.
+                ReturnToSlot(seed, "has no state authority");
+                return;
+            }
+
+            if (buyer.GetBalance() < _seedDefinition.buyPrice)
+            {
+                RejectPurchase(seed, buyer);
+                return;
+            }
+
+            ReleaseSlot(seed);
+            seed.Purchase();
+            EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
+
+            SetCurrentSeed(null);
+            SpawnSeed();
         }
     }
 }
