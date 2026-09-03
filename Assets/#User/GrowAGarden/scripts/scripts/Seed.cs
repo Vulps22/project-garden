@@ -313,12 +313,32 @@ namespace GrowAGarden
         /// Removed because its owner's garden lease expired. Master only — despawning needs state
         /// authority, and by this point nobody is holding it to have taken authority away.
         /// </summary>
-        public void Discard()
+        /// <summary>
+        /// Removes this from the world, and says whether it managed to.
+        ///
+        /// Fusion's Despawn silently does nothing without state authority, and a caller counting
+        /// successes it never checked reports cleanup that did not happen. A seed dropped by a
+        /// player who then leaves can end up with no authority at all, which is exactly when this
+        /// fails and exactly when nobody is watching.
+        /// </summary>
+        public bool Discard()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!SceneNetworking.IsMasterClient) return false;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
-            if (obj != null && obj.HasStateAuthority) SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            if (obj == null)
+            {
+                Logger.Warn($"Discard() '{gameObject.name}' — no NetworkObject; nothing despawned");
+                return false;
+            }
+            if (!obj.HasStateAuthority)
+            {
+                Logger.Warn($"Discard() '{gameObject.name}' — no state authority (authority known={HasKnownAuthority}); NOT despawned");
+                return false;
+            }
+
+            SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            return true;
         }
 
         // ── State ─────────────────────────────────────────────────────────────────
@@ -344,7 +364,13 @@ namespace GrowAGarden
                 case SeedMessageType.grabber:
                     BytesReader grabReader = new BytesReader(data);
                     bool hasGrabber = grabReader.NextByte() == 1;
-                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabReader.NextString()) : null;
+                    // Temporary instrumentation. Every decision about who may buy, plant or recall
+                    // this seed reads HolderId, and until now nothing recorded whether the id on
+                    // the wire ever resolved to a player — a lookup miss and an empty hand are
+                    // indistinguishable downstream, and both read as "nobody is holding it".
+                    string grabberId = hasGrabber ? grabReader.NextString() : null;
+                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabberId) : null;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     // Who holds it is lifecycle. This is the one place _grabber changes on every
                     // client, so raising here lets AuthorityController reclaim a shop seed the
                     // moment it leaves a player's hand.
@@ -420,6 +446,47 @@ namespace GrowAGarden
             writer.AddByte(0);
             networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.grabber, writer.Data);
         }
+
+        // ── Temporary instrumentation ─────────────────────────────────────────────
+
+        /// <summary>Exists only to drive ReportLooseState. Remove with it.</summary>
+        private void Update() => ReportLooseState();
+
+        /// <summary>
+        /// Reports the physical state of a seed lying loose in the world, but only when that state
+        /// changes. Delete this once the unpushable-seed report is understood.
+        ///
+        /// It exists because a seed dropped by a player who then left could not be pushed, and two
+        /// separate explanations fit equally well from the outside: nobody holds state authority so
+        /// nothing simulates it, or collisions are still suspended from a recall that never gave
+        /// them back. Those are one line apart in the log and were three wrong guesses apart
+        /// without it. Sampled rather than per-frame, and change-gated on top of that, because a
+        /// per-frame log line once took the client log to 204 MB.
+        /// </summary>
+        private void ReportLooseState()
+        {
+            if (!IsLooseInWorld) return;
+            if (Time.time < _nextLooseReportAt) return;
+            _nextLooseReportAt = Time.time + 2f;
+
+            var body = GetComponent<Rigidbody>();
+            var ret = GetComponent<ReturnableEntity>();
+            var hover = GetComponent<HoveringEntity>();
+
+            string state = $"authority={HasLocalAuthority} known={HasKnownAuthority} " +
+                           $"kinematic={(body == null ? "?" : body.isKinematic.ToString())} " +
+                           $"collides={(body == null ? "?" : body.detectCollisions.ToString())} " +
+                           $"returning={(ret == null ? "?" : ret.IsReturning.ToString())} " +
+                           $"collisionsSuspended={(ret == null ? "?" : ret.CollisionsSuspended.ToString())} " +
+                           $"inContact={(hover == null ? "?" : hover.IsInContact.ToString())}";
+
+            if (state == _lastLooseState) return;
+            _lastLooseState = state;
+            Logger.Info($"ReportLooseState() '{gameObject.name}' — {state}");
+        }
+
+        private float _nextLooseReportAt;
+        private string _lastLooseState;
 
         private void OnValidate()
         {
