@@ -6,9 +6,13 @@ using UnityEngine;
 namespace GrowAGarden
 {
     /// <summary>
-    /// The counter. A player puts a grown plant down on it and the shop handles everything from
-    /// there: it takes the plant out of their hands, pays them, takes ownership of it, and passes
-    /// it to storage to be cleaned up for resale.
+    /// The counter. A player puts something down on it and the shop handles the rest: it takes the
+    /// thing out of their hands, pays them, takes ownership of it, and ends it.
+    ///
+    /// It deals in SellableEntity, not in crops. Whether a thing is sellable, what it is worth and
+    /// what being sold does to it are all the object's own business — so a produce, a bucket of
+    /// milk or a sword all pass through here unchanged, and this file has no idea which it just
+    /// bought.
     ///
     /// The seller *offers*; the shop *accepts*. It used to be the other way round — the master
     /// watched its own copy of a plant it did not own cross this trigger and inferred a sale from
@@ -18,7 +22,7 @@ namespace GrowAGarden
     ///
     /// This has its own NetworkBridge rather than riding the plant's, because the seller is
     /// addressing the shop, not the plant. The plant is named by its NetworkId inside the
-    /// payload, the way UnifiedPool already addresses a plant it is told to take back.
+    /// payload, so the message survives whatever is happening to the plant itself.
     /// </summary>
     public class SellPoint : MonoBehaviour
     {
@@ -31,7 +35,7 @@ namespace GrowAGarden
         // Master-only bookkeeping for the sale in progress. Captured up front because announcing
         // the sale takes the plant out of the seller's hands, which clears the holder — read it
         // afterwards and there is nobody left to pay.
-        private PlantSeed _pending;
+        private SellableEntity _pending;
         private string _pendingSellerId;
         private int _pendingValue;
 
@@ -65,17 +69,19 @@ namespace GrowAGarden
         /// </summary>
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.TryGetComponent(out PlantSeed plant)) return;
-            if (plant.IsSeed || plant.SalePending) return;
-            if (!plant.IsHeld) return;
-            if (plant.GetGrowthCompletion() < 1f) return;
+            // InParent, because the collider that crosses the counter may be a child mesh rather
+            // than the root that carries the trait.
+            SellableEntity sellable = other.GetComponentInParent<SellableEntity>();
+            if (sellable == null) return;
+            if (!sellable.CanBeSold || sellable.IsPending) return;
+            if (!sellable.IsHeld) return;
 
             PlayerBalance seller = EconomyManager.Instance == null
                 ? null
                 : EconomyManager.Instance.GetLocalPlayer();
             if (seller == null)
             {
-                Logger.Warn($"OnTriggerEnter() '{gameObject.name}' — local balance unavailable, cannot offer '{plant.name}' for sale");
+                Logger.Warn($"OnTriggerEnter() '{gameObject.name}' — local balance unavailable, cannot offer '{sellable.name}' for sale");
                 return;
             }
 
@@ -87,13 +93,13 @@ namespace GrowAGarden
             string id = seller.GetID();
             int size = BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
-            writer.AddInt((int)plant.NetworkId);
+            writer.AddInt((int)NetworkIdOf(sellable));
             writer.AddString(id);
             _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SellRequest, writer.Data);
 
             // Optimistic, and only ever local: it is out of my hands the moment I put it down.
             // If the shop refuses, SaleRejected puts it back.
-            plant.SetSalePending(true);
+            sellable.SetPending(true);
         }
 
         // ── Shop's side ───────────────────────────────────────────────────────────
@@ -111,6 +117,10 @@ namespace GrowAGarden
                 case SellMessageType.SaleRejected:
                     SetPendingFromPayload(data, false);
                     break;
+                case SellMessageType.SaleAccepted:
+                    // Every client ends the object its own way; only its owner can despawn it.
+                    FindSellable(ReadId(data))?.Sell();
+                    break;
                 default:
                     Logger.Warn($"OnMessageToAll() '{gameObject.name}' — unknown message id={id}");
                     break;
@@ -124,14 +134,14 @@ namespace GrowAGarden
 
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;
-            uint plantId = (uint)reader.NextInt();
+            uint itemId = (uint)reader.NextInt();
             string sellerId = reader.NextString();
 
-            PlantSeed plant = FindPlant(plantId);
-            if (plant == null)
+            SellableEntity sellable = FindSellable(itemId);
+            if (sellable == null)
             {
-                // Nothing to hand back to — the named plant cannot be resolved on this client.
-                Logger.Warn($"OnSellRequested() '{gameObject.name}' — no plant with NetworkId={plantId}");
+                // Nothing to hand back to — the named object cannot be resolved on this client.
+                Logger.Warn($"OnSellRequested() '{gameObject.name}' — nothing sellable with NetworkId={itemId}");
                 return;
             }
 
@@ -140,13 +150,13 @@ namespace GrowAGarden
             // a plant that no longer exists anywhere.
             if (_pending != null)
             {
-                Reject(plant, "arrived while the counter was busy with another sale");
+                Reject(sellable, "arrived while the counter was busy with another sale");
                 return;
             }
 
-            if (plant.IsSeed || plant.IsInPool || plant.GetGrowthCompletion() < 1f)
+            if (!sellable.CanBeSold)
             {
-                Reject(plant, "is not a grown plant");
+                Reject(sellable, "is not something the shop will take");
                 return;
             }
 
@@ -155,38 +165,37 @@ namespace GrowAGarden
                 : EconomyManager.Instance.GetPlayer(sellerId);
             if (seller == null)
             {
-                Reject(plant, $"names a seller this client does not know ('{sellerId}')");
+                Reject(sellable, $"names a seller this client does not know ('{sellerId}')");
                 return;
             }
 
-            _pending = plant;
+            _pending = sellable;
             _pendingSellerId = sellerId;
-            _pendingValue = plant.seedDefinition.sellValue;
+            _pendingValue = sellable.SellValue;
 
-            Announce(SellMessageType.SalePending, plant);
-            plant.SetSalePending(true);
+            Announce(SellMessageType.SalePending, sellable);
+            sellable.SetPending(true);
 
-            StartCoroutine(TakeOwnershipAndComplete(plant));
+            StartCoroutine(TakeOwnershipAndComplete(sellable));
         }
 
         /// <summary>
         /// Takes the plant off the seller and completes the sale.
         ///
-        /// Ownership is not optional here: paying and pooling both write state, and pooling moves
-        /// the transform — which a client that does not hold Fusion authority cannot do, because
-        /// NetworkRigidbody3D overwrites a proxy's position on the next tick. Announcing the sale
-        /// by RPC is enough to change flags everywhere, but it cannot carry the plant into
-        /// storage. So the shop takes ownership first and acts second.
+        /// Ownership is not optional here: Runner.Despawn silently does nothing unless the caller
+        /// holds state authority, so a shop that has not taken the plant off the seller would pay
+        /// out and leave the plant standing there. So the shop takes ownership first and acts
+        /// second.
         ///
         /// Latency is free here — the plant is already out of the seller's hands and invisible, so
         /// nothing anybody is looking at is waiting on this.
         /// </summary>
-        private IEnumerator TakeOwnershipAndComplete(PlantSeed plant)
+        private IEnumerator TakeOwnershipAndComplete(SellableEntity sellable)
         {
-            NetworkObject obj = plant.networkBridge == null ? null : plant.networkBridge.Object;
+            NetworkObject obj = ObjectOf(sellable);
             if (obj == null)
             {
-                Reject(plant, "has no spawned network object");
+                Reject(sellable, "has no spawned network object");
                 yield break;
             }
 
@@ -203,24 +212,28 @@ namespace GrowAGarden
 
             if (!obj.HasStateAuthority)
             {
-                Reject(plant, $"could not be taken into shop ownership within {_authorityTimeout}s");
+                Reject(sellable, $"could not be taken into shop ownership within {_authorityTimeout}s");
                 yield break;
             }
 
             EconomyManager.Instance.AddBalance(_pendingSellerId, _pendingValue);
-            plant.Sell();                                                   // tell everyone it is sold
-            PoolManager.Instance.ReturnPlantSeed(plant.seedDefinition.seedId, plant);   // hand to storage
 
-            Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{plant.name}' for {_pendingValue} to '{_pendingSellerId}'");
+            // Announced rather than simply despawned, because what a sale *does* to a thing is the
+            // thing's own business — a crop disappears, something else might go behind the counter.
+            // Every client runs Sell(), which raises the object's Sold event locally before it ends
+            // itself; only its owner, which is now the shop, can actually despawn it.
+            Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{sellable.name}' for {_pendingValue} to '{_pendingSellerId}'");
+            Announce(SellMessageType.SaleAccepted, sellable);
+
             ClearPending();
         }
 
-        /// <summary>Hands the plant back: the shop is not taking it, so it must reappear.</summary>
-        private void Reject(PlantSeed plant, string why)
+        /// <summary>Hands it back: the shop is not taking it, so it must reappear.</summary>
+        private void Reject(SellableEntity sellable, string why)
         {
-            Logger.Warn($"Reject() '{gameObject.name}' — plant '{plant.name}' {why}; sale abandoned");
-            Announce(SellMessageType.SaleRejected, plant);
-            plant.SetSalePending(false);
+            Logger.Warn($"Reject() '{gameObject.name}' — '{sellable.name}' {why}; sale abandoned");
+            Announce(SellMessageType.SaleRejected, sellable);
+            sellable.SetPending(false);
             ClearPending();
         }
 
@@ -231,32 +244,44 @@ namespace GrowAGarden
             _pendingValue = 0;
         }
 
-        private void Announce(SellMessageType type, PlantSeed plant)
+        private void Announce(SellMessageType type, SellableEntity sellable)
         {
             var writer = new BytesWriter(BytesWriter.IntSize);
-            writer.AddInt((int)plant.NetworkId);
+            writer.AddInt((int)NetworkIdOf(sellable));
             _networkBridge.RPC_SendMessageToAll((byte)type, writer.Data);
         }
 
         /// <summary>Applies a pending/rejected announcement on every client.</summary>
         private void SetPendingFromPayload(byte[] data, bool pending)
         {
+            FindSellable(ReadId(data))?.SetPending(pending);
+        }
+
+        private uint ReadId(byte[] data)
+        {
             var reader = new BytesReader(data);
-            if (!reader.IsValid) return;
-            PlantSeed plant = FindPlant((uint)reader.NextInt());
-            if (plant != null) plant.SetSalePending(pending);
+            return reader.IsValid ? (uint)reader.NextInt() : 0u;
+        }
+
+        private static NetworkObject ObjectOf(SellableEntity sellable) =>
+            sellable == null ? null : sellable.GetComponent<NetworkObject>();
+
+        private static uint NetworkIdOf(SellableEntity sellable)
+        {
+            NetworkObject obj = ObjectOf(sellable);
+            return obj == null ? 0u : obj.Id.Raw;
         }
 
         /// <summary>
-        /// Resolves the plant the seller named. Fusion's own registry rather than a list this
-        /// component would have to be given and keep in step with the scene.
+        /// Resolves what the seller named. Fusion's own registry rather than a list this component
+        /// would have to be given and keep in step with the scene.
         /// </summary>
-        private PlantSeed FindPlant(uint rawId)
+        private SellableEntity FindSellable(uint rawId)
         {
             NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
             if (runner == null || rawId == 0) return null;
             return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) && obj != null
-                ? obj.GetComponent<PlantSeed>()
+                ? obj.GetComponent<SellableEntity>()
                 : null;
         }
 
@@ -267,9 +292,10 @@ namespace GrowAGarden
 
         private enum SellMessageType : byte
         {
-            SellRequest = 0,   // seller -> shop: plant NetworkId + seller id
-            SalePending = 1,   // shop -> all: plant NetworkId
-            SaleRejected = 2   // shop -> all: plant NetworkId
+            SellRequest = 0,    // seller -> shop: item NetworkId + seller id
+            SalePending = 1,    // shop -> all: item NetworkId
+            SaleRejected = 2,   // shop -> all: item NetworkId
+            SaleAccepted = 3    // shop -> all: item NetworkId
         }
     }
 }

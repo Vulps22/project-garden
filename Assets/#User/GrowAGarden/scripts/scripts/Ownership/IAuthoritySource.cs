@@ -5,7 +5,7 @@ namespace GrowAGarden
     ///
     /// Fusion transfers state authority to whoever grabs an object and never transfers it back,
     /// so unsold stock ends up owned by whichever player last touched it. That is why
-    /// UnifiedPool has to beg for authority with a 20 second timeout on every sale, and why a
+    /// the shop has to beg for authority before it can bring a seed home, and why a
     /// rejected purchase leaves a shop seed owned by the player who could not afford it.
     /// </summary>
     public interface IAuthoritySource
