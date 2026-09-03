@@ -638,7 +638,7 @@ MonoBehaviour:
   _somniumPlayersContainer: {fileID: 163550769}
   _bridge: {fileID: 163550767}
   _balanceDisplayManager: {fileID: 2069335585}
-  _startingBalance: 10
+  _startingBalance: 500
 --- !u!114 &163550769
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -872,7 +872,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: b0c80db92e9d16b228b4500d9158101d, type: 3}
-  LastBuildSizeBytes: 14765024
+  LastBuildSizeBytes: 14765728
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -900,7 +900,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 297360352
+      AvailableSize: 297384176
     Paid:
       Entries: []
   OwnedTokens: []
