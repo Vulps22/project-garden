@@ -30,7 +30,7 @@ namespace GrowAGarden
                 return;
             }
 
-            produce.Init(seedDefinition, _slot, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            produce.Init(_slot, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
             // The plot passes to the produce rather than being freed — a carrot in the ground
             // occupies that ground until somebody pulls it, so nobody may sow over it. End() must
