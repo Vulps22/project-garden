@@ -1,29 +1,33 @@
-using System;
 using UnityEngine;
 
 namespace GrowAGarden
 {
     /// <summary>
-    /// One place on a bearing plant where a produce can hang.
+    /// One place on a bearing plant where a produce can hang, and what is currently hanging there.
     ///
-    /// The array of these is what makes a pumpkin, a tomato and an apple tree one mechanism rather
-    /// than three: a pumpkin has one, a tomato several, an apple tree many.
+    /// **Runtime only, deliberately.** This used to be a [Serializable] class authored as an array
+    /// on the prefab, and the array arrived empty in the exported Somnium world — a pumpkin grew
+    /// its vine and then reported "bearing into 0 socket(s)", while every plain-typed field on the
+    /// same prefab (the body, the max scale, the produce prefab) came through untouched. The
+    /// Editor deserialised the same asset correctly every time, so the cause is somewhere in the
+    /// bundle export and not visible from here.
     ///
-    /// It holds the produce's Fusion id rather than a reference, the same way every other
-    /// cross-object message in this project addresses things — a reference would be master-only,
-    /// and this has to survive a state broadcast.
+    /// Rather than keep guessing at it, the authored data is now a plain Transform[] — the one
+    /// kind of array there is no doubt about — and this is built from it at Awake. Nothing about
+    /// bearing changed; only what the prefab is asked to remember.
     /// </summary>
-    [Serializable]
     public class ProduceSlot
     {
-        [Tooltip("Where the produce sits. The plant does not move, so this is set once and never written again.")]
-        public Transform socket;
+        /// <summary>Where the produce sits. The plant does not move, so this is read once.</summary>
+        public readonly Transform socket;
 
         /// <summary>Fusion id of the produce hanging here, or 0 when the socket is empty.</summary>
-        [NonSerialized] public uint produceId;
+        public uint produceId;
 
         /// <summary>True once something borne here has been taken.</summary>
-        [NonSerialized] public bool harvested;
+        public bool harvested;
+
+        public ProduceSlot(Transform socket) => this.socket = socket;
 
         public bool IsEmpty => produceId == 0;
     }
