@@ -424,7 +424,7 @@ MonoBehaviour:
   _grabInteractable: {fileID: 4766289745070567967}
   _sellable: {fileID: 4179585410284388070}
   _bodyToScale: {fileID: 6041893373370285627}
-  _maxScale: 0.99
+  _maxScale: 1
 --- !u!114 &4179585410284388070
 MonoBehaviour:
   m_ObjectHideFlags: 0
