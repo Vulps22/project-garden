@@ -9,21 +9,26 @@ upgrades worth rolling for.
 
 ---
 
-## 1. Plot claiming
+## Terminology
 
-Only your plot. Plant in it, harvest from it, and nobody else can do either.
+**World / Island / Garden / Plot / PlantSlot**, locked 2026-09-03 and recorded in
+[`terminology.md`](terminology.md), along with the renames the code still owes it. Read that first if
+any of the words below feel ambiguous — several of them used to mean something else.
 
-**Mostly built already.** `PlantSlot.OwnerId` exists, is replicated, and `CanBeUsedBy(playerId)` is
-already checked when the master decides a planting. What is missing:
+---
 
-- a claim gesture — what makes an unowned plot yours in the first place
-- the same check on **harvest**, which is currently open to anyone who can reach the produce
-- something visual for whose plot is whose
+## 1. Plot ownership
 
-**Engineering note.** The interesting question is not the claim, it is what happens when the world is
-full of plots held by people who are not coming back. `GardenLease`'s 120-second hold is the
-beginning of an answer and its duration should be judged against how a real dropout feels, not
-chosen in the abstract.
+Only your Plot. Plant in it, harvest from it, and nobody else can do either — unless you invited
+them.
+
+This is first because every step after it assumes a Plot belongs to somebody. An upgrade is bought
+for a Plot, a rare find matters because what it grows into is yours, and a world that re-rolls is
+only tolerable if what you have claimed survives the re-roll.
+
+Claiming, teammates, and the check on **harvest** — currently open to anyone who can reach the
+produce — are designed in **[`plot-ownership.md`](plot-ownership.md)**: a deed you carry, an
+application scroll the applicant issues, and a shed where every ownership change is committed.
 
 ## 2. Upgrades — sell the seed, or sell the produce
 
@@ -127,3 +132,49 @@ does the hard parts — spawn, ownership, derived growth, master-decided facts, 
 to anything.
 
 Nothing here needs a new networking concept. That is the good sign.
+
+---
+
+## Future — islands that generate themselves
+
+Beyond the four steps: **stop authoring the map.** Keep a list of explorable prefabs and let the game
+drop them into the void procedurally as players fly out to meet them. Exploration stops having an
+edge, and the world stops being a fixed amount of content.
+
+The seed is **the timestamp the instance was spawned** — the moment the first master client joins. So
+every instance is a different world, every player in that instance is in the same one, and the whole
+thing costs one number.
+
+**Engineering notes.**
+
+- **The seed is a fact; the map is a derivation.** One `long`, decided by the master and replicated
+  the way `_plantedTimestamp` already is, and every client computes the same islands forever with no
+  further messages. This is `GetGrowthCompletion()` at world scale, and it is the property to protect
+  above all others — the moment any part of the layout has to be *announced*, infinite exploration
+  stops being free.
+- **Generation must be pure and index-addressable.** The same seed and the same coordinate must give
+  the same island on every client, in any order, whoever arrived first — so a late joiner can compute
+  island #47 without having computed the forty-six before it. That rules out `UnityEngine.Random`,
+  which is global mutable state shared with everything else in the process. Hash the seed with the
+  island's coordinate into a local `System.Random` instead.
+- **Purity is also what makes unloading safe.** Islands have to despawn behind the player or the
+  NetworkObject count grows without bound (§4c — Somnium may have a per-world limit nobody has hit
+  yet). Despawning a place a player might return to is only acceptable if it regenerates
+  *identically*, which is exactly what determinism buys. It is not a nicety here; it is the thing
+  that lets the world be endless.
+- **The real ceiling is `SceneNetworking._networkPrefabs`.** Every explorable has to be registered
+  there by hand, and §3 already flags that array as the pressure point. Generation is unbounded; the
+  *vocabulary* is not. Infinite exploration is infinite arrangements of a finite prefab list, which
+  is fine, and worth being honest about when it starts to feel repetitive.
+- Rarity from §3 applies per island — the multiplier becomes a property of where you are.
+
+**And the good problem: getting it home.** A seed found six islands out has to be carried back through
+0G, and that is the best thing about it. Every find becomes a commitment rather than a pickup, and the
+journey is where it can go wrong. A carry container would soften exactly the tension that makes it
+worth doing, and should be resisted for as long as it stays bearable.
+
+The interesting version is the **ender chest on some islands** — put a thing in, it appears at home.
+That is nearly free: `SellableEntity` with a different `OnSold()`, crediting an inventory instead of
+thatch, and `SellPoint` already proves the shape. Keeping it **rare** leaves the 0G carry as the
+default and makes the chest a relief you are pleased to find, which is a better feeling than a bigger
+backpack.
