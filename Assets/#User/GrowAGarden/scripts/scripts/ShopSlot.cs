@@ -8,13 +8,22 @@ namespace GrowAGarden
     public class ShopSlot : MonoBehaviour
     {
         [SerializeField] private SeedDefinition _seedDefinition;
-        private PlantSeed _currentSeed;
+
+        [Tooltip("The seed this slot sells. Must also be listed on the SceneNetworking " +
+                 "component, or Fusion has no id to spawn it by.")]
+        [SerializeField] private NetworkObject _seedPrefab;
+
+        private Seed _currentSeed;
         private Collider[] _propColliders;
         private Collider _slotTrigger;
 
         [Tooltip("How long the shop waits to be given ownership of a seed before giving up on " +
                  "bringing it home. A safety net, not a normal path.")]
         [SerializeField] private float _authorityTimeout = 2f;
+
+        /// <summary>How long to wait before trying to stock an empty slot again.</summary>
+        private const float RESTOCK_RETRY_SECONDS = 0.5f;
+        private float _lastStockAttempt = float.NegativeInfinity;
 
         private void Start()
         {
@@ -45,19 +54,20 @@ namespace GrowAGarden
         {
             if (!SceneNetworking.IsMasterClient) return;
 
-            bool seedMissing = _currentSeed == null
-                            || _currentSeed.IsInPool   // planted, grown, sold — returned to pool
-                            || !_currentSeed.IsSeed;   // planted but not yet returned to pool
+            // A seed that is bought, planted or otherwise gone is despawned, so a Unity-null
+            // _currentSeed is now the only way a slot is empty. There is no second state to test
+            // for: a seed is a seed for its whole life.
+            if (_currentSeed != null) return;
 
-            if (seedMissing)
-            {
-                // Must run even when _currentSeed is already null: the join-time SpawnSeed()
-                // fires from OnLocalPlayerJoined, before Fusion has spawned the pooled scene
-                // objects, so UnifiedPool.Restore() has not yet flagged anything IsInPool and
-                // Claim() returns null. This retry is what stocks the slot once it can.
-                SetCurrentSeed(null);
-                SpawnSeed();
-            }
+            // Restocking is a retry, not a per-frame job. Spawning is the one thing here that
+            // can fail for reasons outside this slot — the session not being ready, the prefab
+            // table not built — and at 90 Hz a failing retry becomes hundreds of attempts and,
+            // if Fusion throws rather than refusing, hundreds of orphans.
+            if (Time.time - _lastStockAttempt < RESTOCK_RETRY_SECONDS) return;
+            _lastStockAttempt = Time.time;
+
+            SetCurrentSeed(null);
+            SpawnSeed();
         }
 
         private void SpawnSeed()
@@ -68,18 +78,139 @@ namespace GrowAGarden
                 return;
             }
 
-            PlantSeed claimed = PoolManager.Instance.ClaimPlantSeed(_seedDefinition.seedId);
-            if (claimed == null)
+            if (!CanSpawn())
             {
-                Logger.Warn($"SpawnSeed() '{gameObject.name}' — pool for '{_seedDefinition.seedId}' had nothing to claim; slot left empty");
                 return;
             }
 
-            Logger.Info($"SpawnSeed() '{gameObject.name}' — claimed '{claimed.name}' authority={claimed.HasLocalAuthority} at {transform.position}");
+            Seed claimed = SpawnFreshSeed();
+            if (claimed == null)
+            {
+                Logger.Warn($"SpawnSeed() '{gameObject.name}' — no seed available for '{_seedDefinition.seedId}'; slot left empty, will retry");
+                return;
+            }
+
+            Logger.Info($"SpawnSeed() '{gameObject.name}' — stocked '{claimed.name}' authority={claimed.HasLocalAuthority} at {transform.position}");
 
             SetCurrentSeed(claimed);
             claimed.PlaceInShop(transform.position, transform.rotation);
             AssignSlot(claimed);
+            StartCoroutine(AnnounceStock(claimed));
+        }
+
+        /// <summary>
+        /// Whether Fusion can actually create an object right now.
+        ///
+        /// Asks the runner, not our own bookkeeping. IsSharedModeMasterClient goes true as soon
+        /// as the peer is in a room, and SceneNetworking.IsNetworkReady is a static that outlives
+        /// the scene it describes — during a world transition the old value is still standing
+        /// while the new scene's Update loops are already running. Either one alone said "go"
+        /// while Fusion's simulation had no player index yet, and Runner.Spawn() in that window
+        /// instantiates the prefab and *then* throws out of Simulation.GetNextId(), leaving an
+        /// orphaned GameObject that is never networked and never told what it is. Those orphans
+        /// are what put two seeds in one slot.
+        ///
+        /// LocalPlayer.IsRealPlayer is the question that actually matters — it is false until
+        /// this peer has a player index, which is precisely what GetNextId() needs.
+        /// </summary>
+        private bool CanSpawn()
+        {
+            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+            return runner != null
+                && runner.IsRunning
+                && runner.LocalPlayer.IsRealPlayer
+                && SceneNetworking.IsNetworkReady;
+        }
+
+        /// <summary>
+        /// Makes a new seed rather than reusing one.
+        ///
+        /// SharedModeStateAuthMasterClient is the point of the exercise: the master owns the
+        /// stock from the instant it exists, so the client that decides what stock is is also
+        /// the client that can broadcast it. Under pooling those were routinely different
+        /// machines, and broadcastState() self-gates on authority, so the master's decisions
+        /// silently went nowhere. The flag only works from the master, which SpawnSeed() has
+        /// already established.
+        ///
+        /// Returns null rather than throwing when the prefab table has not been built yet —
+        /// registration happens at runner setup, and a slot can reach here first. Update() tries
+        /// again shortly afterwards.
+        /// </summary>
+        private Seed SpawnFreshSeed()
+        {
+            SceneNetworking net = SceneNetworking.Instance;
+            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+            if (net == null || runner == null) return null;
+
+            if (!net.NetworkPrefabs.TryGetValue(_seedPrefab, out NetworkPrefabId prefabId))
+            {
+                Logger.Warn($"SpawnFreshSeed() '{gameObject.name}' — '{_seedPrefab.name}' is not registered on SceneNetworking yet");
+                return null;
+            }
+
+            NetworkObject spawned;
+            try
+            {
+                spawned = runner.Spawn(prefabId, transform.position, transform.rotation,
+                                       null, null,
+                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
+            }
+            catch (System.Exception e)
+            {
+                // Fusion instantiates the prefab before it allocates an id, so a throw in here
+                // has already left a GameObject in the scene that will never be networked. There
+                // is no handle to clean it up with — the only real defence is CanSpawn() above,
+                // and the retry interval that stops a bad frame becoming a hundred of them.
+                //
+                // Caught rather than left to propagate because ExceptionAlarm blacks the world
+                // out on any exception from this assembly, and a shop that cannot restock is not
+                // worth making the garden unplayable for. The error still says so, loudly.
+                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion threw spawning '{_seedPrefab.name}': {e.Message}");
+                return null;
+            }
+
+            if (spawned == null)
+            {
+                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion refused to spawn '{_seedPrefab.name}'");
+                return null;
+            }
+
+            Seed seed = spawned.GetComponent<Seed>();
+            if (seed == null)
+                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — spawned '{spawned.name}' has no Seed component");
+
+            return seed;
+        }
+
+        /// <summary>
+        /// Says what fresh stock is, more than once.
+        ///
+        /// A spawned object exists on the spawner immediately but reaches everyone else a few
+        /// ticks later, so the RestoreToShop() that follows a spawn can be about an object the
+        /// other clients do not have yet, and an RPC with nowhere to land is simply dropped.
+        /// Pooling never had this problem: every seed existed on every client from scene load,
+        /// so no message about one could outrun the object it described.
+        ///
+        /// Repeating the state broadcast is the crude fix, and deliberately so — this is the
+        /// one thing about runtime spawn that cannot be settled by reading the SDK, so phase A
+        /// exists partly to find out whether it was needed at all. If the logs show proxies
+        /// were already in step, delete the loop and keep a single broadcast.
+        /// </summary>
+        private IEnumerator AnnounceStock(Seed seed)
+        {
+            // Gaps, not timestamps — these land at 0.25 s, 1 s and 2 s after the spawn.
+            float[] gaps = { 0.25f, 0.75f, 1f };
+            foreach (float gap in gaps)
+            {
+                yield return new WaitForSeconds(gap);
+
+                // Only while it is still ours and still stock — a seed bought in the meantime
+                // has moved on, and re-asserting shop state over it is exactly the bug the
+                // purchase-authority work removed.
+                if (seed == null || seed != _currentSeed || !seed.InShop) yield break;
+
+                seed.broadcastState();
+            }
         }
 
         /// <summary>
@@ -89,7 +220,7 @@ namespace GrowAGarden
         /// whichever seed is currently its stock — and must stop listening when it is not, or a
         /// sold seed could be bought a second time from the slot it no longer occupies.
         /// </summary>
-        private void SetCurrentSeed(PlantSeed seed)
+        private void SetCurrentSeed(Seed seed)
         {
             if (_currentSeed == seed) return;
 
@@ -140,7 +271,7 @@ namespace GrowAGarden
         /// setting on every client, so it has to run on all of them or the stock bounces around
         /// inside the barrow on everyone else's screen.
         /// </summary>
-        private void AssignSlot(PlantSeed seed)
+        private void AssignSlot(Seed seed)
         {
             IgnorePropCollisions(seed, true);
 
@@ -164,7 +295,7 @@ namespace GrowAGarden
         }
 
         /// <summary>The seed belongs to a player now; it is no longer this slot's business.</summary>
-        private void ReleaseSlot(PlantSeed seed)
+        private void ReleaseSlot(Seed seed)
         {
             IgnorePropCollisions(seed, false);
 
@@ -199,9 +330,9 @@ namespace GrowAGarden
         /// a layer-based rule would work in the Editor and quietly do nothing in-world.
         ///
         /// Re-applied on every AssignSlot() because Unity drops ignored pairs when a collider is
-        /// disabled and re-enabled, which is exactly what pooling does.
+        /// disabled and re-enabled, which UpdateVisuals does on every state change.
         /// </summary>
-        private void IgnorePropCollisions(PlantSeed seed, bool ignore)
+        private void IgnorePropCollisions(Seed seed, bool ignore)
         {
             if (_propColliders == null) CachePropColliders();
             if (_propColliders.Length == 0 || seed == null) return;
@@ -224,7 +355,7 @@ namespace GrowAGarden
             foreach (Collider c in root.GetComponentsInChildren<Collider>(true))
             {
                 if (c.isTrigger) continue;                                  // our own slot trigger
-                if (c.GetComponentInParent<PlantSeed>() != null) continue;  // a seed, not the prop
+                if (c.GetComponentInParent<Seed>() != null) continue;  // a seed, not the prop
                 found.Add(c);
             }
             _propColliders = found.ToArray();
@@ -234,7 +365,7 @@ namespace GrowAGarden
         /// Puts a seed back where it belongs without charging anyone. Used for every exit that
         /// is not a genuine purchase; the slot keeps its seed, so nothing restocks.
         /// </summary>
-        private void ReturnToSlot(PlantSeed seed, string why)
+        private void ReturnToSlot(Seed seed, string why)
         {
             Logger.Warn($"ReturnToSlot() '{gameObject.name}' — seed '{seed.name}' {why}; not a sale");
 
@@ -257,7 +388,7 @@ namespace GrowAGarden
         /// seconds — during which its copy was untouchable while the buyer carried the real one
         /// away. The shop has to own the thing it is putting back on the shelf.
         /// </summary>
-        private void SendHome(PlantSeed seed)
+        private void SendHome(Seed seed)
         {
             var ret = seed.GetComponent<ReturnableEntity>();
             if (ret == null) return;
@@ -265,7 +396,7 @@ namespace GrowAGarden
             StartCoroutine(TakeOwnershipAndRecall(seed, ret));
         }
 
-        private IEnumerator TakeOwnershipAndRecall(PlantSeed seed, ReturnableEntity ret)
+        private IEnumerator TakeOwnershipAndRecall(Seed seed, ReturnableEntity ret)
         {
             NetworkObject obj = seed.networkBridge == null ? null : seed.networkBridge.Object;
             if (obj == null) yield break;
@@ -297,7 +428,7 @@ namespace GrowAGarden
         /// Refuses a purchase the player cannot afford: drops it out of their hand and puts it
         /// back in the slot. The seed stays this slot's current seed, so no restock happens.
         /// </summary>
-        private void RejectPurchase(PlantSeed seed, PlayerBalance buyer)
+        private void RejectPurchase(Seed seed, PlayerBalance buyer)
         {
             Logger.Info($"RejectPurchase() '{gameObject.name}' — '{buyer.GetID()}' cannot afford {_seedDefinition.seedId} ({buyer.GetBalance()} < {_seedDefinition.buyPrice})");
 
@@ -308,7 +439,7 @@ namespace GrowAGarden
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent(out PlantSeed seed) && seed.IsSeed)
+            if (other.TryGetComponent(out Seed seed))
             {
                 // Only latch seeds this slot actually sells — a seed of another type carried
                 // through the trigger must not become this slot's _currentSeed.
@@ -335,7 +466,7 @@ namespace GrowAGarden
         /// Grabbing a seed therefore raised an exit while it sat motionless in the slot, and the
         /// purchase path charged for it and restocked. Check where the seed actually is instead.
         /// </summary>
-        private bool HasLeftSlot(PlantSeed seed)
+        private bool HasLeftSlot(Seed seed)
         {
             if (_slotTrigger == null) _slotTrigger = GetComponent<Collider>();
             if (_slotTrigger == null) return true;   // no volume to test against; trust the event
@@ -355,7 +486,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnTriggerExit(Collider other)
         {
-            if (!other.TryGetComponent(out PlantSeed seed) || seed != _currentSeed) return;
+            if (!other.TryGetComponent(out Seed seed) || seed != _currentSeed) return;
 
             // Still inside: the event came from a physics-state toggle, not from movement.
             if (!HasLeftSlot(seed)) return;
@@ -392,7 +523,7 @@ namespace GrowAGarden
         /// deciding this in more than one place is what let a purchase commit on the buyer's
         /// machine while the seed was sent home on everyone else's.
         /// </summary>
-        private void OnPurchaseRequested(PlantSeed seed)
+        private void OnPurchaseRequested(Seed seed)
         {
             if (!SceneNetworking.IsMasterClient) return;
             if (seed != _currentSeed) return;
@@ -424,7 +555,7 @@ namespace GrowAGarden
             }
 
             ReleaseSlot(seed);
-            seed.Purchase();
+            seed.Purchase(buyer.GetID());
             EconomyManager.Instance.RemoveBalance(buyer.GetID(), _seedDefinition.buyPrice);
 
             SetCurrentSeed(null);

@@ -42,7 +42,7 @@ Inside `Assets/#User/GrowAGarden/`:
 GrowAGardenScene.unity      the one scene
 prefab_buyables/            BuyPoint{,Carrot,Turnip,Pumpkin} — the shop slots
 prefabs_sellables/          SellPoint
-prefabs_unified/            Unified_Carrot, Unified_turnip, unified_pumpkin — the pooled seeds
+prefabs_crops/              Seed_/Plant_/Produce_{Carrot,Turnip,Pumpkin} — nine spawnable prefabs
 Prefabs_world/, Materials/, sounds/
 scripts/                    see "Where the code lives" below
 ```
@@ -119,14 +119,16 @@ CM's would be a wire-format change, so they are left alone.
 
 ```
 scripts/scripts/                 game logic
-  PlantSeed/                     PlantSeed, RootedPlantSeed, ViningPlantSeed, RegrowableFruit (stub)
-  Pools/                         PoolManager, UnifiedPool
+  Plants/                        Plant, RootedPlant, BearingPlant, SingleHarvestPlant,
+                                 MultiHarvestPlant, ProduceSlot
+  Produce/                       Produce, RootedProduce
   economy/                       EconomyManager, PlayerBalance, BalanceDisplayManager
   Physics/                       KinematicController, ReturnableEntity, AlignableEntity,
                                  HoveringEntity, IKinematicSource, ILifecycleNotifier
-  Ownership/                     AuthorityController, IAuthoritySource
-  Interaction/                   SingleHolderFilter, IHeldObject
-  ShopSlot, PlantSlot, SellPoint, SeedDefinition, Logger, ExceptionAlarm
+  Ownership/                     AuthorityController, GardenLease, IAuthoritySource, IPlotOccupant
+  Interaction/                   SingleHolderFilter, SellableEntity, IHeldObject,
+                                 ISellValueSource, XRGrabInteractableRef
+  Seed, ShopSlot, PlantSlot, SellPoint, SeedDefinition, IPlantable, Logger, ExceptionAlarm
 scripts/Seeds/                   CarrotSeed, TurnipSeed, PumpkinSeed (SeedDefinition subclasses)
 scripts/Networking Plugin/       vendored CM (see above)
 scripts/{Interactions Plugin, ARS Additional, Networked Components, Interactions Examples}/
@@ -237,17 +239,21 @@ with several real clients connected. A single client tells you nothing about any
 
 ### Authority model
 
-Master-client authoritative, with two distinct notions of authority — do not conflate them:
+Master-client authoritative, with **three** distinct notions of ownership — do not conflate them:
 
-- `SceneNetworking.IsMasterClient` — scene-wide owner. Gates economy mutation, shop spawning, and
-  slot bookkeeping. It resolves to the **first player to join** (confirmed empirically, though not yet
-  in a busy multi-client session — treat as confirmed-but-provisional).
-- `networkBridge.Object.HasStateAuthority` — **per-NetworkObject** Fusion authority. Gates growth
-  simulation, movement and state broadcast for one plant. Authority migrates on grab and never
-  migrates back on its own, which is what `AuthorityController` exists to correct.
+- `SceneNetworking.IsMasterClient` — scene-wide owner. Gates economy mutation, spawning, planting
+  decisions and slot bookkeeping. It resolves to the **first player to join** (confirmed empirically,
+  though not yet in a busy multi-client session — treat as confirmed-but-provisional).
+- `networkBridge.Object.HasStateAuthority` — **per-NetworkObject** Fusion authority: who *simulates*
+  this object and who may despawn it. It transfers on **hover**, not on grab (`NetworkGrabbable`
+  calls `RequestControl()` from `firstHoverEntered`), so **authority is not evidence of anything** —
+  a player who waves a hand near a ripe pumpkin owns it, having harvested nothing.
+- `OwnerId` on a plot or seed — **whose it is**. A replicated fact decided by the master, in the
+  same shape as `IHeldObject.HolderId`. See "Ownership is a fact, not state authority" below.
 
-A single plant is simulated only by its state authority; every other client is a passive proxy applying
-RPC state.
+A plant is simulated only by its state authority; every other client is a passive proxy applying RPC
+state. Because authority transfers on hover, every decision that matters must be *announced* by the
+master, never inferred from who happens to own an object.
 
 ### The governing rule: the master is the source of truth
 
@@ -321,8 +327,9 @@ Two corollaries:
 ### Behaviour lives in components on the prefab
 
 `PlantSeed` used to own lifecycle, growth, serialization, planting, grab arbitration, physics mode and
-ownership. The physical and interaction concerns are now small components on the unified prefabs,
-resolved through one-member interfaces so they know nothing about seeds:
+ownership. The physical and interaction concerns are small components resolved through one-member
+interfaces, so they know nothing about crops. They live on **`Seed` and `Produce` only** — the two
+things a hand can reach:
 
 | Component | Owns | Talks to |
 |---|---|---|
@@ -332,13 +339,18 @@ resolved through one-member interfaces so they know nothing about seeds:
 | `ReturnableEntity` | travelling back to a target position when recalled | `IHeldObject` |
 | `AlignableEntity` | turning back to a stored target rotation when realigned | `IHeldObject` |
 | `HoveringEntity` | falling, landing, rising to hover, bobbing, spinning, righting | told explicitly |
+| `SellableEntity` | value, whether it can be sold, and what a sale does to it | `ISellValueSource` |
 
-All six re-evaluate on `ILifecycleNotifier.LifecycleChanged`, which `PlantSeed` raises after every
-lifecycle transition and on every `grabber` RPC. The event deliberately carries **no payload** —
+They re-evaluate on `ILifecycleNotifier.LifecycleChanged`, which `Seed` and `Produce` raise after
+every lifecycle transition and on every `grabber` RPC. The event deliberately carries **no payload** —
 subscribers read what they need from the source, so a new behaviour needs no interface change.
 
-`PlantSeed` supplies the answers: `ShouldBeKinematic`, `ShouldUseGravity`, `ShouldMasterOwn`,
-`HolderId`, `IsHeld`, `HasKnownAuthority`. Each is *derived* from lifecycle rather than remembered.
+`Seed` and `Produce` supply the answers: `ShouldBeKinematic`, `ShouldUseGravity`, `ShouldMasterOwn`,
+`HolderId`, `IsHeld`. Each is *derived* rather than remembered.
+
+**A produce hovers only once harvested.** Until a player takes it, it is attached to a plant or
+sitting in the earth and must not drift — so `HoveringEntity` stays off. That is rule 2 applied at
+the right seam, and it means a socket never fights a hovering body for position.
 
 `ReturnableEntity` and `AlignableEntity` are deliberately separate: coming back to a place and facing
 a particular way are different wants. `AlignableEntity`'s target is a `Quaternion` snapshot, not a live
@@ -346,18 +358,19 @@ a particular way are different wants. `AlignableEntity`'s target is a `Quaternio
 vector while spinning, because the spin is what creates the conflict; it uses up-vector alignment
 rather than per-axis euler flags, since rotations don't decompose into independent axes past ~90°.
 
-Hover/fall/settle values are serialized on the three unified prefabs, so tuning feel needs no code
-change: hover height 0.25, rise 0.6 m/s, fall gravity scale 0.35, max fall 2.5 m/s, spin 20°/s.
+Hover/fall/settle values are serialized on the prefabs, so tuning feel needs no code change: hover
+height 0.25, rise 0.6 m/s, fall gravity scale 0.35, max fall 2.5 m/s, spin 20°/s.
 
 ### Networking: hand-rolled byte packing
 
 All sync goes through `NetworkBridge` RPCs carrying `(byte messageId, byte[] data)`, serialized manually
 with `BytesWriter`/`BytesReader`. There is no Fusion `[Networked]` property anywhere.
 
-- Each component defines its **own private `enum ...MessageType : byte`** (`PlantMessageType`,
-  `PlantSlotMessageType`, `PoolMessageType`). IDs are scoped per NetworkBridge, so `0` in one component
-  is unrelated to `0` in another. **Append new values, never insert** — these are wire ids, and
-  renumbering makes two builds disagree about what a message means.
+- Each component defines its **own private `enum ...MessageType : byte`** — `SeedMessageType`,
+  `PlantMessageType`, `ProduceMessageType`, `PlantSlotMessageType`, `SellMessageType`. IDs are scoped
+  per NetworkBridge, so `0` in one is unrelated to `0` in another, and each starts at 0. **Append new
+  values, never insert** — these are wire ids, and renumbering makes two builds disagree about what a
+  message means.
 - `BytesWriter` is **pre-sized** — you must compute the exact byte count up front. Adding a field to a
   payload means updating the size calculation too, or it will overflow. See
   `GetExtraBroadcastStateSize()` for how subclasses extend a parent's payload.
@@ -370,49 +383,119 @@ with `BytesWriter`/`BytesReader`. There is no Fusion `[Networked]` property anyw
 
 New clients get state pushed, never pulled: `SceneNetworking.OnOtherPlayerJoined` → authority calls
 `broadcastState()`. `EconomyManager` does the same on `OnBecomeWorldMaster` (deferred one frame via
-`BroadcastNextFrame`). `PlantSeed` also re-broadcasts on `OnStateAuthorityChanged`, because
+`BroadcastNextFrame`). `Seed` also re-broadcasts on `OnStateAuthorityChanged`, because
 `broadcastState()` is a no-op without authority — anything that changed while unowned was never sent.
 This is the mechanism behind open issue #40.
 
-### `PlantSeed` — the core template-method class
+### Three classes, three lifetimes
 
-`PlantSeed` (abstract) drives the seed → planted → grown → sold lifecycle. Subclasses override hooks
-rather than reimplementing the loop:
+`PlantSeed` is gone. It used to be a seed, a growing crop and a fruit by turns, which is why it owned
+lifecycle, growth, serialization, planting, grab arbitration, physics mode and ownership at once.
+Those are now three objects with three lifetimes, and **only two of them can be touched.**
 
-| Hook | Purpose |
-|---|---|
-| `UpdateVisuals(bool isSeed)` | **abstract** — swap models/colliders for seed vs plant |
-| `OnGrowthUpdated(completion, targetScale)` | per-frame scale; default scales the root transform |
-| `OnFullyGrown()` | phase complete; default enables grab + broadcasts |
-| `OnWillUpdate()` | runs on **all** clients, before the authority-only guard |
-| `On{Write,Read}BroadcastState` + `GetExtraBroadcastStateSize` | extend the state payload |
+| | what it is | grabbable |
+|---|---|---|
+| `Seed` | shop stock, then a bought thing, then something you put in the ground | yes |
+| `Plant` | spawned into a plot by the master, grows there, never reached by a hand | **no** |
+| `Produce` | what a plant yields; the only thing that is ever sold | yes |
 
-The four lifecycle flags — `IsSeed`, `InShop`, `IsBought`, `IsInPool` — are **read-only to external
-callers**. Mutate them through the action methods, each of which owns its state change, raises
-`LifecycleChanged` and broadcasts if it should:
+That a plant cannot be touched is what makes it small: no `XRGrabInteractable`, no
+`NetworkGrabbable`, `SingleHolderFilter`, `ReturnableEntity`, `AlignableEntity`, `HoveringEntity` or
+`KinematicController` — and no colliders at all. It keeps `AuthorityController`, because a plant does
+belong to the world.
 
-`Claim()` · `PlaceInShop(pos, rot)` · `RestoreToShop()` · `Purchase()` · `Plant(slot)` · `Sell()` ·
-`ReturnToPool(pos, rot)` · `ForceRelease()` · `RequestPurchase()`
+```
+Plant (abstract)                   Produce
+├── RootedPlant                    └── RootedProduce
+└── BearingPlant (abstract)
+    ├── SingleHarvestPlant
+    └── MultiHarvestPlant  (#43, written, no crop uses it)
+```
 
-Order matters inside them: set the flags **before** calling `SetState()`, because `SetState()` raises
-`LifecycleChanged` itself — doing it the other way round publishes one event describing a state that
-never existed (a free seed, when it is really shop stock), and every listener acts on it.
+- **`RootedPlant`** (carrot, turnip) *is* the crop: on full growth it spawns a `RootedProduce` at its
+  own transform and despawns itself, handing the plot over rather than freeing it.
+- **`BearingPlant`** (pumpkin) keeps standing and hangs produce off sockets. `SingleHarvestPlant`
+  withers once every socket has yielded; `MultiHarvestPlant` refills and carries on.
+- **`RootedProduce`** earns its class by **owning the plot** until it is pulled — otherwise a player
+  could sow a seed into ground that visibly still holds a carrot.
 
-Growth is **timestamp-derived, not accumulated**: `GetGrowthCompletion()` compares
-`DateTimeOffset.UtcNow` against `_plantedTimestamp` and the current phase's `duration`. This is why
-syncing a timestamp is sufficient to sync growth, and why phase transitions reset `_plantedTimestamp`.
+Growth and ripening are **derived, never sent**: every client compares now against a timestamp and
+arrives at the same scale. Syncing one timestamp syncs the whole thing forever.
 
-Two implementations: `RootedPlantSeed` (simple show/hide, e.g. carrot, turnip) and `ViningPlantSeed`
-(multi-phase vine → fruit → decay, e.g. pumpkin; anchors the vine in world space via `LateUpdate` while
-the fruit root moves freely, and starts decay when the root travels `_vineDetachRadius` from the
-anchor).
+**A plant positions itself from its plot.** Fusion's spawn pose is local to the spawner and not
+networked, so the plot's `NetworkId` rides in the state payload and each client places the plant from
+it. A plant never moves, so paying for a `NetworkTransform` to replicate a value that changes once
+would be absurd.
+
+### Traits, not interfaces the class has to admit
+
+`SellableEntity` is a component you add, in the same family as `KinematicController`,
+`SingleHolderFilter`, `ReturnableEntity`, `AlignableEntity` and `HoveringEntity` — behaviour that
+attaches to anything and knows nothing about crops. A produce is sellable; a watering can or a sword
+could be.
+
+It owns the object's half of a sale: `SellValue` (from an optional `ISellValueSource`, else a
+serialized number), `CanBeSold` (its own `enabled` flag — off while unripe), `SetPending` (leave the
+world when offered, come back if refused) and `OnSold()`, which **defaults** to despawning rather
+than requiring it. `SellPoint` therefore has no idea what a crop is.
+
+### Ownership is a fact, not state authority
+
+Plots carry `OwnerId` — a Somnium player id, decided by the master and replicated, exactly as
+`IHeldObject.HolderId` is one level down. Seeds carry their own, because they leave the garden.
+
+**Do not reach for Fusion state authority for this.** `NetworkGrabbable` calls `RequestControl()` on
+`firstHoverEntered`, so authority transfers to anyone whose hand comes *near* a seed or produce —
+ownership by proximity, without a grab. Authority is also the master's channel for acting on objects
+at all (`SellPoint`, `ShopSlot` and `AuthorityController` all take it as routine business), and it
+vanishes the moment a player disconnects.
+
+`GardenLease` holds a departed player's garden for **120 seconds** before freeing their plots and
+despawning what stands in them — a dropout is indistinguishable from leaving, and
+`DestroyWhenStateAuthorityLeaves` cannot wait. Their `HolderId`, by contrast, is cleared
+**immediately**: that is a correction, not cleanup, and leaving it set makes `SingleHolderFilter`
+refuse the object to everyone for the rest of the session.
+
+### Runtime spawn — nothing is pooled
+
+`SceneNetworking._networkPrefabs` registers the nine crop prefabs into Fusion's `PrefabTable`;
+`ShopSlot`, `PlantSlot` and `BearingPlant` spawn from it and despawn when done. Always with
+`NetworkSpawnFlags.SharedModeStateAuthMasterClient`, so **the client that decides a thing exists is
+the client that owns it** — which is what closed the gap behind most of the 2026-09-02 bugs, since
+`broadcastState()` self-gates on `HasStateAuthority`.
+
+Four traps, each of which cost an upload. `docs/runtime-spawn.md` §4 has the full list.
+
+- **`Spawned()` runs before `Start()`.** Subscribe to `NetworkBridge.OnSpawned` in `Awake`.
+- **Never gate a spawn on our own statics.** `IsSharedModeMasterClient` goes true as soon as the peer
+  is in a room, and `IsNetworkReady` is a static that outlives its scene. Ask the runner:
+  `runner.IsRunning && runner.LocalPlayer.IsRealPlayer`. Spawning early makes Fusion instantiate the
+  prefab and *then* throw from `Simulation.GetNextId()`, leaving orphans nothing will ever clean up.
+  Rate-limit retries for the same reason.
+- **A kinematic `NetworkRigidbody3D` ignores `transform.position`** — use `Teleport()`. Non-kinematic
+  bodies are physics-driven and don't show this, which is why seeds worked and produce didn't.
+- **Arrays of custom `[Serializable]` classes arrive empty from the bundle export.** Plain
+  `Transform[]` survives. The Editor reports the array as correct by every available means, so this
+  is only visible in-world. Author plain arrays and build richer objects at `Awake`.
+
+### Deleting a class hands its job to the prefabs, silently
+
+Every failure in landing the split was this shape. `PlaceInShop` used to write the pose after a
+spawn; `OnGrowthUpdated` used to overwrite the root scale every frame; `UpdateVisuals` used to enable
+the renderer; the growth phases used to overwrite the body scale. All four deletions were correct,
+and all four left a prefab holding a value that had never been meaningful and was suddenly the only
+source of truth.
+
+**After deleting anything that wrote to a component every frame, audit what the prefab now says about
+it.** The prefabs are now authoritative for appearance, scale and physical presence, and nothing at
+runtime will second-guess them.
 
 ### The shop purchase flow
 
 Worth reading end to end before changing anything in `ShopSlot` — nearly every step is there because
 the obvious version was wrong.
 
-1. Master `SpawnSeed()`s from the pool, `PlaceInShop()`, `AssignSlot()`. Stock is **physical**, not
+1. Master spawns a `Seed_` prefab, `PlaceInShop()`, `AssignSlot()`. Stock is **physical**, not
    kinematic; `ReturnableEntity` + `AlignableEntity` are armed with auto-recall so a nudge tidies
    itself up. Prop collisions are ignored per collider pair (the slot anchor sits inside the barrow
    mesh) — done pairwise rather than by layer, because the physics collision matrix lives in
@@ -433,36 +516,33 @@ the obvious version was wrong.
 6. If nobody anywhere holds it (`HolderId` empty), it was shoved out by a hand or another seed —
    `ReturnToSlot()`. Treating that as a sale handed out free seeds and restocked the slot, which is a
    straightforward way to print crops.
-7. `ShopSlot.Update()` (master only) re-stocks whenever the slot's seed is missing. This must run
-   **even when `_currentSeed` is already null**: the join-time `SpawnSeed()` fires before Fusion has
-   spawned the pooled scene objects, so `Claim()` returns null and the retry is what actually stocks
-   the slot. A "remove logging" commit once wrapped this in `if (_currentSeed != null)` and silently
-   disabled it — **diff logging-removal hunks for control flow, not just deleted lines.**
+7. `ShopSlot.Update()` (master only) re-stocks whenever the slot is empty — a sold or planted seed
+   is despawned, so a Unity-null `_currentSeed` is the only empty state there is. Retries are
+   rate-limited to twice a second: a failing per-frame spawn is hundreds of attempts and, when
+   Fusion throws rather than refusing, hundreds of orphans.
 8. `OnTriggerEnter` latches only seeds whose `seedId` matches the slot's. Without that, a carrot
    carried past the pumpkin buy point en route to the sell point became that slot's stock.
 
 ### Seed definitions are MonoBehaviours, not ScriptableObjects
 
-`SeedDefinition` is an abstract `MonoBehaviour` whose concrete subclasses (`CarrotSeed`, `TurnipSeed`,
-`PumpkinSeed`) **hardcode** id/prices/phases in `Init()`, called from both `OnEnable` and `OnValidate`.
-Balance changes are code changes, not Inspector edits. To add a crop: new `SeedDefinition` subclass +
-a `PlantSeed` subclass choice + prefab + a `UnifiedPool` under `PoolManager` + a `ShopSlot`.
+`SeedDefinition` is an abstract `MonoBehaviour` whose concrete subclasses (`CarrotSeed`,
+`TurnipSeed`, `PumpkinSeed`) **hardcode** id, prices and durations in `Init()`, called from both
+`OnEnable` and `OnValidate`. Balance changes are code changes, not Inspector edits.
 
-Current balance: carrot 10/15, one 10 s phase. Turnip see `TurnipSeed`. Pumpkin 60/110 —
-vine 60 s → fruit 60 s → decay 30 s.
+**One definition per crop, referenced by all three of its prefabs** — seed, plant and produce — so
+there is one place per crop to read and to change. The multi-phase `phases` list is gone: the plant
+owns `growthDuration`, the produce owns `ripenDuration`, and a bearing plant owns `witherDuration`.
 
-### Pooling — nothing is instantiated at runtime
+A produce **must not** be handed the plant's definition component: a `RootedPlant` despawns itself
+the statement after it bears, so the produce would spend its life pointing at a component on a
+destroyed GameObject. Unity's overloaded null then makes every `!= null` read false, which is how a
+carrot came to sell for nothing while its ripening still looked right by coincidence.
 
-Fusion NetworkObjects are pre-placed in the scene and recycled. `PoolManager` (singleton) maps
-`seedId → UnifiedPool`; pools `Claim()` and `Return()` existing `PlantSeed` instances. `Restore()`
-requires state authority, so pool returns may need `RequestAuthorityAndReturn` (20 s timeout), and
-`Awake`-time restores that fail are retried each frame from `_pendingRestore`.
+To add a crop: a `SeedDefinition` subclass, three prefabs, all three registered on `SceneNetworking`,
+and a `ShopSlot` pointed at the seed.
 
-A pooled seed is **hidden**: `SetState()` routes to `HideForPool()` instead of `UpdateVisuals()`, which
-disables every renderer, collider and the grab. Without it the pools are visible piles of grabbable
-seeds at the pool transforms.
-
-An exhausted pool returns `null` — callers must handle it; empty shops are the symptom.
+Current balance: carrot 10/15, grows 10 s. Turnip 18/25, 15 s. Pumpkin 60/110 — vine 60 s, fruit
+ripens 60 s, withers 30 s.
 
 ### Economy
 
@@ -479,7 +559,7 @@ null**. Refuse rather than guess when it is; the next broadcast restores it.
 
 ## Conventions
 
-- **Commits:** `#<issue> <imperative description>` — e.g. `#42 Add null SeedId guard in PoolManager.Awake`.
+- **Commits:** `#<issue> <imperative description>` — e.g. `#42 Add null socket guard in BearingPlant.Awake`.
   Issue number first, present tense. Recent work without an issue drops the number and reads as a
   sentence about intent (`Let the holder ask to buy and the master decide`).
 - **Branches:** `feature/<issue>-<slug>` or `feature/<slug>`, `wip/<slug>` for exploratory work.
@@ -504,36 +584,83 @@ report. Removing the booster left a dangling `Debug_EconomyBoost.Instance` deref
 The master-client probe going forward is `BalanceDisplayManager.Set`'s existing
 `Logger.Log($"...IsMasterClient={...}")`, read from the client log — no side effects.
 
+`Produce.ReportPlacementOnce()` is **temporary instrumentation**, not a debug utility: one line per
+produce, a second after it is born, saying where it actually is and what it is worth. It exists
+because the logs used to report the position we *asked for* rather than the one the object got, and
+that cost two uploads. Delete it once late-join, player-leave and master-leave are tested.
+
 ## Current state
 
-Branch **`feature/purchase-authority`**, 4 commits ahead of `main`, tree clean. `main` is well ahead of
-`origin/main` and unpushed. Tags `MVP`, `add-turnip` are historical.
+Branch **`feature/runtime-spawn`**, well ahead of `main`; `main` is ahead of `origin/main` and
+unpushed. Tags `MVP`, `add-turnip` are historical.
 
-The five-phase seed-physics rework: phases 0–2b confirmed in-world; phase 3 (physical shop stock)
-uploaded and mostly working, though stock drifts inside the socket rather than settling dead centre;
-**phase 4 and the feel pass on top of it are committed but never fairly tested** — the playtest meant
-to validate them was invalidated by the per-frame pumpkin throw.
+**The core loop works in-world, on both crop shapes** (confirmed 2026-09-03). A rooted crop is
+bought, planted, grows, becomes produce, is carried and sold. A bearing crop grows a vine, bears into
+a socket, ripens, is harvested, withers, and frees its plot to be replanted. No project exceptions in
+the session; the only exceptions in the log are Somnium's own avatar system.
 
-Issues #45 (extract grab filtering) and #46 (dependency inversion) are **done in code** on this branch
-but their GitHub issues are still open.
+Design docs in `docs/`: `roadmap.md` (**start here** — plot claiming, upgrades, generalised spawn
+slots, world cycling), `runtime-spawn.md` (what replaced pooling, and the four traps),
+`bearing-plants-and-produce.md` (the Seed/Plant/Produce design), `world-bridge.md` (a deferred
+refactor — see below).
+
+### ⚠ Reset before this is anything but a test build
+
+**`EconomyManager._startingBalance` is 500.** It was raised from 10 so the pumpkin could be reached
+without ten manual carrot loops in VR — a testing tax, not a design decision. **Put it back to 10.**
+It is one serialized field on `SceneManager` in the scene, and it is the only change on this branch
+that is not the game.
+
+Also temporary: **`Produce.ReportPlacementOnce()`** logs a produce's real position, scale, ripeness
+and value one second after it is born. It exists because two uploads were spent on "the produce is
+missing" when the only position in the log was the one we *asked for*. Delete it once the remaining
+tests below are green.
+
+### What still needs testing, and what to learn from each
+
+None of these can be answered by one player standing in a world alone.
+
+**A second client joining a running world.** The one unevaluated guess left on the branch:
+`ShopSlot.AnnounceStock` re-broadcasts stock state three times (0.25 s, 1 s, 2 s after spawning),
+because a spawned object reaches other clients a few ticks after the spawner and an RPC about an
+object a client does not have yet is silently dropped. **Learn:** does a late joiner see shop stock,
+growing plants at the right size, and ripe produce? If yes, collapse `AnnounceStock` to a single
+broadcast and delete the loop. If they see nothing, the answer is not more broadcasts — it is putting
+birth state in the spawn snapshot, for which `NetworkBridge` already exposes `[Networked]
+SyncByteArray`. Watch for whether growth *scale* is right, not just presence: scale is derived from a
+timestamp, so a wrong size means the timestamp never arrived.
+
+**A player leaving.** `GardenLease` should clear their `HolderId` immediately and hold their plots for
+120 seconds. **Learn:** can another player pick up a seed the leaver was carrying (immediately, not
+after 120 s)? Does the garden survive a rejoin inside the window? Does it actually get cleared after
+it — plots freed, plants and unharvested produce despawned, their loose seeds gone? The 120 s figure
+is a guess and should be judged against how a real dropout feels.
+
+**The master client leaving.** The least understood path in the project and the one most likely to
+bite. **Learn:** does the new master take over shop restocking, growth simulation and sale
+acceptance? `AuthorityController` should reclaim plants and unheld stock on `OnBecomeWorldMaster`,
+but `SceneNetworking.ReassignNullObjectsAuthority` only ever sweeps *scene* objects and every crop is
+now spawned — so `AuthorityController` is the only thing doing it. Also the standing suspect for
+**#40** (scoreboard desync after master transfer).
 
 ### Known open problems
 
-- **#40** — scoreboard desync after master client transfer.
-- **Plants land in the wrong slot** (confirmed 2026-08-27, predates the physics work). Seed colliders
-  overlapping two `PlantSlot` triggers is the leading theory; establish first whether the authority
-  actually chooses wrong or whether it's a proxy display divergence.
-- **The pumpkin has no seed model.** `ViningPlantSeed` shows the *vine* as its seed, at full scale, so
-  the thing a player buys is an oversized vine. Its `Pumpkin_Fruit` collider sits 24.6 cm from the root
-  while the slot trigger's half-extents are ~(0.29, 0.37, 0.27), which is why `HasLeftSlot()` — testing
-  the root while the event comes from a collider — can swallow real exits. A seed mesh is the fix;
-  scaling the root is not, because vining growth scales the children. Turnip is on the same fault line
-  with 8.3 cm of slack: working, not safe.
-- **`unified_pumpkin.prefab` has no `NetworkGrabbable`**, while carrot and turnip both do. Unverified as
-  a cause of anything, but it is a real asymmetry.
-- **Nothing clears a shop return target when a seed is planted.** `PlantSeed.Plant()` never touches
-  `ReturnableEntity`, and `ClearReturnTarget()` is only called from `ReleaseSlot()`. Any seed reaching a
-  plot with its shop target still set gets recalled out of it permanently, because `_autoRecall` stays
-  true.
-- **#43** `RegrowablePlantSeed` — `RegrowableFruit.cs` is an empty stub reserved for it. **#44**, **#47**
-  are seed ideas.
+- **#40** — scoreboard desync after master client transfer. Untested since the split.
+- **Growth pivots.** Everything scales about its mesh centre, so a pumpkin inflates through its vine
+  and a carrot grows out of the soil as much as into it. The fix is an empty `ScalePivot` parent
+  between root and mesh, with the mesh offset so the stem or soil line sits at the pivot's origin,
+  and `_bodyToScale` pointed at the pivot. No code change — `_bodyToScale` is just a transform.
+- **`MultiHarvestPlant` has no ending** (#43). With plants ungrabbable there is no uproot gesture at
+  all, so an apple tree holds its plot until its owner's lease expires. Needs a real answer — a tool,
+  a hold-to-remove on the plot, or a lifespan — before a crop uses it.
+- **`WorldBridge` refactor**, agreed and deferred: one seam over the SDK so churn touches one file
+  rather than every script *and every prefab*. `docs/world-bridge.md`. Blocked on nothing now except
+  the tests above; start with spawn/despawn/take-authority, which are pure de-duplication.
+- **#44**, **#47** are seed ideas. `PlantableEntity` — planting a sword to grow an auto-harvester — is
+  a future idea, not a plan; the architecture already allows it, since what grows is a prefab
+  reference on the thing being planted.
+
+**Closed by the split, do not re-diagnose:** plants landing in the wrong slot (the master now spawns
+the plant *at* the plot it chose, so there is no trigger to disagree about); the pumpkin's oversized
+vine seed and its collider offset; `unified_pumpkin` missing `NetworkGrabbable`; shop return targets
+surviving a planting.
