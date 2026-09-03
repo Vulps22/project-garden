@@ -599,10 +599,21 @@ bought, planted, grows, becomes produce, is carried and sold. A bearing crop gro
 a socket, ripens, is harvested, withers, and frees its plot to be replanted. No project exceptions in
 the session; the only exceptions in the log are Somnium's own avatar system.
 
-Design docs in `docs/`: `roadmap.md` (**start here** — plot claiming, upgrades, generalised spawn
-slots, world cycling), `runtime-spawn.md` (what replaced pooling, and the four traps),
-`bearing-plants-and-produce.md` (the Seed/Plant/Produce design), `world-bridge.md` (a deferred
-refactor — see below).
+Design docs in `docs/`. **The roadmap holds milestones only; mechanism lives in a doc per step,
+named after that step.** A step doc starts as a design and becomes the record of what was built —
+`runtime-spawn.md` is that whole arc — so there is no separate "how it works" document to write
+later. Link both ways, and do not create a step doc until the step has real design in it.
+
+- `terminology.md` — **read this first.** World / Island / Garden / Plot / PlantSlot, and the renames
+  the code still owes it. Several of these words used to mean something else, and the scripts still
+  use "plot" to mean PlantSlot.
+- `roadmap.md` — **start here after that.** Plot ownership, upgrades, generalised spawn slots, world
+  cycling, and a future section on procedurally generated islands.
+- `plot-ownership.md` — step 1's mechanism: the deed, the application scroll, the shed as the one
+  place ownership changes are committed. Designed, not built.
+- `runtime-spawn.md` — what replaced pooling, and the four traps.
+- `bearing-plants-and-produce.md` — the Seed/Plant/Produce design.
+- `world-bridge.md` — a deferred refactor; see below.
 
 ### ⚠ Reset before this is anything but a test build
 
