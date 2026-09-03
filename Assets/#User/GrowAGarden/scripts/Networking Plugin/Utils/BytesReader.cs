@@ -149,6 +149,15 @@ namespace GrowAGarden
 
         public string NextString(int length)
         {
+            // An empty string is a legitimate value, not an underrun: a seed sitting in the shop
+            // has no OwnerId, so broadcastState() sends string.Empty for it. Validate() rejects a
+            // zero-length read, which latched _isValid false on every proxy that received a shop
+            // seed's state and logged an error per sync. It is harmless only because the string is
+            // the last field in every current payload — a field appended after one would decode as
+            // a default with nothing but that log line to say so.
+            if (length == 0)
+                return string.Empty;
+
             if (!Validate(length, length))
                 return string.Empty;
 
@@ -231,7 +240,7 @@ namespace GrowAGarden
             if (!_isValid || bytesCount <= 0 || _position + bytesCount > _data.Length || arrayLength <= 0)
             {
                 _isValid = false;
-                Debug.LogError($"[{nameof(BytesWriter)}]: Buffer inconstancy error!");
+                Debug.LogError($"[{nameof(BytesReader)}]: Buffer inconstancy error!");
                 return false;
             }
             return true;

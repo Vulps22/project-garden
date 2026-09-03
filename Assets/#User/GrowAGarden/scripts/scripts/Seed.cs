@@ -75,6 +75,17 @@ namespace GrowAGarden
         public string HolderId => _grabber?.GetID();
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
+        /// <summary>
+        /// True while there is a live NetworkObject to send on. Fusion throws
+        /// "Behaviour not initialized: Object not set." from an RPC on a detached object, and an
+        /// XRI teardown deselect arrives *after* Fusion has detached this one: despawning a seed
+        /// runs OnDisable -> UnregisterWithInteractionManager -> SelectCancel -> OnGrabDeselected.
+        /// The throw escaped UnregisterInteractable before it dropped this interactable from the
+        /// manager's list, so the destroyed component stayed registered and XRInteractionManager
+        /// threw a NullReferenceException every frame for the rest of the session.
+        /// </summary>
+        private bool CanSendRpc => networkBridge != null && networkBridge.Object != null;
+
         public bool HasLocalAuthority =>
             networkBridge != null && networkBridge.Object != null && networkBridge.Object.HasStateAuthority;
 
@@ -389,6 +400,8 @@ namespace GrowAGarden
                 return;
             }
 
+            if (!CanSendRpc) return;
+
             string id = _grabber.GetID();
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
@@ -399,6 +412,10 @@ namespace GrowAGarden
 
         public void OnGrabDeselected(SelectExitEventArgs args)
         {
+            // A teardown deselect is not a player letting go, and there is nothing to announce:
+            // the despawn already tells every peer this seed is gone. See CanSendRpc.
+            if (!CanSendRpc) return;
+
             var writer = new BytesWriter(BytesWriter.ByteSize);
             writer.AddByte(0);
             networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.grabber, writer.Data);
