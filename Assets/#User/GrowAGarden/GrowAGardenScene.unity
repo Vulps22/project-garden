@@ -872,7 +872,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: b0c80db92e9d16b228b4500d9158101d, type: 3}
-  LastBuildSizeBytes: 14765728
+  LastBuildSizeBytes: 14765104
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -900,7 +900,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 297384176
+      AvailableSize: 297383648
     Paid:
       Entries: []
   OwnedTokens: []
@@ -3377,6 +3377,11 @@ PrefabInstance:
         type: 3}
       propertyPath: SortKey
       value: 1057134575
+      objectReference: {fileID: 0}
+    - target: {fileID: 9007863502847404369, guid: 828e87013a6a3164190665cdf93ec775,
+        type: 3}
+      propertyPath: Flags
+      value: 131073
       objectReference: {fileID: 0}
     - target: {fileID: 9007863502847404369, guid: 828e87013a6a3164190665cdf93ec775,
         type: 3}
