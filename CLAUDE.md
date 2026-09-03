@@ -566,6 +566,12 @@ null**. Refuse rather than guess when it is; the next broadcast restores it.
 - **Logging:** always the project's `GrowAGarden.Logger` (`Log`/`Info`/`Warn`/`Error`), never `Debug.Log`
   directly. Messages conventionally lead with `Method() 'objectName' — ` context; the log histogram in
   step 5 depends on that shape.
+- **Events:** an event we declare is named for **the fact** — `Sold`, `Harvested`, `PurchaseRequested`,
+  `PlayerGone` — and a handler is `On` + that name, so it reads `Seed.PurchaseRequested +=
+  OnPurchaseRequested`. The `On`-prefixed *events* in the tree (`NetworkBridge.OnSpawned`,
+  `SceneNetworking.OnOtherPlayerJoined`, `OnBecomeWorldMaster`) are **vendored or SDK, not ours** —
+  that is the whole of the apparent inconsistency. `EconomyManager.OnPlayerBalanceChanged` is the one
+  event of ours out of step and should become `PlayerBalanceChanged`.
 - Fields are `_camelCase` private + `[SerializeField]`; wire references in the Inspector, and use
   `OnValidate()` to auto-populate same-GameObject components.
 - **Comments explain why, not what.** The existing docstrings record the bug each guard exists for.
