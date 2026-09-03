@@ -154,7 +154,7 @@ MonoBehaviour:
   seedDefinition: {fileID: 3861128055438924250}
   networkBridge: {fileID: 600434924158706135}
   _bodyToScale: {fileID: 3790986464714830403}
-  _maxScale: 0.25
+  _maxScale: 1
   _producePrefab: {fileID: 848182256679900965, guid: 63f388150445280beb6dbae4752ab728,
     type: 3}
   _produceSockets:

@@ -22,3 +22,6 @@ Assets/#User/*
 # Design docs — outside Assets/, so Unity never imports them
 !/docs/
 !/docs/**
+
+# Ad-hoc screenshots dropped in the repo root for review
+/screenshot.png
