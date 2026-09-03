@@ -599,7 +599,8 @@ bought, planted, grows, becomes produce, is carried and sold. A bearing crop gro
 a socket, ripens, is harvested, withers, and frees its plot to be replanted. No project exceptions in
 the session; the only exceptions in the log are Somnium's own avatar system.
 
-Design docs in `docs/`: `runtime-spawn.md` (what replaced pooling, and the four traps),
+Design docs in `docs/`: `roadmap.md` (**start here** — plot claiming, upgrades, generalised spawn
+slots, world cycling), `runtime-spawn.md` (what replaced pooling, and the four traps),
 `bearing-plants-and-produce.md` (the Seed/Plant/Produce design), `world-bridge.md` (a deferred
 refactor — see below).
 
