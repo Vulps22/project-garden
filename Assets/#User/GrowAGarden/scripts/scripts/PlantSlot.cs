@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
 using UnityEngine;
@@ -202,8 +203,11 @@ namespace GrowAGarden
             if (spawned == null) return null;
 
             // Explicit, for the same reason SpawnProduce is: the pose handed to Spawn() is local
-            // to the spawner and not networked.
+            // to the spawner and not networked. Plants carry no rigidbody, so a transform write is
+            // enough here — see Plant.PlaceSpawned for why it is not, for anything that does.
             spawned.transform.SetPositionAndRotation(transform.position, transform.rotation);
+            var body = spawned.GetComponent<NetworkRigidbody3D>();
+            if (body != null) body.Teleport(transform.position, transform.rotation);
 
             Plant plant = spawned.GetComponent<Plant>();
             if (plant == null) Logger.Error($"SpawnPlant() '{gameObject.name}' — '{spawned.name}' has no Plant component");

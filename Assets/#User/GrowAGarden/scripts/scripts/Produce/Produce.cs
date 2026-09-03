@@ -152,7 +152,29 @@ namespace GrowAGarden
         private void Update()
         {
             ApplyRipeness();
+            ReportPlacementOnce();
         }
+
+        /// <summary>
+        /// Says where this actually ended up, once, a second after it was born.
+        ///
+        /// Temporary, and worth the noise: two uploads were spent on "the produce is missing" when
+        /// it had in fact spawned every time, because the only position in the log was the one we
+        /// *asked* for. A second later is after any network tick has had its say, so this
+        /// distinguishes "never placed" from "placed, then moved". Delete once the loop is green.
+        /// </summary>
+        private void ReportPlacementOnce()
+        {
+            if (_placementReported || _ripenTimestamp == 0) return;
+            if (System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _ripenTimestamp < 1) return;
+
+            _placementReported = true;
+            Logger.Info($"ReportPlacement() '{gameObject.name}' — at {transform.position} scale={transform.localScale.x:F2} " +
+                        $"bodyScale={(_bodyToScale == null ? -1f : _bodyToScale.localScale.x):F2} ripe={IsRipe} " +
+                        $"kinematic={ShouldBeKinematic} authority={HasLocalAuthority}");
+        }
+
+        private bool _placementReported;
 
         /// <summary>
         /// Scales from the clock and opens the grab the moment it is ripe. Runs on every client and

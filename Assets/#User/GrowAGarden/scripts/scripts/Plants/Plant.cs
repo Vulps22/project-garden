@@ -1,4 +1,5 @@
 using Fusion;
+using Fusion.Addons.Physics;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
@@ -294,19 +295,34 @@ namespace GrowAGarden
 
             if (spawned == null) return null;
 
-            // Write the pose explicitly rather than trusting the one passed to Spawn().
-            // Fusion's own docs are blunt about this: the spawn position is used only for the
-            // local instantiation and is not networked, and a NetworkRigidbody3D takes the
-            // transform over from the next tick. ShopSlot never hit this because PlaceInShop
-            // writes the seed's transform straight after spawning it; nothing was doing the
-            // equivalent for produce, which is how a carrot could grow correctly and then appear
-            // nowhere near its plot.
-            spawned.transform.SetPositionAndRotation(position, rotation);
+            PlaceSpawned(spawned, position, rotation);
 
             Produce produce = spawned.GetComponent<Produce>();
             if (produce == null) Logger.Error($"SpawnProduce() '{gameObject.name}' — spawned '{spawned.name}' has no Produce component");
-            else Logger.Info($"SpawnProduce() '{gameObject.name}' — bore '{spawned.name}' at {position}");
+            else Logger.Info($"SpawnProduce() '{gameObject.name}' — bore '{spawned.name}' at {spawned.transform.position} (asked {position})");
             return produce;
+        }
+
+        /// <summary>
+        /// Puts a freshly spawned object where it is meant to be.
+        ///
+        /// Two steps, because the pose handed to Runner.Spawn() is used only for the local
+        /// instantiation and is not networked at all.
+        ///
+        /// The second step is the one that took two uploads to find. A kinematic networked
+        /// rigidbody is driven *by* its network state, so writing transform.position on it is
+        /// overwritten on the next tick and the object reappears wherever its state says — which
+        /// for something spawned a moment ago is the origin. Seeds never showed this because a
+        /// seed is non-kinematic and physics-driven, so a transform write flows through. Produce
+        /// is kinematic until it is harvested, and it is the first thing this game ever spawned
+        /// that was. Teleport() is Fusion's own answer: it moves the body *and* its state.
+        /// </summary>
+        protected static void PlaceSpawned(NetworkObject spawned, Vector3 position, Quaternion rotation)
+        {
+            spawned.transform.SetPositionAndRotation(position, rotation);
+
+            var body = spawned.GetComponent<NetworkRigidbody3D>();
+            if (body != null) body.Teleport(position, rotation);
         }
 
         protected virtual void OnValidate()
