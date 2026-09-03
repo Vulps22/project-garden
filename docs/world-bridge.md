@@ -10,7 +10,7 @@ project has — "this changed, that broke". This is a cleanup, and cleanups wait
 
 ## Why
 
-Two arguments, and the second is the one that matters.
+Three arguments, and the second is the one that matters.
 
 **It is already duplicated, and the duplication has already cost us.** `Plant.SpawnProduce` and
 `PlantSlot.SpawnPlant` are the same twenty-five lines twice: resolve the runner, look up the prefab
@@ -33,6 +33,17 @@ If `NetworkBridge` is dropped for raw Fusion calls, or a method is deprecated, t
 file to change. Today it would be every script and **every prefab**, because `NetworkBridge` is not
 merely called — it is a serialized field on nine crop prefabs plus `PlantSlot`, `SellPoint`,
 `EconomyManager` and `BalanceDisplayManager`. That is a scene-wide re-wire, not a code change.
+
+**It is where the SDK's vocabulary can be made ours.** A pass-through is not a wasted method: it is
+the only place a name can be corrected. `SceneNetworking.OnOtherPlayerJoined` breaks the project's own
+event convention — an event is the fact, `On` belongs to the handler — and it cannot be renamed,
+because it is vendored and has to stay diffable against upstream. Behind a seam it becomes
+`OtherPlayerJoined` for everyone downstream, and the vendored name stops leaking into every subscriber
+in the game. The same applies to anything the SDK spells awkwardly.
+
+This is worth doing **opportunistically rather than as a project**: normalise a name the next time
+that function is touched for another reason. A rename sweep for its own sake is churn; a rename taken
+on the way past is free.
 
 ## Naming
 
