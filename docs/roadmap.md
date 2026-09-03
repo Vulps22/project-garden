@@ -94,13 +94,25 @@ different map now. The world gets a heartbeat.
 
 **Engineering notes.**
 
-- **Cycling must skip stock somebody is holding.** A slot re-rolling while a player's hand is on the
-  seed would despawn it out of their grip. `HolderId` is the check, and this is the same shape as
-  every bug the seed lifecycle has ever had.
+- **Cycling takes stock out of a player's hands, deliberately.** Holding is not owning. An earlier
+  draft of this document said a cycle should skip held stock; that is wrong, and wrong in a way this
+  project has a name for — `HolderId` says who is holding, `OwnerId` says whose it is, and only the
+  second is a claim. Treating a hand as a claim lets a player with no thatch grab the rarest thing
+  on the map and squat on it until the timer flips.
+- **The scramble is the point.** Reaching the shop with a second left on the clock is free drama.
+  Build for it rather than around it.
+- **Bought stock is already safe by construction.** `ShopSlot` drops its reference to a seed the
+  moment it stops being `InShop`, so the only thing a cycle can ever despawn is unsold stock. No
+  extra ownership check is needed — the existing structure already draws the line in the right place.
+- **What does need care: a despawn must end the grab first.** `Runner.Despawn` destroys the object on
+  every client, and XRI left holding a destroyed object is its own bug. This is the same rule as
+  `runtime-spawn.md` §4d and it applies to every despawn path — cycling, `GardenLease` clearing a
+  departed player's seeds, and anything else that removes something a hand might be on.
 - **Design question worth settling before building it:** a cycle can destroy a sub-1% find before the
   player who spotted it gets there. Options — rare items are exempt from cycling; a slot only
   re-rolls if nobody has been near it; or the cycle is the price of hesitating, which is a defensible
-  answer too. Decide deliberately rather than discovering it in a playtest.
+  answer and the one most consistent with the scramble above. Decide deliberately rather than
+  discovering it in a playtest.
 - The master ticks the cycle and acts on it. There is no need to derive the schedule on every client:
   nothing but the master does anything with it, and the spawns speak for themselves.
 
