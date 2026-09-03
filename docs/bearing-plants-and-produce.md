@@ -1,6 +1,9 @@
 # Seed, Plant, Produce — design
 
-Status: **classes written 2026-09-03, not yet compile-checked; prefabs and scene wiring outstanding.** Rewritten 2026-09-02, `SellableEntity` added 2026-09-03, against `feature/runtime-spawn`
+Status: **implemented and confirmed in-world 2026-09-03.** Both shapes run the full loop: a rooted
+crop is bought, planted, grows, becomes produce, is carried and sold; a bearing crop grows a vine,
+bears into a socket, ripens, is harvested, withers, and frees its plot to be replanted. Outstanding:
+growth pivots (§12) and the late-join question. Rewritten 2026-09-02, `SellableEntity` added 2026-09-03, against `feature/runtime-spawn`
 @ 6c507a1, after runtime spawn removed the constraint the first version was written under.
 
 Supersedes the pooled version of this document. What survives from it: the naming rationale (§3),
