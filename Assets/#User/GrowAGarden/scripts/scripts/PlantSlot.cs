@@ -201,6 +201,10 @@ namespace GrowAGarden
 
             if (spawned == null) return null;
 
+            // Explicit, for the same reason SpawnProduce is: the pose handed to Spawn() is local
+            // to the spawner and not networked.
+            spawned.transform.SetPositionAndRotation(transform.position, transform.rotation);
+
             Plant plant = spawned.GetComponent<Plant>();
             if (plant == null) Logger.Error($"SpawnPlant() '{gameObject.name}' — '{spawned.name}' has no Plant component");
             return plant;

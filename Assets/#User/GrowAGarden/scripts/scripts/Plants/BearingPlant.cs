@@ -48,7 +48,11 @@ namespace GrowAGarden
             broadcastState();
         }
 
-        protected override void OnFullyGrown() => Bear();
+        protected override void OnFullyGrown()
+        {
+            Logger.Info($"OnFullyGrown() '{gameObject.name}' — grown; bearing into {_produceSlots.Length} socket(s)");
+            Bear();
+        }
 
         /// <summary>
         /// Runs on the master when a produce this plant bore is taken. Empties the socket, then
