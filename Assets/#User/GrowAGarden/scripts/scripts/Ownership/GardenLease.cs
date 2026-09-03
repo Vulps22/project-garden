@@ -1,108 +1,52 @@
 using System.Collections.Generic;
-using SomniumSpace.Bridge.Components;
-using SomniumSpace.Bridge.Player;
 using UnityEngine;
 
 namespace GrowAGarden
 {
     /// <summary>
-    /// Tidies up after a player who has left, but not straight away.
+    /// Clears up the ground after a player who is not coming back.
     ///
-    /// Cleanup is a 120 second lease rather than an instant sweep, because a dropout is
-    /// indistinguishable from leaving and losing a garden to a flaky connection is a miserable way
-    /// to find that out. Come back inside the window and everything is exactly where you left it.
+    /// It owns no clock. <see cref="PlayerManager"/> decides when a departure becomes permanent and
+    /// raises PlayerDestroyed; this answers only "what do I clear up for that id?". It used to own
+    /// both, which meant anything else needing to tidy up after a departure would have had to keep
+    /// a second timer that agreed with this one.
     ///
-    /// This is why ownership is a replicated fact rather than Fusion state authority: Fusion offers
-    /// DestroyWhenStateAuthorityLeaves, which fires the instant authority departs and cannot wait
-    /// for anything. A lease is not expressible as a flag.
+    /// The immediate half of a departure — dropping a departed player's HolderId — is not here
+    /// either. Seed and Produce take that from PlayerManager.PlayerLeft themselves, because it is a
+    /// correction each object makes to its own state rather than anything this needs to coordinate.
     ///
     /// Long-term persistence across sessions is explicitly out of scope.
+    ///
+    /// Naming: this is no longer a lease now the timer has moved out — it is plot cleanup, and
+    /// terminology.md records the rename as pending. Left alone here so a behaviour change and a
+    /// scene-touching rename do not land in the same upload.
     /// </summary>
     public class GardenLease : MonoBehaviour
     {
-        [SerializeField] private SomniumPlayersContainer _players;
-
-        [Tooltip("Seconds a departed player's garden is held for them before it is cleared.")]
-        [SerializeField] private float _leaseSeconds = 120f;
-
-        /// <summary>
-        /// Raised on every client the moment a player leaves — not when their lease expires.
-        ///
-        /// Anything holding that player's id as a *holder* must drop it at once. That is a
-        /// correction rather than cleanup: they are demonstrably not holding anything, and leaving
-        /// their id in place makes SingleHolderFilter refuse the object to everyone for the rest of
-        /// the session. Every client sees the departure locally, so this needs no message.
-        /// </summary>
-        public static event System.Action<string> PlayerGone;
-
-        private readonly Dictionary<string, float> _expiries = new Dictionary<string, float>();
         private PlantSlot[] _slots;
 
         private void Awake()
         {
-            if (_players == null)
-            {
-                Logger.Error($"Awake() '{gameObject.name}' — no SomniumPlayersContainer; gardens will never be cleaned up");
-                return;
-            }
-            _players.PlayerRemoved.AddListener(OnPlayerRemoved);
-            _players.PlayerAdded.AddListener(OnPlayerAdded);
+            PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
         }
 
         private void OnDestroy()
         {
-            if (_players == null) return;
-            _players.PlayerRemoved.RemoveListener(OnPlayerRemoved);
-            _players.PlayerAdded.RemoveListener(OnPlayerAdded);
-        }
-
-        private void OnPlayerRemoved(ISomniumPlayer player)
-        {
-            string id = player?.Properties?.Id;
-            if (string.IsNullOrEmpty(id)) return;
-
-            PlayerGone?.Invoke(id);
-
-            if (!SceneNetworking.IsMasterClient) return;
-            _expiries[id] = Time.time + _leaseSeconds;
-            Logger.Info($"OnPlayerRemoved() '{gameObject.name}' — '{id}' left; garden held for {_leaseSeconds}s");
-        }
-
-        /// <summary>They came back inside the window. The lease is simply forgotten.</summary>
-        private void OnPlayerAdded(ISomniumPlayer player)
-        {
-            string id = player?.Properties?.Id;
-            if (string.IsNullOrEmpty(id)) return;
-            if (_expiries.Remove(id))
-                Logger.Info($"OnPlayerAdded() '{gameObject.name}' — '{id}' returned in time; garden kept");
-        }
-
-        private void Update()
-        {
-            if (_expiries.Count == 0 || !SceneNetworking.IsMasterClient) return;
-
-            List<string> expired = null;
-            foreach (KeyValuePair<string, float> entry in _expiries)
-            {
-                if (Time.time < entry.Value) continue;
-                expired ??= new List<string>();
-                expired.Add(entry.Key);
-            }
-
-            if (expired == null) return;
-            foreach (string id in expired)
-            {
-                _expiries.Remove(id);
-                Clear(id);
-            }
+            PlayerManager.PlayerDestroyed -= OnPlayerDestroyed;
         }
 
         /// <summary>
         /// Frees every plot the player held, destroys what stands in them, and removes any seeds
-        /// they bought and left lying about. Master only — this despawns things.
+        /// they bought and left lying about.
+        ///
+        /// Master only — this despawns things — and PlayerManager already raises PlayerDestroyed on
+        /// the master alone. The guard stays because that is a promise made elsewhere, and a
+        /// despawn without authority fails silently.
         /// </summary>
-        private void Clear(string playerId)
+        private void OnPlayerDestroyed(string playerId)
         {
+            if (!SceneNetworking.IsMasterClient) return;
+
             _slots ??= FindObjectsByType<PlantSlot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
             int plots = 0;
@@ -122,7 +66,7 @@ namespace GrowAGarden
                 seeds++;
             }
 
-            Logger.Info($"Clear() '{gameObject.name}' — lease expired for '{playerId}': {plots} plots freed, {seeds} seeds removed");
+            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — cleared '{playerId}': {plots} plots freed, {seeds} seeds removed");
         }
     }
 }

@@ -99,7 +99,7 @@ namespace GrowAGarden
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
             SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
-            GardenLease.PlayerGone += OnPlayerGone;
+            PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
 
@@ -117,7 +117,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
             SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
-            GardenLease.PlayerGone -= OnPlayerGone;
+            PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
         }
@@ -126,7 +126,7 @@ namespace GrowAGarden
         /// A departed player is holding nothing. A correction rather than cleanup — leaving their
         /// id set makes SingleHolderFilter refuse this to everyone for the rest of the session.
         /// </summary>
-        private void OnPlayerGone(string playerId)
+        private void OnPlayerLeft(string playerId)
         {
             if (_grabber == null || _grabber.GetID() != playerId) return;
             _grabber = null;
