@@ -319,7 +319,10 @@ namespace GrowAGarden
                 case ProduceMessageType.grabber:
                     BytesReader grabReader = new BytesReader(data);
                     bool hasGrabber = grabReader.NextByte() == 1;
-                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabReader.NextString()) : null;
+                    // Temporary instrumentation — see the matching note in Seed.OnMessageToAll.
+                    string grabberId = hasGrabber ? grabReader.NextString() : null;
+                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabberId) : null;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     LifecycleChanged?.Invoke();
                     break;
                 case ProduceMessageType.harvestRequest:

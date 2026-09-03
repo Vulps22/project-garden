@@ -62,8 +62,10 @@ namespace GrowAGarden
             foreach (Seed seed in FindObjectsByType<Seed>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (seed == null || seed.OwnerId != playerId || seed.InShop) continue;
-                seed.Discard();
-                seeds++;
+                // Count what actually went, not what was asked to go. Discard() is a no-op without
+                // state authority, and a seed whose owner has just left is the case most likely to
+                // have none.
+                if (seed.Discard()) seeds++;
             }
 
             Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — cleared '{playerId}': {plots} plots freed, {seeds} seeds removed");

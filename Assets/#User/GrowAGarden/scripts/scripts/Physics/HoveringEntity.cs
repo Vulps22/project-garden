@@ -63,6 +63,9 @@ namespace GrowAGarden
         private float _bobPhase;
 
         private bool _inContact;
+
+        /// <summary>Temporary instrumentation: something is touching this, so hover damping is off.</summary>
+        public bool IsInContact => _inContact;
         private float _lastContactTime;
         private float _horizontalDampRate;
 
