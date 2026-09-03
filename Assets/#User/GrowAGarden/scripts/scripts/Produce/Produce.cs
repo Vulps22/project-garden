@@ -139,10 +139,19 @@ namespace GrowAGarden
         /// <summary>
         /// Called by whatever bore this, on the master, immediately after spawning — before any
         /// other client has the object — so the first state broadcast describes something true.
+        ///
+        /// Deliberately does *not* take a SeedDefinition. A produce carries its own on its prefab,
+        /// and the obvious-looking alternative — letting the plant hand over the one it is holding
+        /// — is a trap: a RootedPlant despawns itself in the very next statement, so the produce
+        /// would spend its life pointing at a component on a destroyed GameObject. Unity's
+        /// overloaded null then makes every `seedDefinition != null` read false, which is how a
+        /// carrot came to sell for nothing while its ripening still looked correct by coincidence.
         /// </summary>
-        public void Init(SeedDefinition definition, PlantSlot slot, long ripenTimestamp)
+        public void Init(PlantSlot slot, long ripenTimestamp)
         {
-            seedDefinition = definition;
+            if (seedDefinition == null)
+                Logger.Error($"Init() '{gameObject.name}' — no SeedDefinition on this prefab; it will be worthless and ripen instantly");
+
             _slot = slot;
             _ripenTimestamp = ripenTimestamp;
             ApplyRipeness();
@@ -171,7 +180,7 @@ namespace GrowAGarden
             _placementReported = true;
             Logger.Info($"ReportPlacement() '{gameObject.name}' — at {transform.position} scale={transform.localScale.x:F2} " +
                         $"bodyScale={(_bodyToScale == null ? -1f : _bodyToScale.localScale.x):F2} ripe={IsRipe} " +
-                        $"kinematic={ShouldBeKinematic} authority={HasLocalAuthority}");
+                        $"kinematic={ShouldBeKinematic} authority={HasLocalAuthority} worth={SellValue}");
         }
 
         private bool _placementReported;
