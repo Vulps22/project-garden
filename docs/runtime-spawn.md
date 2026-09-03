@@ -1,6 +1,6 @@
 # Runtime spawn — what it changes
 
-Status: **phases A and B implemented.** Written 2026-09-02 against `main` @ 53abd4f; updated as each
+Status: **phases A-C implemented and working in-world.** Written 2026-09-02 against `main` @ 53abd4f; updated as each
 phase landed.
 
 Companion to `bearing-plants-and-produce.md`, which was designed against the pooled world and is
@@ -155,6 +155,22 @@ earlier still. Neither says anything about whether Fusion's simulation has a pla
 is exactly what `GetNextId()` needs. Ask the runner: `runner.LocalPlayer.IsRealPlayer`. The general
 lesson is worth keeping — **our own bookkeeping is not evidence about Fusion's internal state.**
 
+**j. Deleting a class transfers its responsibilities to the prefabs, silently.** Every failure in
+landing phase C was this: `PlaceInShop` used to write the pose after a spawn, `OnGrowthUpdated` used
+to overwrite the root scale every frame, `UpdateVisuals` used to enable the renderer, and the growth
+phases used to overwrite the body scale. All four were deleted deliberately, and all four left the
+prefab holding a value that had never been meaningful and was now authoritative. **After deleting
+anything that wrote to a component every frame, audit what the prefab now says about it.**
+
+**k. A kinematic networked rigidbody ignores `transform.position`.** It is driven by its network
+state, so a direct write is overwritten on the next tick. Use `NetworkRigidbody3D.Teleport()`.
+Non-kinematic bodies are physics-driven and do not show this, which is why seeds worked and produce
+did not.
+
+**l. Arrays of custom `[Serializable]` classes arrive empty from the bundle export.** Plain
+`Transform[]` survives. The Editor reports the array as correct by every means available, so this is
+only visible in-world. Author plain arrays and build richer objects at `Awake`.
+
 **h. Proxies instantiate at the prefab's own transform.** The `position`/`rotation` arguments are
 local-only; the correct pose reaches proxies on the next `NetworkRigidbody3D` tick. Expect a
 one-frame pop at spawn. If it reads badly, the fix is spawning invisible and revealing on the first
@@ -196,7 +212,7 @@ every client computes scale forever. No new sync.
 |---|---|---|
 | **A** ✅ | Register `Unified_Carrot`; the carrot slot spawns, `SellPoint` despawns, turnip and pumpkin keep pooling as the control | **Done 2026-09-02.** Spawning works in an exported world: buy → grow → sell → despawn → restock all completed. Two defects found, see §4f/§4i |
 | **B** ✅ | All three crops spawn. `UnifiedPool`, `PoolManager`, `IsInPool`, `HideForPool()`, `PlantSeed.Sell()`, the 153 scene instances and their three pool containers all deleted. Scene went from 20,093 lines to 1,696, and from 255 scene NetworkObjects to 99 | untested in-world |
-| **C** | Seed and plant become separate prefabs. `RequestPlant` → master spawns the plant, seed authority despawns the seed. Deletes `IsSeed`, `SetState(bool)`, `UpdateVisuals(bool)`. Pumpkin gets a real seed prefab while it is open. | The full buy → plant → grow → sell loop, and that planting is decided in one place |
+| **C** ✅ | Seed, plant and produce become separate prefabs and classes; planting becomes a master decision. See `bearing-plants-and-produce.md` | **Done 2026-09-03.** Full loop confirmed on both crop shapes. Five failure modes on the way, every one a rule a deleted class used to enforce — see §4j |
 | **D** | `Produce` and the bearing-plant split — `bearing-plants-and-produce.md` phases A–D, minus everything pool-shaped | as that doc describes |
 
 A and B are deliberately not merged. A is the only phase whose purpose is to answer "does this work
