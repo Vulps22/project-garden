@@ -18,6 +18,8 @@ namespace GrowAGarden
 
         protected override void OnFullyGrown()
         {
+            Logger.Info($"OnFullyGrown() '{gameObject.name}' — grown at {transform.position}; becoming produce");
+
             Produce produce = SpawnProduce(_producePrefab, transform.position, transform.rotation);
             if (produce == null)
             {

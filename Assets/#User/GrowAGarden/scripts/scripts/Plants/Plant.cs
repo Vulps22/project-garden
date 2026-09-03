@@ -292,7 +292,21 @@ namespace GrowAGarden
                 return null;
             }
 
-            return spawned == null ? null : spawned.GetComponent<Produce>();
+            if (spawned == null) return null;
+
+            // Write the pose explicitly rather than trusting the one passed to Spawn().
+            // Fusion's own docs are blunt about this: the spawn position is used only for the
+            // local instantiation and is not networked, and a NetworkRigidbody3D takes the
+            // transform over from the next tick. ShopSlot never hit this because PlaceInShop
+            // writes the seed's transform straight after spawning it; nothing was doing the
+            // equivalent for produce, which is how a carrot could grow correctly and then appear
+            // nowhere near its plot.
+            spawned.transform.SetPositionAndRotation(position, rotation);
+
+            Produce produce = spawned.GetComponent<Produce>();
+            if (produce == null) Logger.Error($"SpawnProduce() '{gameObject.name}' — spawned '{spawned.name}' has no Produce component");
+            else Logger.Info($"SpawnProduce() '{gameObject.name}' — bore '{spawned.name}' at {position}");
+            return produce;
         }
 
         protected virtual void OnValidate()
