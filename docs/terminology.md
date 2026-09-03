@@ -36,8 +36,10 @@ per `Dirt`, four `BorderedPlotWithRoad` instances in `GrowAGardenScene`.
 The scripts use "plot" to mean **PlantSlot** throughout. These should be corrected **before `Plot`
 becomes a class**, or the ambiguity gets baked into new code:
 
-- `GardenLease` → `PlotLease`. It leases neither a Garden nor a PlantSlot; it holds a **Plot** claim.
-  Doubly wrong today: wrong unit *and* wrong level.
+- `GardenLease` → `PlotCleanup`. It was going to be `PlotLease` — wrong unit *and* wrong level, since
+  it leases neither a Garden nor a PlantSlot — but `PlayerManager` has since taken the timer, so it
+  holds no lease at all now. It frees Plots on an event. The rename is still pending: it touches the
+  scene, and a behaviour change and a scene-touching rename should not share an upload.
 - `IPlotOccupant` → `IPlantSlotOccupant`. Its occupants are a `Plant` and a `RootedProduce`, and both
   stand in a PlantSlot.
 - ~45 lowercase uses of "plot" in comments and docstrings that mean **PlantSlot** — including

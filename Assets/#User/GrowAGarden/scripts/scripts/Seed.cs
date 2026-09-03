@@ -107,7 +107,7 @@ namespace GrowAGarden
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
             SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
-            GardenLease.PlayerGone += OnPlayerGone;
+            PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
         }
@@ -123,7 +123,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
             SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
-            GardenLease.PlayerGone -= OnPlayerGone;
+            PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
         }
@@ -134,7 +134,7 @@ namespace GrowAGarden
         /// seed to everyone for the rest of the session. Every client learns of the departure
         /// locally, so no message is needed.
         /// </summary>
-        private void OnPlayerGone(string playerId)
+        private void OnPlayerLeft(string playerId)
         {
             if (_grabber == null || _grabber.GetID() != playerId) return;
             _grabber = null;
