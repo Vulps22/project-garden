@@ -178,3 +178,56 @@ That is nearly free: `SellableEntity` with a different `OnSold()`, crediting an 
 thatch, and `SellPoint` already proves the shape. Keeping it **rare** leaves the 0G carry as the
 default and makes the chest a relief you are pleased to find, which is a better feeling than a bigger
 backpack.
+
+---
+
+## Future — buying more garden
+
+A **Plot Seed**, found in the random drops out in the world. It is only *visible* to a player with
+more than **5,000 × the number of plots they already own** — everyone else sees an empty socket.
+Plant it and it grows something you can pick up and carry to an available space.
+
+The Garden island moves to a **grid** of plot-and-road chunks to support this (the grid serves a
+second feature as well — to be written up separately). Carry the thing the Plot Seed grew and you
+see **green ghosts** of the free grid cells adjacent to the plots you already hold; place it in one
+and a new Plot spawns there, merging with yours into a single larger garden.
+
+The escalation is the good part: the price of *seeing* the next expansion rises with every expansion
+you have already bought, so it stays a distant thing that comes into view exactly once you can
+plausibly reach it.
+
+**Engineering notes.**
+
+- **The visibility gate is a derivation, not a message.** Balances are already broadcast to everyone
+  and plot ownership will be, so every client can compute `5000 × plots` for itself and decide
+  whether to render. Nothing new goes on the wire. Re-evaluate on balance change and on plot-count
+  change — both are already events — rather than per frame.
+- **Hide the collider with the renderer.** The object exists on the network for everyone regardless
+  of who can see it, so a player below the threshold will otherwise walk into something invisible.
+  Related: this is a veil, not a secret. A modified client could see it. That is fine for "you cannot
+  afford this yet" and would not be fine for anything that must be enforced.
+- **A grid gives plots an identity worth having.** A coordinate is a better id than a scene
+  reference, and it makes *adjacent* computable — which is the whole ghost preview, for free and
+  entirely locally. No networking in the preview at all; the master only decides the placement.
+- **The grid collides with `GardenIsland` being one prefab.** If the garden is spawned chunk by
+  chunk, the prefab is the *chunk*, not the island. Worth settling before the `GardenIsland` prefab
+  is made, or it gets made twice.
+- **⚠ Spawning plots removes PlantSlots from the only authority sweep there is.** `Plant_Slot` is a
+  scene object today, which is why `SceneNetworking.ReassignNullObjectsAuthority` reaches it — that
+  method only ever walks `_sceneNetworkObjects`. Make plots spawnable and their 24 PlantSlots stop
+  being scene objects, and nothing reclaims their authority when an owner leaves. That gap already
+  exists for crops; this would widen it to the ground itself.
+- **Prefer "you own two Plots" over "two Plots become one".** A claim is per-Plot and a player can
+  already hold several, so expansion needs no data-model change — merging is roads and borders, a
+  visual concern. Making a composite Plot means a second kind of claimable thing, and
+  `plot-ownership.md` would need reopening.
+- **Placement is a master decision with an optimistic ghost.** The client draws the preview
+  immediately from the grid it can already see; the master confirms what actually spawns. Standard
+  shape — a decision may be slow, a hand must not be.
+- **The price only makes sense after step 2.** 5,000 thatch is roughly 333 carrots at today's
+  numbers. This is endgame, and it is endgame *because* upgrades and rarity are supposed to change
+  what an hour is worth. It should be designed against that economy, not this one.
+
+**Open:** the thing the Plot Seed grows has no name yet — not a hoe. And it is worth deciding whether
+the ghosts appear while carrying the seed, the grown object, or both; the sketch says "plot seed" but
+the flow plants it first.
