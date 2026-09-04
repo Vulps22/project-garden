@@ -526,6 +526,7 @@ GameObject:
   - component: {fileID: 163550763}
   - component: {fileID: 163550769}
   - component: {fileID: 163550768}
+  - component: {fileID: 163550771}
   - component: {fileID: 163550767}
   - component: {fileID: 163550766}
   - component: {fileID: 163550770}
@@ -635,10 +636,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 456224aeaeed55249b6514f2677544ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.EconomyManager
-  _somniumPlayersContainer: {fileID: 163550769}
   _bridge: {fileID: 163550767}
   _balanceDisplayManager: {fileID: 2069335585}
-  _startingBalance: 500
+  _startingBalance: 10
 --- !u!114 &163550769
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -672,8 +672,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd91c580e136f05aa95498a001e9448f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.GardenLease
+--- !u!114 &163550771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f29ccb7eef33e5a62bade7784998df7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlayerManager
   _players: {fileID: 163550769}
-  _leaseSeconds: 120
+  _graceSeconds: 180
 --- !u!1001 &183129657
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -872,7 +884,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: b0c80db92e9d16b228b4500d9158101d, type: 3}
-  LastBuildSizeBytes: 14765104
+  LastBuildSizeBytes: 14764928
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -891,7 +903,7 @@ MonoBehaviour:
   EnableScripting: 1
   AssemblyIndex: 0
   ScriptingAssembly: GrowAGarden
-  AssemblyAvailabilityCorrect: 1
+  AssemblyAvailabilityCorrect: 0
   AssemblyVisualise: 0
   AsmdefReference: {fileID: 5897886265953266890, guid: 5a8fb4d7db2dbfa4ead85f84477bb4be,
     type: 3}
@@ -900,7 +912,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 297383648
+      AvailableSize: 297384848
     Paid:
       Entries: []
   OwnedTokens: []
