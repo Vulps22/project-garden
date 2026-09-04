@@ -231,3 +231,76 @@ plausibly reach it.
 **Open:** the thing the Plot Seed grows has no name yet — not a hoe. And it is worth deciding whether
 the ghosts appear while carrying the seed, the grown object, or both; the sketch says "plot seed" but
 the flow plants it first.
+
+---
+
+## Future — the world grows a plot at a time
+
+Four plots, ten-plus players in every test. Teaming up absorbs some of that; the rest needs more
+ground.
+
+**When the last plot is claimed, a new island is appended to the end of the chain**, joined *sell
+point to buy point* — the existing island's sell point backs onto the new island's buy point, so the
+seam reads as a street rather than a border.
+
+Rejected on the way: a permanent rain cloud by the sell point that teleports you to a new island. It
+was going to get messy at scale, and the reason is worth keeping — **a teleport makes instances,
+instances split the player base, and the whole value of a multiplayer garden is other people being in
+it.** It would also break the physical continuity that makes carrying anything meaningful.
+
+**Engineering notes.**
+
+- **The chain works because every segment is self-sufficient.** Each Garden already has its own sell
+  point and three buy points, so a player on island three never walks back to island one — they buy,
+  plant, grow and sell where they stand. The chain is walked exactly once, to find free ground. A
+  linear world with a central shop would be unplayable by island five; this one is a long street
+  where you only care about your stretch of it.
+- **Write the trigger as an invariant, not an event:** *there is always at least one free plot in the
+  world*. The event version fires once and hands you one island when ten players claim at once; the
+  invariant is checked after every claim and every release and spawns as many as it needs. It also
+  answers what happens when a lease expires and plots come back — nothing, because it already holds.
+  A small buffer (fewer than two free) stops an arriving player waiting on a spawn.
+- **Only the count goes on the wire.** Island N sits at `origin + N × length`; sync "there are three
+  islands" and every client places them identically. Same derivation as the procgen seed — a
+  replicated transform for a value that changes once would be absurd.
+- **It never shrinks, deliberately.** Un-appending is hard — someone may be standing on it, crops may
+  be growing — and worlds do not persist across instances, so sprawl is bounded by *peak concurrent*
+  demand rather than cumulative. Recorded as a non-goal so nobody builds shrink logic later.
+- **This is the grid's second customer.** The Plot Seed grows a garden *within* an island; this
+  appends whole islands. Different axes, one foundation, and both need the garden authored as
+  spawnable chunks. Build the grid once.
+- **⚠ Object count.** Each island is four Plots of 24 PlantSlots, and every PlantSlot carries a
+  NetworkObject and a NetworkBridge — 96 NetworkObjects per island before a single crop exists.
+  Three islands is 288, just for dirt. `runtime-spawn.md` §4c notes Somnium may have a per-world
+  limit nobody has found yet; appending islands is the thing most likely to find it. Worth measuring
+  before it is built.
+
+### Prerequisite: the scene has to be tidied first
+
+Measured 2026-09-04: **30 root objects**, of which 16 are `Fence_4_Dark (n)`, four are
+`BorderedPlotWithRoad` (not even contiguous — `SceneManager` sits between two of them), four are the
+buy and sell points, and two are loose `Grass`. `Environment` exists and contains only the light,
+floor, terrain and ambience.
+
+So an island is not an object. It is twenty-six root objects that happen to sit near each other, and
+**nothing can append one until it is a single thing.** The target:
+
+```
+World (scene)
+├── SceneManager          managers only
+├── #World Uploader       SDK
+├── PostProcessing        SDK
+├── Environment           light, floor, ambience
+└── GardenIsland          ← one prefab, everything else inside
+    ├── Plots/            BorderedPlotWithRoad ×4
+    ├── Shop/             BuyPointCarrot / Turnip / Pumpkin
+    ├── SellPoint
+    └── Scenery/          fences, grass
+```
+
+**Do this in two steps, and only the second one is dangerous.** Grouping the island into a prefab
+that is still *placed* in the scene changes nothing about networking — its PlantSlots stay scene
+objects and keep the SDK's authority sweep. Spawning that prefab at runtime is what takes them out of
+`SceneNetworking.ReassignNullObjectsAuthority`, which only ever walks `_sceneNetworkObjects`. Step one
+is free tidying and can happen now; step two should wait until orphaned authority is solved for crops,
+because it extends that same gap to the ground itself.
