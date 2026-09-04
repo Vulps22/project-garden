@@ -130,6 +130,54 @@ request; the master's next broadcast is what actually changes anything.
   already has exactly this shape in `_currentSeed`. Otherwise a player can carpet the Garden in
   scrolls.
 
+## The structural half: one Plot, one NetworkObject, 24 sockets
+
+Moving `OwnerId` up from the PlantSlot to the Plot is not only a correctness fix. It is what makes
+the slot's `NetworkObject` pointless, and removing 24 network identities per Plot is what makes the
+rest of the roadmap affordable. **These are one refactor, and splitting them would hide that.**
+
+Look at what a `PlantSlot` actually replicates today:
+
+```csharp
+public bool          IsOccupied { get; private set; }
+public string        OwnerId    { get; private set; }
+public IPlotOccupant Occupant   { get; private set; }   // local reference, never synced
+```
+
+`Occupant` is not networked — a plant positions itself from the slot's NetworkId. So the *only*
+reason a patch of dirt carries a `NetworkObject` **and** a `NetworkBridge` is `OwnerId`, and this
+document has already decided `OwnerId` does not belong there. Take it away and a socket's remaining
+networked state is **one bit**: occupied, or not. Twenty-four of those is three bytes as a mask.
+
+| | now | after |
+|---|---:|---:|
+| NetworkObjects per island | 96 | 4 |
+| authority reassignments per master transfer | 96 | 4 |
+| three chained islands (see roadmap) | 288 | 12 |
+
+The ~100 lines of `ReassignNullObjectsAuthority Plant_Slot` at every master transfer in the
+2026-09-03 logs are this problem printing itself, once per slot.
+
+**Two traps, both already paid for elsewhere.**
+
+- **Author the sockets as a plain `Transform[]`.** Arrays of custom `[Serializable]` classes arrive
+  empty from the bundle export — the `ProduceSlot` defect, invisible by every means the Editor
+  offers and only visible in-world. Build richer per-socket objects at `Awake`.
+- **`BytesWriter` is pre-sized**, so the Plot's payload calculation now covers 24 sockets. Small, but
+  it is exactly the shape of "add a field, forget the size, overflow".
+
+**One consequence to design deliberately.** A plant currently anchors to its slot's NetworkId; after
+this it anchors to **(plot NetworkId, socket index)**. That is better rather than worse — stable,
+meaningful, and it survives the socket not being a network object at all. `PlantSlot`'s
+`RequestPlant` comment already says it is "sent on the plot's bridge rather than the seed's", which
+is terminology debt today and becomes literally true afterwards.
+
+**Sequencing.** This depends on the scene tidy in `roadmap.md` — an island cannot be one prefab until
+it is one object, and a Plot cannot be one NetworkObject until the hierarchy says which sockets are
+its. Do it as part of that tidy, while the island is still *placed* in the scene rather than spawned:
+that step changes nothing about networking, so a Plot losing 24 NetworkObjects can be tested on its
+own before anything starts spawning islands at runtime.
+
 ## Open questions
 
 **1. Does a teammate see anything?** As specified, "don't own a Plot, see nothing" leaves an accepted

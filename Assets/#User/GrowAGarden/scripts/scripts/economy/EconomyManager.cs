@@ -1,5 +1,3 @@
-using SomniumSpace.Bridge.Components;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using System;
 using System.Collections;
@@ -16,7 +14,6 @@ namespace GrowAGarden
         public static EconomyManager Instance;
         public static event Action<int, int> OnPlayerBalanceChanged;
 
-        [SerializeField] private SomniumPlayersContainer _somniumPlayersContainer;
         [SerializeField] private NetworkBridge _bridge;
         [SerializeField] private BalanceDisplayManager _balanceDisplayManager;
         [SerializeField] private int _startingBalance;
@@ -32,8 +29,9 @@ namespace GrowAGarden
                 return;
             }
             Instance = this;
-            _somniumPlayersContainer.PlayerAdded.AddListener(OnPlayerJoined);
-            _somniumPlayersContainer.LocalPlayerAdded.AddListener(OnLocalPlayerJoined);
+            PlayerManager.PlayerJoined += OnPlayerJoined;
+            PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
+            PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
         }
 
         private void Start()
@@ -46,6 +44,9 @@ namespace GrowAGarden
         {
             _bridge.OnMessageToAll -= OnMessageToAll;
             SceneNetworking.OnBecomeWorldMaster -= OnBecomeWorldMaster;
+            PlayerManager.PlayerJoined -= OnPlayerJoined;
+            PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
+            PlayerManager.PlayerDestroyed -= OnPlayerDestroyed;
         }
 
         private void OnBecomeWorldMaster()
@@ -59,21 +60,36 @@ namespace GrowAGarden
             BroadcastBalances();
         }
 
-        private void OnLocalPlayerJoined(ISomniumPlayer player)
+        private void OnLocalPlayerJoined(string playerId, string playerName)
         {
-            _localPlayerId = player.Properties.Id;
+            _localPlayerId = playerId;
             if (_balances.Count > 0) return;
-            var balance = new PlayerBalance(player, _startingBalance);
-            _balances.Add(balance.GetID(), balance);
+            _balances.Add(playerId, new PlayerBalance(playerId, playerName, _startingBalance));
             if (SceneNetworking.IsMasterClient) BroadcastBalances();
         }
 
-        private void OnPlayerJoined(ISomniumPlayer player)
+        private void OnPlayerJoined(string playerId, string playerName)
         {
             if (!SceneNetworking.IsMasterClient) return;
-            if (_balances.ContainsKey(player.Properties.Id)) return;
-            var balance = new PlayerBalance(player, _startingBalance);
-            _balances.Add(balance.GetID(), balance);
+            if (_balances.ContainsKey(playerId)) return;
+            _balances.Add(playerId, new PlayerBalance(playerId, playerName, _startingBalance));
+            BroadcastBalances();
+        }
+
+        /// <summary>
+        /// A departed player did not come back, so they leave the table and the balance board.
+        /// Master only, and no new message type is needed: every client clears and rebuilds
+        /// _balances from each broadcast, so a removal propagates exactly like a change does.
+        ///
+        /// Nothing removed them before this, which is why a leaver's name stayed on the board for
+        /// the rest of the session.
+        /// </summary>
+        private void OnPlayerDestroyed(string playerId)
+        {
+            if (!SceneNetworking.IsMasterClient) return;
+            if (!_balances.Remove(playerId)) return;
+
+            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — removed '{playerId}' from the balance table");
             BroadcastBalances();
         }
 

@@ -623,12 +623,12 @@ later. Link both ways, and do not create a step doc until the step has real desi
 
 ### ⚠ Reset before this is anything but a test build
 
-**`EconomyManager._startingBalance` is 500.** It was raised from 10 so the pumpkin could be reached
-without ten manual carrot loops in VR — a testing tax, not a design decision. **Put it back to 10.**
-It is one serialized field on `SceneManager` in the scene, and it is the only change on this branch
-that is not the game.
+**`EconomyManager._startingBalance` is back to 10** (2026-09-03). It had been raised to 500 so the
+pumpkin could be reached without ten manual carrot loops in VR — a testing tax, not a design
+decision. If it is ever raised again for testing, it is one serialized field on `SceneManager` in the
+scene, and putting it back is the last thing to do before an upload that is not a test build.
 
-Also temporary: **`Produce.ReportPlacementOnce()`** logs a produce's real position, scale, ripeness
+Still temporary: **`Produce.ReportPlacementOnce()`** logs a produce's real position, scale, ripeness
 and value one second after it is born. It exists because two uploads were spent on "the produce is
 missing" when the only position in the log was the one we *asked for*. Delete it once the remaining
 tests below are green.

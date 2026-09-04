@@ -40,6 +40,9 @@ namespace GrowAGarden
 
         private bool _returning;
         private bool _collisionsSuspended;
+
+        /// <summary>Temporary instrumentation: this recall turned collisions off and owes them back.</summary>
+        public bool CollisionsSuspended => _collisionsSuspended;
         private bool _grabSuspended;
         private float _recallStartedAt;
         private IHeldObject _holder;
