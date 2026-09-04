@@ -298,6 +298,11 @@ World (scene)
     └── Scenery/          fences, grass
 ```
 
+The same tidy is the moment to make **one Plot one NetworkObject with 24 sockets** instead of 24
+separate ones — that is the structural half of step 1's ownership change, and
+[`plot-ownership.md`](plot-ownership.md) carries it. It takes an island from 96 NetworkObjects to 4,
+which is what makes appending islands affordable at all.
+
 **Do this in two steps, and only the second one is dangerous.** Grouping the island into a prefab
 that is still *placed* in the scene changes nothing about networking — its PlantSlots stay scene
 objects and keep the SDK's authority sweep. Spawning that prefab at runtime is what takes them out of
