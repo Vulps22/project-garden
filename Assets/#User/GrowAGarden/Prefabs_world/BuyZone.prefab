@@ -56,6 +56,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Fence (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 2549348850836120464, guid: 786a44860ec141f84b61328f711357da,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5316908149211970744, guid: 786a44860ec141f84b61328f711357da,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -926,6 +931,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Fence (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 2549348850836120464, guid: 786a44860ec141f84b61328f711357da,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5316908149211970744, guid: 786a44860ec141f84b61328f711357da,
         type: 3}

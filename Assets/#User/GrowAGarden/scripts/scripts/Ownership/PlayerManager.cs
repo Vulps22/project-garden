@@ -63,6 +63,14 @@ namespace GrowAGarden
 
         public static string LocalPlayerId { get; private set; }
 
+        /// <summary>
+        /// The local player's headset transform, or null until they've spawned. The one point of
+        /// contact with Somnium's player list per the class docstring — anything that needs "where
+        /// is the local player right now" (CloudGenerator's spawn anchor, say) reads this rather
+        /// than holding its own SomniumPlayersContainer reference.
+        /// </summary>
+        public static Transform LocalPlayerHead { get; private set; }
+
         /// <summary>Departed ids, and the time each stops being reprievable.</summary>
         private readonly Dictionary<string, float> _pending = new Dictionary<string, float>();
 
@@ -105,6 +113,7 @@ namespace GrowAGarden
             if (string.IsNullOrEmpty(id)) return;
 
             LocalPlayerId = id;
+            LocalPlayerHead = player?.References?.Body?.Head;
             LocalPlayerJoined?.Invoke(id, player.Properties.NickName);
         }
 
