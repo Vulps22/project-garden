@@ -74,8 +74,10 @@ namespace GrowAGarden
         private PlayerBalance _grabber;
         private HoveringEntity _hovering;
 
-        /// <summary>The plot this holds, if any. Only a RootedProduce has one. Master-side.</summary>
-        protected PlantSlot _slot;
+        /// <summary>The Plot this holds, if any, and which of its slots. Only a RootedProduce has
+        /// one — a BearingPlant's socket-hung fruit occupies no slot at all. Master-side.</summary>
+        protected PlotStateManager _plot;
+        protected int _slotIndex = -1;
 
         /// <summary>Ripeness [0,1], derived from the clock on every client.</summary>
         public float GetRipeness()
@@ -157,12 +159,13 @@ namespace GrowAGarden
         /// overloaded null then makes every `seedDefinition != null` read false, which is how a
         /// carrot came to sell for nothing while its ripening still looked correct by coincidence.
         /// </summary>
-        public void Init(PlantSlot slot, long ripenTimestamp)
+        public void Init(PlotStateManager plot, int slotIndex, long ripenTimestamp)
         {
             if (seedDefinition == null)
                 Logger.Error($"Init() '{gameObject.name}' — no SeedDefinition on this prefab; it will be worthless and ripen instantly");
 
-            _slot = slot;
+            _plot = plot;
+            _slotIndex = slotIndex;
             _ripenTimestamp = ripenTimestamp;
             ApplyRipeness();
             broadcastState();
@@ -274,10 +277,11 @@ namespace GrowAGarden
             // happen in one place.
             if (!SceneNetworking.IsMasterClient) return;
 
-            if (_slot != null)
+            if (_plot != null)
             {
-                _slot.Release();
-                _slot = null;
+                _plot.Release(_slotIndex);
+                _plot = null;
+                _slotIndex = -1;
             }
 
             Harvested?.Invoke();
@@ -292,7 +296,8 @@ namespace GrowAGarden
         public void Uproot()
         {
             if (!SceneNetworking.IsMasterClient) return;
-            _slot = null;
+            _plot = null;
+            _slotIndex = -1;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (obj != null && obj.HasStateAuthority) SceneNetworking.NetworkRunnerRef.Despawn(obj);

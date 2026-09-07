@@ -80,7 +80,7 @@ namespace GrowAGarden
                 Produce produce = SpawnProduce(_producePrefab, slot.socket.position, slot.socket.rotation);
                 if (produce == null) continue;
 
-                produce.Init(null, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                produce.Init(null, -1, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 slot.produceId = produce.NetworkId;
                 slot.harvested = false;
 

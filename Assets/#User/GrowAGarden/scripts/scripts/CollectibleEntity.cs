@@ -283,8 +283,7 @@ namespace GrowAGarden
                     ApplyRestoreToDispenser();
                     break;
                 default:
-                    Logger.Warn($"OnMessageToAll() '{gameObject.name}' — unknown message id={id}");
-                    break;
+                    break;   // associateRequest/associated/acceptRequest belong to PlotApplication, on the same bridge
             }
         }
 
@@ -350,13 +349,19 @@ namespace GrowAGarden
     }
 
     /// <summary>Message ids are scoped per NetworkBridge — see SeedMessageType. Append new values,
-    /// never insert.</summary>
+    /// never insert. 5-7 belong to PlotApplication, a sibling component on the same bridge for
+    /// prefabs that need "which Plot is this application for" on top of the base take/holder
+    /// shape — kept in this shared enum rather than a second one, since two independently-numbered
+    /// enums on one bridge is exactly the collision class of bug this project has already hit.</summary>
     enum CollectibleMessageType : byte
     {
         stateSync = 0,
         grabber = 1,
         takeRequest = 2,
         taken = 3,
-        restoredToDispenser = 4
+        restoredToDispenser = 4,
+        associateRequest = 5,
+        associated = 6,
+        acceptRequest = 7
     }
 }

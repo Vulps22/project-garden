@@ -23,8 +23,6 @@ namespace GrowAGarden
     /// </summary>
     public class GardenLease : MonoBehaviour
     {
-        private PlantSlot[] _slots;
-
         private void Awake()
         {
             PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
@@ -36,27 +34,21 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Frees every plot the player held, destroys what stands in them, and removes any seeds
-        /// they bought and left lying about.
+        /// Frees every Plot the player held, uproots what stands in every one of its slots, and
+        /// removes any seeds they bought and left lying about.
         ///
         /// Master only — this despawns things — and PlayerManager already raises PlayerDestroyed on
         /// the master alone. The guard stays because that is a promise made elsewhere, and a
         /// despawn without authority fails silently.
+        ///
+        /// Ownership is Plot-wide now, not per-slot — PlantSlot no longer carries an OwnerId at
+        /// all, so there is nothing left to loop over slot-by-slot. Clearing a departed player's
+        /// Plot means uprooting every one of its 24 slots together, via the Plot's own
+        /// PlotStateManager, then relinquishing the claim.
         /// </summary>
         private void OnPlayerDestroyed(string playerId)
         {
             if (!SceneNetworking.IsMasterClient) return;
-
-            _slots ??= FindObjectsByType<PlantSlot>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-            int plots = 0;
-            foreach (PlantSlot slot in _slots)
-            {
-                if (slot == null || slot.OwnerId != playerId) continue;
-                if (slot.Occupant != null) slot.Occupant.Uproot();
-                slot.ClearOwner();
-                plots++;
-            }
 
             int seeds = 0;
             foreach (Seed seed in FindObjectsByType<Seed>(FindObjectsInactive.Include, FindObjectsSortMode.None))
@@ -68,7 +60,26 @@ namespace GrowAGarden
                 if (seed.Discard()) seeds++;
             }
 
-            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — cleared '{playerId}': {plots} plots freed, {seeds} seeds removed");
+            int leases = 0;
+            foreach (PlotLeaseManager lease in FindObjectsByType<PlotLeaseManager>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (lease == null) continue;
+
+                // RemoveTeammate no-ops on a Plot the departed player was never on, so this runs
+                // for every Plot rather than tracking who is whose teammate first — same reasoning
+                // as looping every Seed above rather than only ones known to be theirs.
+                lease.RemoveTeammate(playerId);
+
+                if (lease.OwnerId != playerId) continue;
+
+                PlotStateManager state = lease.GetComponent<PlotStateManager>();
+                if (state != null) state.UprootAll();
+
+                lease.Relinquish();
+                leases++;
+            }
+
+            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — cleared '{playerId}': {leases} plot leases relinquished, {seeds} seeds removed");
         }
     }
 }

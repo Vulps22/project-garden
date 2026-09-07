@@ -1,5 +1,140 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &647442389049614515
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5874332717605640633}
+  - component: {fileID: 4947228595861481132}
+  - component: {fileID: 4112756240362499976}
+  m_Layer: 0
+  m_Name: DeedAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5874332717605640633
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647442389049614515}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.7, z: -1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5519532455505384345}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &4947228595861481132
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647442389049614515}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.3
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4112756240362499976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647442389049614515}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3740c84efde79e0eda7f3eb2e95ca773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.Socket
+  _bounds: {fileID: 4947228595861481132}
+  _authorityTimeout: 2
+--- !u!1 &6259685309636070209
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1628970025861401121}
+  - component: {fileID: 4445146562317540619}
+  - component: {fileID: 8158066923382469089}
+  m_Layer: 0
+  m_Name: ApplicationDropZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1628970025861401121
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6259685309636070209}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5519532455505384345}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &4445146562317540619
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6259685309636070209}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4, y: 3, z: 3}
+  m_Center: {x: 0, y: 1, z: -1}
+--- !u!114 &8158066923382469089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6259685309636070209}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24018a37fe98b0be7a2ead10d0772100, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlotApplicationZone
+  _plot: {fileID: 2471312826826638800}
 --- !u!1 &6468099296292873319
 GameObject:
   m_ObjectHideFlags: 0
@@ -9,6 +144,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5519532455505384345}
+  - component: {fileID: 2471312826826638800}
+  - component: {fileID: 2011646851454114364}
+  - component: {fileID: 5277851954152796999}
+  - component: {fileID: 8889897950934988560}
   m_Layer: 0
   m_Name: Plot
   m_TagString: Untagged
@@ -39,8 +178,79 @@ Transform:
   - {fileID: 7497130416337635764}
   - {fileID: 5942473621574301232}
   - {fileID: 8671408439433938551}
+  - {fileID: 5874332717605640633}
+  - {fileID: 1628970025861401121}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2471312826826638800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6468099296292873319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66364816947644fcbe82da1e54f3f55b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlotLeaseManager
+  _networkBridge: {fileID: 5277851954152796999}
+  _deedSocket: {fileID: 4112756240362499976}
+  _deedPrefab: {fileID: 4360997998222114339, guid: 5a20ff6eb429e76008f737b4b4c3aeac,
+    type: 3}
+--- !u!114 &2011646851454114364
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6468099296292873319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
+  SortKey: 4206171910
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 5277851954152796999}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &5277851954152796999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6468099296292873319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
+  _SyncByteArray: 
+  _SyncIntArray: 
+  _SyncFloatArray: []
+  _SyncVector2Array: []
+  _SyncVector3Array: []
+  _SyncVector4Array: []
+  _SyncStringArray: []
+--- !u!114 &8889897950934988560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6468099296292873319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b1261e3820b468fb1a690493c7ef5de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlotStateManager
+  _networkBridge: {fileID: 5277851954152796999}
+  _lease: {fileID: 2471312826826638800}
+  _authorityTimeout: 2
 --- !u!1001 &425496246014350111
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -306,6 +516,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5519532455505384345}
     m_Modifications:
+    - target: {fileID: 1047703800680781787, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 2065433153
+      objectReference: {fileID: 0}
     - target: {fileID: 3255477956178942633, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -361,6 +576,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dirt (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 4808529521069430638, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 239572542
+      objectReference: {fileID: 0}
+    - target: {fileID: 6116737585727973053, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 3790185374
+      objectReference: {fileID: 0}
+    - target: {fileID: 8382056627848703109, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 3580354858
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -384,6 +614,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5519532455505384345}
     m_Modifications:
+    - target: {fileID: 1047703800680781787, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 274691228
+      objectReference: {fileID: 0}
     - target: {fileID: 3255477956178942633, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -438,6 +673,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Dirt (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4808529521069430638, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 2743797913
+      objectReference: {fileID: 0}
+    - target: {fileID: 6116737585727973053, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1999443449
+      objectReference: {fileID: 0}
+    - target: {fileID: 8382056627848703109, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1789612933
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -798,6 +1048,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5519532455505384345}
     m_Modifications:
+    - target: {fileID: 1047703800680781787, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 4088394465
+      objectReference: {fileID: 0}
     - target: {fileID: 3255477956178942633, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -852,6 +1107,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Dirt (4)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4808529521069430638, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 2262533854
+      objectReference: {fileID: 0}
+    - target: {fileID: 6116737585727973053, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1518179390
+      objectReference: {fileID: 0}
+    - target: {fileID: 8382056627848703109, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1308348874
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1053,6 +1323,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5519532455505384345}
     m_Modifications:
+    - target: {fileID: 1047703800680781787, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 2107638154
+      objectReference: {fileID: 0}
     - target: {fileID: 3255477956178942633, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1107,6 +1382,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Dirt
+      objectReference: {fileID: 0}
+    - target: {fileID: 4808529521069430638, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 281777543
+      objectReference: {fileID: 0}
+    - target: {fileID: 6116737585727973053, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 3832390375
+      objectReference: {fileID: 0}
+    - target: {fileID: 8382056627848703109, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 3622559859
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1220,6 +1510,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5519532455505384345}
     m_Modifications:
+    - target: {fileID: 1047703800680781787, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 210793375
+      objectReference: {fileID: 0}
     - target: {fileID: 3255477956178942633, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1275,6 +1570,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Dirt (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4808529521069430638, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 2679900060
+      objectReference: {fileID: 0}
+    - target: {fileID: 6116737585727973053, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1935545596
+      objectReference: {fileID: 0}
+    - target: {fileID: 8382056627848703109, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1725715080
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -1298,6 +1608,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5519532455505384345}
     m_Modifications:
+    - target: {fileID: 1047703800680781787, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 3818697826
+      objectReference: {fileID: 0}
     - target: {fileID: 3255477956178942633, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1352,6 +1667,21 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Dirt (3)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4808529521069430638, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1992837215
+      objectReference: {fileID: 0}
+    - target: {fileID: 6116737585727973053, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1248482751
+      objectReference: {fileID: 0}
+    - target: {fileID: 8382056627848703109, guid: 6e91ba49df0db9f48bb00f4bded59e3a,
+        type: 3}
+      propertyPath: SortKey
+      value: 1038652235
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

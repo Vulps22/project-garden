@@ -1,8 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace GrowAGarden
 {
@@ -19,14 +16,28 @@ namespace GrowAGarden
     /// pool sized by _maxClouds; spawning only toggles objects active and re-randomizes their local
     /// transforms. Nothing is ever Instantiated or Destroyed after OnEnable.
     ///
-    /// [ExecuteAlways] plus an EditorApplication.update hook means this also runs outside Play
-    /// mode, so the wind and timing can be tuned by watching the Scene view rather than guessing
-    /// and hitting Play. Update() drives it in Play mode as normal; the two paths funnel into the
-    /// same Tick() so there is only one place the animation is defined.
+    /// [ExecuteAlways] plus an Editor-only companion (scripts/Editor/CloudGeneratorEditorPreview.cs)
+    /// means this also runs outside Play mode, so the wind and timing can be tuned by watching the
+    /// Scene view rather than guessing and hitting Play. Update() drives it in Play mode as normal;
+    /// both paths funnel into the same Tick() so there is only one place the animation is defined.
     ///
-    /// Clouds spawn in a ring around <see cref="Anchor"/> — the local player's head, not this
-    /// object's own position — so density holds up wherever the player has wandered in an
-    /// unbounded world rather than only near wherever this GameObject happens to sit.
+    /// This class itself must never reference UnityEditor — Somnium's server-side compile scans
+    /// the built assembly, not the guarded source, so an #if UNITY_EDITOR block in a script that
+    /// otherwise ships to the world still gets flagged as "editor-only code detected." The fix
+    /// used elsewhere in this project for the same reason (see CLAUDE.md's Community Modules
+    /// vendoring notes) is to physically separate editor-only code into its own script under an
+    /// Editor/ folder, which Unity excludes from every build at the assembly level rather than a
+    /// preprocessor level. EditorPreviewTick() and PreviewInEditor are this class's public seam
+    /// for that companion to drive it from outside — everything UnityEditor-specific (the
+    /// EditorApplication.update hook, the wall-clock delta, SceneView.RepaintAll) lives there,
+    /// not here.
+    ///
+    /// Clouds spawn anywhere within a disc around <see cref="Anchor"/> — the local player's head,
+    /// not this object's own position — right overhead included, so density holds up wherever the
+    /// player has wandered in an unbounded world rather than only near wherever this GameObject
+    /// happens to sit. An early pass gave that disc an inner exclusion radius so clouds would not
+    /// spawn "in your face"; in practice that just carved a permanent hole in the sky centred on
+    /// wherever the player actually is, which is the one place they are guaranteed to be looking.
     /// </summary>
     [ExecuteAlways]
     public class CloudGenerator : MonoBehaviour
@@ -37,10 +48,10 @@ namespace GrowAGarden
         [Tooltip("Drift speed in metres/second.")]
         [SerializeField] private float _windSpeed = 1.5f;
 
-        [Tooltip("Clouds spawn at a random point in this full ring around the anchor (see below) — " +
-                 "every direction, not just upwind — so the sky reads full no matter which way the " +
-                 "player is looking, and no matter where in an unbounded world they are.")]
-        [SerializeField] private Vector2 _spawnRadiusRange = new Vector2(40f, 160f);
+        [Tooltip("Clouds spawn anywhere from directly overhead out to this distance from the " +
+                 "anchor (see below), in every direction — no inner limit. A minimum spawn " +
+                 "distance is a hole in the sky right where the player is looking most often.")]
+        [SerializeField] private float _spawnRadius = 160f;
 
         [Tooltip("Height range above the anchor that clouds spawn at.")]
         [SerializeField] private Vector2 _spawnHeightRange = new Vector2(10f, 30f);
@@ -113,64 +124,75 @@ namespace GrowAGarden
         private readonly List<ActiveCloud> _active = new List<ActiveCloud>();
         private float _clock;
         private float _nextSpawnAt;
-#if UNITY_EDITOR
-        private double _lastEditorTime;
-#endif
+
+        /// <summary>Set by OnValidate whenever a field changes while previewing; consumed by the
+        /// next Tick() rather than acted on immediately, so dragging a slider rebuilds the pool
+        /// once on release-ish cadence rather than once per frame of the drag.</summary>
+        private bool _needsRebuild;
+
+        /// <summary>Read by the Editor-only companion to decide whether to drive this instance's
+        /// Tick() outside Play mode. See the class note on why that logic lives there.</summary>
+        public bool PreviewInEditor => _previewInEditor;
 
         private void OnEnable()
         {
-            _blobMesh = BuildIcosahedron();
-            BuildPool();
-            _clock = 0f;
-            _nextSpawnAt = _spawnIntervalSeconds;
-
-#if UNITY_EDITOR
-            _lastEditorTime = EditorApplication.timeSinceStartup;
-            EditorApplication.update -= EditorTick;
-            if (!Application.isPlaying && _previewInEditor) EditorApplication.update += EditorTick;
-#endif
+            RebuildPoolAndClock();
         }
 
         private void OnDisable()
         {
-#if UNITY_EDITOR
-            EditorApplication.update -= EditorTick;
-#endif
             DestroyPool();
         }
 
-#if UNITY_EDITOR
-        private void OnValidate()
+        private void RebuildPoolAndClock()
         {
-            EditorApplication.update -= EditorTick;
-            if (isActiveAndEnabled && !Application.isPlaying && _previewInEditor)
-                EditorApplication.update += EditorTick;
+            if (_blobMesh == null) _blobMesh = BuildIcosahedron();
+            BuildPool();
+            _clock = 0f;
+            _nextSpawnAt = _spawnIntervalSeconds;
         }
 
-        private void EditorTick()
+        /// <summary>
+        /// Makes every field change visible immediately rather than only on the next natural
+        /// spawn, while previewing outside Play mode.
+        ///
+        /// Turning preview off tears the whole pool down rather than just pausing it — a frozen
+        /// cluster of clouds left sitting in the Scene view when you meant to stop looking at this
+        /// is clutter, not a paused preview. Turning it back on rebuilds from scratch, same as
+        /// enabling the component fresh. Nothing here touches UnityEditor — OnValidate is itself
+        /// a plain UnityEngine callback that Unity simply never invokes outside the Editor.
+        /// </summary>
+        private void OnValidate()
         {
-            if (Application.isPlaying || !_previewInEditor) return;
-            double now = EditorApplication.timeSinceStartup;
-            // Clamped so refocusing after a long idle doesn't age every cloud through its whole
-            // life in one jump — the same shape of trap as an uncapped retry timer elsewhere here.
-            float dt = Mathf.Clamp((float)(now - _lastEditorTime), 0f, 0.1f);
-            _lastEditorTime = now;
-            Tick(dt);
-            SceneView.RepaintAll();
+            if (!isActiveAndEnabled || Application.isPlaying) return;
+
+            if (_previewInEditor) _needsRebuild = true;
+            else DestroyPool();
         }
-#endif
+
+        /// <summary>The Editor-only companion's entry point for driving this outside Play mode —
+        /// see the class note. Never called from anywhere in this file.</summary>
+        public void EditorPreviewTick(float dt) => Tick(dt);
 
         private void Update()
         {
-            // Edit-mode ticking is EditorTick's job, driven off EditorApplication.update rather
-            // than Update() — Unity only calls Update() in edit mode on a redraw, not a steady
-            // clock, which reads as stuttery rather than drifting.
+            // Edit-mode ticking is the Editor-only companion's job, via EditorPreviewTick(),
+            // driven off EditorApplication.update rather than Update() — Unity only calls
+            // Update() in edit mode on a redraw, not a steady clock, which reads as stuttery
+            // rather than drifting.
             if (!Application.isPlaying) return;
             Tick(Time.deltaTime);
         }
 
         private void Tick(float dt)
         {
+            if (_needsRebuild)
+            {
+                _needsRebuild = false;
+                RebuildPoolAndClock();
+                return;   // just rebuilt; animate it starting next tick rather than mid-rebuild
+            }
+
             _clock += dt;
 
             if (_active.Count < _maxClouds && _clock >= _nextSpawnAt)
@@ -235,9 +257,9 @@ namespace GrowAGarden
             CloudSlot slot = _pooled.Dequeue();
 
             Vector3 spawnDir = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up) * Vector3.forward;
-            float spawnRadius = Random.Range(_spawnRadiusRange.x, _spawnRadiusRange.y);
+            float distance = Random.Range(0f, _spawnRadius);
             float height = Random.Range(_spawnHeightRange.x, _spawnHeightRange.y);
-            slot.Root.position = Anchor() + spawnDir * spawnRadius + Vector3.up * height;
+            slot.Root.position = Anchor() + spawnDir * distance + Vector3.up * height;
             slot.Root.localScale = Vector3.zero;
             slot.Root.gameObject.SetActive(true);
 
@@ -322,7 +344,10 @@ namespace GrowAGarden
                     blob.AddComponent<MeshFilter>().sharedMesh = _blobMesh;
                     var renderer = blob.AddComponent<MeshRenderer>();
                     renderer.sharedMaterial = _cloudMaterial;
-                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    // On, deliberately — a cloud drifting over the island without a shadow moving
+                    // under it reads as a bug, not as a saved draw call. Blob count is small enough
+                    // that shadow casting costs nothing worth trading that away for.
+                    renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                     blob.SetActive(false);
                     blobs[b] = blob.transform;
                 }
