@@ -1,0 +1,195 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1569535373706550505
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 205220629181088461}
+  - component: {fileID: 7779455543598268880}
+  - component: {fileID: 5943459316990552737}
+  m_Layer: 0
+  m_Name: Socket
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &205220629181088461
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1569535373706550505}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1633378447987696194}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7779455543598268880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1569535373706550505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3740c84efde79e0eda7f3eb2e95ca773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.Socket
+  _bounds: {fileID: 5943459316990552737}
+  _authorityTimeout: 2
+--- !u!136 &5943459316990552737
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1569535373706550505}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.34610748
+  m_Height: 2.23416
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.2806883, z: 0}
+--- !u!1 &4130635913581179573
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1633378447987696194}
+  - component: {fileID: 6447189552683106159}
+  m_Layer: 0
+  m_Name: ItemDispenser
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1633378447987696194
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4130635913581179573}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 205220629181088461}
+  - {fileID: 175395246663111706}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6447189552683106159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4130635913581179573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4827b5a5a95c45aa8ceb6e52d4a18751, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.DispensingEntity
+  _socket: {fileID: 7779455543598268880}
+  _itemPrefab: {fileID: 4360997998222114339, guid: 19ad52c5912c27cda99439c5975fe392,
+    type: 3}
+--- !u!1001 &3105854289819653846
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1633378447987696194}
+    m_Modifications:
+    - target: {fileID: 1913236613196886109, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_Name
+      value: Fish_Market_Box1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 67f1302dec354a84aa034d45b262d509, type: 3}
+--- !u!4 &175395246663111706 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2987319256468112076, guid: 67f1302dec354a84aa034d45b262d509,
+    type: 3}
+  m_PrefabInstance: {fileID: 3105854289819653846}
+  m_PrefabAsset: {fileID: 0}
