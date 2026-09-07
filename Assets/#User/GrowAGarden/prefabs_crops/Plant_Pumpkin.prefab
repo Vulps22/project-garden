@@ -121,6 +121,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
   seedId: pumpkin
   displayName: Pumpkin
+  seedPrefab: {fileID: 7457805046529267251, guid: 2089c0feed826f538bac5fec0978e4be,
+    type: 3}
+  spawnWeight: 0.25
   buyPrice: 60
   sellValue: 110
   growthDuration: 60

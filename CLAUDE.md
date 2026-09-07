@@ -218,6 +218,28 @@ Nothing in the Unity Editor console sees in-world behaviour. The client log is h
 
 (`Player-prev.log` is the previous session; the `drive_c` path is because Somnium runs under Proton.)
 
+**⚠ Find the session banner first. Never read the log without it.**
+
+`Logger.BeginSession()` prints one line from `WorldManager.Awake()` at the start of every run:
+
+```
+[GrowAGarden] Logging Session Started 2026-09-05 00:31:07
+```
+
+The client log is **append-only across runs**, so a histogram or a `grep -c` over the whole file
+counts every session the file remembers — including the build before the fix you are trying to
+judge. Get the last banner's line number and read only from there:
+
+```bash
+START=$(grep -n "Logging Session Started" "$L" | tail -1 | cut -d: -f1)
+tail -n +"$START" "$L" | grep -c "ReturnToSocket"
+```
+
+**No banner means the run predates this, or the world never loaded** — say which, do not analyse it
+anyway. And check the banner's timestamp against when the user actually tested: quoting an older
+session's numbers as if they described the current build has already happened twice, once while
+reporting a bug as fixed that had never been re-run.
+
 **Check its size before reading it.** A per-frame throw took it to 647 MB / 11.6 M lines in one
 session. Use `grep -n -m` and line-ranged `sed`, never a whole read. `grep -c` on a 600 MB file is
 fine; `head`/`tail` are instant.

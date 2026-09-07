@@ -309,3 +309,78 @@ objects and keep the SDK's authority sweep. Spawning that prefab at runtime is w
 `SceneNetworking.ReassignNullObjectsAuthority`, which only ever walks `_sceneNetworkObjects`. Step one
 is free tidying and can happen now; step two should wait until orphaned authority is solved for crops,
 because it extends that same gap to the ground itself.
+
+---
+
+## Future — the game is a tournament format
+
+**How many plots can you get in four hours.** Every player starts at zero in a world nobody has seen
+before, buys, grows, sells and explores, and the board at the end is the result. It is worth writing
+down now, while it is still free, because three things already built for other reasons turn out to be
+competition infrastructure — and one thing in the architecture would have to change before there is
+ever anything at stake.
+
+**The escalating Plot Seed price is already a scoring function.** 5,000 thatch × plots owned, merely
+to *see* the next one, means N plots cost a cumulative 5,000 × N(N+1)/2 — ~275,000 for ten, with the
+tenth alone costing nine times the first. That curve compresses the score at the top: a player twice
+as effective does not get twice the plots, they get roughly forty per cent more. The field stays
+within sight of each other and the last hour stays live. Most competitive games bolt that on
+afterwards as rubber-banding and it always feels like an apology; here it falls out of a mechanic
+added purely for pacing. **Do not flatten this curve for balance reasons without noticing what else
+it was holding up.**
+
+**Instances do not persist, and the map is seeded by the instance timestamp.** That makes an instance
+a *match* rather than a save file — everyone starts equal, and a pinned seed gives identical ground
+to every heat. Fresh-start-every-time is usually the hard part of tournament design and it is already
+how the world works.
+
+**The balance board is already a live leaderboard**, and `EconomyManager` rebroadcasts the entire
+table on every change, so final standings are a snapshot of a thing that exists.
+
+### Exploring is what makes it a format rather than an optimisation
+
+As specified, *first to ten plots* has **no player interaction at all**. The append invariant —
+always at least one free plot — deliberately guarantees ground is never scarce, so nobody ever
+competes *over* a plot. It is a speedrun against the clock and the market, run in parallel lanes.
+That is a real genre and it is fine, but it is not rivalry, and the whole argument for a multiplayer
+garden is other people being in it.
+
+The rivalry has to come from exploring, and this is the strongest argument yet for the found-seed
+half of the design. The moment good seeds are **found rather than bought**, every minute is a real
+decision: another carrot cycle at a known rate, or go looking. Safe compounding against variance —
+and crucially, the right answer moves with how far behind you are and how much time is left. That is
+not solvable in advance, which is exactly what stops a format collapsing into one line everyone runs.
+Without it, someone optimises the loop once and the tournament is a typing test.
+
+The 0G carry home is what gives that risk teeth, and the note against a carry container in the
+procgen section applies doubly here: softening the journey removes the only thing making a find a
+commitment rather than a pickup.
+
+### ⚠ The master client is a player
+
+This is the one that needs an architectural answer rather than a design one. The master decides
+purchases, sales, spawning, planting and the entire economy. In a friendly race that is fine. The
+moment anything is at stake, **the referee is also competing** — and it is not even about cheating,
+since a master's own client is also the one whose lag or crash takes the match with it.
+
+The fix is cheap *if* it is anticipated: a non-playing host joins first and stays.
+`SceneNetworking.IsMasterClient` resolves to the first player to join, so this needs no new
+mechanism — only that nothing in the world ever assumes the master is a participant. That assumption
+is easy to introduce accidentally and hard to remove later, so the note is here rather than in a
+step doc.
+
+### The one thing worth protecting now
+
+`BalanceDisplayManager` sorts on balance because that is the only number there has ever been. Have it
+sort on a **supplied** metric instead of a hard-coded one and a plot-count board, a match score or a
+personal-best board is a parameter rather than a rewrite. That is a small change today and an
+irritating one once the shed and the deed exist.
+
+Everything else here should wait. Format, duration, whether it is teams — `plot-ownership.md`'s
+application scroll already makes a team a real thing, and "the plots are yours but she grew half of
+them" is a good problem — are all decisions to make against an economy that does not exist yet, for
+the same reason the Plot Seed's price cannot be set against today's numbers.
+
+**Open:** whether a match needs a *stop* condition in-world at all, or whether the world simply keeps
+running and the tournament is a thing agreed outside it. The second is free and should be tried
+first.

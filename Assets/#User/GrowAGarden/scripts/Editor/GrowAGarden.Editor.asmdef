@@ -1,0 +1,18 @@
+{
+    "name": "GrowAGarden.Editor",
+    "rootNamespace": "GrowAGarden.EditorTools",
+    "references": [
+        "GUID:5a8fb4d7db2dbfa4ead85f84477bb4be"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

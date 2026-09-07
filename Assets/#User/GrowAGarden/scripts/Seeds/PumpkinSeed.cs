@@ -22,6 +22,7 @@ namespace GrowAGarden
             growthDuration = 60f;
             ripenDuration = 60f;
             witherDuration = 30f;
+            spawnWeight = 0.25f;     // the one you hope to find in a slot
         }
     }
 }

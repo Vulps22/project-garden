@@ -170,6 +170,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &108362855
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 108362856}
+  - component: {fileID: 108362857}
+  m_Layer: 0
+  m_Name: Buyable_Turnip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &108362856
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 108362855}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &108362857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 108362855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f730f8fe4306a604aa2a489e16f0f7b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TurnipSeed
+  seedId: turnip
+  displayName: Turnip
+  seedPrefab: {fileID: 4238708424358438818, guid: 56add58f7a7cd95a8ba2beceb37fdaec,
+    type: 3}
+  spawnWeight: 0.6
+  buyPrice: 18
+  sellValue: 25
+  growthDuration: 15
+  ripenDuration: 1
+  witherDuration: 0
 --- !u!1 &163550761
 GameObject:
   m_ObjectHideFlags: 0
@@ -183,6 +237,7 @@ GameObject:
   - component: {fileID: 163550769}
   - component: {fileID: 163550768}
   - component: {fileID: 163550771}
+  - component: {fileID: 163550772}
   - component: {fileID: 163550767}
   - component: {fileID: 163550766}
   - component: {fileID: 163550770}
@@ -239,7 +294,10 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 492012853}
+  - {fileID: 108362856}
+  - {fileID: 258327366}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &163550766
@@ -342,6 +400,77 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlayerManager
   _players: {fileID: 163550769}
   _graceSeconds: 180
+--- !u!114 &163550772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31d451b9210b6b4f9bd37f657e4fba5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.WorldManager
+  _buyables:
+  - {fileID: 492012854}
+  - {fileID: 108362857}
+  - {fileID: 258327365}
+  _recycleSeconds: 300
+--- !u!1 &258327364
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 258327366}
+  - component: {fileID: 258327365}
+  m_Layer: 0
+  m_Name: Buyable_Pumpkin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &258327365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 258327364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 730773380ceafed43bc38ea080586a5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
+  seedId: pumpkin
+  displayName: Pumpkin
+  seedPrefab: {fileID: 7457805046529267251, guid: 2089c0feed826f538bac5fec0978e4be,
+    type: 3}
+  spawnWeight: 0.25
+  buyPrice: 60
+  sellValue: 110
+  growthDuration: 60
+  ripenDuration: 60
+  witherDuration: 30
+--- !u!4 &258327366
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 258327364}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &331244564
 GameObject:
   m_ObjectHideFlags: 0
@@ -394,7 +523,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: b0c80db92e9d16b228b4500d9158101d, type: 3}
-  LastBuildSizeBytes: 14765920
+  LastBuildSizeBytes: 14772944
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -422,7 +551,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 297384848
+      AvailableSize: 297377728
     Paid:
       Entries: []
   OwnedTokens: []
@@ -547,6 +676,60 @@ MonoBehaviour:
   RespawnHeightY: -100
   RespawningBehavior: 0
   Subcategory: 1
+--- !u!1 &492012852
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 492012853}
+  - component: {fileID: 492012854}
+  m_Layer: 0
+  m_Name: Buyable_Carrot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &492012853
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 492012852}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &492012854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 492012852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79d4529017e70be4a906f61d3e1272c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
+  seedId: carrot
+  displayName: Carrot
+  seedPrefab: {fileID: 4360997998222114339, guid: 17da2c2486b0ce26894a3e906bc69759,
+    type: 3}
+  spawnWeight: 1
+  buyPrice: 10
+  sellValue: 15
+  growthDuration: 10
+  ripenDuration: 1
+  witherDuration: 0
 --- !u!1 &650578202
 GameObject:
   m_ObjectHideFlags: 0
@@ -1108,6 +1291,11 @@ PrefabInstance:
       propertyPath: SortKey
       value: 4120389315
       objectReference: {fileID: 0}
+    - target: {fileID: 652222540485973106, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: _seedDefinition
+      value: 
+      objectReference: {fileID: 258327365}
     - target: {fileID: 659289724856276440, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -1303,6 +1491,16 @@ PrefabInstance:
       propertyPath: SortKey
       value: 29935653
       objectReference: {fileID: 0}
+    - target: {fileID: 3396885523323556647, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: _override
+      value: 
+      objectReference: {fileID: 492012854}
+    - target: {fileID: 3396885523323556647, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: _seedDefinition
+      value: 
+      objectReference: {fileID: 492012854}
     - target: {fileID: 3427534528228326778, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -1543,6 +1741,11 @@ PrefabInstance:
       propertyPath: SortKey
       value: 1239295403
       objectReference: {fileID: 0}
+    - target: {fileID: 7721934490830400049, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3343173258
+      objectReference: {fileID: 0}
     - target: {fileID: 7779813174546467271, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -1598,6 +1801,11 @@ PrefabInstance:
       propertyPath: SortKey
       value: 2592673732
       objectReference: {fileID: 0}
+    - target: {fileID: 8872886910893093263, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: _seedDefinition
+      value: 
+      objectReference: {fileID: 108362857}
     - target: {fileID: 9056760489449866776, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -1624,25 +1832,15 @@ PrefabInstance:
       value: 2511249297
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 6255469667422718475, guid: 352c2db0c163b0c6689750a609a2de4e, type: 3}
+    - {fileID: 9131677894954112812, guid: 352c2db0c163b0c6689750a609a2de4e, type: 3}
+    - {fileID: 6527142379982381477, guid: 352c2db0c163b0c6689750a609a2de4e, type: 3}
+    - {fileID: 2344077968230077195, guid: 352c2db0c163b0c6689750a609a2de4e, type: 3}
+    - {fileID: 3615228509409602890, guid: 352c2db0c163b0c6689750a609a2de4e, type: 3}
+    - {fileID: 6065251126724968480, guid: 352c2db0c163b0c6689750a609a2de4e, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8681102262485421029, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 8681102262485421029, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 3982870076868339526, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 3982870076868339526, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
     - targetCorrespondingSourceObject: {fileID: 39778370635865824, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
@@ -1723,63 +1921,39 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 7831669054766929060, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 4729601000909967419, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 7831669054766929060, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 5401198187476455167, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 1316509781753893800, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 828306709172476687, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 1806836824817143148, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 2986565038977797711, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 6384267222379583644, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 2460209199415152779, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 3064828520336743078, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 7182747214622557563, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 3064828520336743078, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 6734888470933079694, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 6080693357051485610, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 6206280582180214858, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 6860376735716148078, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 2215386158991398558, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 2797439750160609544, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 2797439750160609544, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 6356834759500936708, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 6011744371999647936, guid: 352c2db0c163b0c6689750a609a2de4e,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 1361305440271924528, guid: 352c2db0c163b0c6689750a609a2de4e,
+    - targetCorrespondingSourceObject: {fileID: 1705587712453070266, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
@@ -1788,8 +1962,8 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 331244566}
   - {fileID: 93833483}
   - {fileID: 1830304809}
-  - {fileID: 331244566}
   - {fileID: 163550764}
   - {fileID: 4844959713083103933}

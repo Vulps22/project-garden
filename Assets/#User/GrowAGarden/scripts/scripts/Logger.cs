@@ -31,6 +31,27 @@ namespace GrowAGarden
             }
         }*/
 
+        private static bool _sessionAnnounced;
+
+        /// <summary>
+        /// Prints one banner at the top of this run's log, once.
+        ///
+        /// The client log is append-only across sessions and routinely hundreds of megabytes, so
+        /// every histogram and every grep is over *every* run the file remembers, not the one you
+        /// just did. Two separate diagnoses have been made against a previous session's evidence
+        /// and reported as if they described the current build. The banner is the line that makes
+        /// "which run is this" answerable.
+        ///
+        /// Idempotent, so wiring it to more than one manager is harmless.
+        /// </summary>
+        public static void BeginSession()
+        {
+            if (_sessionAnnounced) return;
+            _sessionAnnounced = true;
+
+            Debug.Log($"[GrowAGarden] Logging Session Started {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Log(string message)   => Write("LOG  ", message);
 

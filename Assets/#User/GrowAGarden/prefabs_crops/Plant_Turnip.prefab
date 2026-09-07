@@ -89,6 +89,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TurnipSeed
   seedId: turnip
   displayName: Turnip
+  seedPrefab: {fileID: 4238708424358438818, guid: 56add58f7a7cd95a8ba2beceb37fdaec,
+    type: 3}
+  spawnWeight: 0.6
   buyPrice: 18
   sellValue: 25
   growthDuration: 15

@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 2060642639392244118}
   - component: {fileID: 4055397104056983847}
   - component: {fileID: 6397603678082433816}
-  - component: {fileID: 3514436457669290416}
   - component: {fileID: 1985118068510523639}
   - component: {fileID: 24317900800843347}
   - component: {fileID: 102256461019197783}
@@ -25,6 +24,7 @@ GameObject:
   - component: {fileID: 949654064763826485}
   - component: {fileID: 2596616327883126207}
   - component: {fileID: 1366681578920243093}
+  - component: {fileID: 5422299156740226707}
   m_Layer: 0
   m_Name: Seed_Turnip
   m_TagString: Untagged
@@ -281,28 +281,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 0.01
     Scale: 0.01
---- !u!64 &3514436457669290416
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4036554697963305885}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300020, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
 --- !u!65 &1985118068510523639
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -338,6 +316,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TurnipSeed
   seedId: turnip
   displayName: Turnip
+  seedPrefab: {fileID: 4238708424358438818}
+  spawnWeight: 0.6
   buyPrice: 18
   sellValue: 25
   growthDuration: 15
@@ -463,6 +443,27 @@ MonoBehaviour:
   _grabInteractable: {fileID: 2060642639392244118}
   _plantPrefab: {fileID: 2465927474794732699, guid: a424a8b55e0f09fd3a7fe733a500e376,
     type: 3}
+--- !u!65 &5422299156740226707
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4036554697963305885}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.23124848, y: 0.19444577, z: 0.3793785}
+  m_Center: {x: 0, y: 0.09722289, z: 0}
 --- !u!1001 &484607368895811444
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -532,7 +533,8 @@ PrefabInstance:
       propertyPath: m_Convex
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 64000012883916708, guid: f0666abddd74e5644ac4cf977d74e5e9, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
