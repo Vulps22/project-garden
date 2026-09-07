@@ -17,6 +17,7 @@ namespace GrowAGarden
             growthDuration = 15f;
             ripenDuration = 1f;
             witherDuration = 0f;
+            spawnWeight = 0.6f;      // rarer than the staple, and dearer
         }
     }
 }

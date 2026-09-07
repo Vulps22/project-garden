@@ -15,7 +15,6 @@ GameObject:
   - component: {fileID: 5547742860702557159}
   - component: {fileID: 5200472926570274245}
   - component: {fileID: 7802783851439514983}
-  - component: {fileID: 8817429224528844882}
   - component: {fileID: 2029201865052126567}
   - component: {fileID: 4854113166815372293}
   - component: {fileID: 3030109200838806176}
@@ -25,6 +24,7 @@ GameObject:
   - component: {fileID: 3683215358484958959}
   - component: {fileID: 5343519784740636641}
   - component: {fileID: 270004820687563866}
+  - component: {fileID: 1030967210836959154}
   m_Layer: 0
   m_Name: Seed_Carrot
   m_TagString: Untagged
@@ -165,9 +165,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
   m_InteractionManager: {fileID: 0}
-  m_Colliders:
-  - {fileID: 0}
-  - {fileID: 8817429224528844882}
+  m_Colliders: []
   m_InteractionLayers:
     m_Bits: 8
   m_DistanceCalculationMode: 1
@@ -283,28 +281,6 @@ MonoBehaviour:
   m_LimitAngularVelocity: 0
   m_MaxLinearVelocityDelta: 10
   m_MaxAngularVelocityDelta: 20
---- !u!64 &8817429224528844882
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7865445560042903941}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300024, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
 --- !u!65 &2029201865052126567
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -324,8 +300,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.25, y: 1, z: 0.31}
-  m_Center: {x: 0, y: 0.12, z: 0}
+  m_Size: {x: 0.25, y: 0.2920549, z: 0.4211352}
+  m_Center: {x: 0, y: 0.08167508, z: -0.00045064092}
 --- !u!114 &4854113166815372293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -340,6 +316,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
   seedId: carrot
   displayName: Carrot
+  seedPrefab: {fileID: 4360997998222114339}
+  spawnWeight: 1
   buyPrice: 10
   sellValue: 15
   growthDuration: 10
@@ -465,6 +443,27 @@ MonoBehaviour:
   _grabInteractable: {fileID: 7802783851439514983}
   _plantPrefab: {fileID: 8889210848319893590, guid: af83123bd613b1048aae31891e4bc91d,
     type: 3}
+--- !u!65 &1030967210836959154
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.1, y: 0.14163843, z: 0.4127997}
+  m_Center: {x: 0, y: 0.070819214, z: 0}
 --- !u!1001 &3316487622308164166
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -476,18 +475,6 @@ PrefabInstance:
     - target: {fileID: 1000013410243764, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_Name
       value: Carrot_Plant
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalPosition.x
@@ -529,18 +516,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 64000012162240616, guid: 56b36da289d9a9e4cb37c5f588e23748,
-        type: 3}
-      propertyPath: m_Convex
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 64000012162240616, guid: 56b36da289d9a9e4cb37c5f588e23748,
-        type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 64000012162240616, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

@@ -19,6 +19,7 @@ namespace GrowAGarden
             growthDuration = 10f;
             ripenDuration = 1f;
             witherDuration = 0f;
+            spawnWeight = 1f;        // the staple
         }
     }
 }

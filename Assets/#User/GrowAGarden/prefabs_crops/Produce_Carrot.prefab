@@ -164,9 +164,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.Interaction.Toolkit::UnityEngine.XR.Interaction.Toolkit.Interactables.XRGrabInteractable
   m_InteractionManager: {fileID: 0}
-  m_Colliders:
-  - {fileID: 5618123937032368709}
-  - {fileID: 0}
+  m_Colliders: []
   m_InteractionLayers:
     m_Bits: 8
   m_DistanceCalculationMode: 1
@@ -339,6 +337,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
   seedId: carrot
   displayName: Carrot
+  seedPrefab: {fileID: 4360997998222114339, guid: 17da2c2486b0ce26894a3e906bc69759,
+    type: 3}
+  spawnWeight: 1
   buyPrice: 10
   sellValue: 15
   growthDuration: 10

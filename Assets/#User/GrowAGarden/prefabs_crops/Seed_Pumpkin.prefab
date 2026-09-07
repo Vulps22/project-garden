@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 3878184324576002847}
   - component: {fileID: 3767036565027619042}
   - component: {fileID: 4555009917655504416}
-  - component: {fileID: 8604201822218632167}
   - component: {fileID: 8037693417760414100}
   - component: {fileID: 5068858058103319459}
   - component: {fileID: 8204313276170379938}
@@ -25,6 +24,7 @@ GameObject:
   - component: {fileID: 5142504421326369526}
   - component: {fileID: 6194637529697643899}
   - component: {fileID: 1503669737050969287}
+  - component: {fileID: 8218423619992580241}
   m_Layer: 0
   m_Name: Seed_Pumpkin
   m_TagString: Untagged
@@ -266,28 +266,6 @@ MonoBehaviour:
     Position: 0.01
     Rotation: 0.01
     Scale: 0.01
---- !u!64 &8604201822218632167
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3517095199874354261}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
 --- !u!65 &8037693417760414100
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -323,6 +301,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
   seedId: pumpkin
   displayName: Pumpkin
+  seedPrefab: {fileID: 7457805046529267251}
+  spawnWeight: 0.25
   buyPrice: 60
   sellValue: 110
   growthDuration: 60
@@ -463,6 +443,27 @@ MonoBehaviour:
   _grabInteractable: {fileID: 3767036565027619042}
   _plantPrefab: {fileID: 8075810893608712117, guid: af85332b863bfb112a2457847ebed4c8,
     type: 3}
+--- !u!65 &8218423619992580241
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3517095199874354261}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.15567279, y: 0.11854096, z: 0.15595686}
+  m_Center: {x: -0.00074037537, y: 0.013330296, z: 0.00059834495}
 --- !u!1001 &3614676769897996538
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -536,7 +537,8 @@ PrefabInstance:
       propertyPath: m_Convex
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 64000010882942002, guid: 0adfa404918648e42a1fb073ef9010d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

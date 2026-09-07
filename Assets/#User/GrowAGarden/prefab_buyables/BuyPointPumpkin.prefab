@@ -9,9 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7297317383324926382}
-  - component: {fileID: 6868783266310726522}
   - component: {fileID: 5523914299885111811}
   - component: {fileID: 6520559026116492647}
+  - component: {fileID: 1971681400774571552}
   m_Layer: 0
   m_Name: Socket
   m_TagString: Untagged
@@ -34,22 +34,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 9160691759795748690}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6868783266310726522
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1504413241770997251}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2a108b2b6f5a3b49bd9346fb714b687, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ShopSlot
-  _seedDefinition: {fileID: 6520559026116492647}
-  _seedPrefab: {fileID: 7457805046529267251, guid: 2089c0feed826f538bac5fec0978e4be,
-    type: 3}
-  _authorityTimeout: 2
 --- !u!65 &5523914299885111811
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -85,11 +69,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
   seedId: pumpkin
   displayName: Pumpkin
+  seedPrefab: {fileID: 7457805046529267251, guid: 2089c0feed826f538bac5fec0978e4be,
+    type: 3}
+  spawnWeight: 0.25
   buyPrice: 60
   sellValue: 110
   growthDuration: 60
   ripenDuration: 60
   witherDuration: 30
+--- !u!114 &1971681400774571552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1504413241770997251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3740c84efde79e0eda7f3eb2e95ca773, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.Socket
+  _bounds: {fileID: 5523914299885111811}
+  _authorityTimeout: 2
 --- !u!1 &6674447652368485556
 GameObject:
   m_ObjectHideFlags: 0
@@ -99,6 +100,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9160691759795748690}
+  - component: {fileID: 1096731368916334947}
+  - component: {fileID: 7419382676327891554}
   m_Layer: 0
   m_Name: BuyPointPumpkin
   m_TagString: Untagged
@@ -123,6 +126,39 @@ Transform:
   - {fileID: 7297317383324926382}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
+--- !u!114 &1096731368916334947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6674447652368485556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fad9637d14a2e9e9d88172a9c4c6da8f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.BuyPoint
+  _socket: {fileID: 1971681400774571552}
+  _seedDefinition: {fileID: 0}
+  _override: {fileID: 0}
+  _rarityMultiplier: 1
+  _authorityTimeout: 2
+  _display: {fileID: 7419382676327891554}
+--- !u!114 &7419382676327891554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6674447652368485556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c5774a5a033e444dbad1ee57b36b606, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.StallDisplay
+  _name: {fileID: 2943433667173728596}
+  _buyPrice: {fileID: 736803657080312521}
+  _sellValue: {fileID: 2125421254947154169}
 --- !u!1001 &2832398083760244332
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -209,9 +245,45 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4a55a03c8b29c2a49bfab53de73c7906, type: 3}
+--- !u!114 &736803657080312521 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3276109284240118949, guid: 4a55a03c8b29c2a49bfab53de73c7906,
+    type: 3}
+  m_PrefabInstance: {fileID: 2832398083760244332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
 --- !u!4 &1089708283482041701 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2905341716527164169, guid: 4a55a03c8b29c2a49bfab53de73c7906,
     type: 3}
   m_PrefabInstance: {fileID: 2832398083760244332}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2125421254947154169 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4193326595336203925, guid: 4a55a03c8b29c2a49bfab53de73c7906,
+    type: 3}
+  m_PrefabInstance: {fileID: 2832398083760244332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro
+--- !u!114 &2943433667173728596 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1123540765777463096, guid: 4a55a03c8b29c2a49bfab53de73c7906,
+    type: 3}
+  m_PrefabInstance: {fileID: 2832398083760244332}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshPro

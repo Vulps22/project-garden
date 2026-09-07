@@ -1,3 +1,4 @@
+using Fusion;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -15,6 +16,15 @@ namespace GrowAGarden
     {
         public string seedId;
         public string displayName;
+
+        [Tooltip("The Seed_ prefab a shop slot spawns for this crop. Must also be listed on the " +
+                 "SceneNetworking component, or Fusion has no id to spawn it by.")]
+        public NetworkObject seedPrefab;
+
+        [Header("Stocking")]
+        [Tooltip("Relative chance of a slot rolling this crop. Higher is more common. Set in " +
+                 "Init() with the rest of the balance, not in the Inspector.")]
+        public float spawnWeight = 1f;
 
         [Header("Economy")]
         public int buyPrice;
