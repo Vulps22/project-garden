@@ -30,13 +30,14 @@ namespace GrowAGarden
                 return;
             }
 
-            produce.Init(_slot, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            produce.Init(_plot, _slotIndex, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
-            // The plot passes to the produce rather than being freed — a carrot in the ground
+            // The slot passes to the produce rather than being freed — a carrot in the ground
             // occupies that ground until somebody pulls it, so nobody may sow over it. End() must
-            // therefore not release the plot on the way out.
-            if (_slot != null) _slot.SetOccupant(produce);
-            _slot = null;
+            // therefore not release the slot on the way out.
+            if (_plot != null) _plot.SetOccupant(_slotIndex, produce);
+            _plot = null;
+            _slotIndex = -1;
             End();
         }
     }

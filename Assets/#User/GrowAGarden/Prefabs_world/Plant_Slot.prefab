@@ -12,8 +12,6 @@ GameObject:
   - component: {fileID: -1893894221572679936}
   - component: {fileID: 605552105126306851}
   - component: {fileID: 8336462611885538189}
-  - component: {fileID: 5599036029508546899}
-  - component: {fileID: 1812902384280269279}
   m_Layer: 0
   m_Name: Plant_Slot
   m_TagString: Untagged
@@ -49,8 +47,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02f44bcc4a5289d4d86b1450a057d982, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlantSlot
-  _networkBridge: {fileID: 1812902384280269279}
-  IsOccupied: 0
 --- !u!64 &605552105126306851
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -94,37 +90,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 0.29, z: 1}
   m_Center: {x: 0, y: 0.08, z: 0}
---- !u!114 &5599036029508546899
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5638776142935579134}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
-  SortKey: 1002650531
-  ObjectInterest: 1
-  Flags: 524289
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 1812902384280269279}
-  ForceRemoteRenderTimeframe: 0
---- !u!114 &1812902384280269279
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5638776142935579134}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
 --- !u!1001 &1065315512423157182
 PrefabInstance:
   m_ObjectHideFlags: 0

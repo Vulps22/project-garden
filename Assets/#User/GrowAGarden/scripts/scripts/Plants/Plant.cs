@@ -44,8 +44,13 @@ namespace GrowAGarden
         /// <summary>Unix seconds when withering began, or 0 while the plant is still alive.</summary>
         protected long _witherTimestamp;
 
-        /// <summary>The plot this occupies, on every client — it is also where the plant is.</summary>
-        protected PlantSlot _slot;
+        /// <summary>The Plot this occupies, on every client — it is also where the plant is.</summary>
+        protected PlotStateManager _plot;
+
+        /// <summary>Which of the Plot's slots this stands in. A Plant is always planted into one,
+        /// unlike a Produce, which may have none (a BearingPlant's socket-hung fruit occupies no
+        /// slot at all).</summary>
+        protected int _slotIndex = -1;
 
         private bool _hasBorne;
 
@@ -113,9 +118,10 @@ namespace GrowAGarden
         /// Called by the master immediately after spawning, before anyone else has this object.
         /// Sets the facts that define the plant so the state broadcast has something true to say.
         /// </summary>
-        public void Init(PlantSlot slot, long plantedTimestamp)
+        public void Init(PlotStateManager plot, int slotIndex, long plantedTimestamp)
         {
-            _slot = slot;
+            _plot = plot;
+            _slotIndex = slotIndex;
             _plantedTimestamp = plantedTimestamp;
             ApplyBodyScale();
             broadcastState();
@@ -171,7 +177,8 @@ namespace GrowAGarden
         {
             if (!SceneNetworking.IsMasterClient) return;
             OnUprooted();
-            _slot = null;          // the lease clears the plot itself; End() must not fight it
+            _plot = null;           // the lease clears the plot itself; End() must not fight it
+            _slotIndex = -1;
             End();
         }
 
@@ -184,7 +191,7 @@ namespace GrowAGarden
         /// </summary>
         protected void End()
         {
-            if (_slot != null) _slot.Release();
+            if (_plot != null) _plot.Release(_slotIndex);
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (obj != null && obj.HasStateAuthority) SceneNetworking.NetworkRunnerRef.Despawn(obj);
@@ -195,8 +202,12 @@ namespace GrowAGarden
             if (networkBridge == null || networkBridge.Object == null) return;
             if (!networkBridge.Object.HasStateAuthority) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 5 + GetExtraBroadcastStateSize());
-            writer.AddInt((int)SlotNetworkId());
+            // One int for the plot's NetworkId, one byte for which of its slots this stands in —
+            // an added field on top of the raw slot id this used to write. Forgetting to grow the
+            // pre-sized BytesWriter to match is exactly the trap plot-ownership.md warns about.
+            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 5 + BytesWriter.ByteSize + GetExtraBroadcastStateSize());
+            writer.AddInt((int)(_plot == null ? 0u : _plot.NetworkId));
+            writer.AddByte((byte)_slotIndex);
             writer.AddInt((int)(_plantedTimestamp >> 32));
             writer.AddInt((int)(_plantedTimestamp & 0xFFFFFFFFL));
             writer.AddInt((int)(_witherTimestamp >> 32));
@@ -210,7 +221,7 @@ namespace GrowAGarden
             if ((PlantMessageType)id != PlantMessageType.stateSync) return;
 
             BytesReader reader = new BytesReader(data);
-            AdoptSlot((uint)reader.NextInt());
+            AdoptSlot((uint)reader.NextInt(), (int)reader.NextByte());
             long high = reader.NextInt();
             long low = (uint)reader.NextInt();
             _plantedTimestamp = (high << 32) | low;
@@ -224,35 +235,32 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Which plot this stands in — and therefore where it is.
+        /// Which Plot, and which of its slots, this stands in — and therefore where it is.
         ///
         /// Spawn position is not networked: Fusion uses it only for the local instantiation, so a
         /// proxy would otherwise build the plant at the world origin and wait for a transform
         /// component to correct it. A plant never moves, so paying for a NetworkTransform on every
         /// plant in the garden to replicate a value that changes once would be absurd. Naming the
-        /// plot instead is a derivation: every client already has the plot, so one id places the
-        /// plant exactly, forever, with nothing ticking.
+        /// (plot, slot index) pair instead is a derivation: every client already has the Plot and
+        /// its slot anchors, so that pair places the plant exactly, forever, with nothing ticking.
         /// </summary>
-        private uint SlotNetworkId()
+        private void AdoptSlot(uint plotRawId, int slotIndex)
         {
-            if (_slot == null) return 0u;
-            NetworkObject obj = _slot.GetComponent<NetworkObject>();
-            return obj == null ? 0u : obj.Id.Raw;
-        }
-
-        private void AdoptSlot(uint rawId)
-        {
-            if (_slot != null || rawId == 0) return;
+            if (_plot != null || plotRawId == 0) return;
 
             NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
             if (runner == null) return;
-            if (!runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) || obj == null) return;
+            if (!runner.TryFindObject(new NetworkId { Raw = plotRawId }, out NetworkObject obj) || obj == null) return;
 
-            _slot = obj.GetComponent<PlantSlot>();
-            if (_slot == null) return;
+            _plot = obj.GetComponent<PlotStateManager>();
+            if (_plot == null) return;
 
-            transform.position = _slot.transform.position;
-            transform.rotation = _slot.transform.rotation;
+            _slotIndex = slotIndex;
+            Transform anchor = _plot.AnchorFor(slotIndex);
+            if (anchor == null) return;
+
+            transform.position = anchor.position;
+            transform.rotation = anchor.rotation;
         }
 
         protected virtual int GetExtraBroadcastStateSize() => 0;
