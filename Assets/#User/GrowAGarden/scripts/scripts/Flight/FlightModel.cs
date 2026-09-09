@@ -53,8 +53,31 @@ namespace GrowAGarden
 
             [Tooltip("Airspeed at which the player has full control of the path angle. Below it " +
                      "the nose drops toward straight down however the wrists are held, which is " +
-                     "what a wing with no air over it does and what makes a stall recoverable.")]
+                     "what a wing with no air over it does and what makes a stall recoverable.\n\n" +
+                     "Set too low and it creates a trap rather than a recovery. At 8 a player " +
+                     "holding 55 degrees of wrist — just under the stall — still had 64% " +
+                     "authority at 5 m/s, which pulled the commanded 52 degree climb back to " +
+                     "exactly level. A level path neither gains nor loses speed, so it is a " +
+                     "stable equilibrium: they hovered at 5 m/s indefinitely and could not tell " +
+                     "it from a park. The value has to be high enough that low speed genuinely " +
+                     "drops the nose.")]
             public float ControlSpeed;
+
+            [Tooltip("How much of the real cost of climbing is charged. 1 is honest physics, " +
+                     "which reads as brutally harsh — a climb strips speed at up to 9.8 m/s². " +
+                     "Lower is more forgiving. Below about 0.5 a dive-then-climb cycle starts " +
+                     "returning more height than it spent, which makes porpoising a way to gain " +
+                     "altitude rather than merely trade it.")]
+            public float ClimbCost;
+
+            [Tooltip("Hard ceiling on airspeed, m/s. Quadratic drag already implies a terminal " +
+                     "velocity, but it comes out of the glide ratio rather than being chosen — " +
+                     "one drag coefficient cannot set both, and the one that makes 18 m/s an " +
+                     "equilibrium puts terminal at 76 m/s, head-down skydiving speed. This is the " +
+                     "size of the pool a fall can fill however far it lasts, and with ClimbCost " +
+                     "it is what stops a drop from world height buying a climb back to it. Real " +
+                     "belly-to-earth is about 55.")]
+            public float TerminalSpeed;
 
             public static Settings Default => new Settings
             {
@@ -67,6 +90,8 @@ namespace GrowAGarden
                 MaxYawRateDeg   = 60f,
                 FlapHeight      = 20f,
                 ControlSpeed    = 8f,
+                ClimbCost       = 0.45f,
+                TerminalSpeed   = 55f,
             };
         }
 
@@ -99,6 +124,8 @@ namespace GrowAGarden
             _s = s;
             if (_s.BestGlideSpeed <= 0f) _s.BestGlideSpeed = 18f;
             if (_s.ControlSpeed <= 0f) _s.ControlSpeed = 8f;
+            if (_s.ClimbCost <= 0f) _s.ClimbCost = 0.45f;
+            if (_s.TerminalSpeed <= 0f) _s.TerminalSpeed = 55f;
             if (Speed <= 0f) Speed = _s.BestGlideSpeed;
         }
 
@@ -164,7 +191,18 @@ namespace GrowAGarden
             // it has no say in anything, so the path angle falls away toward straight down as
             // speed bleeds off, gravity does what it always does, and the recovery is the dive
             // the player would have had to make anyway.
-            Authority = Mathf.Clamp01(Speed / _s.ControlSpeed);
+            // Squared, not linear, and the shape matters more than the threshold.
+            //
+            // A linear ramp starts taking control away the moment speed dips below the threshold
+            // — and climbing *costs* speed by design, so a climb pushed the player under it and
+            // the fading authority then flattened the climb out. Holding 26 degrees of wrist, the
+            // path fell from 22.9 to 0.1 and a five-metre-a-second climb died to nothing in about
+            // four seconds. The act of climbing removed the ability to climb.
+            //
+            // Squaring holds full control across the whole of normal flight and collapses only
+            // when speed is genuinely gone, which is the one case it was added for.
+            float speedRatio = Mathf.Clamp01(Speed / _s.ControlSpeed);
+            Authority = speedRatio * speedRatio;
             float pathRad = Mathf.Lerp(-Mathf.PI * 0.5f, commandedRad, Authority);
             PathAngleDeg = pathRad * Mathf.Rad2Deg;
 
@@ -173,7 +211,14 @@ namespace GrowAGarden
             // is no sustained climb anywhere in here, deliberately: altitude is bought with
             // speed, and speed is bought with altitude, and the only thing that adds to the
             // system is a flap.
-            float dSpeed = -G * Mathf.Sin(pathRad) - DragK * Speed * Speed;
+            // Climbing is charged at a fraction of what it really costs. Honest physics strips
+            // speed at up to 9.8 m/s² on the way up, which reads as being punished for every
+            // metre gained rather than trading for it. Diving still earns at the full rate, so
+            // the exchange is deliberately in the player's favour — see ClimbCost.
+            float gravity = -G * Mathf.Sin(pathRad);
+            if (gravity < 0f) gravity *= _s.ClimbCost;          // negative == climbing == losing speed
+
+            float dSpeed = gravity - DragK * Speed * Speed;
             Speed += dSpeed * dt;
 
             Speed = Mathf.Max(0f, Speed);

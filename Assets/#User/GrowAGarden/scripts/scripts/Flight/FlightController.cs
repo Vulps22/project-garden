@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using SomniumSpace.Bridge.Player;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace GrowAGarden
 {
@@ -76,14 +78,6 @@ namespace GrowAGarden
 
         [Header("Flap")]
 
-        [Tooltip("How far both hands must sweep down, in metres relative to the body, to count " +
-                 "as a flap. A distance rather than a speed: one frame of 5cm hand jitter at 90Hz " +
-                 "reads as 4.5 m/s, which is why a velocity threshold fired flaps nobody made.")]
-        [SerializeField] private float _flapDistance = 0.4f;
-
-        [Tooltip("Seconds the sweep has to happen within. Longer than this and it is an arm being " +
-                 "lowered, not a flap.")]
-        [SerializeField] private float _flapWindow = 0.35f;
 
         [Tooltip("Seconds after leaving the ground before a flap can be spent. Stops a landing " +
                  "immediately re-arming and re-spending it, which read as bouncing.")]
@@ -92,6 +86,19 @@ namespace GrowAGarden
         [Tooltip("Seconds of immunity from terrain contact straight after flight starts. Without " +
                  "it the surface just stepped off re-grounds the player before they clear it.")]
         [SerializeField] private float _launchGrace = 0.5f;
+
+        [Header("Boost")]
+
+        [Tooltip("Which hand fires the vertical boost. The primary button is A on the right " +
+                 "controller and X on the left — Unity abstracts both to the same usage and tells " +
+                 "the hands apart by device characteristics. Somnium binds jump to A, and that is " +
+                 "deliberate rather than a clash: on the ground A jumps and the boost no-ops, in " +
+                 "the air there is nothing to jump from and A boosts.")]
+        [SerializeField] private bool _boostOnRightHand = true;
+
+        [Tooltip("Seconds between re-finding the controller. They connect late and drop out when " +
+                 "they sleep.")]
+        [SerializeField] private float _deviceScanInterval = 2f;
 
         [Header("Somnium")]
 
@@ -141,6 +148,8 @@ namespace GrowAGarden
             if (!_enabled) return;
             MeasurePreviousWrite();
             if (!Resolve()) return;
+
+            PollBoostButton();
 
             // ── Contact and pose gate flight ──────────────────────────────────────
             //
@@ -199,13 +208,6 @@ namespace GrowAGarden
             float rightPitch = rightRaw - _calibratedOffset;
             float pitch      = (leftPitch + rightPitch) * 0.5f;
             float difference = rightPitch - leftPitch;   // the offset cancels, but read it from the same place
-
-            if (DetectFlap() && !_flapSpent && Time.time - _airborneSince >= _flapArmDelay)
-            {
-                _flapSpent = true;
-                _model.Flap();
-                Logger.Info($"Flap() '{gameObject.name}' — thrown at {_root.position.y:F1}m, speed={_model.Speed:F1}");
-            }
 
             // ── Move ──────────────────────────────────────────────────────────────
             Vector3 local = _model.Step(pitch, difference, Time.deltaTime, out float yawDelta);
@@ -370,37 +372,55 @@ namespace GrowAGarden
             return Mathf.Asin(Mathf.Clamp(v.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
         }
 
-        private float _peakLeft, _peakRight, _peakAt;
-        private bool _havePeak;
+        /// <summary>
+        /// Throws the player upward, once between leaving the ground and touching it again.
+        ///
+        /// **Nothing calls this yet.** It was driven by a gesture — both hands sweeping down
+        /// through a distance — and that gesture is the same movement as drawing the arms in to
+        /// end flight, so exiting a glide threw the player 20m into the air instead. The boost
+        /// itself is fine and is left intact; it is waiting on a button, which the bridge does not
+        /// expose (SomniumPlayerAction.DoAction triggers actions, it cannot listen for one). See
+        /// ButtonProbe for what is being done about that.
+        /// </summary>
+        public void Boost()
+        {
+            if (!_flying || _flapSpent || Time.time - _airborneSince < _flapArmDelay) return;
+            _flapSpent = true;
+            _model.Flap();
+            Logger.Info($"Boost() '{gameObject.name}' — thrown at {_root.position.y:F1}m, speed={_model.Speed:F1}");
+        }
+
+        // ── Boost input ───────────────────────────────────────────────────────────
+
+        private readonly List<InputDevice> _devices = new();
+        private InputDevice _boostDevice;
+        private float _nextDeviceScanAt;
+        private bool _boostWasDown;
 
         /// <summary>
-        /// Both hands swept down through a real distance, quickly.
+        /// Reads the controller directly rather than through any action map.
         ///
-        /// Measured **relative to the body**, not in world space: a player descending at 3 m/s
-        /// carries their hands down 0.4m in about a tenth of a second without moving a muscle, so
-        /// a world-space test fires a flap every time you dive. And measured as a *distance* over
-        /// a window rather than an instantaneous speed, because a single frame of tracking jitter
-        /// is enough to clear any velocity threshold worth having — which is what was throwing
-        /// players upward with no gesture at all.
+        /// Somnium's own input bindings are not on the bridge — SomniumPlayerAction.DoAction can
+        /// trigger an action but cannot listen for one — so there is no "jump" event to subscribe
+        /// to. Reading the device sits below whatever Somnium consumes, which is why the same
+        /// button can drive their jump and our boost without either noticing the other.
         /// </summary>
-        private bool DetectFlap()
+        private void PollBoostButton()
         {
-            float l = _leftHand.position.y - _root.position.y;
-            float r = _rightHand.position.y - _root.position.y;
-
-            if (!_havePeak || Time.time - _peakAt > _flapWindow || l > _peakLeft || r > _peakRight)
+            if (Time.time >= _nextDeviceScanAt)
             {
-                if (!_havePeak || l > _peakLeft || r > _peakRight) { _peakAt = Time.time; }
-                _peakLeft = Mathf.Max(l, _havePeak ? _peakLeft : l);
-                _peakRight = Mathf.Max(r, _havePeak ? _peakRight : r);
-                if (Time.time - _peakAt > _flapWindow) { _peakLeft = l; _peakRight = r; _peakAt = Time.time; }
-                _havePeak = true;
+                _nextDeviceScanAt = Time.time + Mathf.Max(0.5f, _deviceScanInterval);
+                InputDeviceCharacteristics want = InputDeviceCharacteristics.Controller
+                    | (_boostOnRightHand ? InputDeviceCharacteristics.Right : InputDeviceCharacteristics.Left);
+                InputDevices.GetDevicesWithCharacteristics(want, _devices);
+                _boostDevice = _devices.Count > 0 ? _devices[0] : default;
             }
 
-            if (_peakLeft - l < _flapDistance || _peakRight - r < _flapDistance) return false;
+            if (!_boostDevice.isValid) return;
+            if (!_boostDevice.TryGetFeatureValue(CommonUsages.primaryButton, out bool down)) return;
 
-            _peakLeft = l; _peakRight = r; _peakAt = Time.time;   // consumed
-            return true;
+            if (down && !_boostWasDown) Boost();
+            _boostWasDown = down;
         }
 
         // ── Instrumentation ───────────────────────────────────────────────────────

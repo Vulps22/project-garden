@@ -243,6 +243,69 @@ rarely.
 
 ---
 
+## Parked for after the group playtest: the sink curve
+
+Raised 2026-09-09 while tuning, **deliberately not built** — it wants judging against how the
+current model feels to several people, not against one person's session.
+
+**Sink currently grows with speed, which is backwards from what the design wants.** With the wrists
+level the path angle is fixed at the glide slope, so `vertical = Speed x sin(-3.18)` — every extra
+metre per second of speed makes you sink faster. 1.0 m/s at cruise, 2.2 at 40, 3.0 at terminal.
+Going fast is punished, and the wish is the opposite: past a certain speed you should be more or
+less holding altitude.
+
+The fix is the same shape as the one that fixed the climb collapse — stop using a straight line.
+
+| m/s | current | inverse (1/v) | inverse-square (1/v²) |
+|---|---|---|---|
+| 8 | 0.44 | 2.25 | 5.06 |
+| 12 | 0.67 | 1.50 | 2.25 |
+| **18** | **1.00** | **1.00** | **1.00** |
+| 26 | 1.44 | 0.69 | 0.48 |
+| 40 | 2.22 | 0.45 | 0.20 |
+| 55 | 3.05 | 0.33 | 0.11 |
+
+All three cross at best glide, so only the shape either side changes.
+
+**Inverse is the one that matches the intent.** Above cruise you nearly hold altitude; below it you
+sink hard, which pairs with the authority curve so both mechanisms punish being slow and speed
+becomes the resource. It is also what makes dive-to-build-then-glide-flat the natural loop, which is
+the Zenith behaviour this is aimed at.
+
+Three things to weigh before building it:
+
+- **⚠ It rewrites world-crossing.** At 30 m/s the inverse curve sinks 0.6 m/s — a **50:1 glide
+  ratio**, so 100 m of altitude crosses 5 km. That does not merely loosen
+  [`procgen-islands.md`](procgen-islands.md)'s island spacing, it makes distance close to free, and
+  the roadmap's "getting it home is the good problem" tension goes with it. That is a world-design
+  decision wearing a tuning constant's clothes.
+- **It needs a floor.** Inverse-square gives 20 m/s of sink at 4 m/s airspeed; even inverse gives
+  4.5. Below about 8 m/s the curve has to be clamped or a slow player is fired at the ground.
+- **Sink and terminal velocity are currently the same number.** `DragK` is derived from the sink at
+  best glide, and that same coefficient sets terminal velocity. A speed-dependent sink makes the
+  glide angle a function of speed (`sin θ = −S·V₀/v²` for the inverse case) and decouples them, so
+  `TerminalSpeed` would have to be set explicitly rather than falling out of the drag. A structural
+  change, not a constant.
+
+Inverse-square is more dramatic but the low-speed end gets silly and the high end makes gliding
+almost frictionless.
+
+### While you are at it, two things the same session turned up
+
+**Auto-calibration is noisy.** The neutral wrist angle is taken from whatever pose the player
+launches in, and across three sessions it came out **-19.3, -6.7 and +4.3 degrees** — 24 degrees of
+spread in what counts as "level". Everything downstream, the stall angle included, moves with it.
+Worth deciding whether the neutral should be a fixed serialized figure, a deliberate calibration
+gesture, or an average taken over the first second of flight rather than a single frame.
+
+**ButtonProbe keys on `device.name`, and both Touch controllers report the same string.** Left and
+right share a dictionary entry and flip each other's state, which produced thousands of phantom
+edges in one run and made the press counts meaningless. Handedness has to come from
+`device.characteristics`. Only matters while the probe is still in the scene, but it also means the
+existing button map was confirmed by Vulps's stated press order rather than by the data.
+
+---
+
 ## Open questions
 
 1. **Does `Root` stay written?** The probe above. Everything is downstream.
