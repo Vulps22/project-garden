@@ -76,6 +76,21 @@ namespace GrowAGarden
                 _audioSource = GetComponent<AudioSource>();
         }
 
+        private void OnEnable()
+        {
+            PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
+        }
+
+        private void OnDisable()
+        {
+            PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
+        }
+
+        private void OnLocalPlayerJoined(string playerId, string playerName)
+        {
+            TriggerTooltip(Tooltips.Tutorial.Welcome);
+        }
+
         private void LoadProgress()
         {
             string json = PlayerPrefs.GetString(STORAGE_KEY, "");
