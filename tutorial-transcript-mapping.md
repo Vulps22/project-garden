@@ -2,27 +2,27 @@
 
 ## Tutorials (linear progression)
 
-| Step | Script Section | MP3 File | Status |
-|---|---|---|---|
-| 1 | Welcome | `tutorial_Welcome.mp3` | ✓ |
-| 2 | Hut Intro / Deed Scroll | `tutorial_hut.mp3` | ✓ |
-| 3 | First Thatch (Planting) | `tutorial_planting.mp3` | ✓ |
-| 4 | First Harvest (Selling) | `tutorial_selling.mp3` | ✓ |
-| 5 | Selling Basics / Practice Goal | `tutorial_first_100.mp3` | ✓ |
-| 6 | Exploration Intro | `tutorial_first_flight.mp3` | ✓ |
-| 7–8 | Flying (Oops Moment) + Flight Controls | `tutorial_flight_1.mp3` | ✓ |
-| 9 | Trough-Shot Technique | `tutorial_flight_2.mp3` | ✓ |
-| 10 | Flying Wrap-Up | `tutorial_final.mp3` | ✓ |
+| Step | Script Section | MP3 File | Duration | Trigger |
+|---|---|---|---|---|
+| 1 | Welcome | `tutorial_Welcome.mp3` | 10.9s | World load, player spawn |
+| 2 | Hut Intro / Deed Scroll | `tutorial_hut.mp3` | 17.9s | First time entering hut |
+| 3 | First Thatch (Planting) | `tutorial_planting.mp3` | 8.3s | After hut, ready to plant |
+| 4 | First Harvest (Selling) | `tutorial_selling.mp3` | 7.2s | Plant harvested / produce spawned |
+| 5 | Selling Basics / Practice Goal | `tutorial_first_100.mp3` | 15.4s | First produce sold |
+| 6 | Exploration Intro | `tutorial_first_flight.mp3` | 25.3s | Player reaches 100 Thatch |
+| 7–8 | Flying (Oops Moment) + Flight Controls | `tutorial_flight_1.mp3` | 17.1s | Player launches into air |
+| 9 | Trough-Shot Technique | `tutorial_flight_2.mp3` | 20.8s | Player in flight, or on first airborne interval |
+| 10 | Flying Wrap-Up | `tutorial_final.mp3` | 10.3s | Flight phase completed |
 
 ## Tips (context-triggered)
 
-| Trigger Event | Script Section | MP3 File | Status |
-|---|---|---|---|
-| Fall too far | First Fall (World Floor) | `tip_falling.mp3` | ✓ |
-| Bounce off island while falling | Falling Off an Island | `tip_climbing.mp3` | ✓ |
-| Find upgrade seed | Upgrade Seed Found | `tip_upgrades.mp3` | ✓ |
-| Find buffing seed | Buffing Seed Found | `tip_buffing.mp3` | ✓ |
-| Player added to deed | Player Added to Deed List | `tutorial_teams.mp3` | ✓ |
+| Trigger Event | Script Section | MP3 File | Duration | Condition |
+|---|---|---|---|---|
+| Fall below world floor | First Fall (World Floor) | `tip_falling.mp3` | 20.5s | Y < -50 (approx) → teleport + audio |
+| Bounce off island surface | Falling Off an Island | `tip_climbing.mp3` | 7.8s | Collision while falling → mentions rock grab |
+| Collect upgrade seed | Upgrade Seed Found | `tip_upgrades.mp3` | 18.7s | First upgrade acquired |
+| Collect buffing seed | Buffing Seed Found | `tip_buffing.mp3` | 13.3s | First buff/feature seed acquired |
+| Player joins deed | Player Added to Deed List | `tutorial_teams.mp3` | 17.1s | Second player added to plot ownership |
 
 ## Status
 
@@ -33,6 +33,30 @@
 
 Ready to wire into the scene.
 
+## Implementation Notes
+
+### Audio Sequencing
+- **Linear tutorials** play in order as milestones are hit; skip any already seen
+- **Tips** can play multiple times; gate by "first occurrence" or "once per session"
+- Narrator voice should have consistent character: helpful, witty, occasionally comedic
+- Use Somnium's spatial audio where applicable (narrator centered in world space)
+
+### File Locations
+All audio files live in: `Assets/#User/GrowAGarden/sounds/`
+
+### Audio Properties
+- **Format:** MP3 (stereo, 44.1 kHz)
+- **Bitrate:** ~90–98 kbps
+- **Total linear tutorial duration:** ~133 seconds (~2:13)
+- **Total tip duration:** ~77.4 seconds (~1:17)
+
+### Next Steps
+1. Wire AudioSource components to trigger points in scene
+2. Add narrator state tracking (which tutorials have played)
+3. Implement event listeners for milestone triggers
+4. Test audio timing against gameplay flow
+
 ## Conversion Status
 ✓ All 14 MP3s converted from **mono → stereo** for VR audio (2026-09-09)
 ✓ All files are 44.1kHz, ready for Unity import
+✓ All triggers and durations documented
