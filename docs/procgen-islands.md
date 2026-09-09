@@ -14,9 +14,17 @@ finished and independently useful — the island scale box, and this document �
 half-built system waiting to be resumed. A branch parked mid-design rots; a merged branch does not.
 
 **Flight is the blocker, and it is a real one.** The world's usable radius is a function of flight
-speed, so nothing here can be sized until flight exists (see *Radius* below). The custom flight
-system also has no supported API behind it, which makes it a spike rather than a task. Work
-continues on **`add-advanced-flight`**, cut from `main` at this commit.
+speed, so nothing here can be sized until flight exists (see *Radius* below). Work continues on
+**`add-advanced-flight`**, cut from `main` at this commit, and is designed in
+**[`flight.md`](flight.md)**.
+
+That doc supplies the constraint this one is missing: **flap height x glide ratio = the island
+spacing ceiling** — 240 m at the current starting numbers. Island spacing and flap height are one
+decision, not two.
+
+(An earlier version of this section said flight had no supported API behind it. That was wrong:
+`ISomniumPlayer.References.Body` hands over `Root`, `Head` and both hands as real `Transform`s. See
+`flight.md`.)
 
 Resume this document when flight has a known speed and a known implementation.
 
