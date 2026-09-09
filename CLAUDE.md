@@ -619,8 +619,17 @@ that cost two uploads. Delete it once late-join, player-leave and master-leave a
 
 ## Current state
 
-Branch **`feature/runtime-spawn`**, well ahead of `main`; `main` is ahead of `origin/main` and
-unpushed. Tags `MVP`, `add-turnip` are historical.
+Branch **`add-advanced-flight`**, cut from `main` on 2026-09-09. `main` is pushed and current.
+Tags `MVP`, `add-turnip` are historical.
+
+**Why this branch exists, and what it blocks.** `feature/procgen` was opened to start procedural
+islands, produced the island scale box and `docs/procgen-islands.md`, and was **merged to `main` and
+parked the same day** — everything on it was finished and independently useful, and a branch parked
+mid-design rots where a merged one does not. Procgen is **blocked on flight**: the world's usable
+radius is a function of flight speed, and the custom hand-driven flight that replaces Somnium's has
+no supported API behind it (`ISomniumPlayerMotion` exposes only `DoTeleportToPoint` positionally), so
+it is a spike rather than a task. Resume `procgen-islands.md` once flight has a known speed and a
+known implementation.
 
 **The core loop works in-world, on both crop shapes** (confirmed 2026-09-03). A rooted crop is
 bought, planted, grows, becomes produce, is carried and sold. A bearing crop grows a vine, bears into
@@ -640,6 +649,7 @@ later. Link both ways, and do not create a step doc until the step has real desi
 - `plot-ownership.md` — step 1's mechanism: the deed, the application scroll, the shed as the one
   place ownership changes are committed. Designed, not built.
 - `runtime-spawn.md` — what replaced pooling, and the four traps.
+- `procgen-islands.md` — premade islands placed by the world seed. **Parked, blocked on flight.**
 - `bearing-plants-and-produce.md` — the Seed/Plant/Produce design.
 - `world-bridge.md` — a deferred refactor; see below.
 
@@ -655,36 +665,25 @@ and value one second after it is born. It exists because two uploads were spent 
 missing" when the only position in the log was the one we *asked for*. Delete it once the remaining
 tests below are green.
 
-### What still needs testing, and what to learn from each
+### Multiplayer paths — tested, do not re-open them
 
-None of these can be answered by one player standing in a world alone.
+**Late join, a player leaving, and the master client leaving have all been exercised with real
+clients and they work.** This section used to list them as the project's outstanding risk, and that
+framing outlived the testing by a long way — long enough to be repeated back at Vulps as fact in
+several separate sessions. If a multiplayer path looks unverified, the reason is almost always that
+a document here is stale, not that the work was never done. Ask before asserting it.
 
-**A second client joining a running world.** The one unevaluated guess left on the branch:
-`ShopSlot.AnnounceStock` re-broadcasts stock state three times (0.25 s, 1 s, 2 s after spawning),
-because a spawned object reaches other clients a few ticks after the spawner and an RPC about an
-object a client does not have yet is silently dropped. **Learn:** does a late joiner see shop stock,
-growing plants at the right size, and ripe produce? If yes, collapse `AnnounceStock` to a single
-broadcast and delete the loop. If they see nothing, the answer is not more broadcasts — it is putting
-birth state in the spawn snapshot, for which `NetworkBridge` already exposes `[Networked]
-SyncByteArray`. Watch for whether growth *scale* is right, not just presence: scale is derived from a
-timestamp, so a wrong size means the timestamp never arrived.
+What is genuinely left over from that testing:
 
-**A player leaving.** `GardenLease` should clear their `HolderId` immediately and hold their plots for
-120 seconds. **Learn:** can another player pick up a seed the leaver was carrying (immediately, not
-after 120 s)? Does the garden survive a rejoin inside the window? Does it actually get cleared after
-it — plots freed, plants and unharvested produce despawned, their loose seeds gone? The 120 s figure
-is a guess and should be judged against how a real dropout feels.
-
-**The master client leaving.** The least understood path in the project and the one most likely to
-bite. **Learn:** does the new master take over shop restocking, growth simulation and sale
-acceptance? `AuthorityController` should reclaim plants and unheld stock on `OnBecomeWorldMaster`,
-but `SceneNetworking.ReassignNullObjectsAuthority` only ever sweeps *scene* objects and every crop is
-now spawned — so `AuthorityController` is the only thing doing it. Also the standing suspect for
-**#40** (scoreboard desync after master transfer).
+- `AnnounceStock` still re-broadcasts three times, now in `BuyPoint`, `DispensingEntity` and
+  `PlotLeaseManager` rather than the old `ShopSlot`. Late joiners do see stock, so the loop can
+  most likely collapse to one broadcast — confirm before deleting it.
+- Departures are owned by **`PlayerManager`**, not `GardenLease`: one clock, `_graceSeconds = 180`,
+  `OnPlayerRemoved` → grace → `OnPlayerDestroyed`. A number of docstrings still credit
+  `GardenLease` and still say 120 s.
 
 ### Known open problems
 
-- **#40** — scoreboard desync after master client transfer. Untested since the split.
 - **Growth pivots.** Everything scales about its mesh centre, so a pumpkin inflates through its vine
   and a carrot grows out of the soil as much as into it. The fix is an empty `ScalePivot` parent
   between root and mesh, with the mesh offset so the stem or soil line sits at the pivot's origin,
@@ -693,8 +692,8 @@ now spawned — so `AuthorityController` is the only thing doing it. Also the st
   all, so an apple tree holds its plot until its owner's lease expires. Needs a real answer — a tool,
   a hold-to-remove on the plot, or a lifespan — before a crop uses it.
 - **`WorldBridge` refactor**, agreed and deferred: one seam over the SDK so churn touches one file
-  rather than every script *and every prefab*. `docs/world-bridge.md`. Blocked on nothing now except
-  the tests above; start with spawn/despawn/take-authority, which are pure de-duplication.
+  rather than every script *and every prefab*. `docs/world-bridge.md`. Unblocked; start with
+  spawn/despawn/take-authority, which are pure de-duplication.
 - **#44**, **#47** are seed ideas. `PlantableEntity` — planting a sword to grow an auto-harvester — is
   a future idea, not a plan; the architecture already allows it, since what grows is a prefab
   reference on the thing being planted.
