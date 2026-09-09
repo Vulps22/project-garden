@@ -56,11 +56,31 @@ All audio files live in: `Assets/#User/GrowAGarden/sounds/`
 - **Total linear tutorial duration:** ~133 seconds (~2:13)
 - **Total tip duration:** ~77.4 seconds (~1:17)
 
+### Progression Gates
+- **Flight disabled until Step 7 triggered** — prevents skipping linear progression
+- Other steps gated by in-world milestones (plant, harvest, Thatch earned, etc.)
+
+### Persistent Storage (Somnium Bridge)
+Store tutorial progress as JSON in local storage:
+```json
+{
+  "tutorialDisabled": false,
+  "currentStep": 2,
+  "stepsPlayed": [0, 1],
+  "tipsPlayed": ["falling", "upgrades"]
+}
+```
+- **tutorialDisabled:** Master toggle (user setting at end of branch)
+- **currentStep:** Next step to play (0–9)
+- **stepsPlayed:** Array of completed step indices (for skip detection)
+- **tipsPlayed:** Array of tip keys that have triggered (prevents spam)
+
 ### Next Steps
-1. Wire AudioSource components to trigger points in scene
-2. Add narrator state tracking (which tutorials have played)
-3. Implement event listeners for milestone triggers
-4. Test audio timing against gameplay flow
+1. Create `TutorialManager` component to read/write storage
+2. Wire AudioSource components to trigger points
+3. Implement event listeners for milestones
+4. Lock flight behind Step 7 trigger
+5. Add Settings menu toggle for tutorial disable
 
 ## Conversion Status
 ✓ All 14 MP3s converted from **mono → stereo** for VR audio (2026-09-09)
