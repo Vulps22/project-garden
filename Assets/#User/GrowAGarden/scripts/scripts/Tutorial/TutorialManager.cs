@@ -15,29 +15,29 @@ namespace GrowAGarden
 
     public class TutorialManager : MonoBehaviour
     {
-        public static class Tutorials
+        public static class Tooltips
         {
-            public static class Steps
+            public static class Tutorial
             {
-                public const int Welcome = 0;
-                public const int Hut = 1;
-                public const int Planting = 2;
-                public const int Selling = 3;
-                public const int SellingBasics = 4;
-                public const int ExplorationIntro = 5;
-                public const int FlyingOopsMoment = 6;
-                public const int FlightControls = 7;
-                public const int TroughShotTechnique = 8;
-                public const int FlyingWrapUp = 9;
+                public const string Welcome = "Welcome";
+                public const string Hut = "Hut";
+                public const string Planting = "Planting";
+                public const string Selling = "Selling";
+                public const string SellingBasics = "SellingBasics";
+                public const string ExplorationIntro = "ExplorationIntro";
+                public const string FlyingOopsMoment = "FlyingOopsMoment";
+                public const string FlightControls = "FlightControls";
+                public const string TroughShotTechnique = "TroughShotTechnique";
+                public const string FlyingWrapUp = "FlyingWrapUp";
             }
 
             public static class Tips
             {
-                public const string Falling = "falling";
-                public const string Climbing = "climbing";
-                public const string Upgrades = "upgrades";
-                public const string Buffing = "buffing";
-                public const string Teams = "teams";
+                public const string Falling = "Falling";
+                public const string Climbing = "Climbing";
+                public const string Upgrades = "Upgrades";
+                public const string Buffing = "Buffing";
+                public const string Teams = "Teams";
             }
         }
         private static TutorialManager _instance;
@@ -111,66 +111,37 @@ namespace GrowAGarden
 
         public int GetCurrentStep() => _progress.currentStep;
 
-        public void TriggerStep(int step)
-        {
-            if (_progress.tutorialDisabled || step < _progress.currentStep || step >= _tutorials.Length)
-                return;
-
-            if (HasStepPlayed(step))
-                return;
-
-            PlayTutorialAudio(step);
-            MarkStepPlayed(step);
-            _progress.currentStep = step + 1;
-            SaveProgress();
-            OnStepTriggered?.Invoke(step);
-        }
-
-        public void TriggerTip(string tipKey)
+        public void TriggerTooltip(string tooltipId)
         {
             if (_progress.tutorialDisabled)
                 return;
 
-            if (HasTipPlayed(tipKey))
+            if (HasTooltipPlayed(tooltipId))
                 return;
 
-            if (!_tips.TryGetValue(tipKey, out AudioClip clip))
+            if (!TryGetAudioClip(tooltipId, out AudioClip clip))
                 return;
 
             PlayAudio(clip);
-            MarkTipPlayed(tipKey);
+            MarkTooltipPlayed(tooltipId);
             SaveProgress();
-            OnTipTriggered?.Invoke(tipKey);
+            OnStepTriggered?.Invoke(GetStepIndex(tooltipId));
         }
 
-        private bool HasStepPlayed(int step)
+        private bool HasTooltipPlayed(string tooltipId)
         {
-            return System.Array.Exists(_progress.stepsPlayed, element => element == step);
+            return System.Array.Exists(_progress.tipsPlayed, element => element == tooltipId);
         }
 
-        private bool HasTipPlayed(string tipKey)
-        {
-            return System.Array.Exists(_progress.tipsPlayed, element => element == tipKey);
-        }
-
-        private void MarkStepPlayed(int step)
-        {
-            System.Array.Resize(ref _progress.stepsPlayed, _progress.stepsPlayed.Length + 1);
-            _progress.stepsPlayed[_progress.stepsPlayed.Length - 1] = step;
-        }
-
-        private void MarkTipPlayed(string tipKey)
+        private void MarkTooltipPlayed(string tooltipId)
         {
             System.Array.Resize(ref _progress.tipsPlayed, _progress.tipsPlayed.Length + 1);
-            _progress.tipsPlayed[_progress.tipsPlayed.Length - 1] = tipKey;
+            _progress.tipsPlayed[_progress.tipsPlayed.Length - 1] = tooltipId;
         }
 
-        private void PlayTutorialAudio(int step)
+        private bool TryGetAudioClip(string tooltipId, out AudioClip clip)
         {
-            if (step >= _tutorials.Length || _tutorials[step] == null)
-                return;
-
-            PlayAudio(_tutorials[step]);
+            return _tips.TryGetValue(tooltipId, out clip);
         }
 
         private void PlayAudio(AudioClip clip)
@@ -179,18 +150,28 @@ namespace GrowAGarden
                 _audioSource.PlayOneShot(clip);
         }
 
-        public void SetTutorialAudio(int step, AudioClip clip)
+        private int GetStepIndex(string tooltipId)
         {
-            if (step < 0 || step >= _tutorials.Length)
-                return;
-
-            _tutorials[step] = clip;
+            return tooltipId switch
+            {
+                "Welcome" => 0,
+                "Hut" => 1,
+                "Planting" => 2,
+                "Selling" => 3,
+                "SellingBasics" => 4,
+                "ExplorationIntro" => 5,
+                "FlyingOopsMoment" => 6,
+                "FlightControls" => 7,
+                "TroughShotTechnique" => 8,
+                "FlyingWrapUp" => 9,
+                _ => -1
+            };
         }
 
-        public void SetTipAudio(string tipKey, AudioClip clip)
+        public void SetTooltipAudio(string tooltipId, AudioClip clip)
         {
             if (clip != null)
-                _tips[tipKey] = clip;
+                _tips[tooltipId] = clip;
         }
 
         public void ResetProgress()
