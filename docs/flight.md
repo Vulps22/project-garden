@@ -199,6 +199,50 @@ numbers above exist so there is something to react to rather than because they a
 
 ---
 
+## First in-world run, 2026-09-09
+
+Flown once from `SceneManager`. Everything below is what the log said rather than what it felt like,
+except where noted.
+
+**The bridge route works.** `Root` resolved to `XR.Body`, hands to `LeftHandAnchor` /
+`RightHandAnchor`, and writes to `Root` stick. The route was never in doubt after that.
+
+**`forward` is the right hand axis.** Left and right agree on it (`54/56`, `62/62`, `57/67`) while
+`right` mirrors between hands (`L -85 / R +58`) — mirroring is the signature of an axis pointing out
+of the body, agreement is the signature of one pointing along the arm.
+
+**But Somnium's hand anchors are not level when an arm is level.** Arms out read **54-69 degrees**,
+which parked the player above the 60 degree stall angle: `speed=0.0` on eight of twenty reports,
+before they had done anything wrong. The angle is therefore **calibrated from the launch pose**
+rather than assumed, which sidesteps the rig convention entirely.
+
+**Flying backwards was `Root`, not the hands.** Movement followed `_root.forward`, and `XR.Body`'s
+forward is not where the player is looking. It follows the **head**, flattened, now.
+
+**The bounce on every landing was the flap.** `IsGrounded` re-armed it on every grounded frame and
+2.5 m/s of downward hand movement is ordinary walking, so a landing armed and instantly spent it.
+Threshold raised to 4 m/s, plus an arm delay, plus arming only on the ground-to-air transition.
+
+**Disabling fly and glide does not disable walking.** The joystick still moved the player and fought
+the model. `SetMovementSpeed(0, 0, 0)` while flying, restored on landing.
+
+**Somnium already respawns a player who falls too far.** One `Root moved 35.77m` entry, from
+y=-21 back to spawn — `PlayerController._respawnHeight` doing its job. That answers
+[`procgen-islands.md`](procgen-islands.md)'s open question about the trash-can floor and players:
+nothing needs building.
+
+**⚠ Unresolved: something still pulls Y down about 0.06 m every frame**, X and Z untouched, despite
+`SetGravity(0, 0)`. Steady rather than bursty, so it reads more like a character controller step than
+gravity. The instrumentation now reports drift as an average, a peak and a count per interval instead
+of per frame, which should say what it is on the next run.
+
+**And the first instrumentation was itself a bug** — edge-triggered on a signal that alternated every
+frame, so it produced a WARN/INFO pair per frame: precisely the per-frame spam it was written to
+avoid. Worth remembering that "log only on change" is only cheap when the thing actually changes
+rarely.
+
+---
+
 ## Open questions
 
 1. **Does `Root` stay written?** The probe above. Everything is downstream.
@@ -210,3 +254,11 @@ numbers above exist so there is something to react to rather than because they a
    trip free and might make the flap feel less precious.
 5. **Does flight need engaging**, or are you flying whenever you are off the ground?
 6. **Advanced flight's clamps** — which ones come off, and does yaw become roll-to-turn when they do?
+7. **⚠ What happens when an inverted player touches terrain and Somnium takes over?** Advanced-only
+   by construction: basic mode writes only `position` and a yaw `Rotate`, so `Root` cannot leave
+   upright. Once loops exist it can, and handing back to Somnium mid-loop has three possible
+   outcomes — it rights the player smoothly, it snaps them upright, or it leaves them inverted and
+   everything downstream (walking, gravity, the camera) is wrong. Only a test will say which.
+   If it snaps or does nothing, the fix belongs here rather than in the SDK: tween `Root` back to
+   upright over a few tenths of a second on leaving flight. It has to be a tween — a snap rotation
+   in a headset is genuinely unpleasant, and this one would fire on every landing after a roll.
