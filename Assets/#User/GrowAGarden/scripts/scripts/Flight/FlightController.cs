@@ -39,6 +39,25 @@ namespace GrowAGarden
         [Tooltip("How far up from Root to centre the contact sphere, roughly mid-torso.")]
         [SerializeField] private float _contactHeight = 1.0f;
 
+        [Tooltip("How far out from the head, horizontally, both hands must be before flight will " +
+                 "engage at all. A small adult female arm is roughly 0.65m shoulder to fingertip, " +
+                 "and the head sits inboard of the shoulder, so arms out measures well past this " +
+                 "while arms at the sides measures around 0.25m. Deliberately under arm length so " +
+                 "nobody has to stretch. Entry condition only — bringing the arms in mid-air does " +
+                 "not drop the player out of flight.")]
+        [SerializeField] private float _armExtension = 0.55f;
+
+        [Tooltip("How far below the head a hand may be and still count as held out. A T-pose puts " +
+                 "the hands roughly a shoulder's drop under the head; arms at the sides puts them " +
+                 "around 0.7m under. Measured against the head rather than in absolute metres so " +
+                 "it scales with the player.")]
+        [SerializeField] private float _armDrop = 0.45f;
+
+        [Tooltip("How far in the hands must come before flight ends and Somnium is handed back. " +
+                 "Lower than the reach needed to start flying, on purpose: with one threshold for " +
+                 "both, a hand hovering near it toggles flight on and off frame to frame.")]
+        [SerializeField] private float _armRetract = 0.40f;
+
         [Header("Hands")]
 
         [Tooltip("Which local axis of the hand points along the arm. The first in-world run said " +
@@ -57,13 +76,22 @@ namespace GrowAGarden
 
         [Header("Flap")]
 
-        [Tooltip("Downward hand speed, m/s, that counts as a flap. The first run used 2.5 and " +
-                 "ordinary walking triggered it.")]
-        [SerializeField] private float _flapSpeedThreshold = 4f;
+        [Tooltip("How far both hands must sweep down, in metres relative to the body, to count " +
+                 "as a flap. A distance rather than a speed: one frame of 5cm hand jitter at 90Hz " +
+                 "reads as 4.5 m/s, which is why a velocity threshold fired flaps nobody made.")]
+        [SerializeField] private float _flapDistance = 0.4f;
+
+        [Tooltip("Seconds the sweep has to happen within. Longer than this and it is an arm being " +
+                 "lowered, not a flap.")]
+        [SerializeField] private float _flapWindow = 0.35f;
 
         [Tooltip("Seconds after leaving the ground before a flap can be spent. Stops a landing " +
                  "immediately re-arming and re-spending it, which read as bouncing.")]
         [SerializeField] private float _flapArmDelay = 0.4f;
+
+        [Tooltip("Seconds of immunity from terrain contact straight after flight starts. Without " +
+                 "it the surface just stepped off re-grounds the player before they clear it.")]
+        [SerializeField] private float _launchGrace = 0.5f;
 
         [Header("Somnium")]
 
@@ -97,7 +125,8 @@ namespace GrowAGarden
         private int _driftCount;
         private float _driftMax;
 
-        private static readonly Collider[] _contacts = new Collider[4];
+        private static readonly Collider[] _contacts = new Collider[8];
+        private Collider[] _ownColliders = System.Array.Empty<Collider>();
 
         private void Awake() => _model = new FlightModel(_settings);
 
@@ -113,20 +142,43 @@ namespace GrowAGarden
             MeasurePreviousWrite();
             if (!Resolve()) return;
 
-            // ── Contact gates everything ──────────────────────────────────────────
+            // ── Contact and pose gate flight ──────────────────────────────────────
             //
             // Touching the world at all hands the player back to Somnium: walking, gravity, the
             // lot. Not a downward raycast, because a raycast only answers "is there ground below
             // me" — a player can be hanging off the underside of an island, or buried head-first
-            // in one from above, and in both cases flying is the wrong answer. An overlap test
-            // asks the question actually being asked.
+            // in one from above, and in both cases flying is the wrong answer.
+            //
+            // ⚠ UNRESOLVED: there is no specified way to leave the ground.
+            //
+            // Contact suspends flight and hands the player back to Somnium. But standing on an
+            // island *is* contact, so the only route back into flight is to stop touching — which
+            // needs flight. The first in-world run deadlocked on exactly this: one landing and the
+            // player was grounded for the rest of the session, 34 grounded reports and not one
+            // flying frame.
+            //
+            // Walking off an edge is the intended route, and arms have to be out for flight to
+            // engage at all — which also settles an on/off flicker seen while simply walking near
+            // an edge, where the contact sphere alternated frame to frame and took flight with it.
+            // Arms at your sides now means walking, whatever the geometry says.
             bool touching = Touching();
-            if (touching == _flying) SetFlying(!touching);
+
+            if (_flying)
+            {
+                // Arms drawn in ends flight rather than parking. Drawing the hands to the chest
+                // bends the wrists past the stall angle as a side effect, so it used to read as
+                // "park" — which is the opposite of what pulling your arms in should mean. Now it
+                // hands Somnium back its gravity and its walking, and the player falls.
+                bool grounded = touching && Time.time - _airborneSince > _launchGrace;
+                if (grounded || !ArmsOut(_armRetract)) SetFlying(false);
+            }
+            else if (!touching && ArmsOut(_armExtension))
+            {
+                SetFlying(true);
+            }
 
             if (!_flying)
             {
-                _flapSpent = true;              // no flap until properly airborne again
-                _airborneSince = Time.time;
                 Report(0f, 0f, Vector3.zero, true);
                 return;
             }
@@ -179,12 +231,63 @@ namespace GrowAGarden
 
         // ── Contact ───────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Whether the player is in contact with the world.
+        ///
+        /// The player's own colliders are skipped explicitly rather than being excluded by layer.
+        /// A CharacterController is not a trigger, so QueryTriggerInteraction does not help, and a
+        /// mask of "everything" put the player's own capsule dead centre of a sphere centred on
+        /// the player — which reads as permanently touching the world. Filtering by identity
+        /// survives whatever the mask is later set to.
+        /// </summary>
         private bool Touching()
         {
             Vector3 centre = _root.position + Vector3.up * _contactHeight;
             int n = Physics.OverlapSphereNonAlloc(centre, _contactRadius, _contacts,
                                                   _terrainMask, QueryTriggerInteraction.Ignore);
-            return n > 0;
+            for (int i = 0; i < n; i++)
+            {
+                Collider c = _contacts[i];
+                if (c == null) continue;
+                if (IsOwn(c)) continue;
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Both arms held out and up — a T-pose, near enough. Takes the reach it must clear, so
+        /// starting flight and staying in it can use different thresholds and not chatter.
+        ///
+        /// Two conditions, and both are needed. **Reach** is horizontal rather than straight-line,
+        /// because arms hanging at the sides are nearly as far from the head in 3D as arms held
+        /// out are; it is the *outward* distance that separates the pose from standing. **Drop**
+        /// is how far under the head the hands sit, which is what actually distinguishes arms out
+        /// at shoulder height from arms out and hanging at forty-five degrees — reach alone
+        /// accepts both, and only the first is the pose being asked for.
+        /// </summary>
+        private bool ArmsOut(float reachNeeded)
+        {
+            Vector3 origin = Origin();
+            return Out(origin, _leftHand, reachNeeded) && Out(origin, _rightHand, reachNeeded);
+        }
+
+        private bool Out(Vector3 origin, Transform hand, float reachNeeded) =>
+            Reach(origin, hand) >= reachNeeded && (origin.y - hand.position.y) <= _armDrop;
+
+        private Vector3 Origin() => _head != null ? _head.position : _root.position;
+
+        private static float Reach(Vector3 origin, Transform hand)
+        {
+            Vector3 d = hand.position - origin;
+            d.y = 0f;
+            return d.magnitude;
+        }
+
+        private bool IsOwn(Collider c)
+        {
+            for (int i = 0; i < _ownColliders.Length; i++) if (_ownColliders[i] == c) return true;
+            return c.transform.IsChildOf(_root);
         }
 
         /// <summary>
@@ -244,7 +347,10 @@ namespace GrowAGarden
                 motion.SetGlideDisableState(true);
             }
 
+            _ownColliders = _root.GetComponentsInChildren<Collider>(true);
+
             Logger.Info($"Resolve() '{gameObject.name}' — took the player: root='{_root.name}' " +
+                        $"ownColliders={_ownColliders.Length} " +
                         $"head='{(_head == null ? "<none>" : _head.name)}' left='{_leftHand.name}' right='{_rightHand.name}'");
             return true;
         }
@@ -264,25 +370,37 @@ namespace GrowAGarden
             return Mathf.Asin(Mathf.Clamp(v.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
         }
 
-        private Vector3 _prevLeft, _prevRight;
-        private bool _havePrev;
+        private float _peakLeft, _peakRight, _peakAt;
+        private bool _havePeak;
 
         /// <summary>
-        /// Both hands sweeping down hard. A gesture rather than a pose, because a pose cannot feel
-        /// like effort. World-space hand movement rather than a button, so it stays true whatever
-        /// a player is carrying.
+        /// Both hands swept down through a real distance, quickly.
+        ///
+        /// Measured **relative to the body**, not in world space: a player descending at 3 m/s
+        /// carries their hands down 0.4m in about a tenth of a second without moving a muscle, so
+        /// a world-space test fires a flap every time you dive. And measured as a *distance* over
+        /// a window rather than an instantaneous speed, because a single frame of tracking jitter
+        /// is enough to clear any velocity threshold worth having — which is what was throwing
+        /// players upward with no gesture at all.
         /// </summary>
         private bool DetectFlap()
         {
-            Vector3 l = _leftHand.position, r = _rightHand.position;
-            if (!_havePrev) { _prevLeft = l; _prevRight = r; _havePrev = true; return false; }
+            float l = _leftHand.position.y - _root.position.y;
+            float r = _rightHand.position.y - _root.position.y;
 
-            float dt = Mathf.Max(Time.deltaTime, 0.0001f);
-            float lv = (_prevLeft.y - l.y) / dt;
-            float rv = (_prevRight.y - r.y) / dt;
-            _prevLeft = l; _prevRight = r;
+            if (!_havePeak || Time.time - _peakAt > _flapWindow || l > _peakLeft || r > _peakRight)
+            {
+                if (!_havePeak || l > _peakLeft || r > _peakRight) { _peakAt = Time.time; }
+                _peakLeft = Mathf.Max(l, _havePeak ? _peakLeft : l);
+                _peakRight = Mathf.Max(r, _havePeak ? _peakRight : r);
+                if (Time.time - _peakAt > _flapWindow) { _peakLeft = l; _peakRight = r; _peakAt = Time.time; }
+                _havePeak = true;
+            }
 
-            return lv > _flapSpeedThreshold && rv > _flapSpeedThreshold;
+            if (_peakLeft - l < _flapDistance || _peakRight - r < _flapDistance) return false;
+
+            _peakLeft = l; _peakRight = r; _peakAt = Time.time;   // consumed
+            return true;
         }
 
         // ── Instrumentation ───────────────────────────────────────────────────────
@@ -323,9 +441,11 @@ namespace GrowAGarden
 
             Logger.Info(
                 $"Report() '{gameObject.name}' — pitch={pitch:F1} diff={difference:F1} " +
-                $"speed={_model.Speed:F1} path={_model.PathAngleDeg:F1} stall={_model.Stall:F2} " +
+                $"speed={_model.Speed:F1} path={_model.PathAngleDeg:F1} stall={_model.Stall:F2} auth={_model.Authority:F2} " +
                 $"vert={local.y:F2} fwd={local.z:F2} y={_root.position.y:F1} " +
-                $"flapSpent={_flapSpent} offset={_calibratedOffset:F1} | {drift} | " +
+                $"flapSpent={_flapSpent} offset={_calibratedOffset:F1} " +
+                $"reach L={Reach(Origin(), _leftHand):F2} R={Reach(Origin(), _rightHand):F2} " +
+                $"drop L={(Origin().y - _leftHand.position.y):F2} R={(Origin().y - _rightHand.position.y):F2} | {drift} | " +
                 $"axes L fwd={Elevation(_leftHand, HandAxis.Forward):F0} up={Elevation(_leftHand, HandAxis.Up):F0} right={Elevation(_leftHand, HandAxis.Right):F0} " +
                 $"R fwd={Elevation(_rightHand, HandAxis.Forward):F0} up={Elevation(_rightHand, HandAxis.Up):F0} right={Elevation(_rightHand, HandAxis.Right):F0}");
         }
