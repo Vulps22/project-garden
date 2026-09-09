@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using SomniumSpace.Bridge;
 
 namespace GrowAGarden
 {
@@ -37,6 +38,14 @@ namespace GrowAGarden
         private Dictionary<string, AudioClip> _audioClips = new Dictionary<string, AudioClip>();
         private HashSet<string> _played = new HashSet<string>();
 
+        [Serializable]
+        public class TooltipProgress
+        {
+            public string[] played = new string[0];
+        }
+
+        private const string STORAGE_KEY = "tutorial_progress";
+
         public static TutorialManager GetInstance()
         {
             if (_instance == null)
@@ -52,6 +61,24 @@ namespace GrowAGarden
                 return;
             }
             _instance = this;
+            LoadProgress();
+        }
+
+        private void LoadProgress()
+        {
+            if (SomniumBridge.LocalStorage.JsonExists(STORAGE_KEY))
+            {
+                TooltipProgress progress = SomniumBridge.LocalStorage.ReadJson<TooltipProgress>(STORAGE_KEY);
+                foreach (string tooltipId in progress.played)
+                    _played.Add(tooltipId);
+            }
+        }
+
+        private void SaveProgress()
+        {
+            TooltipProgress progress = new TooltipProgress();
+            progress.played = new List<string>(_played).ToArray();
+            SomniumBridge.LocalStorage.WriteJson(STORAGE_KEY, progress);
         }
 
         private void Start()
@@ -84,6 +111,7 @@ namespace GrowAGarden
                 _audioSource.PlayOneShot(clip);
 
             _played.Add(tooltipId);
+            SaveProgress();
         }
 
         public void SetAudio(string tooltipId, AudioClip clip)
