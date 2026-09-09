@@ -254,7 +254,17 @@ rarely.
    trip free and might make the flap feel less precious.
 5. **Does flight need engaging**, or are you flying whenever you are off the ground?
 6. **Advanced flight's clamps** — which ones come off, and does yaw become roll-to-turn when they do?
-7. **⚠ What happens when an inverted player touches terrain and Somnium takes over?** Advanced-only
+7. **The terrain mask has to stop including Default before seeds exist again.** Fine while the
+   model is being tuned in an empty world, and left wide on purpose for that. But `Seed_*`,
+   `Produce_*`, `Deed` and `Collectible_BlankDeedScroll` are all `m_Layer: 0`, and a carried one
+   sits inside the contact sphere — so once crops are back, carrying anything would suspend flight
+   permanently, which is precisely the loop the design exists for. Two fixes: move island geometry
+   to `Terrain` (hundreds of scene objects, and the prefab assets too or spawned islands land on
+   Default), or move the eleven carryable prefabs to layer 7 `PhysicalObject`, which is where a
+   carryable rigidbody arguably belongs and gets procgen right for free. Note the collision-matrix
+   export trap does *not* apply — `_terrainMask` is a serialized int on our own component, so it
+   travels; only ProjectSettings' layer *collision rules* are lost.
+8. **⚠ What happens when an inverted player touches terrain and Somnium takes over?** Advanced-only
    by construction: basic mode writes only `position` and a yaw `Rotate`, so `Root` cannot leave
    upright. Once loops exist it can, and handing back to Somnium mid-loop has three possible
    outcomes — it rights the player smoothly, it snaps them upright, or it leaves them inverted and
