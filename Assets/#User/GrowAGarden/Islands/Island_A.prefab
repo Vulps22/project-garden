@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5505857740081688211}
+  - component: {fileID: 4011669963656192756}
   m_Layer: 0
   m_Name: Island_A
   m_TagString: Untagged
@@ -39,6 +40,18 @@ Transform:
   - {fileID: 9129919324179415776}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4011669963656192756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7253221862173745465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1152478963, guid: 6af85501506cb7f4db5388060eadf518, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Bridge.dll::SomniumSpace.Bridge.Components.SomniumClimbableSurface
 --- !u!1001 &737756142937292414
 PrefabInstance:
   m_ObjectHideFlags: 0

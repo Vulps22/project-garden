@@ -36,9 +36,6 @@ namespace GrowAGarden
                      "hovering while keeping the world in motion.")]
             public float ParkSink;
 
-            [Tooltip("How sharply forward speed dies as the stall angle is approached. Higher is " +
-                     "a more abrupt stall.")]
-            public float StallSharpness;
 
             [Tooltip("Degrees of wrist difference ignored before yaw begins. Hands are never level.")]
             public float YawDeadzoneDeg;
@@ -54,17 +51,22 @@ namespace GrowAGarden
                      "a teleport.")]
             public float FlapHeight;
 
+            [Tooltip("Airspeed at which the player has full control of the path angle. Below it " +
+                     "the nose drops toward straight down however the wrists are held, which is " +
+                     "what a wing with no air over it does and what makes a stall recoverable.")]
+            public float ControlSpeed;
+
             public static Settings Default => new Settings
             {
                 BestGlideSpeed  = 18f,
-                SinkAtBestGlide = 1.5f,
+                SinkAtBestGlide = 1.0f,
                 StallAngleDeg   = 60f,
                 ParkSink        = 0.5f,
-                StallSharpness  = 2f,
                 YawDeadzoneDeg  = 5f,
                 YawGain         = 1.5f,
                 MaxYawRateDeg   = 60f,
                 FlapHeight      = 20f,
+                ControlSpeed    = 8f,
             };
         }
 
@@ -87,12 +89,16 @@ namespace GrowAGarden
         /// <summary>Instrumentation: 0 flying, 1 fully stalled.</summary>
         public float Stall { get; private set; }
 
+        /// <summary>Instrumentation: 0 no control of the path angle, 1 full control.</summary>
+        public float Authority { get; private set; }
+
         public FlightModel(Settings s) => Configure(s);
 
         public void Configure(Settings s)
         {
             _s = s;
             if (_s.BestGlideSpeed <= 0f) _s.BestGlideSpeed = 18f;
+            if (_s.ControlSpeed <= 0f) _s.ControlSpeed = 8f;
             if (Speed <= 0f) Speed = _s.BestGlideSpeed;
         }
 
@@ -129,17 +135,37 @@ namespace GrowAGarden
             dt = Mathf.Clamp(dt, 0f, 0.1f);   // a hitch must not launch anyone into orbit
 
             // ── Stall ─────────────────────────────────────────────────────────────
-            // A blend rather than a switch, so the hands losing their grip on the air is
-            // something a player feels coming rather than a state that snaps on.
-            float overStall = (pitchDeg - _s.StallAngleDeg) / Mathf.Max(1f, _s.StallAngleDeg * 0.5f);
-            Stall = Mathf.Clamp01(overStall * _s.StallSharpness);
+            // Wrists above the stall angle: parked. Not a blend — above the angle you are
+            // parked, below it you are flying, and that is the whole rule.
+            bool parked = pitchDeg >= _s.StallAngleDeg;
+            Stall = parked ? 1f : 0f;
+
+            if (parked)
+            {
+                Speed = Mathf.MoveTowards(Speed, 0f, _s.BestGlideSpeed * dt);
+                Authority = 0f;
+                PathAngleDeg = -90f;
+                FlapVelocity = Mathf.Max(0f, FlapVelocity - G * dt);
+                yawDeltaDeg = YawFrom(wristDifferenceDeg, dt);
+                return new Vector3(0f, -_s.ParkSink + FlapVelocity, 0f);
+            }
 
             // ── Path angle ────────────────────────────────────────────────────────
             // The wrists command a path angle relative to the natural glide slope, not an
             // absolute one. That is what makes wrists-level mean "hold speed, sink gently"
             // instead of "fly level and slowly stop".
             float commandedDeg = Mathf.Clamp(pitchDeg, -85f, _s.StallAngleDeg);
-            float pathRad = GlideAngleRad + commandedDeg * Mathf.Deg2Rad;
+            float commandedRad = GlideAngleRad + commandedDeg * Mathf.Deg2Rad;
+
+            // Control authority scales with airspeed, and this is what stops a stall being a
+            // trap. Both velocities below are proportional to Speed, so at zero airspeed the
+            // model froze solid — nothing moved and nothing fell — and with the wrists up the
+            // energy term kept pushing Speed *down* into its own clamp. A wing with no air over
+            // it has no say in anything, so the path angle falls away toward straight down as
+            // speed bleeds off, gravity does what it always does, and the recovery is the dive
+            // the player would have had to make anyway.
+            Authority = Mathf.Clamp01(Speed / _s.ControlSpeed);
+            float pathRad = Mathf.Lerp(-Mathf.PI * 0.5f, commandedRad, Authority);
             PathAngleDeg = pathRad * Mathf.Rad2Deg;
 
             // ── Energy ────────────────────────────────────────────────────────────
@@ -150,15 +176,11 @@ namespace GrowAGarden
             float dSpeed = -G * Mathf.Sin(pathRad) - DragK * Speed * Speed;
             Speed += dSpeed * dt;
 
-            // Stalling kills forward motion; recovering it is what a dive is for.
-            if (Stall > 0f) Speed = Mathf.Lerp(Speed, 0f, Stall * dt * 4f);
             Speed = Mathf.Max(0f, Speed);
 
             // ── Velocity ──────────────────────────────────────────────────────────
-            float glideVertical = Speed * Mathf.Sin(pathRad);
-            float parked = -_s.ParkSink;
-            float vertical = Mathf.Lerp(glideVertical, parked, Stall);
-            float forward = Speed * Mathf.Cos(pathRad) * (1f - Stall);
+            float vertical = Speed * Mathf.Sin(pathRad);
+            float forward = Speed * Mathf.Cos(pathRad);
 
             // ── Flap ──────────────────────────────────────────────────────────────
             FlapVelocity -= G * dt;
@@ -166,11 +188,16 @@ namespace GrowAGarden
             vertical += FlapVelocity;
 
             // ── Yaw ───────────────────────────────────────────────────────────────
-            float d = wristDifferenceDeg;
-            float signed = Mathf.Sign(d) * Mathf.Max(0f, Mathf.Abs(d) - _s.YawDeadzoneDeg);
-            yawDeltaDeg = Mathf.Clamp(signed * _s.YawGain, -_s.MaxYawRateDeg, _s.MaxYawRateDeg) * dt;
+            yawDeltaDeg = YawFrom(wristDifferenceDeg, dt);
 
             return new Vector3(0f, vertical, forward);
+        }
+
+        private float YawFrom(float wristDifferenceDeg, float dt)
+        {
+            float signed = Mathf.Sign(wristDifferenceDeg)
+                         * Mathf.Max(0f, Mathf.Abs(wristDifferenceDeg) - _s.YawDeadzoneDeg);
+            return Mathf.Clamp(signed * _s.YawGain, -_s.MaxYawRateDeg, _s.MaxYawRateDeg) * dt;
         }
     }
 }

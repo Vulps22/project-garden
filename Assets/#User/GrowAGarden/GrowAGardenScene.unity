@@ -479,11 +479,14 @@ MonoBehaviour:
     m_Bits: 4294967295
   _contactRadius: 1
   _contactHeight: 1
+  _armExtension: 0.55
+  _armDrop: 0.45
   _handAxis: 0
   _handPitchOffset: 55
   _autoCalibrate: 1
   _flapSpeedThreshold: 2.5
   _flapArmDelay: 0.4
+  _launchGrace: 0.5
   _takeGravity: 1
   _takeLocomotion: 1
   _logInterval: 2
@@ -605,7 +608,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: e81b33aa2c760a951b46a4ce55681743, type: 3}
-  LastBuildSizeBytes: 60427360
+  LastBuildSizeBytes: 60430400
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -633,7 +636,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 251722176
+      AvailableSize: 251722416
     Paid:
       Entries: []
   OwnedTokens: []
