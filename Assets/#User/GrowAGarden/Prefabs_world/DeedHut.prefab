@@ -88,7 +88,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 174843807049876648}
-  - component: {fileID: 6419754842146002373}
   - component: {fileID: 4170993160643033032}
   m_Layer: 0
   m_Name: DeedHut
@@ -110,8 +109,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6853006049078090491}
   - {fileID: 7992590325946286587}
+  - {fileID: 6853006049078090491}
   - {fileID: 3134037071544744411}
   - {fileID: 4315353162418695269}
   - {fileID: 2527783721375976783}
@@ -123,28 +122,6 @@ Transform:
   - {fileID: 2124597857923926216}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!64 &6419754842146002373
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3046392203152668745}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 4300000, guid: 14f682f9e2d04af4396f95b882219950, type: 3}
 --- !u!114 &4170993160643033032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1236,7 +1213,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100002, guid: 14f682f9e2d04af4396f95b882219950,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5144277865339222922}
   m_SourcePrefab: {fileID: 100100000, guid: 14f682f9e2d04af4396f95b882219950, type: 3}
 --- !u!4 &7992590325946286587 stripped
 Transform:
@@ -1244,6 +1225,34 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 7992590325946686329}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7992590325946719707 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100002, guid: 14f682f9e2d04af4396f95b882219950,
+    type: 3}
+  m_PrefabInstance: {fileID: 7992590325946686329}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &5144277865339222922
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7992590325946719707}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 14f682f9e2d04af4396f95b882219950, type: 3}
 --- !u!1001 &8983841864693810351
 PrefabInstance:
   m_ObjectHideFlags: 0

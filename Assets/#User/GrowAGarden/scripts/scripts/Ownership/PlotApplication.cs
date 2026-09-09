@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
@@ -105,17 +106,17 @@ namespace GrowAGarden
                 return;
             }
 
-            PlayerBalance holder = _collectible.GetGrabber();
+            ISomniumPlayer holder = _collectible.GetGrabber();
             string applicant = _collectible.TakenBy;
 
-            if (holder != null && !string.IsNullOrEmpty(applicant) && holder.GetID() == plot.OwnerId)
+            if (holder != null && !string.IsNullOrEmpty(applicant) && holder.Properties?.Id == plot.OwnerId)
             {
                 plot.AddTeammate(applicant);
                 Logger.Info($"OnAcceptRequested() '{gameObject.name}' — '{applicant}' accepted onto plot owned by '{plot.OwnerId}'");
             }
             else
             {
-                Logger.Warn($"OnAcceptRequested() '{gameObject.name}' — holder={(holder == null ? "unknown" : holder.GetID())} is not owner '{plot.OwnerId}'; not accepted");
+                Logger.Warn($"OnAcceptRequested() '{gameObject.name}' — holder={(holder == null ? "unknown" : holder.Properties?.Id)} is not owner '{plot.OwnerId}'; not accepted");
             }
 
             _collectible.Discard();

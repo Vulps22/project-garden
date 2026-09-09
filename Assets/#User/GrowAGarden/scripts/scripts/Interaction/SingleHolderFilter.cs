@@ -1,3 +1,4 @@
+using SomniumSpace.Bridge.Player;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Filtering;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -50,19 +51,18 @@ namespace GrowAGarden
             string holder = _held?.HolderId;
             if (string.IsNullOrEmpty(holder)) return true;   // nobody holds it
 
-            // The balance table is the only source of the local player's id, and it is cleared
-            // and rebuilt from every master broadcast, so it can be transiently absent. Refuse
-            // rather than guess — the next broadcast restores it and the player grabs again.
-            PlayerBalance local = EconomyManager.Instance == null
-                ? null
-                : EconomyManager.Instance.GetLocalPlayer();
+            // Asked of Somnium, not of the balance table. That table was only ever a stand-in for
+            // "who am I", and being cleared and rebuilt on every master broadcast made it a
+            // stand-in that could answer "nobody" while the player stood there holding the thing.
+            // Refuse rather than guess if the SDK has no local player yet — they have not spawned.
+            ISomniumPlayer local = PlayerManager.GetLocalPlayer();
             if (local == null)
             {
                 Logger.Warn($"Process() '{gameObject.name}' — local identity unavailable, refusing grab");
                 return false;
             }
 
-            return local.GetID() == holder;   // only the holder may keep hold of it
+            return local.Properties?.Id == holder;   // only the holder may keep hold of it
         }
     }
 }

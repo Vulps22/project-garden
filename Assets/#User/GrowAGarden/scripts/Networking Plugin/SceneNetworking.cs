@@ -202,6 +202,16 @@ namespace GrowAGarden
             Log($"Scene Network Objects registered: {r}");
         }
 
+        // GrowAGarden divergence from CM V3: RequestStateAuthority() can throw for a scene object
+        // whose NetworkObject setup Fusion doesn't expect (observed for Plot once it gained its
+        // own NetworkObject/NetworkBridge) — see GrowAGarden's CLAUDE.md for the incident this
+        // fixed. Uncaught, one bad object aborted this loop AND propagated out of SlowLoop(),
+        // which meant UpdateMasterClientState() below never ran again on any later tick either
+        // (InvokeRepeating keeps calling SlowLoop on schedule regardless, throwing fresh every
+        // second) — so a new master's OnBecomeWorldMaster, the signal every "announce everything
+        // on becoming master" rebroadcast in this project depends on, silently never fired for
+        // the rest of the session. Catching per-object keeps one failure from starving every
+        // other scene object's reassignment and every downstream master-transfer handler at once.
         private void ReassignNullObjectsAuthority()
         {
             foreach (NetworkObject obj in _sceneNetworkObjects)
@@ -211,7 +221,14 @@ namespace GrowAGarden
                     if (obj.StateAuthority.IsNone)
                     {
                         Log($"ReassignNullObjectsAuthority {obj.name}");
-                        obj.RequestStateAuthority();
+                        try
+                        {
+                            obj.RequestStateAuthority();
+                        }
+                        catch (Exception e)
+                        {
+                            Log($"ReassignNullObjectsAuthority {obj.name} — RequestStateAuthority threw: {e.Message}");
+                        }
                     }
                 }
             }
@@ -250,6 +267,18 @@ namespace GrowAGarden
             {
                 Log($"Local Player Joined");
                 Log($"Is Master Client={IsMasterClient}");
+
+                // GrowAGarden divergence from CM V3: instrumentation, no behaviour.
+                //
+                // GameMode.Shared is set only by Editor_CreateDebugNetworkRunner; in-world we
+                // adopt Somnium's runner (NetworkRunner.Instances[0]) and never record what
+                // topology it actually chose. Every peer-holds-authority assumption in this
+                // project rests on it being Shared, and until now that has only ever been
+                // exercised in the Editor. One line makes it a fact instead of an inference.
+                Log($"Topology mode={runner.GameMode} topology={runner.Topology} " +
+                    $"isServer={runner.IsServer} isClient={runner.IsClient} " +
+                    $"isSharedModeMaster={runner.IsSharedModeMasterClient} " +
+                    $"localPlayer={runner.LocalPlayer}");
                 InitScenePath();
                 RegisterAllNetworkObjects();
                 IsNetworkReady = true;

@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -60,11 +61,16 @@ namespace GrowAGarden
         public bool ShouldMasterOwn => InDispenser && string.IsNullOrEmpty(HolderId);
 
         private HoveringEntity _hovering;
-        private PlayerBalance _grabber;
+        /// <summary>
+        /// Who has hold of this, as Somnium knows them. Identity, not economy — this used to be a
+        /// PlayerBalance, which meant an id the balance table had not heard of read back as
+        /// "nobody is holding it" and handed the object to whoever grabbed next.
+        /// </summary>
+        private ISomniumPlayer _grabber;
 
         private bool IsLooseInWorld => !InDispenser && !IsHeld;
 
-        public string HolderId => _grabber?.GetID();
+        public string HolderId => _grabber?.Properties?.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>See Seed.CanSendRpc for why this guard exists — same Fusion teardown-order
@@ -113,7 +119,7 @@ namespace GrowAGarden
         /// <summary>A player who has left is holding nothing — see Seed.OnPlayerLeft.</summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.GetID() != playerId) return;
+            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
             _grabber = null;
             LifecycleChanged?.Invoke();
         }
@@ -269,8 +275,15 @@ namespace GrowAGarden
                 case CollectibleMessageType.grabber:
                     BytesReader grabReader = new BytesReader(data);
                     bool hasGrabber = grabReader.NextByte() == 1;
+                    // Temporary instrumentation, mirroring Seed's. Seed and Produce have logged
+                    // this since the holder rework; CollectibleEntity never did, so for deeds and
+                    // scrolls — the objects the plot-ownership work is actually about — whether
+                    // the master ever learned who was holding one was invisible in the client log.
+                    // Two rounds of diagnosis were spent reasoning from the call graph because of
+                    // it. Delete alongside Seed's.
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabberId) : null;
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     LifecycleChanged?.Invoke();
                     break;
                 case CollectibleMessageType.takeRequest:
@@ -311,20 +324,20 @@ namespace GrowAGarden
             if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
-        public PlayerBalance GetGrabber() => _grabber;
+        public ISomniumPlayer GetGrabber() => _grabber;
 
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
-            _grabber = EconomyManager.Instance == null ? null : EconomyManager.Instance.GetLocalPlayer();
+            _grabber = PlayerManager.GetLocalPlayer();
             if (_grabber == null)
             {
-                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local balance unavailable, grabber not broadcast");
+                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
                 return;
             }
 
             if (!CanSendRpc) return;
 
-            string id = _grabber.GetID();
+            string id = _grabber.Properties.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);

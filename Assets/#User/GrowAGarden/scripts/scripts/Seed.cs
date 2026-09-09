@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -67,12 +68,12 @@ namespace GrowAGarden
         public bool ShouldMasterOwn => InShop && string.IsNullOrEmpty(HolderId);
 
         private HoveringEntity _hovering;
-        private PlayerBalance _grabber;
+        private ISomniumPlayer _grabber;
 
         /// <summary>Bought, on the ground, and in nobody's hand. The one condition that floats.</summary>
         private bool IsLooseInWorld => !InShop && !IsHeld;
 
-        public string HolderId => _grabber?.GetID();
+        public string HolderId => _grabber?.Properties?.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>
@@ -136,7 +137,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.GetID() != playerId) return;
+            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
             _grabber = null;
             LifecycleChanged?.Invoke();
         }
@@ -369,7 +370,7 @@ namespace GrowAGarden
                     // the wire ever resolved to a player — a lookup miss and an empty hand are
                     // indistinguishable downstream, and both read as "nobody is holding it".
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabberId) : null;
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     // Who holds it is lifecycle. This is the one place _grabber changes on every
                     // client, so raising here lets AuthorityController reclaim a shop seed the
@@ -415,20 +416,20 @@ namespace GrowAGarden
             if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
-        public PlayerBalance GetGrabber() => _grabber;
+        public ISomniumPlayer GetGrabber() => _grabber;
 
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
-            _grabber = EconomyManager.Instance == null ? null : EconomyManager.Instance.GetLocalPlayer();
+            _grabber = PlayerManager.GetLocalPlayer();
             if (_grabber == null)
             {
-                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local balance unavailable, grabber not broadcast");
+                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
                 return;
             }
 
             if (!CanSendRpc) return;
 
-            string id = _grabber.GetID();
+            string id = _grabber.Properties.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);

@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -54,7 +55,7 @@ namespace GrowAGarden
         /// <summary>Unharvested produce belongs to the world, and the master should hold it.</summary>
         public bool ShouldMasterOwn => !IsHarvested && string.IsNullOrEmpty(HolderId);
 
-        public string HolderId => _grabber?.GetID();
+        public string HolderId => _grabber?.Properties?.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>
@@ -71,7 +72,7 @@ namespace GrowAGarden
             networkBridge != null && networkBridge.Object != null && networkBridge.Object.HasStateAuthority;
 
         protected long _ripenTimestamp;
-        private PlayerBalance _grabber;
+        private ISomniumPlayer _grabber;
         private HoveringEntity _hovering;
 
         /// <summary>The Plot this holds, if any, and which of its slots. Only a RootedProduce has
@@ -130,7 +131,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.GetID() != playerId) return;
+            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
             _grabber = null;
             LifecycleChanged?.Invoke();
         }
@@ -326,7 +327,7 @@ namespace GrowAGarden
                     bool hasGrabber = grabReader.NextByte() == 1;
                     // Temporary instrumentation — see the matching note in Seed.OnMessageToAll.
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? EconomyManager.Instance.GetPlayer(grabberId) : null;
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     LifecycleChanged?.Invoke();
                     break;
@@ -358,7 +359,7 @@ namespace GrowAGarden
             LifecycleChanged?.Invoke();
         }
 
-        public PlayerBalance GetGrabber() => _grabber;
+        public ISomniumPlayer GetGrabber() => _grabber;
 
         /// <summary>
         /// Taking it is the harvest. The request goes out from the machine whose hand closed on it;
@@ -367,15 +368,15 @@ namespace GrowAGarden
         /// </summary>
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
-            _grabber = EconomyManager.Instance == null ? null : EconomyManager.Instance.GetLocalPlayer();
+            _grabber = PlayerManager.GetLocalPlayer();
 
             if (_grabber == null)
             {
-                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local balance unavailable, grabber not broadcast");
+                Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
             }
             else if (CanSendRpc)
             {
-                string id = _grabber.GetID();
+                string id = _grabber.Properties.Id;
                 int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
                 var writer = new BytesWriter(size);
                 writer.AddByte(1);

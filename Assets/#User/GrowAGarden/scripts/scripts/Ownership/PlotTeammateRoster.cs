@@ -63,9 +63,7 @@ namespace GrowAGarden
                 {
                     if (slotIndex >= _slots.Length) break;
 
-                    string name = EconomyManager.Instance != null
-                        ? EconomyManager.Instance.GetPlayer(teammateId)?.GetPlayerName()
-                        : null;
+                    string name = PlayerManager.GetPlayer(teammateId)?.Properties?.NickName;
 
                     _slots[slotIndex].Show(plot, teammateId, string.IsNullOrEmpty(name) ? teammateId : name);
                     slotIndex++;

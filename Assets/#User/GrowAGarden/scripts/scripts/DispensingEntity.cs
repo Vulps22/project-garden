@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using System.Collections;
 using UnityEngine;
 
@@ -131,6 +132,13 @@ namespace GrowAGarden
             _socket.Release();
         }
 
+        /// <summary>See BuyPoint's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS — same
+        /// reasoning, same values, kept as a second copy for the same reason DispensingEntity and
+        /// BuyPoint are two files rather than one.</summary>
+        private const float TAKE_RETRY_SECONDS = 0.15f;
+        private const float TAKE_RETRY_TIMEOUT_SECONDS = 1.5f;
+        private bool _resolvingTake;
+
         /// <summary>The holder has asked to take it. Master only, same as a purchase — deciding
         /// this in more than one place is what let a sale commit on the buyer's machine while the
         /// seed was sent home on everyone else's; a free take is no different a decision.</summary>
@@ -139,23 +147,58 @@ namespace GrowAGarden
             if (!SceneNetworking.IsMasterClient) return;
             if (item != _currentItem) return;
             if (item.IsTaken || !item.InDispenser) return;
+            if (_resolvingTake) return;   // already retrying this exact request
 
-            PlayerBalance taker = item.GetGrabber();
+            StartCoroutine(ResolveTakeRequest(item));
+        }
+
+        /// <summary>
+        /// The taker's grabber RPC and Fusion's own state-authority transfer for the item are two
+        /// separate network events with no ordering guarantee against the take-request itself —
+        /// over real distance, arriving after it is the common case, not the exception. Bouncing
+        /// the item back to the dispenser on the very first miss visibly yanked it out of the
+        /// taker's hand for a take that was about to succeed on its own; retrying quietly for a
+        /// short window before giving up is invisible when it resolves (which it almost always
+        /// does) and only costs the genuinely-stuck case an extra second and a half before it
+        /// falls back to the original behaviour.
+        /// </summary>
+        private IEnumerator ResolveTakeRequest(CollectibleEntity item)
+        {
+            _resolvingTake = true;
+
+            float waited = 0f;
+            ISomniumPlayer taker = null;
+            while (waited < TAKE_RETRY_TIMEOUT_SECONDS)
+            {
+                if (item == null || item != _currentItem || item.IsTaken || !item.InDispenser)
+                {
+                    _resolvingTake = false;
+                    yield break;
+                }
+
+                taker = item.GetGrabber();
+                if (taker != null && item.HasKnownAuthority) break;
+
+                yield return new WaitForSeconds(TAKE_RETRY_SECONDS);
+                waited += TAKE_RETRY_SECONDS;
+            }
+
+            _resolvingTake = false;
 
             if (taker == null)
             {
                 ReturnToSocket(item, "was requested by a taker this client does not know yet");
-                return;
+                yield break;
             }
 
             if (!item.HasKnownAuthority)
             {
                 ReturnToSocket(item, "has no state authority");
-                return;
+                yield break;
             }
 
             // No price to check — the only thing a purchase's balance gate was ever protecting.
-            item.Take(taker.GetID());
+            item.Take(taker.Properties.Id);
         }
 
         private void ReturnToSocket(CollectibleEntity item, string why)

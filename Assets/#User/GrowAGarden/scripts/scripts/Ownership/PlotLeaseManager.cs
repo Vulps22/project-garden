@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
 using System.Collections.Generic;
@@ -123,6 +124,18 @@ namespace GrowAGarden
 
         // ── Claiming ──────────────────────────────────────────────────────────────
 
+        /// <summary>See BuyPoint's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS — same
+        /// reasoning: the holder's grabber RPC and Fusion's own state-authority transfer for the
+        /// deed are separate network events with no ordering guarantee against the take-request
+        /// itself, and over real distance arriving after it is the common case. This one also
+        /// waits on HasKnownAuthority, which the original one-shot version never checked at all —
+        /// Claim()'s Discard() call needs state authority to actually despawn the deed, so a claim
+        /// that announced itself without authority would leave the deed's own object stuck lying
+        /// around, claimed or not.</summary>
+        private const float DEED_RETRY_SECONDS = 0.15f;
+        private const float DEED_RETRY_TIMEOUT_SECONDS = 1.5f;
+        private bool _resolvingClaim;
+
         /// <summary>
         /// The holder carried the deed into the shed's claim trigger — see DeedClaimZone. Reuses
         /// CollectibleEntity's existing take-request wire-up rather than inventing a second
@@ -135,15 +148,54 @@ namespace GrowAGarden
             if (!SceneNetworking.IsMasterClient) return;
             if (deed != _currentDeed) return;
             if (deed.IsTaken || !deed.InDispenser) return;
+            if (_resolvingClaim) return;   // already retrying this exact request
 
-            PlayerBalance holder = deed.GetGrabber();
-            if (holder == null)
+            StartCoroutine(ResolveDeedTakeRequest(deed));
+        }
+
+        /// <summary>
+        /// Retries quietly for a short window rather than giving up on the first miss — see
+        /// BuyPoint.ResolvePurchaseRequest for the full reasoning. Here a miss was previously
+        /// silent (no bounce-back exists for a deed the way ReturnToSocket exists for shop stock),
+        /// which read as "carried it in and nothing happened" — this gives the holder RPC and the
+        /// authority transfer a real chance to arrive before settling for that.
+        /// </summary>
+        private IEnumerator ResolveDeedTakeRequest(CollectibleEntity deed)
+        {
+            _resolvingClaim = true;
+
+            float waited = 0f;
+            ISomniumPlayer holder = null;
+            while (waited < DEED_RETRY_TIMEOUT_SECONDS)
             {
-                Logger.Warn($"OnDeedTakeRequested() '{gameObject.name}' — requested but holder unknown on this client yet; ignoring");
-                return;
+                if (deed == null || deed != _currentDeed || deed.IsTaken || !deed.InDispenser)
+                {
+                    _resolvingClaim = false;
+                    yield break;
+                }
+
+                holder = deed.GetGrabber();
+                if (holder != null && deed.HasKnownAuthority) break;
+
+                yield return new WaitForSeconds(DEED_RETRY_SECONDS);
+                waited += DEED_RETRY_SECONDS;
             }
 
-            Claim(holder.GetID());
+            _resolvingClaim = false;
+
+            if (holder == null)
+            {
+                Logger.Warn($"OnDeedTakeRequested() '{gameObject.name}' — requested but holder unknown on this client after {DEED_RETRY_TIMEOUT_SECONDS}s; ignoring");
+                yield break;
+            }
+
+            if (!deed.HasKnownAuthority)
+            {
+                Logger.Warn($"OnDeedTakeRequested() '{gameObject.name}' — no known state authority on this client after {DEED_RETRY_TIMEOUT_SECONDS}s; ignoring");
+                yield break;
+            }
+
+            Claim(holder.Properties.Id);
         }
 
         /// <summary>Master only. Records the owner, announces it to everyone, and removes the
