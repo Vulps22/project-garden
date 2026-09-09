@@ -224,7 +224,8 @@ namespace GrowAGarden
             Speed = Mathf.Max(0f, Speed);
 
             // ── Velocity ──────────────────────────────────────────────────────────
-            float vertical = Speed * Mathf.Sin(pathRad);
+            float sinkRatio = _s.BestGlideSpeed / Mathf.Max(_s.BestGlideSpeed, Speed);
+            float vertical = Speed * Mathf.Sin(pathRad) * sinkRatio;
             float forward = Speed * Mathf.Cos(pathRad);
 
             // ── Flap ──────────────────────────────────────────────────────────────
