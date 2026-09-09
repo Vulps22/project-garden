@@ -193,12 +193,6 @@ namespace GrowAGarden
             };
         }
 
-        public void SetTooltipAudio(string tooltipId, AudioClip clip)
-        {
-            if (clip != null)
-                _tips[tooltipId] = clip;
-        }
-
         public void ResetProgress()
         {
             _progress = new TutorialProgress
