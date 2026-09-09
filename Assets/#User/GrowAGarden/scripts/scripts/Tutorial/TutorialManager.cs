@@ -15,7 +15,15 @@ namespace GrowAGarden
 
     public class TutorialManager : MonoBehaviour
     {
-        public static TutorialManager Instance;
+        private static TutorialManager _instance;
+
+        public static TutorialManager GetInstance()
+        {
+            if (_instance == null)
+                _instance = FindObjectOfType<TutorialManager>();
+            return _instance;
+        }
+
         public static event Action<int> OnStepTriggered;
         public static event Action<string> OnTipTriggered;
 
@@ -28,12 +36,12 @@ namespace GrowAGarden
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (_instance != null && _instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            Instance = this;
+            _instance = this;
             LoadProgress();
         }
 
