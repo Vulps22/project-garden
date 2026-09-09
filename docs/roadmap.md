@@ -137,6 +137,12 @@ Nothing here needs a new networking concept. That is the good sign.
 
 ## Future — islands that generate themselves
 
+Scoped in **[`procgen-islands.md`](procgen-islands.md)** (2026-09-09), which supersedes the sketch
+below where the two disagree — notably that islands are **premade prefabs placed by the seed**
+rather than generated geometry, that nothing is ever planted on one, and that the rarity roll has to
+be *derived* rather than master-decided because §3's premise breaks at distance. That doc is parked
+on flight; see its status section.
+
 Beyond the four steps: **stop authoring the map.** Keep a list of explorable prefabs and let the game
 drop them into the void procedurally as players fly out to meet them. Exploration stops having an
 edge, and the world stops being a fixed amount of content.
