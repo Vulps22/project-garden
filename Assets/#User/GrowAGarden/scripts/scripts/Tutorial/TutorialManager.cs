@@ -16,8 +16,7 @@ namespace GrowAGarden
     {
         public bool tutorialDisabled;
         public int currentStep;
-        public int[] stepsPlayed;
-        public string[] tipsPlayed;
+        public string[] tooltipsPlayed;
     }
 
     public class TutorialManager : MonoBehaviour
@@ -112,8 +111,7 @@ namespace GrowAGarden
                 {
                     tutorialDisabled = false,
                     currentStep = 0,
-                    stepsPlayed = Array.Empty<int>(),
-                    tipsPlayed = Array.Empty<string>()
+                    tooltipsPlayed = Array.Empty<string>()
                 };
             }
             else
@@ -157,13 +155,13 @@ namespace GrowAGarden
 
         private bool HasTooltipPlayed(string tooltipId)
         {
-            return System.Array.Exists(_progress.tipsPlayed, element => element == tooltipId);
+            return System.Array.Exists(_progress.tooltipsPlayed, element => element == tooltipId);
         }
 
         private void MarkTooltipPlayed(string tooltipId)
         {
-            System.Array.Resize(ref _progress.tipsPlayed, _progress.tipsPlayed.Length + 1);
-            _progress.tipsPlayed[_progress.tipsPlayed.Length - 1] = tooltipId;
+            System.Array.Resize(ref _progress.tooltipsPlayed, _progress.tooltipsPlayed.Length + 1);
+            _progress.tooltipsPlayed[_progress.tooltipsPlayed.Length - 1] = tooltipId;
         }
 
         private bool TryGetAudioClip(string tooltipId, out AudioClip clip)
@@ -207,8 +205,7 @@ namespace GrowAGarden
             {
                 tutorialDisabled = false,
                 currentStep = 0,
-                stepsPlayed = Array.Empty<int>(),
-                tipsPlayed = Array.Empty<string>()
+                tooltipsPlayed = Array.Empty<string>()
             };
             SaveProgress();
         }
