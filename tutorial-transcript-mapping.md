@@ -36,10 +36,16 @@ Ready to wire into the scene.
 ## Implementation Notes
 
 ### Audio Sequencing
-- **Linear tutorials** play in order as milestones are hit; skip any already seen
+- **Linear tutorials** play in order only. Track `CurrentTutorialStep` (0–9); only advance when trigger hits AND player ≥ that step. Skip steps stay skipped.
 - **Tips** can play multiple times; gate by "first occurrence" or "once per session"
 - Narrator voice should have consistent character: helpful, witty, occasionally comedic
 - Use Somnium's spatial audio where applicable (narrator centered in world space)
+
+### Skipped Steps
+If a player somehow bypasses a step (e.g., debug warp to 100 Thatch), they don't hear earlier tutorials. This is acceptable because:
+- Normal gameplay flow ensures sequential progression
+- Context-free playback of out-of-order tutorials breaks narrative
+- Skipped steps are an edge case, not a design path
 
 ### File Locations
 All audio files live in: `Assets/#User/GrowAGarden/sounds/`
