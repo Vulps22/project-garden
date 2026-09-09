@@ -1,4 +1,5 @@
 using Fusion;
+using SomniumSpace.Bridge.Player;
 using System.Collections;
 using UnityEngine;
 
@@ -375,6 +376,15 @@ namespace GrowAGarden
             _socket.Release();
         }
 
+        /// <summary>See DispensingEntity's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS —
+        /// same reasoning, same values, kept as a second copy rather than a shared base for the
+        /// same reason the rest of this pair is: BuyPoint's extra affordability/definition checks
+        /// don't belong on DispensingEntity, and forcing them to share one method would mean one
+        /// of the two carrying a branch it never uses.</summary>
+        private const float TAKE_RETRY_SECONDS = 0.15f;
+        private const float TAKE_RETRY_TIMEOUT_SECONDS = 1.5f;
+        private bool _resolvingPurchase;
+
         /// <summary>
         /// The holder has asked to buy. Master client only — it owns the economy, and deciding
         /// this in more than one place is what let a purchase commit on the buyer's machine while
@@ -385,16 +395,51 @@ namespace GrowAGarden
             if (!SceneNetworking.IsMasterClient) return;
             if (seed != _currentSeed) return;
             if (seed.IsBought || !seed.InShop) return;
+            if (_resolvingPurchase) return;   // already retrying this exact request
 
-            PlayerBalance buyer = seed.GetGrabber();
+            StartCoroutine(ResolvePurchaseRequest(seed));
+        }
+
+        /// <summary>
+        /// The buyer's grabber RPC and Fusion's own state-authority transfer for the seed are two
+        /// separate network events with no ordering guarantee against the take-request itself —
+        /// over real distance, arriving after it is the common case, not the exception. Bouncing
+        /// the seed back to the shelf on the very first miss visibly yanked it out of a buyer's
+        /// hand for a purchase that was about to succeed on its own; retrying quietly for a short
+        /// window before giving up is invisible when it resolves (which it almost always does)
+        /// and only costs the genuinely-stuck case an extra second and a half before it falls back
+        /// to the original behaviour.
+        /// </summary>
+        private IEnumerator ResolvePurchaseRequest(Seed seed)
+        {
+            _resolvingPurchase = true;
+
+            float waited = 0f;
+            ISomniumPlayer buyer = null;
+            while (waited < TAKE_RETRY_TIMEOUT_SECONDS)
+            {
+                if (seed == null || seed != _currentSeed || seed.IsBought || !seed.InShop)
+                {
+                    _resolvingPurchase = false;
+                    yield break;
+                }
+
+                buyer = seed.GetGrabber();
+                if (buyer != null && seed.HasKnownAuthority) break;
+
+                yield return new WaitForSeconds(TAKE_RETRY_SECONDS);
+                waited += TAKE_RETRY_SECONDS;
+            }
+
+            _resolvingPurchase = false;
 
             if (buyer == null)
             {
-                // The request came from the holder, so somebody has it — but this client has not
-                // been told who. Refuse rather than guess: an uncharged sale cannot be undone,
-                // whereas the player can simply pick it up again.
+                // The request came from the holder, so somebody has it — but this client was
+                // never told who, for the whole retry window. Refuse rather than guess: an
+                // uncharged sale cannot be undone, whereas the player can simply pick it up again.
                 ReturnToSocket(seed, "was requested by a buyer this client does not know yet");
-                return;
+                yield break;
             }
 
             if (!seed.HasKnownAuthority)
@@ -402,7 +447,7 @@ namespace GrowAGarden
                 // Nobody owns the object, so Purchase()'s broadcast would reach no one and the
                 // sale would exist only on this client.
                 ReturnToSocket(seed, "has no state authority");
-                return;
+                yield break;
             }
 
             // Priced from the seed, not from _seedDefinition. The stall's definition is what it
@@ -413,20 +458,36 @@ namespace GrowAGarden
             if (sold == null)
             {
                 ReturnToSocket(seed, "has no definition, so it has no price");
-                return;
+                yield break;
             }
 
-            if (buyer.GetBalance() < sold.buyPrice)
+            // Who the buyer is comes from Somnium; what they can afford comes from the economy.
+            // The seed hands over a player, not a balance row, so the money is looked up here — at
+            // the one place that actually cares about it — rather than travelling with whoever
+            // happens to have their hand on the seed.
+            string buyerId = buyer.Properties.Id;
+            PlayerBalance balance = EconomyManager.Instance == null
+                ? null
+                : EconomyManager.Instance.GetPlayer(buyerId);
+            if (balance == null)
             {
-                Logger.Info($"OnPurchaseRequested() '{gameObject.name}' — '{buyer.GetID()}' cannot afford {sold.seedId} ({buyer.GetBalance()} < {sold.buyPrice})");
+                // Known to Somnium but absent from the balance table — the same refusal as an
+                // unknown buyer, for the same reason: an uncharged sale cannot be undone.
+                ReturnToSocket(seed, $"names a buyer with no balance on this client ('{buyerId}')");
+                yield break;
+            }
+
+            if (balance.GetBalance() < sold.buyPrice)
+            {
+                Logger.Info($"OnPurchaseRequested() '{gameObject.name}' — '{buyerId}' cannot afford {sold.seedId} ({balance.GetBalance()} < {sold.buyPrice})");
                 ReturnToSocket(seed, "cannot be afforded");
-                return;
+                yield break;
             }
 
             // Purchase() flips InShop, which reaches every client and releases the socket through
             // OnCurrentSeedLifecycleChanged. Restocking follows from the socket saying it is empty.
-            seed.Purchase(buyer.GetID());
-            EconomyManager.Instance.RemoveBalance(buyer.GetID(), sold.buyPrice);
+            seed.Purchase(buyerId);
+            EconomyManager.Instance.RemoveBalance(buyerId, sold.buyPrice);
         }
 
         /// <summary>

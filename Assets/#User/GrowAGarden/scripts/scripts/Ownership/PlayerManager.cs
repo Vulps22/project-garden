@@ -71,6 +71,33 @@ namespace GrowAGarden
         /// </summary>
         public static Transform LocalPlayerHead { get; private set; }
 
+        /// <summary>
+        /// The Somnium player with this id, or null if nobody in the session has it.
+        ///
+        /// Straight through to the SDK's own container rather than a roster of our own. It already
+        /// keeps one, it is authoritative, and every client has the same view of it with no message
+        /// sent — so a name or an identity is a local read, not a fact that has to arrive.
+        ///
+        /// Ownership code used to ask EconomyManager's balance table for this. That table answers a
+        /// different question — who has money — and is cleared and rebuilt from scratch on every
+        /// broadcast, so a lookup could come back empty for reasons that had nothing to do with
+        /// whether the player was standing there.
+        /// </summary>
+        public static ISomniumPlayer GetPlayer(string somniumId)
+        {
+            if (_container == null || string.IsNullOrEmpty(somniumId)) return null;
+            return _container.GetPlayerByID(somniumId);
+        }
+
+        /// <summary>The local player, or null until they have spawned.</summary>
+        public static ISomniumPlayer GetLocalPlayer() => _container == null ? null : _container.LocalPlayer;
+
+        /// <summary>
+        /// Static, because the accessors above are: everything that wants a player wants it from
+        /// anywhere, and there is exactly one of these in the scene. Same shape as LocalPlayerId.
+        /// </summary>
+        private static SomniumPlayersContainer _container;
+
         /// <summary>Departed ids, and the time each stops being reprievable.</summary>
         private readonly Dictionary<string, float> _pending = new Dictionary<string, float>();
 
@@ -81,6 +108,7 @@ namespace GrowAGarden
                 Logger.Error($"Awake() '{gameObject.name}' — no SomniumPlayersContainer; nothing will ever be cleaned up after a player leaves");
                 return;
             }
+            _container = _players;
             _players.PlayerAdded.AddListener(OnPlayerAdded);
             _players.PlayerRemoved.AddListener(OnPlayerRemoved);
             _players.LocalPlayerAdded.AddListener(OnLocalPlayerAdded);
@@ -88,6 +116,7 @@ namespace GrowAGarden
 
         private void OnDestroy()
         {
+            _container = null;
             if (_players == null) return;
             _players.PlayerAdded.RemoveListener(OnPlayerAdded);
             _players.PlayerRemoved.RemoveListener(OnPlayerRemoved);

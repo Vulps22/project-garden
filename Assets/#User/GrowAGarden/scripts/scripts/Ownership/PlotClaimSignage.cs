@@ -1,18 +1,18 @@
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
 namespace GrowAGarden
 {
     /// <summary>
-    /// The Named Deed above the DeedHut's fireplace — reads, never decides. It watches every
-    /// Plot's OwnerId and shows whoever most recently claimed or relinquished one, resolving the
-    /// id to a display name through EconomyManager's balance table (already synced to everyone,
-    /// so no lookup of our own is needed).
-    ///
-    /// There is only one sign for four Plots, so "most recent" is order-of-arrival across four
-    /// independent broadcasts — fine for a decorative plaque, since nothing here is ever read
-    /// back as a fact. Two clients could show a different name for a moment if two claims land
-    /// in the same frame; both settle on the same name once the broadcasts are done arriving.
+    /// The Named Deed above the DeedHut's fireplace — reads, never decides, and is local to the
+    /// viewer, same as everything else in this hut. It shows the LOCAL player's own name if they
+    /// own one of the four Plots, and nothing otherwise. OwnerId itself is a real, replicated
+    /// fact (the master broadcasts it), but what this sign renders from that fact is a per-viewer
+    /// derivation, not a shared plaque — two people standing in the same hut can see a different
+    /// sign, same as the wall roster and the fireplace, per plot-ownership.md's "everyone else
+    /// sees nothing" table. It previously showed whoever most recently claimed ANY Plot to EVERY
+    /// viewer, which was wrong — this hut's contents are never a shared broadcast display.
     /// </summary>
     public class PlotClaimSignage : MonoBehaviour
     {
@@ -30,33 +30,43 @@ namespace GrowAGarden
         {
             foreach (PlotLeaseManager plot in _plots)
             {
-                if (plot != null) plot.OwnerChanged += OnOwnerChanged;
+                if (plot == null) continue;
+                plot.OwnerChanged += OnPlotChanged;
             }
+            PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
+
+            Refresh();
         }
 
         private void OnDisable()
         {
             foreach (PlotLeaseManager plot in _plots)
             {
-                if (plot != null) plot.OwnerChanged -= OnOwnerChanged;
+                if (plot == null) continue;
+                plot.OwnerChanged -= OnPlotChanged;
             }
+            PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
         }
 
-        private void OnOwnerChanged(PlotLeaseManager plot)
+        private void OnPlotChanged(PlotLeaseManager plot) => Refresh();
+        private void OnLocalPlayerJoined(string playerId, string playerName) => Refresh();
+
+        private void Refresh()
         {
             if (_nameText == null) return;
 
-            if (!plot.IsClaimed)
+            string localId = PlayerManager.LocalPlayerId;
+            bool ownsAPlot = _plots.Any(p => p != null && p.IsClaimed && p.OwnerId == localId);
+
+            if (!ownsAPlot)
             {
                 _nameText.text = _unclaimedText;
                 return;
             }
 
-            string name = EconomyManager.Instance != null
-                ? EconomyManager.Instance.GetPlayer(plot.OwnerId)?.GetPlayerName()
-                : null;
+            string name = PlayerManager.GetLocalPlayer()?.Properties?.NickName;
 
-            _nameText.text = string.IsNullOrEmpty(name) ? plot.OwnerId : name;
+            _nameText.text = string.IsNullOrEmpty(name) ? localId : name;
         }
 
         private void OnValidate()
