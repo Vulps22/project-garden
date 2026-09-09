@@ -242,6 +242,7 @@ GameObject:
   - component: {fileID: 163550766}
   - component: {fileID: 163550770}
   - component: {fileID: 163550773}
+  - component: {fileID: 163550774}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -450,6 +451,42 @@ MonoBehaviour:
   _breakUpSpread: 1.5
   _cloudMaterial: {fileID: 2100000, guid: 5357fe59220a414194dc9eab4b545cf2, type: 2}
   _previewInEditor: 1
+--- !u!114 &163550774
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aff70bfc7c28d7dcfaa4afd444cfd82c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.FlightController
+  _enabled: 1
+  _settings:
+    BestGlideSpeed: 18
+    SinkAtBestGlide: 1.5
+    StallAngleDeg: 60
+    ParkSink: 0.5
+    StallSharpness: 2
+    YawDeadzoneDeg: 5
+    YawGain: 1.5
+    MaxYawRateDeg: 60
+    FlapHeight: 20
+  _terrainMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _contactRadius: 1
+  _contactHeight: 1
+  _handAxis: 0
+  _handPitchOffset: 55
+  _autoCalibrate: 1
+  _flapSpeedThreshold: 2.5
+  _flapArmDelay: 0.4
+  _takeGravity: 1
+  _takeLocomotion: 1
+  _logInterval: 2
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -568,7 +605,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: e81b33aa2c760a951b46a4ce55681743, type: 3}
-  LastBuildSizeBytes: 60393456
+  LastBuildSizeBytes: 60427600
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -596,7 +633,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 251754240
+      AvailableSize: 251751488
     Paid:
       Entries: []
   OwnedTokens: []
@@ -1402,6 +1439,74 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!1001 &998377478
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 29.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -14
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -140.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5505857740081688211, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7253221862173745465, guid: 94794dbbbbd10d830bf3f065c73b835e,
+        type: 3}
+      propertyPath: m_Name
+      value: Island_A
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 94794dbbbbd10d830bf3f065c73b835e, type: 3}
 --- !u!114 &1058157529 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 927950652912324758, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -3002,3 +3107,4 @@ SceneRoots:
   - {fileID: 163550764}
   - {fileID: 4844959713083103933}
   - {fileID: 8575380664821258353}
+  - {fileID: 998377478}
