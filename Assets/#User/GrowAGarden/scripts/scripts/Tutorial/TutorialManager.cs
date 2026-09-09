@@ -5,6 +5,13 @@ using UnityEngine;
 namespace GrowAGarden
 {
     [Serializable]
+    public class TutorialAudioEntry
+    {
+        public string key;
+        public AudioClip clip;
+    }
+
+    [Serializable]
     public class TutorialProgress
     {
         public bool tutorialDisabled;
@@ -54,9 +61,10 @@ namespace GrowAGarden
 
         [SerializeField] private AudioSource _audioSource;
         [SerializeField] private AudioClip[] _tutorials = new AudioClip[10];
-        [SerializeField] private Dictionary<string, AudioClip> _tips = new Dictionary<string, AudioClip>();
+        [SerializeField] private List<TutorialAudioEntry> _tips = new List<TutorialAudioEntry>();
 
         private TutorialProgress _progress;
+        private Dictionary<string, AudioClip> _tipLookup = new Dictionary<string, AudioClip>();
         private const string STORAGE_KEY = "gag_tutorial_progress";
 
         private void Awake()
@@ -74,6 +82,10 @@ namespace GrowAGarden
         {
             if (_audioSource == null)
                 _audioSource = GetComponent<AudioSource>();
+
+            _tipLookup.Clear();
+            foreach (var entry in _tips)
+                _tipLookup[entry.key] = entry.clip;
         }
 
         private void OnEnable()
@@ -156,7 +168,7 @@ namespace GrowAGarden
 
         private bool TryGetAudioClip(string tooltipId, out AudioClip clip)
         {
-            return _tips.TryGetValue(tooltipId, out clip);
+            return _tipLookup.TryGetValue(tooltipId, out clip);
         }
 
         private void PlayAudio(AudioClip clip)
