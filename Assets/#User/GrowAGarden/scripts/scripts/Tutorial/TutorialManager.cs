@@ -68,7 +68,7 @@ namespace GrowAGarden
         private TutorialProgress _progress;
         private HashSet<string> _tooltipsPlayedLookup = new HashSet<string>();
         private Dictionary<string, AudioClip> _tipLookup = new Dictionary<string, AudioClip>();
-        private const string STORAGE_KEY = "gag_tutorial_progress";
+        private const string STORAGE_KEY = "gag_tutorial_progress_v2";
 
         private void Awake()
         {
