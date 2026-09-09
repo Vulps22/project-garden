@@ -66,15 +66,17 @@ namespace GrowAGarden
                  "Forward: left and right agree on it, while Right mirrors between hands.")]
         [SerializeField] private HandAxis _handAxis = HandAxis.Forward;
 
-        [Tooltip("Subtracted from the measured wrist angle. Somnium's hand anchors are not level " +
-                 "when an arm is level — the first run read 54-69 degrees with the arms out, which " +
-                 "parked the player above the stall angle and left them at zero speed. Set from " +
-                 "what Report() prints at a comfortable neutral, or use the auto-calibrate below.")]
-        [SerializeField] private float _handPitchOffset = 55f;
-
-        [Tooltip("Take the offset from wherever the hands are on the first airborne frame, instead " +
-                 "of the figure above. Whatever pose a player launches in becomes their neutral.")]
-        [SerializeField] private bool _autoCalibrate = true;
+        [Tooltip("Manual trim, in degrees, subtracted from the measured wrist angle. Zero, and " +
+                 "it should stay zero: the horizon is the reference, exactly as specified. " +
+                 "This was briefly an automatic per-session calibration taken from the launch " +
+                 "pose, on the strength of one flight where the wrists read 54-69 degrees with " +
+                 "the arms supposedly out. That reading was the player holding their hands up " +
+                 "trying to park, not a rig offset — across 49 samples the raw angle medians at " +
+                 "5 degrees overall and -3.5 during level flight, which is the glide slope. The " +
+                 "auto version redefined zero on every launch, so a 60 degree stall sat at 41, 53 " +
+                 "and 64 degrees on three different flights, and levelling off never behaved the " +
+                 "same way twice.")]
+        [SerializeField] private float _handPitchOffset = 0f;
 
         [Header("Flap")]
 
@@ -122,8 +124,6 @@ namespace GrowAGarden
         private bool _flying;
         private bool _flapSpent;
         private float _airborneSince;
-        private float _calibratedOffset;
-        private bool _calibrated;
 
         private float _nextLogAt;
         private Vector3 _lastWrite;
@@ -196,16 +196,8 @@ namespace GrowAGarden
             float leftRaw  = Elevation(_leftHand);
             float rightRaw = Elevation(_rightHand);
 
-            if (!_calibrated)
-            {
-                _calibrated = true;
-                _calibratedOffset = _autoCalibrate ? (leftRaw + rightRaw) * 0.5f : _handPitchOffset;
-                Logger.Info($"Calibrate() '{gameObject.name}' — neutral wrist pitch {_calibratedOffset:F1}° " +
-                            $"({(_autoCalibrate ? "auto, from launch pose" : "serialized")})");
-            }
-
-            float leftPitch  = leftRaw - _calibratedOffset;
-            float rightPitch = rightRaw - _calibratedOffset;
+            float leftPitch  = leftRaw - _handPitchOffset;
+            float rightPitch = rightRaw - _handPitchOffset;
             float pitch      = (leftPitch + rightPitch) * 0.5f;
             float difference = rightPitch - leftPitch;   // the offset cancels, but read it from the same place
 
@@ -317,7 +309,6 @@ namespace GrowAGarden
             {
                 if (_takeGravity) motion.SetGravity(1f, 1f);
                 if (_takeLocomotion) motion.SetMovementSpeed(1f, 1f, 1f);
-                _calibrated = false;   // next launch re-reads the neutral pose
             }
 
             Logger.Info($"SetFlying() '{gameObject.name}' — {(flying ? "airborne" : "grounded")} at {_root.position}");
@@ -463,7 +454,7 @@ namespace GrowAGarden
                 $"Report() '{gameObject.name}' — pitch={pitch:F1} diff={difference:F1} " +
                 $"speed={_model.Speed:F1} path={_model.PathAngleDeg:F1} stall={_model.Stall:F2} auth={_model.Authority:F2} " +
                 $"vert={local.y:F2} fwd={local.z:F2} y={_root.position.y:F1} " +
-                $"flapSpent={_flapSpent} offset={_calibratedOffset:F1} " +
+                $"flapSpent={_flapSpent} trim={_handPitchOffset:F1} " +
                 $"reach L={Reach(Origin(), _leftHand):F2} R={Reach(Origin(), _rightHand):F2} " +
                 $"drop L={(Origin().y - _leftHand.position.y):F2} R={(Origin().y - _rightHand.position.y):F2} | {drift} | " +
                 $"axes L fwd={Elevation(_leftHand, HandAxis.Forward):F0} up={Elevation(_leftHand, HandAxis.Up):F0} right={Elevation(_leftHand, HandAxis.Right):F0} " +

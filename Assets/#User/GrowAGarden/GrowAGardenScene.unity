@@ -243,7 +243,6 @@ GameObject:
   - component: {fileID: 163550770}
   - component: {fileID: 163550773}
   - component: {fileID: 163550774}
-  - component: {fileID: 163550775}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -490,24 +489,11 @@ MonoBehaviour:
   _autoCalibrate: 1
   _flapArmDelay: 0.4
   _launchGrace: 0.5
+  _boostOnRightHand: 1
+  _deviceScanInterval: 2
   _takeGravity: 1
   _takeLocomotion: 1
   _logInterval: 2
---- !u!114 &163550775
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 163550761}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 316462879623bdf049da68553968368b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.ButtonProbe
-  _enabled: 1
-  _axisThreshold: 0.6
-  _rescanInterval: 5
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -762,7 +748,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: e81b33aa2c760a951b46a4ce55681743, type: 3}
-  LastBuildSizeBytes: 60461776
+  LastBuildSizeBytes: 60459616
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -790,7 +776,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 251689200
+      AvailableSize: 251690368
     Paid:
       Entries: []
   OwnedTokens: []

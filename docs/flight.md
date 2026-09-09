@@ -292,17 +292,57 @@ almost frictionless.
 
 ### While you are at it, two things the same session turned up
 
-**Auto-calibration is noisy.** The neutral wrist angle is taken from whatever pose the player
-launches in, and across three sessions it came out **-19.3, -6.7 and +4.3 degrees** — 24 degrees of
-spread in what counts as "level". Everything downstream, the stall angle included, moves with it.
-Worth deciding whether the neutral should be a fixed serialized figure, a deliberate calibration
-gesture, or an average taken over the first second of flight rather than a single frame.
+**Auto-calibration is gone, and should not come back.** For a while the neutral wrist angle was
+taken automatically from whatever pose the player launched in. It was added on the strength of a
+single flight where the wrists read 54-69 degrees with the arms supposedly out — which turned out to
+be the player holding their hands up trying to park, not a rig offset at all. Across 49 samples the
+raw angle medians at 5 degrees overall and -3.5 during level flight, which is the glide slope: **the
+horizon was always zero, exactly as specified.** The cost of getting that wrong was severe and hard
+to see: the neutral came out -19.3, -6.7 and +4.3 degrees on three sessions, so a 60 degree stall
+actually sat at 41, 53 and 64 degrees, and levelling off never behaved the same way twice. The
+lesson is narrower than "do not automate" — it is that an unexpected number is a thing to
+investigate, not a thing to correct for.
 
 **ButtonProbe keys on `device.name`, and both Touch controllers report the same string.** Left and
 right share a dictionary entry and flip each other's state, which produced thousands of phantom
 edges in one run and made the press counts meaningless. Handedness has to come from
 `device.characteristics`. Only matters while the probe is still in the scene, but it also means the
 existing button map was confirmed by Vulps's stated press order rather than by the data.
+
+---
+
+## Planned: a settings menu in the hut
+
+Vulps's, 2026-09-09. To be built once the model is proven — noted now because one piece of it is
+already answered and one is more work than it looks.
+
+Players tune their own flight at the hut: **trim**, **arm-extension range**, **basic versus advanced
+flight**, and a toggle back to **Somnium's own flight** for anyone who prefers it.
+
+The hut is the right home for it — [`plot-ownership.md`](plot-ownership.md) already makes it the one
+place where things are committed rather than merely done, so a settings panel there needs no new
+idea about where the world's controls live.
+
+**It is all per-client, which makes it the cheapest UI in the project.** Flight is entirely local:
+no RPCs, no master decisions, nothing replicated. Nobody else can see or is affected by any of it.
+
+**`SomniumBridge.LocalStorage` means settings can persist between sessions.** Per-world local
+storage in JSON or text, with `JsonExists`, `DeleteJson`, `GetAllJsonNames`, `GetUsedSpaceBytes` and
+`ClearAllData` documented (the read and write calls themselves want confirming in-world — the XML
+lists only the housekeeping). That matters more than it sounds: a trim you must re-dial on every
+join is worse than no trim, and a comfort setting that forgets you is actively hostile.
+
+**Trim as a player setting is the correct answer to the calibration mistake above.** People hold
+their wrists differently. The fix was never automation — it is letting the player set the number
+once, deliberately, and remembering it.
+
+**⚠ "OG flight" has to hand back four things, not one.** `SetFlyModeDisableState(false)` and
+`SetGlideDisableState(false)` return Somnium's flight, but `SetGravity` and `SetMovementSpeed` also
+have to go back to 1, and `FlightController` has to stop writing `Root`. Those pieces exist —
+`SetFlying(false)` already does the gravity and locomotion half on landing — but they are spread
+across the contact gate rather than gathered into one "hand everything back" path. Worth writing
+that path before the toggle needs it, because a half-restored player is a player stuck with no
+gravity and no walking.
 
 ---
 
