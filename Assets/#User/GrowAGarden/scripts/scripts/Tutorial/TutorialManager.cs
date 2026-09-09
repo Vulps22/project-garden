@@ -51,7 +51,11 @@ namespace GrowAGarden
         public static TutorialManager GetInstance()
         {
             if (_instance == null)
+            {
                 _instance = FindObjectOfType<TutorialManager>();
+                if (_instance == null)
+                    Debug.LogError("TutorialManager not found in scene");
+            }
             return _instance;
         }
 
@@ -59,10 +63,10 @@ namespace GrowAGarden
         public static event Action<string> OnTipTriggered;
 
         [SerializeField] private AudioSource _audioSource;
-        [SerializeField] private AudioClip[] _tutorials = new AudioClip[10];
         [SerializeField] private List<TutorialAudioEntry> _tips = new List<TutorialAudioEntry>();
 
         private TutorialProgress _progress;
+        private HashSet<string> _tooltipsPlayedLookup = new HashSet<string>();
         private Dictionary<string, AudioClip> _tipLookup = new Dictionary<string, AudioClip>();
         private const string STORAGE_KEY = "gag_tutorial_progress";
 
@@ -80,7 +84,11 @@ namespace GrowAGarden
         private void Start()
         {
             if (_audioSource == null)
+            {
                 _audioSource = GetComponent<AudioSource>();
+                if (_audioSource == null)
+                    Debug.LogWarning("TutorialManager: No AudioSource found on this GameObject");
+            }
 
             _tipLookup.Clear();
             foreach (var entry in _tips)
@@ -116,8 +124,24 @@ namespace GrowAGarden
             }
             else
             {
-                _progress = JsonUtility.FromJson<TutorialProgress>(json);
+                try
+                {
+                    _progress = JsonUtility.FromJson<TutorialProgress>(json);
+                }
+                catch
+                {
+                    _progress = new TutorialProgress
+                    {
+                        tutorialDisabled = false,
+                        currentStep = 0,
+                        tooltipsPlayed = Array.Empty<string>()
+                    };
+                }
             }
+
+            _tooltipsPlayedLookup.Clear();
+            foreach (var tooltip in _progress.tooltipsPlayed)
+                _tooltipsPlayedLookup.Add(tooltip);
         }
 
         private void SaveProgress()
@@ -150,18 +174,24 @@ namespace GrowAGarden
             PlayAudio(clip);
             MarkTooltipPlayed(tooltipId);
             SaveProgress();
-            OnStepTriggered?.Invoke(GetStepIndex(tooltipId));
+
+            int stepIndex = GetStepIndex(tooltipId);
+            if (stepIndex >= 0)
+                OnStepTriggered?.Invoke(stepIndex);
+            else
+                OnTipTriggered?.Invoke(tooltipId);
         }
 
         private bool HasTooltipPlayed(string tooltipId)
         {
-            return System.Array.Exists(_progress.tooltipsPlayed, element => element == tooltipId);
+            return _tooltipsPlayedLookup.Contains(tooltipId);
         }
 
         private void MarkTooltipPlayed(string tooltipId)
         {
-            System.Array.Resize(ref _progress.tooltipsPlayed, _progress.tooltipsPlayed.Length + 1);
-            _progress.tooltipsPlayed[_progress.tooltipsPlayed.Length - 1] = tooltipId;
+            _tooltipsPlayedLookup.Add(tooltipId);
+            List<string> list = new List<string>(_tooltipsPlayedLookup);
+            _progress.tooltipsPlayed = list.ToArray();
         }
 
         private bool TryGetAudioClip(string tooltipId, out AudioClip clip)
