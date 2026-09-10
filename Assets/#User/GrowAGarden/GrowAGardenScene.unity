@@ -476,6 +476,13 @@ MonoBehaviour:
     ControlSpeed: 8
     ClimbCost: 0.45
     TerminalSpeed: 55
+    TroughDiveAngleDeg: -45
+    TroughMinDescent: 25
+    TroughPullUpDeg: 35
+    TroughBrakeAngleDeg: 55
+    TroughWindowSeconds: 1.5
+    TroughGain: 0.2
+    TroughMaxBonus: 15
   _terrainMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -485,14 +492,14 @@ MonoBehaviour:
   _armDrop: 0.45
   _armRetract: 0.4
   _handAxis: 0
-  _handPitchOffset: 55
+  _handPitchOffset: 0
   _flapArmDelay: 0.4
   _launchGrace: 0.5
   _boostOnRightHand: 1
   _deviceScanInterval: 2
   _takeGravity: 1
   _takeLocomotion: 1
-  _logInterval: 2
+  _logInterval: 0.5
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -695,6 +702,247 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 94794dbbbbd10d830bf3f065c73b835e, type: 3}
+--- !u!1 &311160980
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 311160984}
+  - component: {fileID: 311160983}
+  - component: {fileID: 311160982}
+  - component: {fileID: 311160981}
+  - component: {fileID: 311160985}
+  - component: {fileID: 311160986}
+  m_Layer: 0
+  m_Name: TutorialManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &311160981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311160980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d6952661619032a297abafd449bccef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.LocalPlayerMotionProbe
+  _moveThreshold: 1
+  _settleSeconds: 1.5
+--- !u!114 &311160982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311160980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fca174dd8ea38ad978d873cf915983f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TutorialManager
+  _audioSource: {fileID: 311160983}
+  _clips:
+  - {fileID: 8300000, guid: 66754e70bbea774a6a68e2bc6464dac1, type: 3}
+  - {fileID: 8300000, guid: b973c36ef7715bca687b796e226b5108, type: 3}
+  - {fileID: 8300000, guid: 459c2978638389384868ae8dd9f9365f, type: 3}
+  - {fileID: 8300000, guid: c003aa4e72df1b6a39597ea25e87193c, type: 3}
+  - {fileID: 8300000, guid: 8b90d1b3cb6dde88e9996f0e76a7a6eb, type: 3}
+  - {fileID: 8300000, guid: bd4f9ed6ce7975b81b7db3fd3f73f623, type: 3}
+  - {fileID: 8300000, guid: 9425200125f4dd727869e56205de5cd6, type: 3}
+  - {fileID: 8300000, guid: bba675f6cdf1d32a2bd47007fc18ae23, type: 3}
+  - {fileID: 8300000, guid: 758f36d0cfb7c90529db995aa9deea92, type: 3}
+  - {fileID: 8300000, guid: 6ce4becd2a57fe0d8824633ab9cc1986, type: 3}
+  - {fileID: 8300000, guid: 4e2801471d0ae0970b7039be30eec1c2, type: 3}
+  - {fileID: 8300000, guid: 1322a8ee728136541843454548fd742b, type: 3}
+  - {fileID: 8300000, guid: 35f6c4aa88f7fe677af94f63df45fedb, type: 3}
+  - {fileID: 8300000, guid: bca1e0678e98f7f5992c42948cdca310, type: 3}
+  - {fileID: 8300000, guid: 7304d6053d0c33b2d994e5ed1b13dadd, type: 3}
+  _rememberProgress: 0
+--- !u!82 &311160983
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311160980}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!4 &311160984
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311160980}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &311160985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311160980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f29ca8ef2ebdb7c28625f6e3a24cb42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.WorldFloor
+  _floorY: -75
+  _returnTo: {fileID: 314732374}
+  _rearmMargin: 5
+  _sweepInterval: 0.5
+  _authorityTimeout: 2
+--- !u!114 &311160986
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311160980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6820292eefdfb60feb57e405fea6fb81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TutorialTriggers
+  _explorationThatch: 100
+  _troughShotAfterSeconds: 5
+  _wrapUpAfterSeconds: 10
+  _flight: {fileID: 163550774}
+--- !u!1 &314732373
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 314732374}
+  m_Layer: 0
+  m_Name: GardenReturnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &314732374
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 314732373}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.9063078, z: 0, w: 0.42261824}
+  m_LocalPosition: {x: -0.81884456, y: 2, z: 4.250243}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &331244564
 GameObject:
   m_ObjectHideFlags: 0
@@ -747,11 +995,11 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: e81b33aa2c760a951b46a4ce55681743, type: 3}
-  LastBuildSizeBytes: 60463664
+  LastBuildSizeBytes: 62668880
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
-  ShowRespawnHeight: 0
+  ShowRespawnHeight: 1
   ValidationData: []
   InfoIsOpen: 0
   Preview360PicturePath: 
@@ -775,7 +1023,7 @@ MonoBehaviour:
     Free:
       Count: 2
       MaxCount: 10
-      AvailableSize: 251687040
+      AvailableSize: 249480896
     Paid:
       Entries: []
   OwnedTokens: []
@@ -1991,7 +2239,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: d1deb11e60b8f0f419363603c4046a0f, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_Volume: 0.25
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -2850,7 +3098,7 @@ PrefabInstance:
     - target: {fileID: 8134728884904400452, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.55
+      value: -2.66
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2983,13 +3231,28 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 174843807049876648, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
         type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.0869565
+      objectReference: {fileID: 0}
+    - target: {fileID: 174843807049876648, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
+        type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.0869565
+      objectReference: {fileID: 0}
+    - target: {fileID: 174843807049876648, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.0869565
+      objectReference: {fileID: 0}
+    - target: {fileID: 174843807049876648, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
+        type: 3}
       propertyPath: m_LocalPosition.x
       value: -6.304
       objectReference: {fileID: 0}
     - target: {fileID: 174843807049876648, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.46
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 174843807049876648, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
         type: 3}
@@ -3076,6 +3339,16 @@ PrefabInstance:
       propertyPath: '_plots.Array.data[3]'
       value: 
       objectReference: {fileID: 2049234567}
+    - target: {fileID: 6058218120424046390, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7156528958367722299, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3735,3 +4008,5 @@ SceneRoots:
   - {fileID: 233909798}
   - {fileID: 829888659}
   - {fileID: 1905802983}
+  - {fileID: 311160984}
+  - {fileID: 314732374}
