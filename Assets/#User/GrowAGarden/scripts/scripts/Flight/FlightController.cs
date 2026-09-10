@@ -122,6 +122,28 @@ namespace GrowAGarden
         private Transform _root, _head, _leftHand, _rightHand;
 
         private bool _flying;
+
+        /// <summary>
+        /// The local player left the ground. Static and parameterless, because flight is entirely
+        /// local — there is one of these in the scene and it only ever describes this client.
+        /// </summary>
+        public static event System.Action Launched;
+
+        /// <summary>The local player landed, carrying how many seconds they were airborne.</summary>
+        public static event System.Action<float> Landed;
+
+        /// <summary>How long the player has been off the ground, or 0 when they are on it.</summary>
+        public float AirborneSeconds => _flying ? Time.time - _airborneSince : 0f;
+
+        public bool IsFlying => _flying;
+
+        /// <summary>Statics outlive a scene when domain reload is off; a subscriber from the last
+        /// session is a destroyed object waiting to be called.</summary>
+        private void OnDestroy()
+        {
+            Launched = null;
+            Landed = null;
+        }
         private bool _flapSpent;
         private float _airborneSince;
 
@@ -181,7 +203,7 @@ namespace GrowAGarden
                 bool grounded = touching && Time.time - _airborneSince > _launchGrace;
                 if (grounded || !ArmsOut(_armRetract)) SetFlying(false);
             }
-            else if (!touching && ArmsOut(_armExtension))
+            else if (!touching && ArmsOut(_armExtension) && FlightUnlocked())
             {
                 SetFlying(true);
             }
@@ -196,8 +218,10 @@ namespace GrowAGarden
             float leftRaw  = Elevation(_leftHand);
             float rightRaw = Elevation(_rightHand);
 
-            float leftPitch  = leftRaw - _handPitchOffset;
-            float rightPitch = rightRaw - _handPitchOffset;
+            float trim = Trim();
+            float leftPitch  = leftRaw - trim;
+            float rightPitch = rightRaw - trim;
+
             float pitch      = (leftPitch + rightPitch) * 0.5f;
             float difference = rightPitch - leftPitch;   // the offset cancels, but read it from the same place
 
@@ -293,7 +317,15 @@ namespace GrowAGarden
         /// </summary>
         private void SetFlying(bool flying)
         {
+            bool was = _flying;
             _flying = flying;
+
+            // Raised before the bridge work below, which returns early when there is no Motion
+            // feature — the player is still airborne in that case, and a listener that never heard
+            // about it would be permanently out of step.
+            if (flying && !was) Launched?.Invoke();
+            else if (!flying && was) Landed?.Invoke(Time.time - _airborneSince);
+
             var motion = _player?.Features?.Motion;
             if (motion == null) return;
 
@@ -349,6 +381,73 @@ namespace GrowAGarden
         }
 
         // ── Input ─────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The trim actually in force: the player's own setting when there is one, falling back to
+        /// the serialized field.
+        ///
+        /// The player's value wins because trim is a property of their arms, not of the world.
+        /// _handPitchOffset stays as the authored default and as the thing that works before the
+        /// settings panel has loaded — and it should stay at 0, which is what the horizon is.
+        /// </summary>
+        /// <summary>
+        /// Whether the player has been told how to fly yet.
+        ///
+        /// The tutorial is a fixed order, and a step that fires out of turn burns the ones before
+        /// it — "skipped steps stay skipped". Falling off an island and instinctively opening your
+        /// arms is enough to trigger the flight lesson, which then pushes the counter past the
+        /// exploration intro that was supposed to set it up, and that line is gone for good. So the
+        /// wings simply do not work until the narrator has offered them.
+        ///
+        /// **Fails open, deliberately.** No TutorialManager in the scene, or the tutorial switched
+        /// off in settings, and flight behaves exactly as it always did. A gate that silently
+        /// disables the game's main mechanic when its narrator is missing is a far worse bug than
+        /// the one it prevents.
+        /// </summary>
+        private bool FlightUnlocked()
+        {
+            GameSettings settings = GameSettings.GetInstance();
+            if (settings != null && settings.SkipTutorial) return true;
+
+            TutorialManager tutorial = TutorialManager.GetInstance();
+            if (tutorial == null) return true;
+
+            if (tutorial.HasPlayed(TutorialManager.Tooltips.Tutorial.ExplorationIntro)) return true;
+
+            // Rate-limited: this is asked every frame the arms are out, and the player holding them
+            // out in confusion is exactly when it would spam hardest.
+            if (Time.time >= _nextLockedLogAt)
+            {
+                _nextLockedLogAt = Time.time + 5f;
+                Logger.Info($"FlightUnlocked() '{gameObject.name}' — flight is locked until the exploration intro has played");
+            }
+            return false;
+        }
+
+        private float _nextLockedLogAt;
+
+        private float Trim()
+        {
+            GameSettings settings = GameSettings.GetInstance();
+            return settings != null ? settings.TrimDegrees : _handPitchOffset;
+        }
+
+        /// <summary>
+        /// The raw, untrimmed wrist angle averaged across both hands — what the player's arms are
+        /// doing right now, before any correction.
+        ///
+        /// Returns false rather than 0 when the rig is not resolved: a zero here is a real, valid
+        /// trim meaning "my wrists are level", so it must not double as "I could not tell".
+        /// </summary>
+        public bool TryGetWristPitch(out float degrees)
+        {
+            degrees = 0f;
+            if (!Resolve()) return false;
+            if (_leftHand == null || _rightHand == null) return false;
+
+            degrees = (Elevation(_leftHand) + Elevation(_rightHand)) * 0.5f;
+            return true;
+        }
 
         private float Elevation(Transform hand) => Elevation(hand, _handAxis);
 
@@ -454,6 +553,7 @@ namespace GrowAGarden
                 $"Report() '{gameObject.name}' — pitch={pitch:F1} diff={difference:F1} " +
                 $"speed={_model.Speed:F1} path={_model.PathAngleDeg:F1} stall={_model.Stall:F2} auth={_model.Authority:F2} " +
                 $"vert={local.y:F2} fwd={local.z:F2} y={_root.position.y:F1} " +
+                $"trough={_model.TroughDescent:F1}m lastBonus={_model.LastTroughBonus:F1} " +
                 $"flapSpent={_flapSpent} trim={_handPitchOffset:F1} " +
                 $"reach L={Reach(Origin(), _leftHand):F2} R={Reach(Origin(), _rightHand):F2} " +
                 $"drop L={(Origin().y - _leftHand.position.y):F2} R={(Origin().y - _rightHand.position.y):F2} | {drift} | " +

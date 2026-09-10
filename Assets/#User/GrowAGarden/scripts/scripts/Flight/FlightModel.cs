@@ -79,6 +79,36 @@ namespace GrowAGarden
                      "belly-to-earth is about 55.")]
             public float TerminalSpeed;
 
+            [Tooltip("Path angle at or below which you count as diving into a trough. Steep enough " +
+                     "that it has to be meant.")]
+            public float TroughDiveAngleDeg;
+
+            [Tooltip("Metres you must actually descend in that dive before the trough will pay " +
+                     "out. The cost half of the trade — without it, a flick of the wrists earns " +
+                     "energy for nothing.")]
+            public float TroughMinDescent;
+
+            [Tooltip("Path angle the pull-out has to reach to convert the dive into speed.")]
+            public float TroughPullUpDeg;
+
+            [Tooltip("Pull up steeper than this and you get nothing — the script's 'careful not " +
+                     "to come up too sharp or you'll hit the breaks'. Below StallAngleDeg, so it " +
+                     "is a distinct mistake from stalling rather than the same one.")]
+            public float TroughBrakeAngleDeg;
+
+            [Tooltip("Seconds after leaving the dive in which the pull-out still counts. The dive " +
+                     "is stored energy and it leaks: hesitate and it is gone.")]
+            public float TroughWindowSeconds;
+
+            [Tooltip("Metres per second of bonus speed per metre descended in the dive. This is " +
+                     "the slingshot: what you get out scales with what you committed to going " +
+                     "down, so a deeper trough pays more.")]
+            public float TroughGain;
+
+            [Tooltip("Ceiling on a single trough's bonus, m/s. Stops one enormous drop from " +
+                     "buying the rest of the world.")]
+            public float TroughMaxBonus;
+
             public static Settings Default => new Settings
             {
                 BestGlideSpeed  = 18f,
@@ -92,6 +122,14 @@ namespace GrowAGarden
                 ControlSpeed    = 8f,
                 ClimbCost       = 0.45f,
                 TerminalSpeed   = 55f,
+
+                TroughDiveAngleDeg  = -45f,
+                TroughMinDescent    = 25f,
+                TroughPullUpDeg     = 35f,
+                TroughBrakeAngleDeg = 55f,
+                TroughWindowSeconds = 1.5f,
+                TroughGain          = 0.2f,
+                TroughMaxBonus      = 15f,
             };
         }
 
@@ -117,6 +155,20 @@ namespace GrowAGarden
         /// <summary>Instrumentation: 0 no control of the path angle, 1 full control.</summary>
         public float Authority { get; private set; }
 
+        /// <summary>Instrumentation: metres descended in the dive currently being banked, or in the
+        /// one still inside its pull-out window. 0 when there is nothing stored.</summary>
+        public float TroughDescent { get; private set; }
+
+        /// <summary>Instrumentation: m/s awarded by the last trough shot. Never reset, so the log
+        /// says what the last one was worth rather than only that one happened.</summary>
+        public float LastTroughBonus { get; private set; }
+
+        /// <summary>Whether the wings are currently below TroughDiveAngleDeg, banking descent.</summary>
+        private bool _diving;
+
+        /// <summary>Seconds left to pull out and convert a banked dive; 0 when nothing is banked.</summary>
+        private float _troughWindowLeft;
+
         public FlightModel(Settings s) => Configure(s);
 
         public void Configure(Settings s)
@@ -126,6 +178,18 @@ namespace GrowAGarden
             if (_s.ControlSpeed <= 0f) _s.ControlSpeed = 8f;
             if (_s.ClimbCost <= 0f) _s.ClimbCost = 0.45f;
             if (_s.TerminalSpeed <= 0f) _s.TerminalSpeed = 55f;
+
+            // A Settings struct already serialized in a scene deserializes new fields as 0, not as
+            // Default — so without these a scene saved before the trough existed would call every
+            // shallow descent a dive and pay out nothing, which reads as the feature being broken
+            // rather than unset. TroughGain is deliberately not guarded: 0 there is a legitimate
+            // "turn the mechanic off" and the only value that means it.
+            if (_s.TroughDiveAngleDeg >= 0f)  _s.TroughDiveAngleDeg = -45f;
+            if (_s.TroughMinDescent <= 0f)    _s.TroughMinDescent = 25f;
+            if (_s.TroughPullUpDeg <= 0f)     _s.TroughPullUpDeg = 35f;
+            if (_s.TroughBrakeAngleDeg <= 0f) _s.TroughBrakeAngleDeg = 55f;
+            if (_s.TroughWindowSeconds <= 0f) _s.TroughWindowSeconds = 1.5f;
+            if (_s.TroughMaxBonus <= 0f)      _s.TroughMaxBonus = 15f;
             if (Speed <= 0f) Speed = _s.BestGlideSpeed;
         }
 
@@ -146,6 +210,16 @@ namespace GrowAGarden
         {
             Speed = _s.BestGlideSpeed;
             FlapVelocity = 0f;
+            ClearTrough();
+        }
+
+        /// <summary>Forget any banked dive. A trough that spans a park or a landing is not a
+        /// trough — the energy it represents was spent stopping.</summary>
+        private void ClearTrough()
+        {
+            _diving = false;
+            TroughDescent = 0f;
+            _troughWindowLeft = 0f;
         }
 
         /// <summary>Throws the player upward. The caller owns "once per airborne period".</summary>
@@ -174,6 +248,7 @@ namespace GrowAGarden
                 PathAngleDeg = -90f;
                 FlapVelocity = Mathf.Max(0f, FlapVelocity - G * dt);
                 yawDeltaDeg = YawFrom(wristDifferenceDeg, dt);
+                ClearTrough();
                 return new Vector3(0f, -_s.ParkSink + FlapVelocity, 0f);
             }
 
@@ -223,9 +298,19 @@ namespace GrowAGarden
 
             Speed = Mathf.Max(0f, Speed);
 
+            // ── Trough shot ───────────────────────────────────────────────────────
+            Speed += TroughStep(PathAngleDeg, Speed * Mathf.Sin(pathRad), dt);
+            if (_s.TerminalSpeed > 0f) Speed = Mathf.Min(Speed, _s.TerminalSpeed);
+
             // ── Velocity ──────────────────────────────────────────────────────────
-            float sinkRatio = _s.BestGlideSpeed / Mathf.Max(_s.BestGlideSpeed, Speed);
-            float vertical = Speed * Mathf.Sin(pathRad) * sinkRatio;
+            // Sink is linear in speed, and stays that way until a group playtest says otherwise.
+            // The inverse curve (sink scaled by BestGlideSpeed/Speed) was flown on 2026-09-09 and
+            // did not work: scaling only this component leaves Speed no longer the magnitude of the
+            // velocity the energy step above just charged for, so a dive earns speed as if
+            // descending steeply while actually descending shallowly. See the parked section of
+            // docs/flight.md — a real speed-dependent sink is a change to the glide angle, not a
+            // multiplier on the answer.
+            float vertical = Speed * Mathf.Sin(pathRad);
             float forward = Speed * Mathf.Cos(pathRad);
 
             // ── Flap ──────────────────────────────────────────────────────────────
@@ -237,6 +322,73 @@ namespace GrowAGarden
             yawDeltaDeg = YawFrom(wristDifferenceDeg, dt);
 
             return new Vector3(0f, vertical, forward);
+        }
+
+        /// <summary>
+        /// The trough shot: dive hard, pull out hard, come up with more than you left with.
+        ///
+        /// The rest of this model conserves energy on purpose — "altitude is bought with speed, and
+        /// speed is bought with altitude, and the only thing that adds to the system is a flap".
+        /// This is the deliberate exception, and it is a *skill* exception: the bonus scales with
+        /// how far you actually committed to going down, so it cannot be farmed with a flick of the
+        /// wrists, and it is thrown away if the pull-out is late or too sharp.
+        ///
+        /// Modelled on a slingshot with the gravity well taken out. What a real one rewards is
+        /// burning deep, where you are fastest; what this one rewards is diving deep, and for the
+        /// same reason — the payout is per metre descended rather than a flat bonus, so a deeper
+        /// trough is worth more than two shallow ones covering the same height.
+        ///
+        /// Returns the speed to add this step, which is zero on all but the one frame that pays out.
+        /// </summary>
+        private float TroughStep(float pathDeg, float verticalSpeed, float dt)
+        {
+            bool diving = pathDeg <= _s.TroughDiveAngleDeg;
+
+            if (diving)
+            {
+                // Bank real descent, not intent: a steep nose that is not actually going down —
+                // stalled, or held up by a flap — has not paid for anything.
+                if (!_diving) { _diving = true; TroughDescent = 0f; }
+                if (verticalSpeed < 0f) TroughDescent += -verticalSpeed * dt;
+                _troughWindowLeft = _s.TroughWindowSeconds;
+                return 0f;
+            }
+
+            if (_diving)
+            {
+                _diving = false;                       // left the dive; the window is now running
+                if (TroughDescent < _s.TroughMinDescent)
+                {
+                    TroughDescent = 0f;                // too shallow to have been a trough at all
+                    _troughWindowLeft = 0f;
+                }
+            }
+
+            if (_troughWindowLeft <= 0f) return 0f;
+
+            _troughWindowLeft -= dt;
+            if (_troughWindowLeft <= 0f)
+            {
+                TroughDescent = 0f;                    // hesitated; the stored energy is gone
+                return 0f;
+            }
+
+            // Too sharp is its own mistake, and it is silent: you keep the height you clawed back
+            // and simply do not get paid, which is what "you'll hit the breaks" should feel like.
+            if (pathDeg > _s.TroughBrakeAngleDeg)
+            {
+                TroughDescent = 0f;
+                _troughWindowLeft = 0f;
+                return 0f;
+            }
+
+            if (pathDeg < _s.TroughPullUpDeg) return 0f;
+
+            float bonus = Mathf.Min(TroughDescent * _s.TroughGain, _s.TroughMaxBonus);
+            LastTroughBonus = bonus;
+            TroughDescent = 0f;
+            _troughWindowLeft = 0f;
+            return bonus;
         }
 
         private float YawFrom(float wristDifferenceDeg, float dt)

@@ -248,6 +248,15 @@ rarely.
 Raised 2026-09-09 while tuning, **deliberately not built** — it wants judging against how the
 current model feels to several people, not against one person's session.
 
+> **It was built anyway later the same day, flown, and reverted.** The shortcut form — multiply the
+> finished `vertical` by `BestGlideSpeed / max(BestGlideSpeed, Speed)` — is not the change described
+> below and does not work. It scales the *answer* rather than the glide angle, so `Speed` stops being
+> the magnitude of the velocity the energy step just charged for: a dive earns speed as though
+> descending steeply while actually descending shallowly, and it damps a fast zoom climb too, since
+> the multiplier does not care about the sign of `vertical`. Sink is linear again as of the revert.
+> The third bullet below is the reason — a speed-dependent sink is a structural change to
+> `GlideAngleRad` and `TerminalSpeed`, not a multiplier bolted on at the end.
+
 **Sink currently grows with speed, which is backwards from what the design wants.** With the wrists
 level the path angle is fixed at the glide slope, so `vertical = Speed x sin(-3.18)` — every extra
 metre per second of speed makes you sink faster. 1.0 m/s at cruise, 2.2 at 40, 3.0 at terminal.
@@ -302,6 +311,20 @@ to see: the neutral came out -19.3, -6.7 and +4.3 degrees on three sessions, so 
 actually sat at 41, 53 and 64 degrees, and levelling off never behaved the same way twice. The
 lesson is narrower than "do not automate" — it is that an unexpected number is a thing to
 investigate, not a thing to correct for.
+
+> **It left a value behind, and that value was the plummet.** Deleting the code did not clear the
+> field it used to write: `_handPitchOffset` stayed at **55** in the scene — squarely inside that
+> misread 54-69 band — while the code default went back to `0`. `pitch = raw - offset`, so hands held
+> level read **-55 degrees**, and the commanded path was the glide slope minus 55: a **-59.8 degree**
+> near-vertical dive on every launch. Modelled at trim 55 the player drops 9.4 m in 39 frames; the
+> 2026-09-09 20:53 client log shows an entire flight lasting 39 frames and dropping 7.3 m, ending
+> below the island at y=-12.24. Two evenings went on the sink curve for this. Reset to 0 the same
+> day. **This is the "deleting a class hands its job to the prefabs" rule in CLAUDE.md, in a scene
+> field** — after removing anything that wrote a serialized value, go and look at what the scene now
+> says about it.
+>
+> It also hid itself: `_logInterval` was **2 seconds**, so a flight that lasted 0.4 s produced not one
+> airborne `Report()` line. Now 0.5.
 
 **ButtonProbe keys on `device.name`, and both Touch controllers report the same string.** Left and
 right share a dictionary entry and flip each other's state, which produced thousands of phantom
