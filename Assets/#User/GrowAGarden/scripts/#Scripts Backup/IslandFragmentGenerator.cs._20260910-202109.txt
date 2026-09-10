@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GrowAGarden
+namespace GrowAGarden.Generation
 {
     // ⚠ Unsure if we're keeping this. Landed on a result that reads well (2026-09-07) after
     // several passes — amalgamation of boulders, then a too-formal symmetric mountain, then

@@ -403,6 +403,14 @@ with `BytesWriter`/`BytesReader`. There is no Fusion `[Networked]` property anyw
 
 ### Late-join sync
 
+**A piece of networked state is not designed until you have said how a joiner gets it.** This is a
+default stance, not a review step and not a follow-up task: every fact the world holds must have an
+answer to "what does a peer who arrives at minute 47 see?", written at the same time as the fact
+itself. Anything phrased as a delta — increment a counter, toggle a flag, apply a change — is
+already wrong, because a joiner has nothing to apply it to. **Broadcast the value, not the event.**
+A value is idempotent, a dropped message self-heals on the next one, and late join stops being a
+special case at all.
+
 New clients get state pushed, never pulled: `SceneNetworking.OnOtherPlayerJoined` → authority calls
 `broadcastState()`. `EconomyManager` does the same on `OnBecomeWorldMaster` (deferred one frame via
 `BroadcastNextFrame`). `Seed` also re-broadcasts on `OnStateAuthorityChanged`, because

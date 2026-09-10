@@ -176,7 +176,7 @@ namespace GrowAGarden
             if (weight <= 0f) return 0f;
             return weight < 1f ? weight * _rarityMultiplier : weight;
         }
-
+//boop
         /// <summary>Changes what this stall sells, clearing whatever is on the shelf first.</summary>
         public void Offer(SeedDefinition definition)
         {

@@ -478,6 +478,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 629793560997956730}
     m_Modifications:
+    - target: {fileID: 4084342172881817567, guid: c568183c125f81381a21a0f9f290c819,
+        type: 3}
+      propertyPath: _override
+      value: 
+      objectReference: {fileID: 5728742278963027199}
     - target: {fileID: 7579675108711353300, guid: c568183c125f81381a21a0f9f290c819,
         type: 3}
       propertyPath: m_Name
@@ -536,7 +541,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7579675108711353300, guid: c568183c125f81381a21a0f9f290c819,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5728742278963027199}
   m_SourcePrefab: {fileID: 100100000, guid: c568183c125f81381a21a0f9f290c819, type: 3}
 --- !u!4 &5317399108900803553 stripped
 Transform:
@@ -544,6 +553,33 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 3496748664698204481}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &6464521683363707541 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7579675108711353300, guid: c568183c125f81381a21a0f9f290c819,
+    type: 3}
+  m_PrefabInstance: {fileID: 3496748664698204481}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5728742278963027199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6464521683363707541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 730773380ceafed43bc38ea080586a5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PumpkinSeed
+  seedId: pumpkin
+  displayName: Pumpkin
+  seedPrefab: {fileID: 0}
+  spawnWeight: 0.25
+  buyPrice: 60
+  sellValue: 110
+  growthDuration: 60
+  ripenDuration: 60
+  witherDuration: 30
 --- !u!1001 &4237250792543611879
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -631,6 +667,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 629793560997956730}
     m_Modifications:
+    - target: {fileID: 4084342172881817567, guid: c568183c125f81381a21a0f9f290c819,
+        type: 3}
+      propertyPath: _override
+      value: 
+      objectReference: {fileID: 8417953058538340392}
     - target: {fileID: 7579675108711353300, guid: c568183c125f81381a21a0f9f290c819,
         type: 3}
       propertyPath: m_Name
@@ -689,8 +730,39 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7579675108711353300, guid: c568183c125f81381a21a0f9f290c819,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8417953058538340392}
   m_SourcePrefab: {fileID: 100100000, guid: c568183c125f81381a21a0f9f290c819, type: 3}
+--- !u!1 &3293204784801935956 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7579675108711353300, guid: c568183c125f81381a21a0f9f290c819,
+    type: 3}
+  m_PrefabInstance: {fileID: 4936994226708691328}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8417953058538340392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3293204784801935956}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f730f8fe4306a604aa2a489e16f0f7b5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TurnipSeed
+  seedId: turnip
+  displayName: Turnip
+  seedPrefab: {fileID: 0}
+  spawnWeight: 0.6
+  buyPrice: 18
+  sellValue: 25
+  growthDuration: 15
+  ripenDuration: 1
+  witherDuration: 0
 --- !u!4 &4453631380278647584 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8740853778601386656, guid: c568183c125f81381a21a0f9f290c819,
