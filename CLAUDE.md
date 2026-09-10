@@ -651,6 +651,8 @@ later. Link both ways, and do not create a step doc until the step has real desi
 - `runtime-spawn.md` — what replaced pooling, and the four traps.
 - `procgen-islands.md` — premade islands placed by the world seed. **Parked, blocked on flight.**
 - `bearing-plants-and-produce.md` — the Seed/Plant/Produce design.
+- `tutorial.md` — the narrator: the ten-line script and what fires each line, and the four
+  tips parked for pass 2.
 - `world-bridge.md` — a deferred refactor; see below.
 
 ### ⚠ Reset before this is anything but a test build
@@ -660,12 +662,11 @@ pumpkin could be reached without ten manual carrot loops in VR — a testing tax
 decision. If it is ever raised again for testing, it is one serialized field on `SceneManager` in the
 scene, and putting it back is the last thing to do before an upload that is not a test build.
 
-**`TutorialManager._rememberProgress` is OFF** (2026-09-09), so the narrator replays the whole
-tutorial on every join instead of remembering what has been heard. Deliberate while the tutorial is
-being built — the loop cannot be walked twice otherwise — and the same shape of testing tax as the
-balance above: one serialized bool on `TutorialManager` in the scene, code default `true`. The
-manager logs `_rememberProgress is OFF` as a WARN at startup, so the client log says so on every run.
-Put it back before an upload that is not a test build.
+**`TutorialManager._rememberProgress` is back ON** (2026-09-10) — the narrator remembers what it
+has said between sessions again. It was off while the tutorial was being built, because the loop
+cannot be walked twice otherwise. If it is turned off again for testing it is one serialized bool
+on `TutorialManager` in the scene, code default `true`, and the manager logs `_rememberProgress is
+OFF` as a WARN at startup, so the client log says so on every run.
 
 Still temporary: **`Produce.ReportPlacementOnce()`** logs a produce's real position, scale, ripeness
 and value one second after it is born. It exists because two uploads were spent on "the produce is

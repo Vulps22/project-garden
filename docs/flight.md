@@ -7,6 +7,10 @@ Written 2026-09-09 on `add-advanced-flight`. **This is [`procgen-islands.md`](pr
 blocker** — the world's usable radius is a function of how a player moves through it, so the map
 cannot be sized until this exists. Links back to [`roadmap.md`](roadmap.md)'s exploration steps.
 
+**Flight is locked until the narrator's exploration line has played**, and the three lines after
+it are what teaches flying at all — see [`tutorial.md`](tutorial.md). It fails open: no narrator,
+or the tutorial switched off, and flight behaves as it always did.
+
 ---
 
 ## Why not Somnium's
