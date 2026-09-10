@@ -46,6 +46,29 @@ namespace GrowAGarden
         public event System.Action LifecycleChanged;
 
         /// <summary>
+        /// Any produce anywhere changed state, on every client — the static twin of
+        /// <see cref="LifecycleChanged"/>, for things that care about produce in general rather
+        /// than one they hold a reference to.
+        ///
+        /// Static because a produce is spawned at runtime, so nothing outside the plot that grew it
+        /// can subscribe to the instance event in time. Raised from the same places, which means a
+        /// listener sees both the harvest itself and the grabber RPC that names the holder — and
+        /// those two arrive in either order, so a listener asking "did *I* just harvest this"
+        /// cannot rely on catching only one of them.
+        ///
+        /// Deliberately not the master-only <see cref="Harvested"/>: that one exists so a bearing
+        /// plant can empty its socket, and it never fires on the client that did the harvesting
+        /// unless they happen to be the master.
+        /// </summary>
+        public static event System.Action<Produce> AnyLifecycleChanged;
+
+        private void RaiseLifecycleChanged()
+        {
+            LifecycleChanged?.Invoke();
+            AnyLifecycleChanged?.Invoke(this);
+        }
+
+        /// <summary>
         /// Anchored until it is picked. A produce hanging on a vine or sitting in the earth must
         /// not fall, drift or be pushed; once it is in a hand it is an ordinary physical object.
         /// </summary>
@@ -133,13 +156,13 @@ namespace GrowAGarden
         {
             if (_grabber == null || _grabber.Properties?.Id != playerId) return;
             _grabber = null;
-            LifecycleChanged?.Invoke();
+            RaiseLifecycleChanged();
         }
 
         private void OnSpawned()
         {
             ApplyRipeness();
-            LifecycleChanged?.Invoke();
+            RaiseLifecycleChanged();
         }
 
         private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
@@ -272,7 +295,7 @@ namespace GrowAGarden
             // to sit exactly where it was put.
             if (_hovering != null && !_hovering.IsHovering) _hovering.BeginHovering(shouldFallFirst: false);
 
-            LifecycleChanged?.Invoke();
+            RaiseLifecycleChanged();
 
             // The plot, and the plant, only care on the master — they make decisions, and decisions
             // happen in one place.
@@ -329,7 +352,7 @@ namespace GrowAGarden
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
                     _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
-                    LifecycleChanged?.Invoke();
+                    RaiseLifecycleChanged();
                     break;
                 case ProduceMessageType.harvestRequest:
                     OnHarvestRequested();
@@ -356,7 +379,7 @@ namespace GrowAGarden
             if (harvested && !IsHarvested) ApplyHarvested();
 
             ApplyRipeness();
-            LifecycleChanged?.Invoke();
+            RaiseLifecycleChanged();
         }
 
         public ISomniumPlayer GetGrabber() => _grabber;
