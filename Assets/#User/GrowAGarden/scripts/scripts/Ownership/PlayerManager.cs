@@ -68,8 +68,29 @@ namespace GrowAGarden
         /// contact with Somnium's player list per the class docstring — anything that needs "where
         /// is the local player right now" (CloudGenerator's spawn anchor, say) reads this rather
         /// than holding its own SomniumPlayersContainer reference.
+        ///
+        /// **Resolved on demand, not captured once.** This used to be a plain auto-property assigned
+        /// in OnLocalPlayerAdded from `player?.References?.Body?.Head`. If the avatar rig is not
+        /// built at the instant Somnium adds the local player — and it frequently is not, which is
+        /// why FlightController.Resolve() re-resolves the body every frame instead of caching it
+        /// once — that null-conditional quietly yielded null and was never retried, so every reader
+        /// of this property got null for the rest of the session with nothing logged.
+        ///
+        /// The cached transform going Unity-null when the rig is torn down is the wanted behaviour
+        /// here rather than the hazard it usually is: a destroyed head reads as null, so the next
+        /// read resolves the new one.
         /// </summary>
-        public static Transform LocalPlayerHead { get; private set; }
+        public static Transform LocalPlayerHead
+        {
+            get
+            {
+                if (_localPlayerHead != null) return _localPlayerHead;
+                _localPlayerHead = GetLocalPlayer()?.References?.Body?.Head;
+                return _localPlayerHead;
+            }
+        }
+
+        private static Transform _localPlayerHead;
 
         /// <summary>
         /// The Somnium player with this id, or null if nobody in the session has it.
@@ -117,6 +138,12 @@ namespace GrowAGarden
         private void OnDestroy()
         {
             _container = null;
+
+            // Statics outlive a scene when domain reload is off, and a head from the last session
+            // is worse than none: it is a live-looking transform belonging to a world that is gone.
+            _localPlayerHead = null;
+            LocalPlayerId = null;
+
             if (_players == null) return;
             _players.PlayerAdded.RemoveListener(OnPlayerAdded);
             _players.PlayerRemoved.RemoveListener(OnPlayerRemoved);
@@ -142,7 +169,11 @@ namespace GrowAGarden
             if (string.IsNullOrEmpty(id)) return;
 
             LocalPlayerId = id;
-            LocalPlayerHead = player?.References?.Body?.Head;
+
+            // Seeded, not depended on. The property re-resolves for itself when the rig was not
+            // ready at this moment, which is the whole point of it no longer being a plain field.
+            _localPlayerHead = player?.References?.Body?.Head;
+
             LocalPlayerJoined?.Invoke(id, player.Properties.NickName);
         }
 
