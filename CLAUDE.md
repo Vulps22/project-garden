@@ -660,6 +660,13 @@ pumpkin could be reached without ten manual carrot loops in VR — a testing tax
 decision. If it is ever raised again for testing, it is one serialized field on `SceneManager` in the
 scene, and putting it back is the last thing to do before an upload that is not a test build.
 
+**`TutorialManager._rememberProgress` is OFF** (2026-09-09), so the narrator replays the whole
+tutorial on every join instead of remembering what has been heard. Deliberate while the tutorial is
+being built — the loop cannot be walked twice otherwise — and the same shape of testing tax as the
+balance above: one serialized bool on `TutorialManager` in the scene, code default `true`. The
+manager logs `_rememberProgress is OFF` as a WARN at startup, so the client log says so on every run.
+Put it back before an upload that is not a test build.
+
 Still temporary: **`Produce.ReportPlacementOnce()`** logs a produce's real position, scale, ripeness
 and value one second after it is born. It exists because two uploads were spent on "the produce is
 missing" when the only position in the log was the one we *asked for*. Delete it once the remaining
