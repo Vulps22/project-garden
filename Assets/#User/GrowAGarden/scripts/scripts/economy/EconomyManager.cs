@@ -109,7 +109,9 @@ namespace GrowAGarden
             {
                 return;
             }
+            int before = balance.GetBalance();
             balance.AddBalance(amount);
+            RaiseIfLocal(playerId, balance.GetBalance(), before);
             BroadcastBalances();
         }
 
@@ -129,8 +131,33 @@ namespace GrowAGarden
                 Logger.Warn($"[EconomyManager] RemoveBalance - playerId={playerId} not found in _balances");
                 return;
             }
+            int before = balance.GetBalance();
             balance.RemoveBalance(amount);
+            RaiseIfLocal(playerId, balance.GetBalance(), before);
             if(SceneNetworking.IsMasterClient) BroadcastBalances();
+        }
+
+        /// <summary>
+        /// Announces a balance change made locally, when it is the local player's.
+        ///
+        /// **The mutation paths have to raise this, not just the broadcast.** A mutation edits the
+        /// PlayerBalance object in place and then sends; when that broadcast arrives back at the
+        /// sender, OnMessageToAll compares the rebuilt value against an "old" reference that is
+        /// the very object already mutated — so old equals new and the event is swallowed. The
+        /// master therefore never heard about its own balance changing, and neither did any client
+        /// that applied a deduction optimistically. The tutorial's 100-Thatch line could not fire
+        /// for a solo player because of it, and the balance display only worked because it redraws
+        /// from the table rather than listening to this.
+        ///
+        /// The value comparison in OnMessageToAll then correctly suppresses the duplicate when the
+        /// broadcast lands, so nothing fires twice.
+        /// </summary>
+        private void RaiseIfLocal(string playerId, int newValue, int oldValue)
+        {
+            if (newValue == oldValue) return;
+            if (string.IsNullOrEmpty(_localPlayerId) || playerId != _localPlayerId) return;
+
+            OnPlayerBalanceChanged?.Invoke(newValue, oldValue);
         }
 
         private void BroadcastBalances()
