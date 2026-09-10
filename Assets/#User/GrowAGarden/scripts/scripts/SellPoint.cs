@@ -38,6 +38,22 @@ namespace GrowAGarden
         // afterwards and there is nobody left to pay.
         private SellableEntity _pending;
         private string _pendingSellerId;
+
+        /// <summary>
+        /// A sale completed: who made it and what they earned. Raised on every client, because the
+        /// master announces it to everyone.
+        ///
+        /// This used to be a local guess. SaleAccepted carried only the item's NetworkId, so each
+        /// client matched it against a set of ids it had offered itself — a client inferring
+        /// something it should have been told, which is the exact shape CLAUDE.md's governing rule
+        /// warns about, and it silently never matched. The seller is now in the payload, so every
+        /// peer is told the whole fact and nobody has to work it out.
+        ///
+        /// Anything that wants "did *I* just sell something" compares the id against
+        /// PlayerManager.LocalPlayerId. Anything that wants "did anyone" ignores it.
+        /// </summary>
+        public static event System.Action<string, int> SaleCompleted;
+
         private int _pendingValue;
 
         private void Start()
@@ -53,6 +69,10 @@ namespace GrowAGarden
         private void OnDestroy()
         {
             if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
+
+            // Statics outlive a scene when domain reload is off, and a subscriber from the last
+            // session is a destroyed object waiting to be called.
+            SaleCompleted = null;
         }
 
         // ── Seller's side ─────────────────────────────────────────────────────────
@@ -117,8 +137,7 @@ namespace GrowAGarden
                     SetPendingFromPayload(data, false);
                     break;
                 case SellMessageType.SaleAccepted:
-                    // Every client ends the object its own way; only its owner can despawn it.
-                    FindSellable(ReadId(data))?.Sell();
+                    ApplySaleAccepted(data);
                     break;
                 default:
                     Logger.Warn($"OnMessageToAll() '{gameObject.name}' — unknown message id={id}");
@@ -222,7 +241,7 @@ namespace GrowAGarden
             // Every client runs Sell(), which raises the object's Sold event locally before it ends
             // itself; only its owner, which is now the shop, can actually despawn it.
             Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{sellable.name}' for {_pendingValue} to '{_pendingSellerId}'");
-            Announce(SellMessageType.SaleAccepted, sellable);
+            AnnounceSale(sellable, _pendingSellerId, _pendingValue);
 
             ClearPending();
         }
@@ -248,6 +267,47 @@ namespace GrowAGarden
             var writer = new BytesWriter(BytesWriter.IntSize);
             writer.AddInt((int)NetworkIdOf(sellable));
             _networkBridge.RPC_SendMessageToAll((byte)type, writer.Data);
+        }
+
+        /// <summary>
+        /// SaleAccepted carries more than the other two: the item, who sold it, and for how much.
+        ///
+        /// A separate writer rather than widening <see cref="Announce"/>, because SalePending and
+        /// SaleRejected genuinely only need the item — and BytesWriter is pre-sized, so one shared
+        /// size calculation covering a field two of the three messages never send is how a payload
+        /// silently overflows later.
+        /// </summary>
+        private void AnnounceSale(SellableEntity sellable, string sellerId, int value)
+        {
+            sellerId ??= string.Empty;
+            int size = BytesWriter.IntSize                                     // item id
+                     + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(sellerId)
+                     + BytesWriter.IntSize;                                    // value
+
+            var writer = new BytesWriter(size);
+            writer.AddInt((int)NetworkIdOf(sellable));
+            writer.AddString(sellerId);
+            writer.AddInt(value);
+            _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SaleAccepted, writer.Data);
+        }
+
+        /// <summary>Applies an accepted sale on every client, the sender included.</summary>
+        private void ApplySaleAccepted(byte[] data)
+        {
+            var reader = new BytesReader(data);
+            if (!reader.IsValid) return;
+
+            uint itemId = (uint)reader.NextInt();
+            string sellerId = reader.NextString();
+            int value = reader.NextInt();
+
+            // Every client ends the object its own way; only its owner can actually despawn it.
+            FindSellable(itemId)?.Sell();
+
+            // Raised after Sell(), so a listener sees a world where the sale has already happened
+            // rather than one mid-transaction.
+            Logger.Info($"ApplySaleAccepted() '{gameObject.name}' — item={itemId} seller='{sellerId}' value={value}");
+            SaleCompleted?.Invoke(sellerId, value);
         }
 
         /// <summary>Applies a pending/rejected announcement on every client.</summary>
