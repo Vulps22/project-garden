@@ -217,18 +217,10 @@ namespace GrowAGarden
                 yield break;
             }
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (!obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
                 Reject(sellable, $"could not be taken into shop ownership within {_authorityTimeout}s");
                 yield break;

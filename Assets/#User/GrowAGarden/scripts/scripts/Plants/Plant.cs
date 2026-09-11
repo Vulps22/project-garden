@@ -273,64 +273,13 @@ namespace GrowAGarden
         /// </summary>
         protected Produce SpawnProduce(NetworkObject prefab, Vector3 position, Quaternion rotation)
         {
-            if (prefab == null)
-            {
-                Logger.Error($"SpawnProduce() '{gameObject.name}' — no produce prefab assigned");
-                return null;
-            }
-
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (!net.NetworkPrefabs.TryGetValue(prefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Error($"SpawnProduce() '{gameObject.name}' — '{prefab.name}' is not registered on SceneNetworking");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, position, rotation, null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                Logger.Error($"SpawnProduce() '{gameObject.name}' — Fusion threw spawning '{prefab.name}': {e.Message}");
-                return null;
-            }
-
+            NetworkObject spawned = WorldBridge.Spawn(prefab, position, rotation, $"SpawnProduce() '{gameObject.name}'");
             if (spawned == null) return null;
-
-            PlaceSpawned(spawned, position, rotation);
 
             Produce produce = spawned.GetComponent<Produce>();
             if (produce == null) Logger.Error($"SpawnProduce() '{gameObject.name}' — spawned '{spawned.name}' has no Produce component");
             else Logger.Info($"SpawnProduce() '{gameObject.name}' — bore '{spawned.name}' at {spawned.transform.position} (asked {position})");
             return produce;
-        }
-
-        /// <summary>
-        /// Puts a freshly spawned object where it is meant to be.
-        ///
-        /// Two steps, because the pose handed to Runner.Spawn() is used only for the local
-        /// instantiation and is not networked at all.
-        ///
-        /// The second step is the one that took two uploads to find. A kinematic networked
-        /// rigidbody is driven *by* its network state, so writing transform.position on it is
-        /// overwritten on the next tick and the object reappears wherever its state says — which
-        /// for something spawned a moment ago is the origin. Seeds never showed this because a
-        /// seed is non-kinematic and physics-driven, so a transform write flows through. Produce
-        /// is kinematic until it is harvested, and it is the first thing this game ever spawned
-        /// that was. Teleport() is Fusion's own answer: it moves the body *and* its state.
-        /// </summary>
-        protected static void PlaceSpawned(NetworkObject spawned, Vector3 position, Quaternion rotation)
-        {
-            spawned.transform.SetPositionAndRotation(position, rotation);
-
-            var body = spawned.GetComponent<NetworkRigidbody3D>();
-            if (body != null) body.Teleport(position, rotation);
         }
 
         protected virtual void OnValidate()

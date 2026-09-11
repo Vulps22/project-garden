@@ -560,10 +560,6 @@ namespace GrowAGarden
         /// </summary>
         private Seed SpawnFreshSeed()
         {
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
             NetworkObject prefab = _seedDefinition == null ? null : _seedDefinition.seedPrefab;
             if (prefab == null)
             {
@@ -571,38 +567,12 @@ namespace GrowAGarden
                 return null;
             }
 
-            if (!net.NetworkPrefabs.TryGetValue(prefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Warn($"SpawnFreshSeed() '{gameObject.name}' — '{prefab.name}' is not registered on SceneNetworking yet");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, _socket.transform.position, _socket.transform.rotation,
-                                       null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                // Fusion instantiates the prefab before it allocates an id, so a throw in here has
-                // already left a GameObject in the scene that will never be networked. There is no
-                // handle to clean it up with — the only real defence is CanSpawn() above, and the
-                // retry interval that stops a bad frame becoming a hundred of them.
-                //
-                // Caught rather than left to propagate because ExceptionAlarm blacks the world out
-                // on any exception from this assembly, and a shop that cannot restock is not worth
-                // making the garden unplayable for. The error still says so, loudly.
-                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion threw spawning '{prefab.name}': {e.Message}");
-                return null;
-            }
-
-            if (spawned == null)
-            {
-                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion refused to spawn '{prefab.name}'");
-                return null;
-            }
+            // The orphan risk behind WorldBridge.Spawn's try/catch is at its worst here: this runs
+            // every frame the slot is empty, so the only real defences are CanSpawn() above and the
+            // retry interval that stops a bad frame becoming a hundred of them.
+            NetworkObject spawned = WorldBridge.Spawn(prefab, _socket.transform.position, _socket.transform.rotation,
+                                                      $"SpawnFreshSeed() '{gameObject.name}'");
+            if (spawned == null) return null;
 
             Seed seed = spawned.GetComponent<Seed>();
             if (seed == null)
