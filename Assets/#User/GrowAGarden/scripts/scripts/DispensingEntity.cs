@@ -240,42 +240,9 @@ namespace GrowAGarden
 
         private CollectibleEntity SpawnFreshItem()
         {
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (_itemPrefab == null)
-            {
-                Logger.Error($"SpawnFreshItem() '{gameObject.name}' — no item prefab set");
-                return null;
-            }
-
-            if (!net.NetworkPrefabs.TryGetValue(_itemPrefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Warn($"SpawnFreshItem() '{gameObject.name}' — '{_itemPrefab.name}' is not registered on SceneNetworking yet");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, _socket.transform.position, _socket.transform.rotation,
-                                       null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                // See BuyPoint.SpawnFreshSeed's catch — same orphan risk, same reason it is caught
-                // rather than left to propagate.
-                Logger.Error($"SpawnFreshItem() '{gameObject.name}' — Fusion threw spawning '{_itemPrefab.name}': {e.Message}");
-                return null;
-            }
-
-            if (spawned == null)
-            {
-                Logger.Error($"SpawnFreshItem() '{gameObject.name}' — Fusion refused to spawn '{_itemPrefab.name}'");
-                return null;
-            }
+            NetworkObject spawned = WorldBridge.Spawn(_itemPrefab, _socket.transform.position, _socket.transform.rotation,
+                                                      $"SpawnFreshItem() '{gameObject.name}'");
+            if (spawned == null) return null;
 
             CollectibleEntity item = spawned.GetComponent<CollectibleEntity>();
             if (item == null)

@@ -415,40 +415,9 @@ namespace GrowAGarden
 
         private CollectibleEntity SpawnFreshDeed()
         {
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (_deedPrefab == null)
-            {
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — no deed prefab set");
-                return null;
-            }
-
-            if (!net.NetworkPrefabs.TryGetValue(_deedPrefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Warn($"SpawnFreshDeed() '{gameObject.name}' — '{_deedPrefab.name}' is not registered on SceneNetworking yet");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, _deedSocket.transform.position, _deedSocket.transform.rotation,
-                                       null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — Fusion threw spawning '{_deedPrefab.name}': {e.Message}");
-                return null;
-            }
-
-            if (spawned == null)
-            {
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — Fusion refused to spawn '{_deedPrefab.name}'");
-                return null;
-            }
+            NetworkObject spawned = WorldBridge.Spawn(_deedPrefab, _deedSocket.transform.position, _deedSocket.transform.rotation,
+                                                      $"SpawnFreshDeed() '{gameObject.name}'");
+            if (spawned == null) return null;
 
             CollectibleEntity deed = spawned.GetComponent<CollectibleEntity>();
             if (deed == null)

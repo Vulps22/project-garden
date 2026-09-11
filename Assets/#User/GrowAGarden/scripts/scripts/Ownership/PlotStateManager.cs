@@ -182,64 +182,22 @@ namespace GrowAGarden
             NetworkObject obj = FindObject(plantableId);
             if (obj == null) yield break;
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (!obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
                 Logger.Warn($"TakeOwnershipAndDespawn() '{gameObject.name}' — could not take ownership of the seed within {_authorityTimeout}s; it will linger invisible");
                 yield break;
             }
 
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldBridge.Despawn(obj, $"TakeOwnershipAndDespawn() '{gameObject.name}'");
         }
 
         private Plant SpawnPlant(NetworkObject prefab, Transform anchor)
         {
-            if (prefab == null)
-            {
-                Logger.Error($"SpawnPlant() '{gameObject.name}' — the seed names no plant prefab");
-                return null;
-            }
-
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (!net.NetworkPrefabs.TryGetValue(prefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Error($"SpawnPlant() '{gameObject.name}' — '{prefab.name}' is not registered on SceneNetworking");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, anchor.position, anchor.rotation, null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                Logger.Error($"SpawnPlant() '{gameObject.name}' — Fusion threw spawning '{prefab.name}': {e.Message}");
-                return null;
-            }
-
+            NetworkObject spawned = WorldBridge.Spawn(prefab, anchor.position, anchor.rotation, $"SpawnPlant() '{gameObject.name}'");
             if (spawned == null) return null;
-
-            // Explicit, for the same reason SpawnProduce is: the pose handed to Spawn() is local
-            // to the spawner and not networked. Plants carry no rigidbody, so a transform write is
-            // enough here.
-            spawned.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
-            var body = spawned.GetComponent<NetworkRigidbody3D>();
-            if (body != null) body.Teleport(anchor.position, anchor.rotation);
 
             Plant plant = spawned.GetComponent<Plant>();
             if (plant == null) Logger.Error($"SpawnPlant() '{gameObject.name}' — '{spawned.name}' has no Plant component");

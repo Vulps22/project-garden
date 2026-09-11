@@ -141,20 +141,12 @@ namespace GrowAGarden
                 yield break;
             }
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (obj != null && !obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
 
             if (obj == null) yield break;
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
                 Logger.Warn($"Discard() '{go.name}' — no authority within {_authorityTimeout}s; " +
                             $"it stays below the floor and the next sweep will try again");
@@ -163,7 +155,7 @@ namespace GrowAGarden
             }
 
             Logger.Info($"Discard() '{go.name}' — fell past the floor at y={go.transform.position.y:F1}, despawned");
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldBridge.Despawn(obj, $"Discard() '{go.name}'");
         }
 
         /// <summary>

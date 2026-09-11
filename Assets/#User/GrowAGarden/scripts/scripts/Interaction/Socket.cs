@@ -143,18 +143,10 @@ namespace GrowAGarden
             NetworkObject obj = held.GetComponent<NetworkObject>();
             if (obj == null) yield break;
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (!obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
                 Logger.Warn($"TakeOwnershipAndRecall() '{gameObject.name}' — could not take ownership of '{held.name}' within {_authorityTimeout}s; leaving it where it is");
                 yield break;
