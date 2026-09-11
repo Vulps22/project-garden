@@ -8,10 +8,6 @@ Assets/*
 Assets/#User/*
 !Assets/#User/GrowAGarden/
 !Assets/#User/GrowAGarden/**
-!Assets/Cartoon_Farm_Crops/
-!Assets/Cartoon_Farm_Crops/**
-!Assets/GVOZDY/
-!Assets/GVOZDY/**
 
 # Track git and documentation files
 !/.gitignore
