@@ -19,6 +19,10 @@ Assets/#User/*
 !/README.md
 !/CLAUDE.md
 
+# Narration sources — Audacity projects behind sounds/*.mp3
+!/Audacity/
+!/Audacity/**
+
 # Design docs — outside Assets/, so Unity never imports them
 !/docs/
 !/docs/**
