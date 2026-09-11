@@ -23,33 +23,18 @@ namespace GrowAGarden
     /// </summary>
     public class GardenLease : MonoBehaviour
     {
-        private void Awake()
-        {
-            PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
-        }
-
-        private void OnDestroy()
-        {
-            PlayerManager.PlayerDestroyed -= OnPlayerDestroyed;
-        }
-
         /// <summary>
         /// Frees every Plot the player held, uproots what stands in every one of its slots, and
         /// removes any seeds they bought and left lying about.
         ///
-        /// Master only — this despawns things — and PlayerManager already raises PlayerDestroyed on
-        /// the master alone. The guard stays because that is a promise made elsewhere, and a
-        /// despawn without authority fails silently.
+        /// Drops them as a teammate everywhere, uproots all 24 slots of each Plot they owned, and
+        /// relinquishes those claims.
         ///
-        /// Ownership is Plot-wide now, not per-slot — PlantSlot no longer carries an OwnerId at
-        /// all, so there is nothing left to loop over slot-by-slot. Clearing a departed player's
-        /// Plot means uprooting every one of its 24 slots together, via the Plot's own
-        /// PlotStateManager, then relinquishing the claim.
+        /// Master only; the caller gates. A despawn without state authority fails silently, so on
+        /// a proxy this clears nothing and says nothing.
         /// </summary>
-        private void OnPlayerDestroyed(string playerId)
+        public void ReleaseFor(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
-
             int seeds = 0;
             foreach (Seed seed in FindObjectsByType<Seed>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
@@ -79,7 +64,7 @@ namespace GrowAGarden
                 leases++;
             }
 
-            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — cleared '{playerId}': {leases} plot leases relinquished, {seeds} seeds removed");
+            Logger.Info($"ReleaseFor() '{gameObject.name}' — cleared '{playerId}': {leases} plot leases relinquished, {seeds} seeds removed");
         }
     }
 }

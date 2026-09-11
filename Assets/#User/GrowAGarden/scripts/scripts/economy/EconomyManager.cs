@@ -29,9 +29,8 @@ namespace GrowAGarden
                 return;
             }
             Instance = this;
-            PlayerManager.PlayerJoined += OnPlayerJoined;
+
             PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
-            PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
         }
 
         private void Start()
@@ -44,9 +43,7 @@ namespace GrowAGarden
         {
             _bridge.OnMessageToAll -= OnMessageToAll;
             SceneNetworking.OnBecomeWorldMaster -= OnBecomeWorldMaster;
-            PlayerManager.PlayerJoined -= OnPlayerJoined;
             PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
-            PlayerManager.PlayerDestroyed -= OnPlayerDestroyed;
         }
 
         private void OnBecomeWorldMaster()
@@ -68,28 +65,30 @@ namespace GrowAGarden
             if (SceneNetworking.IsMasterClient) BroadcastBalances();
         }
 
-        private void OnPlayerJoined(string playerId, string playerName)
+        /// <summary>
+        /// Opens a balance for a player at the starting amount and broadcasts the table.
+        ///
+        /// Does nothing if they already have one — a rejoin inside the grace period reuses an id
+        /// whose row was never removed. Master only; the caller gates.
+        /// </summary>
+        public void EnsureBalance(string playerId, string playerName)
         {
-            if (!SceneNetworking.IsMasterClient) return;
             if (_balances.ContainsKey(playerId)) return;
             _balances.Add(playerId, new PlayerBalance(playerId, playerName, _startingBalance));
             BroadcastBalances();
         }
 
         /// <summary>
-        /// A departed player did not come back, so they leave the table and the balance board.
-        /// Master only, and no new message type is needed: every client clears and rebuilds
-        /// _balances from each broadcast, so a removal propagates exactly like a change does.
+        /// Drops a player from the balance table and the board, and broadcasts the table.
         ///
-        /// Nothing removed them before this, which is why a leaver's name stayed on the board for
-        /// the rest of the session.
+        /// The broadcast carries the removal by itself — every client rebuilds _balances from
+        /// scratch each time — so there is no removal message. Master only; the caller gates.
         /// </summary>
-        private void OnPlayerDestroyed(string playerId)
+        public void RemovePlayer(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
             if (!_balances.Remove(playerId)) return;
 
-            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — removed '{playerId}' from the balance table");
+            Logger.Info($"RemovePlayer() '{gameObject.name}' — removed '{playerId}' from the balance table");
             BroadcastBalances();
         }
 
