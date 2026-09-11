@@ -567,9 +567,6 @@ namespace GrowAGarden
                 return null;
             }
 
-            // The orphan risk behind WorldBridge.Spawn's try/catch is at its worst here: this runs
-            // every frame the slot is empty, so the only real defences are CanSpawn() above and the
-            // retry interval that stops a bad frame becoming a hundred of them.
             NetworkObject spawned = WorldBridge.Spawn(prefab, _socket.transform.position, _socket.transform.rotation,
                                                       $"SpawnFreshSeed() '{gameObject.name}'");
             if (spawned == null) return null;
