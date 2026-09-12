@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
@@ -109,7 +110,7 @@ namespace GrowAGarden
             int size = BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddInt((int)NetworkIdOf(sellable));
-            writer.AddString(id);
+            writer.AddAutoString(id);
             _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SellRequest, writer.Data);
 
             // Optimistic, and only ever local: it is out of my hands the moment I put it down.
@@ -149,7 +150,7 @@ namespace GrowAGarden
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;
             uint itemId = (uint)reader.NextInt();
-            string sellerId = reader.NextString();
+            string sellerId = reader.NextAutoString();
 
             SellableEntity sellable = FindSellable(itemId);
             if (sellable == null)
@@ -274,7 +275,7 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(size);
             writer.AddInt((int)NetworkIdOf(sellable));
-            writer.AddString(sellerId);
+            writer.AddAutoString(sellerId);
             writer.AddInt(value);
             _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SaleAccepted, writer.Data);
         }
@@ -286,7 +287,7 @@ namespace GrowAGarden
             if (!reader.IsValid) return;
 
             uint itemId = (uint)reader.NextInt();
-            string sellerId = reader.NextString();
+            string sellerId = reader.NextAutoString();
             int value = reader.NextInt();
 
             // Every client ends the object its own way; only its owner can actually despawn it.

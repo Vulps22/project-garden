@@ -261,7 +261,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 163550761}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: feca918e0302465a8aeb1344651a7d34, type: 3}
+  m_Script: {fileID: 11500000, guid: c08a1242500f41e4fad1f1551d642746, type: 3}
   m_Name: 
   m_EditorClassIdentifier: networkExample1::networkExample1.SceneNetworking
   _autoTransferObjectsAuthority: 1

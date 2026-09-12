@@ -1,3 +1,4 @@
+using CommunityModules;
 using SomniumSpace.Network.Bridge;
 using System;
 using System.Collections;
@@ -178,8 +179,8 @@ namespace GrowAGarden
             writer.AddByte((byte)_balances.Count);
             foreach (var b in _balances.Values)
             {
-                writer.AddString(b.GetID());
-                writer.AddString(b.GetPlayerName());
+                writer.AddAutoString(b.GetID());
+                writer.AddAutoString(b.GetPlayerName());
                 writer.AddInt(b.GetBalance());
             }
 
@@ -201,8 +202,8 @@ namespace GrowAGarden
             _balances.Clear();
             for (int i = 0; i < count; i++)
             {
-                string playerId = reader.NextString();
-                string playerName = reader.NextString();
+                string playerId = reader.NextAutoString();
+                string playerName = reader.NextAutoString();
                 int balance = reader.NextInt();
                 _balances[playerId] = new PlayerBalance(playerId, playerName, balance);
             }

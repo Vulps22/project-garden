@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
@@ -276,7 +277,7 @@ namespace GrowAGarden
 
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(playerId);
             var writer = new BytesWriter(size);
-            writer.AddString(playerId);
+            writer.AddAutoString(playerId);
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.TeammateRemoveRequest, writer.Data);
         }
 
@@ -306,7 +307,7 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(size);
             writer.AddByte((byte)_teammateIds.Count);
-            foreach (string id in _teammateIds) writer.AddString(id);
+            foreach (string id in _teammateIds) writer.AddAutoString(id);
 
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.TeammatesChanged, writer.Data);
         }
@@ -320,7 +321,7 @@ namespace GrowAGarden
             string owner = ownerId ?? string.Empty;
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
             var writer = new BytesWriter(size);
-            writer.AddString(owner);
+            writer.AddAutoString(owner);
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.OwnerChanged, writer.Data);
         }
 
@@ -331,7 +332,7 @@ namespace GrowAGarden
                 case PlotMessageType.OwnerChanged:
                     var ownerReader = new BytesReader(data);
                     if (!ownerReader.IsValid) return;
-                    string owner = ownerReader.NextString();
+                    string owner = ownerReader.NextAutoString();
                     OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
                     OwnerChanged?.Invoke(this);
                     break;
@@ -341,7 +342,7 @@ namespace GrowAGarden
                     if (!teamReader.IsValid) return;
                     int count = teamReader.NextByte();
                     _teammateIds.Clear();
-                    for (int i = 0; i < count; i++) _teammateIds.Add(teamReader.NextString());
+                    for (int i = 0; i < count; i++) _teammateIds.Add(teamReader.NextAutoString());
                     TeammatesChanged?.Invoke(this);
                     break;
 
@@ -349,7 +350,7 @@ namespace GrowAGarden
                     if (!PlayerManager.IsMaster) return;
                     var removeReader = new BytesReader(data);
                     if (!removeReader.IsValid) return;
-                    RemoveTeammate(removeReader.NextString());
+                    RemoveTeammate(removeReader.NextAutoString());
                     break;
 
                 default:
