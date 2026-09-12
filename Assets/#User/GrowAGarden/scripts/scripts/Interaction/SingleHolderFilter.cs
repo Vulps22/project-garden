@@ -1,4 +1,3 @@
-using SomniumSpace.Bridge.Player;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Filtering;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -55,14 +54,14 @@ namespace GrowAGarden
             // "who am I", and being cleared and rebuilt on every master broadcast made it a
             // stand-in that could answer "nobody" while the player stood there holding the thing.
             // Refuse rather than guess if the SDK has no local player yet — they have not spawned.
-            ISomniumPlayer local = PlayerManager.GetLocalPlayer();
-            if (local == null)
+            PlayerIdentity local = PlayerManager.GetLocalPlayer();
+            if (!local.Exists)
             {
                 Logger.Warn($"Process() '{gameObject.name}' — local identity unavailable, refusing grab");
                 return false;
             }
 
-            return local.Properties?.Id == holder;   // only the holder may keep hold of it
+            return local.Id == holder;   // only the holder may keep hold of it
         }
     }
 }

@@ -67,7 +67,7 @@ namespace GrowAGarden
             Held = held;
             IgnorePropCollisions(held, true);
 
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             var ret = held.GetComponent<ReturnableEntity>();
             if (ret != null)
@@ -98,7 +98,7 @@ namespace GrowAGarden
             Held = null;
             IgnorePropCollisions(released, false);
 
-            if (SceneNetworking.IsMasterClient)
+            if (PlayerManager.IsMaster)
             {
                 var ret = released.GetComponent<ReturnableEntity>();
                 if (ret != null)

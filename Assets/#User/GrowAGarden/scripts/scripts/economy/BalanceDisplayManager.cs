@@ -40,8 +40,8 @@ namespace GrowAGarden
         /// </summary>
         public void Set(string[] names, int[] balances)
         {
-            Logger.Log($"[BalanceDisplayManager] Set - IsMasterClient={SceneNetworking.IsMasterClient}, names={names?.Length ?? 0}, balances={balances?.Length ?? 0}");
-            if (!SceneNetworking.IsMasterClient) return;
+            Logger.Log($"[BalanceDisplayManager] Set - IsMasterClient={PlayerManager.IsMaster}, names={names?.Length ?? 0}, balances={balances?.Length ?? 0}");
+            if (!PlayerManager.IsMaster) return;
 
             int count = Mathf.Min(names.Length, balances.Length, _displays.Length);
             Logger.Log($"[BalanceDisplayManager] Set - sending {count} entries");

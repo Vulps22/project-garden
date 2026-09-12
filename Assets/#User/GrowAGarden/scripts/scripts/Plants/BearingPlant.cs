@@ -104,7 +104,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnHarvested(ProduceSlot slot)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             slot.produceId = 0;
             slot.harvested = true;

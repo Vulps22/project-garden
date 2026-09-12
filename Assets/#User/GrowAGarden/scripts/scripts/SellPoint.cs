@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
 using UnityEngine;
@@ -97,8 +96,8 @@ namespace GrowAGarden
             if (!sellable.CanBeSold || sellable.IsPending) return;
             if (!sellable.IsHeld) return;
 
-            ISomniumPlayer seller = PlayerManager.GetLocalPlayer();
-            if (seller == null)
+            PlayerIdentity seller = PlayerManager.GetLocalPlayer();
+            if (!seller.Exists)
             {
                 Logger.Warn($"OnTriggerEnter() '{gameObject.name}' — local player unavailable, cannot offer '{sellable.name}' for sale");
                 return;
@@ -109,7 +108,7 @@ namespace GrowAGarden
             // on every client, and the two messages travel on different bridges — so their
             // arrival order is not guaranteed and the shop could be handed a plant nobody owns.
             // Naming the seller in the payload makes the whole thing order-independent.
-            string id = seller.Properties.Id;
+            string id = seller.Id;
             int size = BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddInt((int)NetworkIdOf(sellable));
@@ -148,7 +147,7 @@ namespace GrowAGarden
         /// <summary>Master client only — the shop is the only one who accepts a sale.</summary>
         private void OnSellRequested(byte[] data)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;

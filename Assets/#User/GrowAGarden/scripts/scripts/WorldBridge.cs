@@ -7,7 +7,7 @@ using UnityEngine;
 namespace GrowAGarden
 {
     /// <summary>
-    /// Creating, placing, removing and taking control of networked objects — the gateway between
+    /// Creating, placing, removing and taking control of networked objects — the bridge between
     /// this game and Fusion for anything that exists in the shared world.
     ///
     /// Player identity, session state and messaging are not here.

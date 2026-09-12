@@ -3,8 +3,8 @@ using UnityEngine;
 namespace GrowAGarden
 {
     /// <summary>
-    /// Runs the master's response to a player arriving and to one leaving for good: gives them a
-    /// balance, and clears their plots and seeds when they do not come back.
+    /// Runs the response to a player arriving and to one leaving for good: gives them a balance,
+    /// and clears their plots and seeds when they do not come back.
     ///
     /// Managers are called from here rather than subscribing, so the order between them is stated.
     /// Components still subscribe to PlayerManager directly.
@@ -34,7 +34,7 @@ namespace GrowAGarden
 
         private void OnPlayerJoined(string playerId, string playerName)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             EconomyManager economy = EconomyManager.Instance;
             if (economy == null)
@@ -52,7 +52,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnPlayerDestroyed(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             if (_lease != null) _lease.ReleaseFor(playerId);
 

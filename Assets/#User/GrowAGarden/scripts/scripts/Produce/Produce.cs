@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -78,7 +77,7 @@ namespace GrowAGarden
         /// <summary>Unharvested produce belongs to the world, and the master should hold it.</summary>
         public bool ShouldMasterOwn => !IsHarvested && string.IsNullOrEmpty(HolderId);
 
-        public string HolderId => _grabber?.Properties?.Id;
+        public string HolderId => _grabber.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>
@@ -95,7 +94,7 @@ namespace GrowAGarden
             networkBridge != null && networkBridge.Object != null && networkBridge.Object.HasStateAuthority;
 
         protected long _ripenTimestamp;
-        private ISomniumPlayer _grabber;
+        private PlayerIdentity _grabber;
         private HoveringEntity _hovering;
 
         /// <summary>The Plot this holds, if any, and which of its slots. Only a RootedProduce has
@@ -154,8 +153,8 @@ namespace GrowAGarden
         /// </summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
-            _grabber = null;
+            if (!_grabber.Exists || _grabber.Id != playerId) return;
+            _grabber = PlayerIdentity.None;
             RaiseLifecycleChanged();
         }
 
@@ -169,7 +168,7 @@ namespace GrowAGarden
 
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
+            if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
         /// <summary>
@@ -275,7 +274,7 @@ namespace GrowAGarden
         /// <summary>The master decides. Everyone else ignores the request.</summary>
         private void OnHarvestRequested()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (IsHarvested || !IsRipe) return;
 
             networkBridge.RPC_SendMessageToAll((byte)ProduceMessageType.harvested, new byte[0]);
@@ -299,7 +298,7 @@ namespace GrowAGarden
 
             // The plot, and the plant, only care on the master — they make decisions, and decisions
             // happen in one place.
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             if (_plot != null)
             {
@@ -319,7 +318,7 @@ namespace GrowAGarden
         /// </summary>
         public void Uproot()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             _plot = null;
             _slotIndex = -1;
 
@@ -350,8 +349,8 @@ namespace GrowAGarden
                     bool hasGrabber = grabReader.NextByte() == 1;
                     // Temporary instrumentation — see the matching note in Seed.OnMessageToAll.
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     RaiseLifecycleChanged();
                     break;
                 case ProduceMessageType.harvestRequest:
@@ -382,7 +381,7 @@ namespace GrowAGarden
             RaiseLifecycleChanged();
         }
 
-        public ISomniumPlayer GetGrabber() => _grabber;
+        public PlayerIdentity GetGrabber() => _grabber;
 
         /// <summary>
         /// Taking it is the harvest. The request goes out from the machine whose hand closed on it;
@@ -393,13 +392,13 @@ namespace GrowAGarden
         {
             _grabber = PlayerManager.GetLocalPlayer();
 
-            if (_grabber == null)
+            if (!_grabber.Exists)
             {
                 Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
             }
             else if (CanSendRpc)
             {
-                string id = _grabber.Properties.Id;
+                string id = _grabber.Id;
                 int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
                 var writer = new BytesWriter(size);
                 writer.AddByte(1);

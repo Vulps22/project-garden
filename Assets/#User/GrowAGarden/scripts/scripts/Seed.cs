@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -68,12 +67,12 @@ namespace GrowAGarden
         public bool ShouldMasterOwn => InShop && string.IsNullOrEmpty(HolderId);
 
         private HoveringEntity _hovering;
-        private ISomniumPlayer _grabber;
+        private PlayerIdentity _grabber;
 
         /// <summary>Bought, on the ground, and in nobody's hand. The one condition that floats.</summary>
         private bool IsLooseInWorld => !InShop && !IsHeld;
 
-        public string HolderId => _grabber?.Properties?.Id;
+        public string HolderId => _grabber.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>
@@ -137,8 +136,8 @@ namespace GrowAGarden
         /// </summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
-            _grabber = null;
+            if (!_grabber.Exists || _grabber.Id != playerId) return;
+            _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
 
@@ -165,7 +164,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
+            if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
         private void OnSpawned()
@@ -306,7 +305,7 @@ namespace GrowAGarden
             foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) if (r != null) r.enabled = false;
             foreach (Collider c in GetComponentsInChildren<Collider>(true)) if (c != null) c.enabled = false;
 
-            _grabber = null;
+            _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
 
@@ -324,7 +323,7 @@ namespace GrowAGarden
         /// </summary>
         public bool Discard()
         {
-            if (!SceneNetworking.IsMasterClient) return false;
+            if (!PlayerManager.IsMaster) return false;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (obj == null)
@@ -370,8 +369,8 @@ namespace GrowAGarden
                     // the wire ever resolved to a player — a lookup miss and an empty hand are
                     // indistinguishable downstream, and both read as "nobody is holding it".
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     // Who holds it is lifecycle. This is the one place _grabber changes on every
                     // client, so raising here lets AuthorityController reclaim a shop seed the
                     // moment it leaves a player's hand.
@@ -416,12 +415,12 @@ namespace GrowAGarden
             if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
-        public ISomniumPlayer GetGrabber() => _grabber;
+        public PlayerIdentity GetGrabber() => _grabber;
 
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
             _grabber = PlayerManager.GetLocalPlayer();
-            if (_grabber == null)
+            if (!_grabber.Exists)
             {
                 Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
                 return;
@@ -429,7 +428,7 @@ namespace GrowAGarden
 
             if (!CanSendRpc) return;
 
-            string id = _grabber.Properties.Id;
+            string id = _grabber.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);

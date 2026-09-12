@@ -94,7 +94,7 @@ namespace GrowAGarden
         /// </summary>
         private void Sweep()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (Time.time < _nextSweepAt) return;
             _nextSweepAt = Time.time + Mathf.Max(0.1f, _sweepInterval);
 
@@ -212,8 +212,7 @@ namespace GrowAGarden
                 return;
             }
 
-            var motion = PlayerManager.GetLocalPlayer()?.Features?.Motion;
-            if (motion == null)
+            if (!PlayerManager.CanDriveLocalPlayer)
             {
                 Logger.Error($"Rescue() '{gameObject.name}' — no Motion feature; cannot teleport from y={fellTo:F1}");
                 return;
@@ -233,7 +232,7 @@ namespace GrowAGarden
             // — that is what the 'done' parameter is for — and starting 20 seconds of narration
             // about having been teleported while the teleport is still in flight gets the order
             // backwards for no reason, when the API hands us the right moment for free.
-            motion.DoTeleportToPoint(target, direction, () =>
+            PlayerManager.TeleportLocalPlayer(target, direction, () =>
             {
                 Logger.Info($"Rescue() '{gameObject.name}' — teleport complete, playing the falling tip");
                 TutorialManager.GetInstance()?.TriggerTooltip(TutorialManager.Tooltips.Tips.Falling);

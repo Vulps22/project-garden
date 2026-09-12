@@ -26,7 +26,7 @@ namespace GrowAGarden
         private void LateUpdate()
         {
             if (_bearAgainAt < 0f || Time.time < _bearAgainAt) return;
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             _bearAgainAt = -1f;
             Bear();

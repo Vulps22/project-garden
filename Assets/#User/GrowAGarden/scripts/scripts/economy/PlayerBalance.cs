@@ -1,5 +1,3 @@
-using SomniumSpace.Bridge.Player;
-
 namespace GrowAGarden
 {
     public class PlayerBalance
@@ -7,18 +5,6 @@ namespace GrowAGarden
         private readonly string _id;
         private readonly string _name;
         private int _balance;
-
-        /// <summary>
-        /// Creates a new PlayerBalance from a live ISomniumPlayer. Used by master client on player join.
-        /// </summary>
-        /// <param name="player">The Somnium platform player object.</param>
-        /// <param name="startingBalance">The initial Thatch balance.</param>
-        public PlayerBalance(ISomniumPlayer player, int startingBalance)
-        {
-            _id = player.Properties.Id;
-            _name = player.Properties.NickName;
-            _balance = startingBalance;
-        }
 
         /// <summary>
         /// Reconstructs a PlayerBalance from sync data. Used by all clients on balance broadcast receive.

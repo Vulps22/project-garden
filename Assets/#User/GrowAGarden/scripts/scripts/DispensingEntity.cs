@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using System.Collections;
 using UnityEngine;
 
@@ -57,7 +56,7 @@ namespace GrowAGarden
         private void Update()
         {
             if (!_wantsStock) return;
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_currentItem != null) { _wantsStock = false; return; }
 
             if (Time.time - _lastStockAttempt < RESTOCK_RETRY_SECONDS) return;
@@ -92,7 +91,7 @@ namespace GrowAGarden
                 return;
             }
 
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!string.IsNullOrEmpty(item.HolderId)) return;   // someone else has it; their client will ask
 
             ReturnToSocket(item, "left the socket with nobody holding it");
@@ -144,7 +143,7 @@ namespace GrowAGarden
         /// seed was sent home on everyone else's; a free take is no different a decision.</summary>
         private void OnTakeRequested(CollectibleEntity item)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (item != _currentItem) return;
             if (item.IsTaken || !item.InDispenser) return;
             if (_resolvingTake) return;   // already retrying this exact request
@@ -167,7 +166,7 @@ namespace GrowAGarden
             _resolvingTake = true;
 
             float waited = 0f;
-            ISomniumPlayer taker = null;
+            PlayerIdentity taker = PlayerIdentity.None;
             while (waited < TAKE_RETRY_TIMEOUT_SECONDS)
             {
                 if (item == null || item != _currentItem || item.IsTaken || !item.InDispenser)
@@ -177,7 +176,7 @@ namespace GrowAGarden
                 }
 
                 taker = item.GetGrabber();
-                if (taker != null && item.HasKnownAuthority) break;
+                if (taker.Exists && item.HasKnownAuthority) break;
 
                 yield return new WaitForSeconds(TAKE_RETRY_SECONDS);
                 waited += TAKE_RETRY_SECONDS;
@@ -185,7 +184,7 @@ namespace GrowAGarden
 
             _resolvingTake = false;
 
-            if (taker == null)
+            if (!taker.Exists)
             {
                 ReturnToSocket(item, "was requested by a taker this client does not know yet");
                 yield break;
@@ -198,7 +197,7 @@ namespace GrowAGarden
             }
 
             // No price to check — the only thing a purchase's balance gate was ever protecting.
-            item.Take(taker.Properties.Id);
+            item.Take(taker.Id);
         }
 
         private void ReturnToSocket(CollectibleEntity item, string why)
@@ -213,7 +212,7 @@ namespace GrowAGarden
 
         private void SpawnStock()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!CanSpawn()) return;
 
             CollectibleEntity spawned = SpawnFreshItem();
