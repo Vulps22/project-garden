@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using Fusion.Addons.Physics;
 using SomniumSpace.Network.Bridge;
@@ -94,7 +95,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(size);
             writer.AddByte((byte)slotIndex);
             writer.AddInt((int)plantable.NetworkId);
-            writer.AddString(owner);
+            writer.AddAutoString(owner);
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.PlantRequest, writer.Data);
         }
 
@@ -119,7 +120,7 @@ namespace GrowAGarden
             if (!reader.IsValid) return;
             int slotIndex = reader.NextByte();
             uint plantableId = (uint)reader.NextInt();
-            string ownerId = reader.NextString();
+            string ownerId = reader.NextAutoString();
 
             if (slotIndex < 0 || slotIndex >= _slots.Length)
             {

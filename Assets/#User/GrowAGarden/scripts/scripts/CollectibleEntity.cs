@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
@@ -195,14 +196,14 @@ namespace GrowAGarden
         {
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(takerId ?? string.Empty);
             var writer = new BytesWriter(size);
-            writer.AddString(takerId ?? string.Empty);
+            writer.AddAutoString(takerId ?? string.Empty);
             networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.taken, writer.Data);
         }
 
         private void ApplyTaken(byte[] data)
         {
             var reader = new BytesReader(data);
-            TakenBy = reader.IsValid ? reader.NextString() : null;
+            TakenBy = reader.IsValid ? reader.NextAutoString() : null;
             InDispenser = false;
             IsTaken = true;
             ClearDispenserClaim();
@@ -256,7 +257,7 @@ namespace GrowAGarden
             BytesWriter writer = new BytesWriter(size);
             writer.AddByte(InDispenser ? (byte)1 : (byte)0);
             writer.AddByte(IsTaken ? (byte)1 : (byte)0);
-            writer.AddString(takenBy);
+            writer.AddAutoString(takenBy);
             networkBridge.RPC_SendMessageToProxies((byte)CollectibleMessageType.stateSync, writer.Data);
         }
 
@@ -273,7 +274,7 @@ namespace GrowAGarden
                     // the master ever learned who was holding one was invisible in the client log.
                     // Two rounds of diagnosis were spent reasoning from the call graph because of
                     // it. Delete alongside Seed's.
-                    string grabberId = hasGrabber ? grabReader.NextString() : null;
+                    string grabberId = hasGrabber ? grabReader.NextAutoString() : null;
                     _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     LifecycleChanged?.Invoke();
@@ -299,7 +300,7 @@ namespace GrowAGarden
             BytesReader reader = new BytesReader(data);
             InDispenser = reader.NextByte() == 1;
             IsTaken = reader.NextByte() == 1;
-            string takenBy = reader.NextString();
+            string takenBy = reader.NextAutoString();
             TakenBy = string.IsNullOrEmpty(takenBy) ? null : takenBy;
 
             _grabInteractable.enabled = true;
@@ -333,7 +334,7 @@ namespace GrowAGarden
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);
-            writer.AddString(id);
+            writer.AddAutoString(id);
             networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.grabber, writer.Data);
         }
 

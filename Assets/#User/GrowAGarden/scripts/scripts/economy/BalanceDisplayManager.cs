@@ -1,3 +1,4 @@
+using CommunityModules;
 using SomniumSpace.Network.Bridge;
 using TMPro;
 using UnityEngine;
@@ -58,7 +59,7 @@ namespace GrowAGarden
             for (int i = 0; i < count; i++)
             {
                 Logger.Log($"[BalanceDisplayManager] Set - writing entry [{i}]: name={names[i]}, balance={balances[i]}");
-                writer.AddString(names[i]);
+                writer.AddAutoString(names[i]);
                 writer.AddInt(balances[i]);
             }
 
@@ -83,7 +84,7 @@ namespace GrowAGarden
             var balances = new int[count];
             for (int i = 0; i < count; i++)
             {
-                names[i] = reader.NextString();
+                names[i] = reader.NextAutoString();
                 balances[i] = reader.NextInt();
                 Logger.Log($"[BalanceDisplayManager] OnMessageToAll - entry [{i}]: name={names[i]}, balance={balances[i]}");
             }

@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
@@ -349,7 +350,7 @@ namespace GrowAGarden
                     BytesReader grabReader = new BytesReader(data);
                     bool hasGrabber = grabReader.NextByte() == 1;
                     // Temporary instrumentation — see the matching note in Seed.OnMessageToAll.
-                    string grabberId = hasGrabber ? grabReader.NextString() : null;
+                    string grabberId = hasGrabber ? grabReader.NextAutoString() : null;
                     _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     RaiseLifecycleChanged();
@@ -403,7 +404,7 @@ namespace GrowAGarden
                 int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
                 var writer = new BytesWriter(size);
                 writer.AddByte(1);
-                writer.AddString(id);
+                writer.AddAutoString(id);
                 networkBridge.RPC_SendMessageToAll((byte)ProduceMessageType.grabber, writer.Data);
             }
 

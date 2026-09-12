@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
@@ -236,14 +237,14 @@ namespace GrowAGarden
         {
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(buyerId ?? string.Empty);
             var writer = new BytesWriter(size);
-            writer.AddString(buyerId ?? string.Empty);
+            writer.AddAutoString(buyerId ?? string.Empty);
             networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.purchased, writer.Data);
         }
 
         private void ApplyPurchase(byte[] data)
         {
             var reader = new BytesReader(data);
-            OwnerId = reader.IsValid ? reader.NextString() : null;
+            OwnerId = reader.IsValid ? reader.NextAutoString() : null;
             InShop = false;
             IsBought = true;
             ClearShopClaim();
@@ -347,7 +348,7 @@ namespace GrowAGarden
             BytesWriter writer = new BytesWriter(size);
             writer.AddByte(InShop ? (byte)1 : (byte)0);
             writer.AddByte(IsBought ? (byte)1 : (byte)0);
-            writer.AddString(owner);
+            writer.AddAutoString(owner);
             networkBridge.RPC_SendMessageToProxies((byte)SeedMessageType.stateSync, writer.Data);
         }
 
@@ -362,7 +363,7 @@ namespace GrowAGarden
                     // this seed reads HolderId, and until now nothing recorded whether the id on
                     // the wire ever resolved to a player — a lookup miss and an empty hand are
                     // indistinguishable downstream, and both read as "nobody is holding it".
-                    string grabberId = hasGrabber ? grabReader.NextString() : null;
+                    string grabberId = hasGrabber ? grabReader.NextAutoString() : null;
                     _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
                     Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     // Who holds it is lifecycle. This is the one place _grabber changes on every
@@ -392,7 +393,7 @@ namespace GrowAGarden
             BytesReader reader = new BytesReader(data);
             InShop = reader.NextByte() == 1;
             IsBought = reader.NextByte() == 1;
-            string owner = reader.NextString();
+            string owner = reader.NextAutoString();
             OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
 
             _grabInteractable.enabled = true;
@@ -426,7 +427,7 @@ namespace GrowAGarden
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);
-            writer.AddString(id);
+            writer.AddAutoString(id);
             networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.grabber, writer.Data);
         }
 
