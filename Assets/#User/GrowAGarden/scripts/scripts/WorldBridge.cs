@@ -112,6 +112,65 @@ namespace GrowAGarden
         /// </summary>
         public const float AuthorityTimeout = 2f;
 
+        /// <summary>The local peer has joined and the scene's network objects are registered.</summary>
+        public static bool IsNetworkReady => SceneNetworking.IsNetworkReady;
+
+        /// <summary>Raised at the moment IsNetworkReady becomes true.</summary>
+        public static event Action NetworkReady
+        {
+            add { SceneNetworking.OnLocalPlayerJoined += value; }
+            remove { SceneNetworking.OnLocalPlayerJoined -= value; }
+        }
+
+        /// <summary>Whether Fusion can create an object right now — see docs/runtime-spawn.md.</summary>
+        public static bool CanSpawn
+        {
+            get
+            {
+                NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+                return runner != null
+                    && runner.IsRunning
+                    && runner.LocalPlayer.IsRealPlayer
+                    && SceneNetworking.IsNetworkReady;
+            }
+        }
+
+        /// <summary>The spawned object with this network id, or null.</summary>
+        public static NetworkObject Find(uint rawId)
+        {
+            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+            if (runner == null || rawId == 0) return null;
+            return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) ? obj : null;
+        }
+
+        /// <summary>The component of type T on the object with this network id, or null.</summary>
+        public static T Find<T>(uint rawId) where T : Component
+        {
+            NetworkObject obj = Find(rawId);
+            return obj == null ? null : obj.GetComponent<T>();
+        }
+
+        /// <summary>
+        /// Removes an object only if this client is the one simulating it, and says nothing
+        /// either way. Returns whether it acted.
+        ///
+        /// For the shape where every client runs the same line and exactly one is meant to act —
+        /// a plant ending, a produce being sold. <see cref="Despawn"/> is the wrong call there: it
+        /// warns when it cannot act, which on that shape is every proxy, every time, correctly.
+        /// Named for state authority rather than ownership because they are different questions —
+        /// authority stays with whoever last grabbed the object, and OwnerId does not.
+        /// </summary>
+        public static bool DespawnIfStateAuthority(NetworkObject obj)
+        {
+            if (obj == null || !obj.HasStateAuthority) return false;
+
+            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+            if (runner == null) return false;
+
+            runner.Despawn(obj);
+            return true;
+        }
+
         /// <summary>
         /// Requests state authority over an object and waits <see cref="AuthorityTimeout"/>
         /// seconds for it, reporting the outcome through <paramref name="granted"/>.

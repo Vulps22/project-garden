@@ -33,10 +33,10 @@ namespace GrowAGarden
         /// Who paid for this. Set by the master at the moment of purchase and replicated, because
         /// ownership is a fact and facts come from the master.
         ///
-        /// Deliberately not Fusion state authority. Authority transfers on *hover* — see
-        /// NetworkGrabbable.OnHover — so a player reaching towards a dropped seed would become its
-        /// owner without ever grabbing it. Authority answers "who is simulating this"; this answers
-        /// "whose is it", and those have different lifetimes.
+        /// Deliberately not Fusion state authority. Authority follows a grab but never comes back
+        /// on release, so a player who put this down ten minutes ago is still simulating it.
+        /// Authority answers "who is simulating this"; this answers "whose is it", and those have
+        /// different lifetimes.
         /// </summary>
         public string OwnerId { get; private set; }
 
@@ -106,7 +106,7 @@ namespace GrowAGarden
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
@@ -122,7 +122,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToAll -= OnMessageToAll;
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
@@ -159,7 +159,7 @@ namespace GrowAGarden
         /// Re-sends state once a transfer lands, but only on the master.
         ///
         /// A client that has just gained authority knows least about the object — it was a proxy a
-        /// moment ago, and with hover-transfer it may have gained authority by accident. The master
+        /// moment ago, and may hold authority only because it was the last to grab this. The master
         /// is the one client whose view is authoritative, so it is the only one allowed to assert.
         /// </summary>
         private void OnStateAuthorityChanged(bool hasAuthority)
@@ -172,7 +172,7 @@ namespace GrowAGarden
             if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
         }
 
-        private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
+        private void OnOtherPlayerJoined() => broadcastState();
 
         // ── Shop ──────────────────────────────────────────────────────────────────
 
@@ -331,14 +331,8 @@ namespace GrowAGarden
                 Logger.Warn($"Discard() '{gameObject.name}' — no NetworkObject; nothing despawned");
                 return false;
             }
-            if (!obj.HasStateAuthority)
-            {
-                Logger.Warn($"Discard() '{gameObject.name}' — no state authority (authority known={HasKnownAuthority}); NOT despawned");
-                return false;
-            }
 
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
-            return true;
+            return WorldManager.Despawn(obj, $"Discard() '{gameObject.name}' (authority known={HasKnownAuthority})");
         }
 
         // ── State ─────────────────────────────────────────────────────────────────

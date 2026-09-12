@@ -207,7 +207,7 @@ namespace GrowAGarden
         /// A player cannot veto a cycle: holding is not owning — HolderId says who has it, OwnerId
         /// says whose it is, and only the second is a claim — so a player with no thatch must not
         /// be able to squat on the rarest thing in the shop until the timer flips. Authority is
-        /// not a claim either; it transfers on *hover*, so someone who merely waved a hand near
+        /// not a claim either; it follows a grab and never returns, so whoever last picked up
         /// the barrow would otherwise hold the world's whole cycle up.
         ///
         /// So the master asks, and keeps asking, until it has authority — then despawns. Discard()
@@ -510,7 +510,7 @@ namespace GrowAGarden
         private void SpawnStock()
         {
             if (!PlayerManager.IsMaster) return;
-            if (!CanSpawn()) return;
+            if (!WorldManager.CanSpawn) return;
 
             Seed spawned = SpawnFreshSeed();
             if (spawned == null) return;   // SpawnFreshSeed has already said why; Update retries
@@ -522,30 +522,6 @@ namespace GrowAGarden
             spawned.PlaceInShop(_socket.transform.position, _socket.transform.rotation);
             _socket.Hold(spawned.gameObject);
             StartCoroutine(AnnounceStock(spawned));
-        }
-
-        /// <summary>
-        /// Whether Fusion can actually create an object right now.
-        ///
-        /// Asks the runner, not our own bookkeeping. IsSharedModeMasterClient goes true as soon as
-        /// the peer is in a room, and SceneNetworking.IsNetworkReady is a static that outlives the
-        /// scene it describes — during a world transition the old value is still standing while
-        /// the new scene's Update loops are already running. Either one alone said "go" while
-        /// Fusion's simulation had no player index yet, and Runner.Spawn() in that window
-        /// instantiates the prefab and *then* throws out of Simulation.GetNextId(), leaving an
-        /// orphaned GameObject that is never networked and never told what it is. Those orphans
-        /// are what put two seeds in one slot.
-        ///
-        /// LocalPlayer.IsRealPlayer is the question that actually matters — it is false until this
-        /// peer has a player index, which is precisely what GetNextId() needs.
-        /// </summary>
-        private bool CanSpawn()
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            return runner != null
-                && runner.IsRunning
-                && runner.LocalPlayer.IsRealPlayer
-                && SceneNetworking.IsNetworkReady;
         }
 
         /// <summary>

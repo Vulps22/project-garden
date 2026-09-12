@@ -34,13 +34,13 @@ namespace GrowAGarden
         private void OnEnable()
         {
             if (_notifier != null) _notifier.LifecycleChanged += Apply;
-            SceneNetworking.OnBecomeWorldMaster += Apply;
+            PlayerManager.BecameWorldMaster += Apply;
         }
 
         private void OnDisable()
         {
             if (_notifier != null) _notifier.LifecycleChanged -= Apply;
-            SceneNetworking.OnBecomeWorldMaster -= Apply;
+            PlayerManager.BecameWorldMaster -= Apply;
         }
 
         /// <summary>

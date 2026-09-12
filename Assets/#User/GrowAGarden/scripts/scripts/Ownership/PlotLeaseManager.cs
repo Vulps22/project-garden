@@ -72,14 +72,14 @@ namespace GrowAGarden
                 return;
             }
             _networkBridge.OnMessageToAll += OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         /// <summary>A late joiner never saw any past OwnerChanged broadcast — Fusion does not
         /// replay RPCs — so without this its shadow copy of OwnerId reads "unclaimed" regardless
         /// of the truth. Harmless while the master stays the master, but a real correctness bug
         /// the moment host migration hands that client the role.</summary>
-        private void OnOtherPlayerJoined(PlayerRef player)
+        private void OnOtherPlayerJoined()
         {
             if (!PlayerManager.IsMaster) return;
             AnnounceOwner(OwnerId);
@@ -104,7 +104,7 @@ namespace GrowAGarden
         {
             SetCurrentDeed(null);
             if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
         private void Update()
@@ -390,7 +390,7 @@ namespace GrowAGarden
         /// readiness and orphan-avoidance reasoning, identical here.</summary>
         private void SpawnDeed()
         {
-            if (!CanSpawn()) return;
+            if (!WorldBridge.CanSpawn) return;
 
             CollectibleEntity spawned = SpawnFreshDeed();
             if (spawned == null) return;
@@ -401,15 +401,6 @@ namespace GrowAGarden
             spawned.PlaceInDispenser(_deedSocket.transform.position, _deedSocket.transform.rotation);
             _deedSocket.Hold(spawned.gameObject);
             StartCoroutine(AnnounceStock(spawned));
-        }
-
-        private bool CanSpawn()
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            return runner != null
-                && runner.IsRunning
-                && runner.LocalPlayer.IsRealPlayer
-                && SceneNetworking.IsNetworkReady;
         }
 
         private CollectibleEntity SpawnFreshDeed()

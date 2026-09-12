@@ -213,7 +213,7 @@ namespace GrowAGarden
         private void SpawnStock()
         {
             if (!PlayerManager.IsMaster) return;
-            if (!CanSpawn()) return;
+            if (!WorldManager.CanSpawn) return;
 
             CollectibleEntity spawned = SpawnFreshItem();
             if (spawned == null) return;   // SpawnFreshItem has already said why; Update retries
@@ -225,16 +225,6 @@ namespace GrowAGarden
             spawned.PlaceInDispenser(_socket.transform.position, _socket.transform.rotation);
             _socket.Hold(spawned.gameObject);
             StartCoroutine(AnnounceStock(spawned));
-        }
-
-        /// <summary>See BuyPoint.CanSpawn — same Fusion readiness check, same reason.</summary>
-        private bool CanSpawn()
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            return runner != null
-                && runner.IsRunning
-                && runner.LocalPlayer.IsRealPlayer
-                && SceneNetworking.IsNetworkReady;
         }
 
         private CollectibleEntity SpawnFreshItem()

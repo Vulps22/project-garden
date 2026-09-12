@@ -36,13 +36,13 @@ namespace GrowAGarden
         private void Start()
         {
             _bridge.OnMessageToAll += OnMessageToAll;
-            SceneNetworking.OnBecomeWorldMaster += OnBecomeWorldMaster;
+            PlayerBridge.BecameWorldMaster += OnBecomeWorldMaster;
         }
 
         private void OnDestroy()
         {
             _bridge.OnMessageToAll -= OnMessageToAll;
-            SceneNetworking.OnBecomeWorldMaster -= OnBecomeWorldMaster;
+            PlayerBridge.BecameWorldMaster -= OnBecomeWorldMaster;
             PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
         }
 

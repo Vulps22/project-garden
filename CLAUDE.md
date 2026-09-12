@@ -267,15 +267,18 @@ Master-client authoritative, with **three** distinct notions of ownership — do
   decisions and slot bookkeeping. It resolves to the **first player to join** (confirmed empirically,
   though not yet in a busy multi-client session — treat as confirmed-but-provisional).
 - `networkBridge.Object.HasStateAuthority` — **per-NetworkObject** Fusion authority: who *simulates*
-  this object and who may despawn it. It transfers on **hover**, not on grab (`NetworkGrabbable`
-  calls `RequestControl()` from `firstHoverEntered`), so **authority is not evidence of anything** —
-  a player who waves a hand near a ripe pumpkin owns it, having harvested nothing.
+  this object and who may despawn it. `NetworkGrabbable` requests it from `firstSelectEntered`, so it
+  follows a grab — but it is still **not evidence of whose something is**: it never transfers back on
+  release, so whoever last grabbed an object keeps simulating it until someone else grabs it or
+  `AuthorityController` hands it back to the master, and it vanishes entirely when that player
+  disconnects. (It transferred on *hover* until 2026-09-09; `OnHover`'s `RequestControl()` is
+  commented out rather than deleted, because restoring it is one line if the retest exonerates it.)
 - `OwnerId` on a plot or seed — **whose it is**. A replicated fact decided by the master, in the
   same shape as `IHeldObject.HolderId`. See "Ownership is a fact, not state authority" below.
 
 A plant is simulated only by its state authority; every other client is a passive proxy applying RPC
-state. Because authority transfers on hover, every decision that matters must be *announced* by the
-master, never inferred from who happens to own an object.
+state. Because authority outlives the grab that caused it, every decision that matters must be
+*announced* by the master, never inferred from who happens to hold authority over an object.
 
 ### The governing rule: the master is the source of truth
 
@@ -307,7 +310,7 @@ transition is the clock crossing a line that everyone can already see, not an ev
 **And the clause that keeps it playable: optimistic locally, authoritative eventually.** The player
 takes the seed the instant they grab it; the master confirms ~200 ms later and only intervenes if
 the answer was no. Without this the rule reads as "wait for the master", which is exactly the
-flicker the hover-authority fix removed. A decision may be slow. A hand must not be.
+flicker that produced the hover-transfer experiment. A decision may be slow. A hand must not be.
 
 Practical consequences, all of which the code should honour and some of which it does not yet:
 
@@ -466,11 +469,11 @@ than requiring it. `SellPoint` therefore has no idea what a crop is.
 Plots carry `OwnerId` — a Somnium player id, decided by the master and replicated, exactly as
 `IHeldObject.HolderId` is one level down. Seeds carry their own, because they leave the garden.
 
-**Do not reach for Fusion state authority for this.** `NetworkGrabbable` calls `RequestControl()` on
-`firstHoverEntered`, so authority transfers to anyone whose hand comes *near* a seed or produce —
-ownership by proximity, without a grab. Authority is also the master's channel for acting on objects
-at all (`SellPoint`, `ShopSlot` and `AuthorityController` all take it as routine business), and it
-vanishes the moment a player disconnects.
+**Do not reach for Fusion state authority for this.** It follows a grab, but it never comes back on
+release — whoever last grabbed a seed goes on simulating it after they put it down, so authority
+lags "whose is it" by however long since anyone touched it. Authority is also the master's channel
+for acting on objects at all (`SellPoint`, `BuyPoint` and `AuthorityController` all take it as
+routine business), and it vanishes the moment a player disconnects.
 
 `GardenLease` holds a departed player's garden for **120 seconds** before freeing their plots and
 despawning what stands in them — a dropout is indistinguishable from leaving, and
@@ -658,10 +661,6 @@ departure events, and a row of one-line forwards to the bridge for identity, rig
 
 ### Where the tree does not match this yet
 
-- **`WorldBridge` is called from two layers up.** `Plant`, `Socket`, `SellPoint`, `BuyPoint`,
-  `WorldFloor` and `DispensingEntity` call it directly; only `PlotStateManager` and
-  `PlotLeaseManager` reach it from the right place. Closing it needs a manager between, and there
-  is no obvious existing home — `docs/world-bridge.md` lays out the two candidates.
 - **`NetworkBridge` is a serialized field on nine crop prefabs** and on several managers, so the
   messaging triplet is named all over the component layer. No wrapper hides Inspector wiring, so
   this is the one that cannot land in a single upload — see "What has not" in `docs/world-bridge.md`.
@@ -683,12 +682,11 @@ departure events, and a row of one-line forwards to the bridge for identity, rig
   event of ours out of step and should become `PlayerBalanceChanged`.
 - Fields are `_camelCase` private + `[SerializeField]`; wire references in the Inspector, and use
   `OnValidate()` to auto-populate same-GameObject components.
-- **Comments answer one question: what am I looking at.** State what the function does; add reasoning
-  only where it is genuinely obscure — a silent failure, a trap, a non-obvious API constraint. Never
-  what changed, what it used to do, why the refactor happened, or what a decision was weighed
-  against. Git holds that. A line that would survive being moved into a commit message belongs there.
-- **Comments explain why, not what.** The existing docstrings record the bug each guard exists for.
-  Preserve that when editing; a guard with no rationale gets removed by the next person.
+- **Comments: one line per function signature.** Say what the function does. If it needs more than a
+  line it has stopped being a "what does this do" comment and become history, justification, or a
+  note to self. Never what changed, what it used to do, why the refactor happened, what a decision
+  was weighed against, or why the code is arranged as it is — the arrangement is visible, and git
+  holds the rest. A line that would survive being moved into a commit message belongs there.
 
 ## Debug utilities
 

@@ -82,7 +82,7 @@ namespace GrowAGarden
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         protected virtual void OnDestroy()
@@ -93,7 +93,7 @@ namespace GrowAGarden
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
         private void OnSpawned()
@@ -102,7 +102,7 @@ namespace GrowAGarden
             LifecycleChanged?.Invoke();
         }
 
-        private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
+        private void OnOtherPlayerJoined() => broadcastState();
 
         /// <summary>
         /// Only the master re-asserts. A client that has just gained authority knows least about
@@ -194,7 +194,7 @@ namespace GrowAGarden
             if (_plot != null) _plot.Release(_slotIndex);
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
-            if (obj != null && obj.HasStateAuthority) SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldManager.DespawnIfStateAuthority(obj);
         }
 
         public void broadcastState()
@@ -248,11 +248,7 @@ namespace GrowAGarden
         {
             if (_plot != null || plotRawId == 0) return;
 
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null) return;
-            if (!runner.TryFindObject(new NetworkId { Raw = plotRawId }, out NetworkObject obj) || obj == null) return;
-
-            _plot = obj.GetComponent<PlotStateManager>();
+            _plot = WorldManager.Find<PlotStateManager>(plotRawId);
             if (_plot == null) return;
 
             _slotIndex = slotIndex;

@@ -133,11 +133,7 @@ namespace GrowAGarden
 
         private Produce FindProduce(uint rawId)
         {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null || rawId == 0) return null;
-            return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) && obj != null
-                ? obj.GetComponent<Produce>()
-                : null;
+            return WorldManager.Find<Produce>(rawId);
         }
 
         /// <summary>True once every socket has yielded at least once.</summary>

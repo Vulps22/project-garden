@@ -59,6 +59,22 @@ namespace GrowAGarden
         public static bool Despawn(NetworkObject obj, string context)
             => WorldBridge.Despawn(obj, context);
 
+        /// <summary>Whether Fusion can create an object right now.</summary>
+        public static bool CanSpawn => WorldBridge.CanSpawn;
+
+        /// <summary>The spawned object with this network id, or null.</summary>
+        public static NetworkObject Find(uint rawId) => WorldBridge.Find(rawId);
+
+        /// <summary>The component of type T on the object with this network id, or null.</summary>
+        public static T Find<T>(uint rawId) where T : Component => WorldBridge.Find<T>(rawId);
+
+        /// <summary>
+        /// Takes an object out of the world only if this client simulates it, silently. For the
+        /// line every client runs where exactly one should act.
+        /// </summary>
+        public static bool DespawnIfStateAuthority(NetworkObject obj)
+            => WorldBridge.DespawnIfStateAuthority(obj);
+
         /// <summary>
         /// Asks for state authority over an object and waits for it, reporting the outcome
         /// through <paramref name="granted"/>. How long it waits is not the caller's to say.
@@ -91,11 +107,11 @@ namespace GrowAGarden
             // given this peer a player index makes it instantiate the prefab and *then* throw
             // out of Simulation.GetNextId(), leaving an orphan nothing will ever clean up.
             // ShopSlot waits for the same signal for the same reason.
-            if (SceneNetworking.IsNetworkReady) BeginCycling();
-            else SceneNetworking.OnLocalPlayerJoined += BeginCycling;
+            if (WorldBridge.IsNetworkReady) BeginCycling();
+            else WorldBridge.NetworkReady += BeginCycling;
         }
 
-        private void OnDisable() => SceneNetworking.OnLocalPlayerJoined -= BeginCycling;
+        private void OnDisable() => WorldBridge.NetworkReady -= BeginCycling;
 
         private void OnDestroy()
         {
