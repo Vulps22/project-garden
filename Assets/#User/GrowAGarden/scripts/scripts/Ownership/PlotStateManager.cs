@@ -27,10 +27,6 @@ namespace GrowAGarden
                  "no planting at all, and a claimed one allows only its owner.")]
         [SerializeField] private PlotLeaseManager _lease;
 
-        [Tooltip("See PlantSlot's old _authorityTimeout — how long to wait to be given ownership " +
-                 "of a planted seed before giving up on clearing it away. A safety net, not a " +
-                 "normal path.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         private PlantSlotState[] _slots = System.Array.Empty<PlantSlotState>();
         private Dictionary<PlantSlot, int> _slotIndices;
@@ -183,11 +179,11 @@ namespace GrowAGarden
             if (obj == null) yield break;
 
             bool granted = false;
-            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
+            yield return WorldBridge.TakeAuthority(obj, r => granted = r);
 
             if (!granted)
             {
-                Logger.Warn($"TakeOwnershipAndDespawn() '{gameObject.name}' — could not take ownership of the seed within {_authorityTimeout}s; it will linger invisible");
+                Logger.Warn($"TakeOwnershipAndDespawn() '{gameObject.name}' — could not take ownership of the seed within {WorldBridge.AuthorityTimeout}s; it will linger invisible");
                 yield break;
             }
 

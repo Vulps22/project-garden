@@ -273,7 +273,7 @@ namespace GrowAGarden
         /// </summary>
         protected Produce SpawnProduce(NetworkObject prefab, Vector3 position, Quaternion rotation)
         {
-            NetworkObject spawned = WorldBridge.Spawn(prefab, position, rotation, $"SpawnProduce() '{gameObject.name}'");
+            NetworkObject spawned = WorldManager.Spawn(prefab, position, rotation, $"SpawnProduce() '{gameObject.name}'");
             if (spawned == null) return null;
 
             Produce produce = spawned.GetComponent<Produce>();

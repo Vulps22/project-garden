@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using Fusion;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -33,7 +35,39 @@ namespace GrowAGarden
         [Tooltip("Seconds between world-wide stock cycles.")]
         [SerializeField] private float _recycleSeconds = 300f;
 
+
         public System.Collections.Generic.IReadOnlyList<SeedDefinition> Buyables => _buyables;
+
+        // ── Object lifecycle ──────────────────────────────────────────────────────
+        //
+        // The callsite for anything entering or leaving the world. Components and
+        // orchestrators come here; WorldBridge is one layer further down and is theirs to
+        // reach only through this. Managers call the bridge directly — a manager calling a
+        // manager is the sideways call the layering forbids.
+
+        /// <summary>
+        /// Puts a registered prefab into the world, master-owned, at a pose. Null on any
+        /// failure, having logged it against <paramref name="context"/>.
+        /// </summary>
+        public static NetworkObject Spawn(NetworkObject prefab, Vector3 position, Quaternion rotation, string context)
+            => WorldBridge.Spawn(prefab, position, rotation, context);
+
+        /// <summary>
+        /// Takes an object out of the world. False, and loud, if it could not — Fusion's own
+        /// Despawn does nothing without state authority and says nothing about it.
+        /// </summary>
+        public static bool Despawn(NetworkObject obj, string context)
+            => WorldBridge.Despawn(obj, context);
+
+        /// <summary>
+        /// Asks for state authority over an object and waits for it, reporting the outcome
+        /// through <paramref name="granted"/>. How long it waits is not the caller's to say.
+        /// </summary>
+        public static IEnumerator TakeAuthority(NetworkObject obj, Action<bool> granted)
+            => WorldBridge.TakeAuthority(obj, granted);
+
+        /// <summary>The wait, for callers that want to name it in a message.</summary>
+        public static float AuthorityTimeout => WorldBridge.AuthorityTimeout;
 
         private float _nextRecycleAt = float.PositiveInfinity;
 

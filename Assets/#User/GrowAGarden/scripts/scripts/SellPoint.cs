@@ -28,9 +28,6 @@ namespace GrowAGarden
     {
         [SerializeField] private NetworkBridge _networkBridge;
 
-        [Tooltip("How long the shop waits to be given ownership of a plant before abandoning the " +
-                 "sale and handing it back. A safety net, not a normal path.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         // Master-only bookkeeping for the sale in progress. Captured up front because announcing
         // the sale takes the plant out of the seller's hands, which clears the holder — read it
@@ -217,11 +214,11 @@ namespace GrowAGarden
             }
 
             bool granted = false;
-            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
 
             if (!granted)
             {
-                Reject(sellable, $"could not be taken into shop ownership within {_authorityTimeout}s");
+                Reject(sellable, $"could not be taken into shop ownership within {WorldManager.AuthorityTimeout}s");
                 yield break;
             }
 
