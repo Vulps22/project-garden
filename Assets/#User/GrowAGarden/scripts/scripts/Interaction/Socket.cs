@@ -27,9 +27,6 @@ namespace GrowAGarden
                  "collider on this object.")]
         [SerializeField] private Collider _bounds;
 
-        [Tooltip("How long to wait to be given ownership of a held object before giving up on " +
-                 "bringing it home. A safety net, not a normal path.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         /// <summary>Something is in the volume and nothing is held. Whoever owns this socket
         /// decides whether it is worth holding, and calls Hold() if so.</summary>
@@ -144,11 +141,11 @@ namespace GrowAGarden
             if (obj == null) yield break;
 
             bool granted = false;
-            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
 
             if (!granted)
             {
-                Logger.Warn($"TakeOwnershipAndRecall() '{gameObject.name}' — could not take ownership of '{held.name}' within {_authorityTimeout}s; leaving it where it is");
+                Logger.Warn($"TakeOwnershipAndRecall() '{gameObject.name}' — could not take ownership of '{held.name}' within {WorldManager.AuthorityTimeout}s; leaving it where it is");
                 yield break;
             }
 

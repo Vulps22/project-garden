@@ -566,7 +566,7 @@ namespace GrowAGarden
                 return null;
             }
 
-            NetworkObject spawned = WorldBridge.Spawn(prefab, _socket.transform.position, _socket.transform.rotation,
+            NetworkObject spawned = WorldManager.Spawn(prefab, _socket.transform.position, _socket.transform.rotation,
                                                       $"SpawnFreshSeed() '{gameObject.name}'");
             if (spawned == null) return null;
 

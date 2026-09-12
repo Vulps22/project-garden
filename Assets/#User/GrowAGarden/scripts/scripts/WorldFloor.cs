@@ -41,10 +41,6 @@ namespace GrowAGarden
                  "there is going anywhere.")]
         [SerializeField] private float _sweepInterval = 0.5f;
 
-        [Tooltip("Seconds to wait for state authority before giving up on despawning one object. " +
-                 "Same shape as PlotStateManager's, and for the same reason — whoever last waved a " +
-                 "hand near it may still own it.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         /// <summary>
         /// True from crossing the floor until the player is safely back above it. Not just "while
@@ -142,20 +138,20 @@ namespace GrowAGarden
             }
 
             bool granted = false;
-            yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => granted = r);
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
 
             if (obj == null) yield break;
 
             if (!granted)
             {
-                Logger.Warn($"Discard() '{go.name}' — no authority within {_authorityTimeout}s; " +
+                Logger.Warn($"Discard() '{go.name}' — no authority within {WorldManager.AuthorityTimeout}s; " +
                             $"it stays below the floor and the next sweep will try again");
                 new XRGrabInteractableRef(go).SetEnabled(true);
                 yield break;
             }
 
             Logger.Info($"Discard() '{go.name}' — fell past the floor at y={go.transform.position.y:F1}, despawned");
-            WorldBridge.Despawn(obj, $"Discard() '{go.name}'");
+            WorldManager.Despawn(obj, $"Discard() '{go.name}'");
         }
 
         /// <summary>

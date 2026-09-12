@@ -103,14 +103,24 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Requests state authority over an object and waits up to <paramref name="timeout"/>
+        /// How long to wait for Fusion to hand over state authority before giving up.
+        ///
+        /// One number for the whole world, and it lives here because here is the only layer every
+        /// caller can reach. It was four serialized fields on four classes, all set to 2, none of
+        /// which had been chosen — each existed only because this method used to demand an
+        /// argument.
+        /// </summary>
+        public const float AuthorityTimeout = 2f;
+
+        /// <summary>
+        /// Requests state authority over an object and waits <see cref="AuthorityTimeout"/>
         /// seconds for it, reporting the outcome through <paramref name="granted"/>.
         ///
         ///     bool ok = false;
-        ///     yield return WorldBridge.TakeAuthority(obj, _authorityTimeout, r => ok = r);
+        ///     yield return WorldBridge.TakeAuthority(obj, r => ok = r);
         ///     if (!ok) { ...caller's own refusal...; yield break; }
         /// </summary>
-        public static IEnumerator TakeAuthority(NetworkObject obj, float timeout, Action<bool> granted)
+        public static IEnumerator TakeAuthority(NetworkObject obj, Action<bool> granted)
         {
             if (obj == null)
             {
@@ -125,7 +135,7 @@ namespace GrowAGarden
                 // Null-tested first each pass: the object can be despawned while we wait, and
                 // reading HasStateAuthority on a destroyed one throws rather than returning false.
                 float waited = 0f;
-                while (obj != null && !obj.HasStateAuthority && waited < timeout)
+                while (obj != null && !obj.HasStateAuthority && waited < AuthorityTimeout)
                 {
                     yield return null;
                     waited += Time.deltaTime;

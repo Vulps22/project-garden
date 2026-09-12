@@ -239,7 +239,7 @@ namespace GrowAGarden
 
         private CollectibleEntity SpawnFreshItem()
         {
-            NetworkObject spawned = WorldBridge.Spawn(_itemPrefab, _socket.transform.position, _socket.transform.rotation,
+            NetworkObject spawned = WorldManager.Spawn(_itemPrefab, _socket.transform.position, _socket.transform.rotation,
                                                       $"SpawnFreshItem() '{gameObject.name}'");
             if (spawned == null) return null;
 
