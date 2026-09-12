@@ -111,7 +111,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
+            if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace GrowAGarden
 
             // Every decision below belongs to the master. Growth itself is derived, so proxies
             // stay in step without being told anything.
-            if (!HasLocalAuthority || !SceneNetworking.IsMasterClient) return;
+            if (!HasLocalAuthority || !PlayerManager.IsMaster) return;
 
             if (!_hasBorne && GetGrowthCompletion() >= 1f)
             {
@@ -175,7 +175,7 @@ namespace GrowAGarden
         /// </summary>
         public void Uproot()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             OnUprooted();
             _plot = null;           // the lease clears the plot itself; End() must not fight it
             _slotIndex = -1;

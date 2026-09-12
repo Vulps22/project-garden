@@ -50,7 +50,7 @@ namespace GrowAGarden
         /// </summary>
         public void Apply()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_source == null || !_source.ShouldMasterOwn) return;
 
             var obj = _networkBridge == null ? null : _networkBridge.Object;

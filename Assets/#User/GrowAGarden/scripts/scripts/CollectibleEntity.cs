@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -66,11 +65,11 @@ namespace GrowAGarden
         /// PlayerBalance, which meant an id the balance table had not heard of read back as
         /// "nobody is holding it" and handed the object to whoever grabbed next.
         /// </summary>
-        private ISomniumPlayer _grabber;
+        private PlayerIdentity _grabber;
 
         private bool IsLooseInWorld => !InDispenser && !IsHeld;
 
-        public string HolderId => _grabber?.Properties?.Id;
+        public string HolderId => _grabber.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>See Seed.CanSendRpc for why this guard exists — same Fusion teardown-order
@@ -119,8 +118,8 @@ namespace GrowAGarden
         /// <summary>A player who has left is holding nothing — see Seed.OnPlayerLeft.</summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
-            _grabber = null;
+            if (!_grabber.Exists || _grabber.Id != playerId) return;
+            _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
 
@@ -140,7 +139,7 @@ namespace GrowAGarden
 
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
+            if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
         private void OnSpawned()
@@ -234,7 +233,7 @@ namespace GrowAGarden
         /// <summary>Master only — see Seed.Discard, same Fusion-authority caveat.</summary>
         public bool Discard()
         {
-            if (!SceneNetworking.IsMasterClient) return false;
+            if (!PlayerManager.IsMaster) return false;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (obj == null)
@@ -282,8 +281,8 @@ namespace GrowAGarden
                     // Two rounds of diagnosis were spent reasoning from the call graph because of
                     // it. Delete alongside Seed's.
                     string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     LifecycleChanged?.Invoke();
                     break;
                 case CollectibleMessageType.takeRequest:
@@ -324,12 +323,12 @@ namespace GrowAGarden
             if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
-        public ISomniumPlayer GetGrabber() => _grabber;
+        public PlayerIdentity GetGrabber() => _grabber;
 
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
             _grabber = PlayerManager.GetLocalPlayer();
-            if (_grabber == null)
+            if (!_grabber.Exists)
             {
                 Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
                 return;
@@ -337,7 +336,7 @@ namespace GrowAGarden
 
             if (!CanSendRpc) return;
 
-            string id = _grabber.Properties.Id;
+            string id = _grabber.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);

@@ -106,7 +106,7 @@ namespace GrowAGarden
 
         private void Recycle()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             Logger.Info($"Recycle() '{gameObject.name}' — cycling world stock, {(_buyables == null ? 0 : _buyables.Length)} buyables");
             StockRecycled?.Invoke();

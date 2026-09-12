@@ -29,12 +29,11 @@ namespace GrowAGarden
         ///
         /// Drops them as a teammate everywhere, uproots all 24 slots of each Plot they owned, and
         /// relinquishes those claims.
-        ///
-        /// Master only; the caller gates. A despawn without state authority fails silently, so on
-        /// a proxy this clears nothing and says nothing.
         /// </summary>
         public void ReleaseFor(string playerId)
         {
+            if (!PlayerManager.IsMaster) return;
+
             int seeds = 0;
             foreach (Seed seed in FindObjectsByType<Seed>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {

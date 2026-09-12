@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using System.Collections;
 using UnityEngine;
 
@@ -86,7 +85,7 @@ namespace GrowAGarden
         private void Update()
         {
             if (!_wantsStock) return;
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_currentSeed != null) { _wantsStock = false; return; }
 
             if (Time.time - _lastStockAttempt < RESTOCK_RETRY_SECONDS) return;
@@ -103,7 +102,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnStockRecycled()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             if (_socket == null)
             {
@@ -180,7 +179,7 @@ namespace GrowAGarden
         /// <summary>Changes what this stall sells, clearing whatever is on the shelf first.</summary>
         public void Offer(SeedDefinition definition)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             if (definition == null || definition.seedPrefab == null)
             {
@@ -319,7 +318,7 @@ namespace GrowAGarden
                 return;
             }
 
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!string.IsNullOrEmpty(seed.HolderId)) return;   // someone else has it; their client will ask
 
             ReturnToSocket(seed, "left the socket with nobody holding it");
@@ -392,7 +391,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnPurchaseRequested(Seed seed)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (seed != _currentSeed) return;
             if (seed.IsBought || !seed.InShop) return;
             if (_resolvingPurchase) return;   // already retrying this exact request
@@ -415,7 +414,7 @@ namespace GrowAGarden
             _resolvingPurchase = true;
 
             float waited = 0f;
-            ISomniumPlayer buyer = null;
+            PlayerIdentity buyer = PlayerIdentity.None;
             while (waited < TAKE_RETRY_TIMEOUT_SECONDS)
             {
                 if (seed == null || seed != _currentSeed || seed.IsBought || !seed.InShop)
@@ -425,7 +424,7 @@ namespace GrowAGarden
                 }
 
                 buyer = seed.GetGrabber();
-                if (buyer != null && seed.HasKnownAuthority) break;
+                if (buyer.Exists && seed.HasKnownAuthority) break;
 
                 yield return new WaitForSeconds(TAKE_RETRY_SECONDS);
                 waited += TAKE_RETRY_SECONDS;
@@ -433,7 +432,7 @@ namespace GrowAGarden
 
             _resolvingPurchase = false;
 
-            if (buyer == null)
+            if (!buyer.Exists)
             {
                 // The request came from the holder, so somebody has it — but this client was
                 // never told who, for the whole retry window. Refuse rather than guess: an
@@ -465,7 +464,7 @@ namespace GrowAGarden
             // The seed hands over a player, not a balance row, so the money is looked up here — at
             // the one place that actually cares about it — rather than travelling with whoever
             // happens to have their hand on the seed.
-            string buyerId = buyer.Properties.Id;
+            string buyerId = buyer.Id;
             PlayerBalance balance = EconomyManager.Instance == null
                 ? null
                 : EconomyManager.Instance.GetPlayer(buyerId);
@@ -510,7 +509,7 @@ namespace GrowAGarden
 
         private void SpawnStock()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!CanSpawn()) return;
 
             Seed spawned = SpawnFreshSeed();

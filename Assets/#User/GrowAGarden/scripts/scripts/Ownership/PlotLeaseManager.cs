@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,7 +81,7 @@ namespace GrowAGarden
         /// the moment host migration hands that client the role.</summary>
         private void OnOtherPlayerJoined(PlayerRef player)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             AnnounceOwner(OwnerId);
             AnnounceTeammates();
         }
@@ -110,7 +109,7 @@ namespace GrowAGarden
 
         private void Update()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             // Unity's overloaded null check catches a despawned deed here with no event needed —
             // a destroyed UnityEngine.Object compares equal to null even though the C# reference
@@ -145,7 +144,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnDeedTakeRequested(CollectibleEntity deed)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (deed != _currentDeed) return;
             if (deed.IsTaken || !deed.InDispenser) return;
             if (_resolvingClaim) return;   // already retrying this exact request
@@ -165,7 +164,7 @@ namespace GrowAGarden
             _resolvingClaim = true;
 
             float waited = 0f;
-            ISomniumPlayer holder = null;
+            PlayerIdentity holder = PlayerIdentity.None;
             while (waited < DEED_RETRY_TIMEOUT_SECONDS)
             {
                 if (deed == null || deed != _currentDeed || deed.IsTaken || !deed.InDispenser)
@@ -175,7 +174,7 @@ namespace GrowAGarden
                 }
 
                 holder = deed.GetGrabber();
-                if (holder != null && deed.HasKnownAuthority) break;
+                if (holder.Exists && deed.HasKnownAuthority) break;
 
                 yield return new WaitForSeconds(DEED_RETRY_SECONDS);
                 waited += DEED_RETRY_SECONDS;
@@ -183,7 +182,7 @@ namespace GrowAGarden
 
             _resolvingClaim = false;
 
-            if (holder == null)
+            if (!holder.Exists)
             {
                 Logger.Warn($"OnDeedTakeRequested() '{gameObject.name}' — requested but holder unknown on this client after {DEED_RETRY_TIMEOUT_SECONDS}s; ignoring");
                 yield break;
@@ -195,7 +194,7 @@ namespace GrowAGarden
                 yield break;
             }
 
-            Claim(holder.Properties.Id);
+            Claim(holder.Id);
         }
 
         /// <summary>Master only. Records the owner, announces it to everyone, and removes the
@@ -234,7 +233,7 @@ namespace GrowAGarden
         /// not built.</summary>
         public void Relinquish()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             AnnounceOwner(null);
 
             // Load-bearing, not defensive: without this a later claimant would silently inherit
@@ -253,7 +252,7 @@ namespace GrowAGarden
         /// and PlotApplication already logs the outcome of the application that led here.</summary>
         public void AddTeammate(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (string.IsNullOrEmpty(playerId)) return;
             if (playerId == OwnerId) return;
             if (_teammateIds.Contains(playerId)) return;
@@ -288,7 +287,7 @@ namespace GrowAGarden
         /// Plot — GardenLease loops every Plot without checking membership first.</summary>
         public void RemoveTeammate(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!_teammateIds.Remove(playerId)) return;
 
             AnnounceTeammates();
@@ -299,7 +298,7 @@ namespace GrowAGarden
         /// format the way 24 occupancy bits was.</summary>
         private void AnnounceTeammates()
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             int size = BytesWriter.ByteSize;
             foreach (string id in _teammateIds)
@@ -316,7 +315,7 @@ namespace GrowAGarden
         /// shape as PlantSlot.AnnounceOccupancy.</summary>
         private void AnnounceOwner(string ownerId)
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             string owner = ownerId ?? string.Empty;
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
@@ -347,7 +346,7 @@ namespace GrowAGarden
                     break;
 
                 case PlotMessageType.TeammateRemoveRequest:
-                    if (!SceneNetworking.IsMasterClient) return;
+                    if (!PlayerManager.IsMaster) return;
                     var removeReader = new BytesReader(data);
                     if (!removeReader.IsValid) return;
                     RemoveTeammate(removeReader.NextString());

@@ -37,7 +37,7 @@ namespace GrowAGarden
         protected Produce Produce { get; private set; }
 
         /// <summary>True when this client is the one allowed to decide things. See the class note.</summary>
-        protected static bool IsMaster => SceneNetworking.IsMasterClient;
+        protected static bool IsMaster => PlayerManager.IsMaster;
 
         protected virtual void Awake()
         {

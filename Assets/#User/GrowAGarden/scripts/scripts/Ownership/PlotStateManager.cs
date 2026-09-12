@@ -77,7 +77,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnOtherPlayerJoined(PlayerRef player)
         {
-            if (SceneNetworking.IsMasterClient) BroadcastFullState();
+            if (PlayerManager.IsMaster) BroadcastFullState();
         }
 
         public Transform AnchorFor(int slotIndex) =>
@@ -117,7 +117,7 @@ namespace GrowAGarden
         /// addressed by slot index instead of being the slot itself.</summary>
         private void OnPlantRequested(byte[] data)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;
@@ -245,7 +245,7 @@ namespace GrowAGarden
         /// BroadcastFullState's job, for a late joiner only.</summary>
         private void AnnounceOccupancy(int slotIndex)
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             var writer = new BytesWriter(BytesWriter.ByteSize * 2);
             writer.AddByte((byte)slotIndex);
@@ -258,7 +258,7 @@ namespace GrowAGarden
         /// player table.</summary>
         private void BroadcastFullState()
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             byte b0 = 0, b1 = 0, b2 = 0;
             for (int i = 0; i < _slots.Length && i < 24; i++)
