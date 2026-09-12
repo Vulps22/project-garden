@@ -1,5 +1,5 @@
+using CommunityModules;
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
 using UnityEngine;
@@ -29,9 +29,6 @@ namespace GrowAGarden
     {
         [SerializeField] private NetworkBridge _networkBridge;
 
-        [Tooltip("How long the shop waits to be given ownership of a plant before abandoning the " +
-                 "sale and handing it back. A safety net, not a normal path.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         // Master-only bookkeeping for the sale in progress. Captured up front because announcing
         // the sale takes the plant out of the seller's hands, which clears the holder — read it
@@ -97,8 +94,8 @@ namespace GrowAGarden
             if (!sellable.CanBeSold || sellable.IsPending) return;
             if (!sellable.IsHeld) return;
 
-            ISomniumPlayer seller = PlayerManager.GetLocalPlayer();
-            if (seller == null)
+            PlayerIdentity seller = PlayerManager.GetLocalPlayer();
+            if (!seller.Exists)
             {
                 Logger.Warn($"OnTriggerEnter() '{gameObject.name}' — local player unavailable, cannot offer '{sellable.name}' for sale");
                 return;
@@ -109,11 +106,11 @@ namespace GrowAGarden
             // on every client, and the two messages travel on different bridges — so their
             // arrival order is not guaranteed and the shop could be handed a plant nobody owns.
             // Naming the seller in the payload makes the whole thing order-independent.
-            string id = seller.Properties.Id;
+            string id = seller.Id;
             int size = BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddInt((int)NetworkIdOf(sellable));
-            writer.AddString(id);
+            writer.AddAutoString(id);
             _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SellRequest, writer.Data);
 
             // Optimistic, and only ever local: it is out of my hands the moment I put it down.
@@ -148,12 +145,12 @@ namespace GrowAGarden
         /// <summary>Master client only — the shop is the only one who accepts a sale.</summary>
         private void OnSellRequested(byte[] data)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;
             uint itemId = (uint)reader.NextInt();
-            string sellerId = reader.NextString();
+            string sellerId = reader.NextAutoString();
 
             SellableEntity sellable = FindSellable(itemId);
             if (sellable == null)
@@ -217,20 +214,12 @@ namespace GrowAGarden
                 yield break;
             }
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (!obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
-                Reject(sellable, $"could not be taken into shop ownership within {_authorityTimeout}s");
+                Reject(sellable, $"could not be taken into shop ownership within {WorldManager.AuthorityTimeout}s");
                 yield break;
             }
 
@@ -286,7 +275,7 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(size);
             writer.AddInt((int)NetworkIdOf(sellable));
-            writer.AddString(sellerId);
+            writer.AddAutoString(sellerId);
             writer.AddInt(value);
             _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SaleAccepted, writer.Data);
         }
@@ -298,7 +287,7 @@ namespace GrowAGarden
             if (!reader.IsValid) return;
 
             uint itemId = (uint)reader.NextInt();
-            string sellerId = reader.NextString();
+            string sellerId = reader.NextAutoString();
             int value = reader.NextInt();
 
             // Every client ends the object its own way; only its owner can actually despawn it.
@@ -337,11 +326,7 @@ namespace GrowAGarden
         /// </summary>
         private SellableEntity FindSellable(uint rawId)
         {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null || rawId == 0) return null;
-            return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) && obj != null
-                ? obj.GetComponent<SellableEntity>()
-                : null;
+            return WorldManager.Find<SellableEntity>(rawId);
         }
 
         private void OnValidate()

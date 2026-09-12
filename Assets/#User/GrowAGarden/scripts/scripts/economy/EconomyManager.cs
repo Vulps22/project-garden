@@ -1,3 +1,4 @@
+using CommunityModules;
 using SomniumSpace.Network.Bridge;
 using System;
 using System.Collections;
@@ -29,24 +30,21 @@ namespace GrowAGarden
                 return;
             }
             Instance = this;
-            PlayerManager.PlayerJoined += OnPlayerJoined;
+
             PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
-            PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
         }
 
         private void Start()
         {
             _bridge.OnMessageToAll += OnMessageToAll;
-            SceneNetworking.OnBecomeWorldMaster += OnBecomeWorldMaster;
+            PlayerBridge.BecameWorldMaster += OnBecomeWorldMaster;
         }
 
         private void OnDestroy()
         {
             _bridge.OnMessageToAll -= OnMessageToAll;
-            SceneNetworking.OnBecomeWorldMaster -= OnBecomeWorldMaster;
-            PlayerManager.PlayerJoined -= OnPlayerJoined;
+            PlayerBridge.BecameWorldMaster -= OnBecomeWorldMaster;
             PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
-            PlayerManager.PlayerDestroyed -= OnPlayerDestroyed;
         }
 
         private void OnBecomeWorldMaster()
@@ -65,31 +63,35 @@ namespace GrowAGarden
             _localPlayerId = playerId;
             if (_balances.Count > 0) return;
             _balances.Add(playerId, new PlayerBalance(playerId, playerName, _startingBalance));
-            if (SceneNetworking.IsMasterClient) BroadcastBalances();
+            if (PlayerManager.IsMaster) BroadcastBalances();
         }
 
-        private void OnPlayerJoined(string playerId, string playerName)
+        /// <summary>
+        /// Opens a balance for a player at the starting amount and broadcasts the table.
+        ///
+        /// Does nothing if they already have one — a rejoin inside the grace period reuses an id
+        /// whose row was never removed.
+        /// </summary>
+        public void EnsureBalance(string playerId, string playerName)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_balances.ContainsKey(playerId)) return;
             _balances.Add(playerId, new PlayerBalance(playerId, playerName, _startingBalance));
             BroadcastBalances();
         }
 
         /// <summary>
-        /// A departed player did not come back, so they leave the table and the balance board.
-        /// Master only, and no new message type is needed: every client clears and rebuilds
-        /// _balances from each broadcast, so a removal propagates exactly like a change does.
+        /// Drops a player from the balance table and the board, and broadcasts the table.
         ///
-        /// Nothing removed them before this, which is why a leaver's name stayed on the board for
-        /// the rest of the session.
+        /// The broadcast carries the removal by itself — every client rebuilds _balances from
+        /// scratch each time — so there is no removal message.
         /// </summary>
-        private void OnPlayerDestroyed(string playerId)
+        public void RemovePlayer(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!_balances.Remove(playerId)) return;
 
-            Logger.Info($"OnPlayerDestroyed() '{gameObject.name}' — removed '{playerId}' from the balance table");
+            Logger.Info($"RemovePlayer() '{gameObject.name}' — removed '{playerId}' from the balance table");
             BroadcastBalances();
         }
 
@@ -99,7 +101,7 @@ namespace GrowAGarden
         /// </summary>
         public void AddBalance(string playerId, int amount)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (string.IsNullOrEmpty(playerId))
             {
                 Logger.Warn("[EconomyManager] AddBalance - null/empty playerId, ignoring");
@@ -134,7 +136,7 @@ namespace GrowAGarden
             int before = balance.GetBalance();
             balance.RemoveBalance(amount);
             RaiseIfLocal(playerId, balance.GetBalance(), before);
-            if(SceneNetworking.IsMasterClient) BroadcastBalances();
+            if(PlayerManager.IsMaster) BroadcastBalances();
         }
 
         /// <summary>
@@ -162,7 +164,7 @@ namespace GrowAGarden
 
         private void BroadcastBalances()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             int size = BytesWriter.ByteSize; // entry count
             foreach (var b in _balances.Values)
@@ -177,8 +179,8 @@ namespace GrowAGarden
             writer.AddByte((byte)_balances.Count);
             foreach (var b in _balances.Values)
             {
-                writer.AddString(b.GetID());
-                writer.AddString(b.GetPlayerName());
+                writer.AddAutoString(b.GetID());
+                writer.AddAutoString(b.GetPlayerName());
                 writer.AddInt(b.GetBalance());
             }
 
@@ -200,8 +202,8 @@ namespace GrowAGarden
             _balances.Clear();
             for (int i = 0; i < count; i++)
             {
-                string playerId = reader.NextString();
-                string playerName = reader.NextString();
+                string playerId = reader.NextAutoString();
+                string playerName = reader.NextAutoString();
                 int balance = reader.NextInt();
                 _balances[playerId] = new PlayerBalance(playerId, playerName, balance);
             }

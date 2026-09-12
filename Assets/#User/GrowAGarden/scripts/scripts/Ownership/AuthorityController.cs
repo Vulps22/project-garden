@@ -34,13 +34,13 @@ namespace GrowAGarden
         private void OnEnable()
         {
             if (_notifier != null) _notifier.LifecycleChanged += Apply;
-            SceneNetworking.OnBecomeWorldMaster += Apply;
+            PlayerManager.BecameWorldMaster += Apply;
         }
 
         private void OnDisable()
         {
             if (_notifier != null) _notifier.LifecycleChanged -= Apply;
-            SceneNetworking.OnBecomeWorldMaster -= Apply;
+            PlayerManager.BecameWorldMaster -= Apply;
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace GrowAGarden
         /// </summary>
         public void Apply()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_source == null || !_source.ShouldMasterOwn) return;
 
             var obj = _networkBridge == null ? null : _networkBridge.Object;

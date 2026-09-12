@@ -2,7 +2,8 @@
     "name": "GrowAGarden.Editor",
     "rootNamespace": "GrowAGarden.EditorTools",
     "references": [
-        "GUID:5a8fb4d7db2dbfa4ead85f84477bb4be"
+        "GUID:5a8fb4d7db2dbfa4ead85f84477bb4be",
+        "GUID:0eac857c3f7d3f145947f82658c83ed9"
     ],
     "includePlatforms": [
         "Editor"

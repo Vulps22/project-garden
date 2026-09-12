@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using System.Collections;
 using UnityEngine;
 
@@ -86,7 +85,7 @@ namespace GrowAGarden
         private void Update()
         {
             if (!_wantsStock) return;
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_currentSeed != null) { _wantsStock = false; return; }
 
             if (Time.time - _lastStockAttempt < RESTOCK_RETRY_SECONDS) return;
@@ -103,7 +102,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnStockRecycled()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             if (_socket == null)
             {
@@ -180,7 +179,7 @@ namespace GrowAGarden
         /// <summary>Changes what this stall sells, clearing whatever is on the shelf first.</summary>
         public void Offer(SeedDefinition definition)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             if (definition == null || definition.seedPrefab == null)
             {
@@ -208,7 +207,7 @@ namespace GrowAGarden
         /// A player cannot veto a cycle: holding is not owning — HolderId says who has it, OwnerId
         /// says whose it is, and only the second is a claim — so a player with no thatch must not
         /// be able to squat on the rarest thing in the shop until the timer flips. Authority is
-        /// not a claim either; it transfers on *hover*, so someone who merely waved a hand near
+        /// not a claim either; it follows a grab and never returns, so whoever last picked up
         /// the barrow would otherwise hold the world's whole cycle up.
         ///
         /// So the master asks, and keeps asking, until it has authority — then despawns. Discard()
@@ -319,7 +318,7 @@ namespace GrowAGarden
                 return;
             }
 
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!string.IsNullOrEmpty(seed.HolderId)) return;   // someone else has it; their client will ask
 
             ReturnToSocket(seed, "left the socket with nobody holding it");
@@ -392,7 +391,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnPurchaseRequested(Seed seed)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (seed != _currentSeed) return;
             if (seed.IsBought || !seed.InShop) return;
             if (_resolvingPurchase) return;   // already retrying this exact request
@@ -415,7 +414,7 @@ namespace GrowAGarden
             _resolvingPurchase = true;
 
             float waited = 0f;
-            ISomniumPlayer buyer = null;
+            PlayerIdentity buyer = PlayerIdentity.None;
             while (waited < TAKE_RETRY_TIMEOUT_SECONDS)
             {
                 if (seed == null || seed != _currentSeed || seed.IsBought || !seed.InShop)
@@ -425,7 +424,7 @@ namespace GrowAGarden
                 }
 
                 buyer = seed.GetGrabber();
-                if (buyer != null && seed.HasKnownAuthority) break;
+                if (buyer.Exists && seed.HasKnownAuthority) break;
 
                 yield return new WaitForSeconds(TAKE_RETRY_SECONDS);
                 waited += TAKE_RETRY_SECONDS;
@@ -433,7 +432,7 @@ namespace GrowAGarden
 
             _resolvingPurchase = false;
 
-            if (buyer == null)
+            if (!buyer.Exists)
             {
                 // The request came from the holder, so somebody has it — but this client was
                 // never told who, for the whole retry window. Refuse rather than guess: an
@@ -465,7 +464,7 @@ namespace GrowAGarden
             // The seed hands over a player, not a balance row, so the money is looked up here — at
             // the one place that actually cares about it — rather than travelling with whoever
             // happens to have their hand on the seed.
-            string buyerId = buyer.Properties.Id;
+            string buyerId = buyer.Id;
             PlayerBalance balance = EconomyManager.Instance == null
                 ? null
                 : EconomyManager.Instance.GetPlayer(buyerId);
@@ -510,8 +509,8 @@ namespace GrowAGarden
 
         private void SpawnStock()
         {
-            if (!SceneNetworking.IsMasterClient) return;
-            if (!CanSpawn()) return;
+            if (!PlayerManager.IsMaster) return;
+            if (!WorldManager.CanSpawn) return;
 
             Seed spawned = SpawnFreshSeed();
             if (spawned == null) return;   // SpawnFreshSeed has already said why; Update retries
@@ -526,30 +525,6 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Whether Fusion can actually create an object right now.
-        ///
-        /// Asks the runner, not our own bookkeeping. IsSharedModeMasterClient goes true as soon as
-        /// the peer is in a room, and SceneNetworking.IsNetworkReady is a static that outlives the
-        /// scene it describes — during a world transition the old value is still standing while
-        /// the new scene's Update loops are already running. Either one alone said "go" while
-        /// Fusion's simulation had no player index yet, and Runner.Spawn() in that window
-        /// instantiates the prefab and *then* throws out of Simulation.GetNextId(), leaving an
-        /// orphaned GameObject that is never networked and never told what it is. Those orphans
-        /// are what put two seeds in one slot.
-        ///
-        /// LocalPlayer.IsRealPlayer is the question that actually matters — it is false until this
-        /// peer has a player index, which is precisely what GetNextId() needs.
-        /// </summary>
-        private bool CanSpawn()
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            return runner != null
-                && runner.IsRunning
-                && runner.LocalPlayer.IsRealPlayer
-                && SceneNetworking.IsNetworkReady;
-        }
-
-        /// <summary>
         /// Makes a new seed rather than reusing one.
         ///
         /// SharedModeStateAuthMasterClient is the point of the exercise: the master owns the stock
@@ -560,10 +535,6 @@ namespace GrowAGarden
         /// </summary>
         private Seed SpawnFreshSeed()
         {
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
             NetworkObject prefab = _seedDefinition == null ? null : _seedDefinition.seedPrefab;
             if (prefab == null)
             {
@@ -571,38 +542,9 @@ namespace GrowAGarden
                 return null;
             }
 
-            if (!net.NetworkPrefabs.TryGetValue(prefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Warn($"SpawnFreshSeed() '{gameObject.name}' — '{prefab.name}' is not registered on SceneNetworking yet");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, _socket.transform.position, _socket.transform.rotation,
-                                       null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                // Fusion instantiates the prefab before it allocates an id, so a throw in here has
-                // already left a GameObject in the scene that will never be networked. There is no
-                // handle to clean it up with — the only real defence is CanSpawn() above, and the
-                // retry interval that stops a bad frame becoming a hundred of them.
-                //
-                // Caught rather than left to propagate because ExceptionAlarm blacks the world out
-                // on any exception from this assembly, and a shop that cannot restock is not worth
-                // making the garden unplayable for. The error still says so, loudly.
-                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion threw spawning '{prefab.name}': {e.Message}");
-                return null;
-            }
-
-            if (spawned == null)
-            {
-                Logger.Error($"SpawnFreshSeed() '{gameObject.name}' — Fusion refused to spawn '{prefab.name}'");
-                return null;
-            }
+            NetworkObject spawned = WorldManager.Spawn(prefab, _socket.transform.position, _socket.transform.rotation,
+                                                      $"SpawnFreshSeed() '{gameObject.name}'");
+            if (spawned == null) return null;
 
             Seed seed = spawned.GetComponent<Seed>();
             if (seed == null)

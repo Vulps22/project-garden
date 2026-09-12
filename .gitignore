@@ -8,16 +8,16 @@ Assets/*
 Assets/#User/*
 !Assets/#User/GrowAGarden/
 !Assets/#User/GrowAGarden/**
-!Assets/Cartoon_Farm_Crops/
-!Assets/Cartoon_Farm_Crops/**
-!Assets/GVOZDY/
-!Assets/GVOZDY/**
 
 # Track git and documentation files
 !/.gitignore
 !/.gitattributes
 !/README.md
 !/CLAUDE.md
+
+# Narration sources — Audacity projects behind sounds/*.mp3
+!/Audacity/
+!/Audacity/**
 
 # Design docs — outside Assets/, so Unity never imports them
 !/docs/

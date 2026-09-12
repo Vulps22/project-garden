@@ -1,5 +1,5 @@
+using CommunityModules;
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
@@ -63,7 +63,7 @@ namespace GrowAGarden
             switch ((CollectibleMessageType)id)
             {
                 case CollectibleMessageType.associateRequest:
-                    if (!SceneNetworking.IsMasterClient) return;
+                    if (!PlayerManager.IsMaster) return;
                     var reader = new BytesReader(data);
                     if (!reader.IsValid) return;
                     Associate((uint)reader.NextInt());
@@ -76,7 +76,7 @@ namespace GrowAGarden
                     break;
 
                 case CollectibleMessageType.acceptRequest:
-                    if (!SceneNetworking.IsMasterClient) return;
+                    if (!PlayerManager.IsMaster) return;
                     OnAcceptRequested();
                     break;
             }
@@ -106,17 +106,17 @@ namespace GrowAGarden
                 return;
             }
 
-            ISomniumPlayer holder = _collectible.GetGrabber();
+            PlayerIdentity holder = _collectible.GetGrabber();
             string applicant = _collectible.TakenBy;
 
-            if (holder != null && !string.IsNullOrEmpty(applicant) && holder.Properties?.Id == plot.OwnerId)
+            if (holder.Exists && !string.IsNullOrEmpty(applicant) && holder.Id == plot.OwnerId)
             {
                 plot.AddTeammate(applicant);
                 Logger.Info($"OnAcceptRequested() '{gameObject.name}' — '{applicant}' accepted onto plot owned by '{plot.OwnerId}'");
             }
             else
             {
-                Logger.Warn($"OnAcceptRequested() '{gameObject.name}' — holder={(holder == null ? "unknown" : holder.Properties?.Id)} is not owner '{plot.OwnerId}'; not accepted");
+                Logger.Warn($"OnAcceptRequested() '{gameObject.name}' — holder={(holder.Exists ? holder.Id : "unknown")} is not owner '{plot.OwnerId}'; not accepted");
             }
 
             _collectible.Discard();
@@ -126,11 +126,7 @@ namespace GrowAGarden
         {
             if (AssociatedPlotId == 0) return null;
 
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null) return null;
-            if (!runner.TryFindObject(new NetworkId { Raw = AssociatedPlotId }, out NetworkObject obj) || obj == null) return null;
-
-            return obj.GetComponent<PlotLeaseManager>();
+            return WorldManager.Find<PlotLeaseManager>(AssociatedPlotId);
         }
 
         private void OnValidate()

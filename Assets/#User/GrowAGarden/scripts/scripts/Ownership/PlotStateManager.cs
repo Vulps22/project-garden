@@ -1,3 +1,4 @@
+using CommunityModules;
 using Fusion;
 using Fusion.Addons.Physics;
 using SomniumSpace.Network.Bridge;
@@ -27,10 +28,6 @@ namespace GrowAGarden
                  "no planting at all, and a claimed one allows only its owner.")]
         [SerializeField] private PlotLeaseManager _lease;
 
-        [Tooltip("See PlantSlot's old _authorityTimeout — how long to wait to be given ownership " +
-                 "of a planted seed before giving up on clearing it away. A safety net, not a " +
-                 "normal path.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         private PlantSlotState[] _slots = System.Array.Empty<PlantSlotState>();
         private Dictionary<PlantSlot, int> _slotIndices;
@@ -59,13 +56,13 @@ namespace GrowAGarden
                 return;
             }
             _networkBridge.OnMessageToAll += OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         private void OnDestroy()
         {
             if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
         /// <summary>
@@ -75,9 +72,9 @@ namespace GrowAGarden
         /// correctness bug the moment host migration ever hands that client the role: it would
         /// make planting decisions off a copy it never actually received.
         /// </summary>
-        private void OnOtherPlayerJoined(PlayerRef player)
+        private void OnOtherPlayerJoined()
         {
-            if (SceneNetworking.IsMasterClient) BroadcastFullState();
+            if (PlayerManager.IsMaster) BroadcastFullState();
         }
 
         public Transform AnchorFor(int slotIndex) =>
@@ -98,7 +95,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(size);
             writer.AddByte((byte)slotIndex);
             writer.AddInt((int)plantable.NetworkId);
-            writer.AddString(owner);
+            writer.AddAutoString(owner);
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.PlantRequest, writer.Data);
         }
 
@@ -117,13 +114,13 @@ namespace GrowAGarden
         /// addressed by slot index instead of being the slot itself.</summary>
         private void OnPlantRequested(byte[] data)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;
             int slotIndex = reader.NextByte();
             uint plantableId = (uint)reader.NextInt();
-            string ownerId = reader.NextString();
+            string ownerId = reader.NextAutoString();
 
             if (slotIndex < 0 || slotIndex >= _slots.Length)
             {
@@ -182,64 +179,22 @@ namespace GrowAGarden
             NetworkObject obj = FindObject(plantableId);
             if (obj == null) yield break;
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (!obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldBridge.TakeAuthority(obj, r => granted = r);
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
-                Logger.Warn($"TakeOwnershipAndDespawn() '{gameObject.name}' — could not take ownership of the seed within {_authorityTimeout}s; it will linger invisible");
+                Logger.Warn($"TakeOwnershipAndDespawn() '{gameObject.name}' — could not take ownership of the seed within {WorldBridge.AuthorityTimeout}s; it will linger invisible");
                 yield break;
             }
 
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldBridge.Despawn(obj, $"TakeOwnershipAndDespawn() '{gameObject.name}'");
         }
 
         private Plant SpawnPlant(NetworkObject prefab, Transform anchor)
         {
-            if (prefab == null)
-            {
-                Logger.Error($"SpawnPlant() '{gameObject.name}' — the seed names no plant prefab");
-                return null;
-            }
-
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (!net.NetworkPrefabs.TryGetValue(prefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Error($"SpawnPlant() '{gameObject.name}' — '{prefab.name}' is not registered on SceneNetworking");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, anchor.position, anchor.rotation, null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                Logger.Error($"SpawnPlant() '{gameObject.name}' — Fusion threw spawning '{prefab.name}': {e.Message}");
-                return null;
-            }
-
+            NetworkObject spawned = WorldBridge.Spawn(prefab, anchor.position, anchor.rotation, $"SpawnPlant() '{gameObject.name}'");
             if (spawned == null) return null;
-
-            // Explicit, for the same reason SpawnProduce is: the pose handed to Spawn() is local
-            // to the spawner and not networked. Plants carry no rigidbody, so a transform write is
-            // enough here.
-            spawned.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
-            var body = spawned.GetComponent<NetworkRigidbody3D>();
-            if (body != null) body.Teleport(anchor.position, anchor.rotation);
 
             Plant plant = spawned.GetComponent<Plant>();
             if (plant == null) Logger.Error($"SpawnPlant() '{gameObject.name}' — '{spawned.name}' has no Plant component");
@@ -287,7 +242,7 @@ namespace GrowAGarden
         /// BroadcastFullState's job, for a late joiner only.</summary>
         private void AnnounceOccupancy(int slotIndex)
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             var writer = new BytesWriter(BytesWriter.ByteSize * 2);
             writer.AddByte((byte)slotIndex);
@@ -300,7 +255,7 @@ namespace GrowAGarden
         /// player table.</summary>
         private void BroadcastFullState()
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             byte b0 = 0, b1 = 0, b2 = 0;
             for (int i = 0; i < _slots.Length && i < 24; i++)
@@ -362,12 +317,7 @@ namespace GrowAGarden
             }
         }
 
-        private NetworkObject FindObject(uint rawId)
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null || rawId == 0) return null;
-            return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) ? obj : null;
-        }
+        private NetworkObject FindObject(uint rawId) => WorldBridge.Find(rawId);
 
         private IPlantable FindPlantable(uint rawId)
         {

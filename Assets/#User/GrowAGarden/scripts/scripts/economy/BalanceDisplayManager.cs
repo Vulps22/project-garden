@@ -1,3 +1,4 @@
+using CommunityModules;
 using SomniumSpace.Network.Bridge;
 using TMPro;
 using UnityEngine;
@@ -40,8 +41,8 @@ namespace GrowAGarden
         /// </summary>
         public void Set(string[] names, int[] balances)
         {
-            Logger.Log($"[BalanceDisplayManager] Set - IsMasterClient={SceneNetworking.IsMasterClient}, names={names?.Length ?? 0}, balances={balances?.Length ?? 0}");
-            if (!SceneNetworking.IsMasterClient) return;
+            Logger.Log($"[BalanceDisplayManager] Set - IsMasterClient={PlayerManager.IsMaster}, names={names?.Length ?? 0}, balances={balances?.Length ?? 0}");
+            if (!PlayerManager.IsMaster) return;
 
             int count = Mathf.Min(names.Length, balances.Length, _displays.Length);
             Logger.Log($"[BalanceDisplayManager] Set - sending {count} entries");
@@ -58,7 +59,7 @@ namespace GrowAGarden
             for (int i = 0; i < count; i++)
             {
                 Logger.Log($"[BalanceDisplayManager] Set - writing entry [{i}]: name={names[i]}, balance={balances[i]}");
-                writer.AddString(names[i]);
+                writer.AddAutoString(names[i]);
                 writer.AddInt(balances[i]);
             }
 
@@ -83,7 +84,7 @@ namespace GrowAGarden
             var balances = new int[count];
             for (int i = 0; i < count; i++)
             {
-                names[i] = reader.NextString();
+                names[i] = reader.NextAutoString();
                 balances[i] = reader.NextInt();
                 Logger.Log($"[BalanceDisplayManager] OnMessageToAll - entry [{i}]: name={names[i]}, balance={balances[i]}");
             }

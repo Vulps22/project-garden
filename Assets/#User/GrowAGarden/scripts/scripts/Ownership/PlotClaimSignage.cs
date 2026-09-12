@@ -64,7 +64,7 @@ namespace GrowAGarden
                 return;
             }
 
-            string name = PlayerManager.GetLocalPlayer()?.Properties?.NickName;
+            string name = PlayerManager.GetLocalPlayer().Name;
 
             _nameText.text = string.IsNullOrEmpty(name) ? localId : name;
         }

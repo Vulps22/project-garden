@@ -1,5 +1,5 @@
+using CommunityModules;
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -66,11 +66,11 @@ namespace GrowAGarden
         /// PlayerBalance, which meant an id the balance table had not heard of read back as
         /// "nobody is holding it" and handed the object to whoever grabbed next.
         /// </summary>
-        private ISomniumPlayer _grabber;
+        private PlayerIdentity _grabber;
 
         private bool IsLooseInWorld => !InDispenser && !IsHeld;
 
-        public string HolderId => _grabber?.Properties?.Id;
+        public string HolderId => _grabber.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>See Seed.CanSendRpc for why this guard exists — same Fusion teardown-order
@@ -94,7 +94,7 @@ namespace GrowAGarden
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
@@ -110,7 +110,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToAll -= OnMessageToAll;
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
@@ -119,8 +119,8 @@ namespace GrowAGarden
         /// <summary>A player who has left is holding nothing — see Seed.OnPlayerLeft.</summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
-            _grabber = null;
+            if (!_grabber.Exists || _grabber.Id != playerId) return;
+            _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
 
@@ -140,7 +140,7 @@ namespace GrowAGarden
 
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
+            if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
         private void OnSpawned()
@@ -148,7 +148,7 @@ namespace GrowAGarden
             if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
         }
 
-        private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
+        private void OnOtherPlayerJoined() => broadcastState();
 
         // ── Dispenser ─────────────────────────────────────────────────────────────
 
@@ -196,14 +196,14 @@ namespace GrowAGarden
         {
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(takerId ?? string.Empty);
             var writer = new BytesWriter(size);
-            writer.AddString(takerId ?? string.Empty);
+            writer.AddAutoString(takerId ?? string.Empty);
             networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.taken, writer.Data);
         }
 
         private void ApplyTaken(byte[] data)
         {
             var reader = new BytesReader(data);
-            TakenBy = reader.IsValid ? reader.NextString() : null;
+            TakenBy = reader.IsValid ? reader.NextAutoString() : null;
             InDispenser = false;
             IsTaken = true;
             ClearDispenserClaim();
@@ -234,7 +234,7 @@ namespace GrowAGarden
         /// <summary>Master only — see Seed.Discard, same Fusion-authority caveat.</summary>
         public bool Discard()
         {
-            if (!SceneNetworking.IsMasterClient) return false;
+            if (!PlayerManager.IsMaster) return false;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (obj == null)
@@ -242,14 +242,7 @@ namespace GrowAGarden
                 Logger.Warn($"Discard() '{gameObject.name}' — no NetworkObject; nothing despawned");
                 return false;
             }
-            if (!obj.HasStateAuthority)
-            {
-                Logger.Warn($"Discard() '{gameObject.name}' — no state authority (authority known={HasKnownAuthority}); NOT despawned");
-                return false;
-            }
-
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
-            return true;
+            return WorldManager.Despawn(obj, $"Discard() '{gameObject.name}' (authority known={HasKnownAuthority})");
         }
 
         // ── State ─────────────────────────────────────────────────────────────────
@@ -264,7 +257,7 @@ namespace GrowAGarden
             BytesWriter writer = new BytesWriter(size);
             writer.AddByte(InDispenser ? (byte)1 : (byte)0);
             writer.AddByte(IsTaken ? (byte)1 : (byte)0);
-            writer.AddString(takenBy);
+            writer.AddAutoString(takenBy);
             networkBridge.RPC_SendMessageToProxies((byte)CollectibleMessageType.stateSync, writer.Data);
         }
 
@@ -281,9 +274,9 @@ namespace GrowAGarden
                     // the master ever learned who was holding one was invisible in the client log.
                     // Two rounds of diagnosis were spent reasoning from the call graph because of
                     // it. Delete alongside Seed's.
-                    string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
+                    string grabberId = hasGrabber ? grabReader.NextAutoString() : null;
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     LifecycleChanged?.Invoke();
                     break;
                 case CollectibleMessageType.takeRequest:
@@ -307,7 +300,7 @@ namespace GrowAGarden
             BytesReader reader = new BytesReader(data);
             InDispenser = reader.NextByte() == 1;
             IsTaken = reader.NextByte() == 1;
-            string takenBy = reader.NextString();
+            string takenBy = reader.NextAutoString();
             TakenBy = string.IsNullOrEmpty(takenBy) ? null : takenBy;
 
             _grabInteractable.enabled = true;
@@ -324,12 +317,12 @@ namespace GrowAGarden
             if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
-        public ISomniumPlayer GetGrabber() => _grabber;
+        public PlayerIdentity GetGrabber() => _grabber;
 
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
             _grabber = PlayerManager.GetLocalPlayer();
-            if (_grabber == null)
+            if (!_grabber.Exists)
             {
                 Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
                 return;
@@ -337,11 +330,11 @@ namespace GrowAGarden
 
             if (!CanSendRpc) return;
 
-            string id = _grabber.Properties.Id;
+            string id = _grabber.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);
-            writer.AddString(id);
+            writer.AddAutoString(id);
             networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.grabber, writer.Data);
         }
 

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using Fusion;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -33,7 +35,55 @@ namespace GrowAGarden
         [Tooltip("Seconds between world-wide stock cycles.")]
         [SerializeField] private float _recycleSeconds = 300f;
 
+
         public System.Collections.Generic.IReadOnlyList<SeedDefinition> Buyables => _buyables;
+
+        // ── Object lifecycle ──────────────────────────────────────────────────────
+        //
+        // The callsite for anything entering or leaving the world. Components and
+        // orchestrators come here; WorldBridge is one layer further down and is theirs to
+        // reach only through this. Managers call the bridge directly — a manager calling a
+        // manager is the sideways call the layering forbids.
+
+        /// <summary>
+        /// Puts a registered prefab into the world, master-owned, at a pose. Null on any
+        /// failure, having logged it against <paramref name="context"/>.
+        /// </summary>
+        public static NetworkObject Spawn(NetworkObject prefab, Vector3 position, Quaternion rotation, string context)
+            => WorldBridge.Spawn(prefab, position, rotation, context);
+
+        /// <summary>
+        /// Takes an object out of the world. False, and loud, if it could not — Fusion's own
+        /// Despawn does nothing without state authority and says nothing about it.
+        /// </summary>
+        public static bool Despawn(NetworkObject obj, string context)
+            => WorldBridge.Despawn(obj, context);
+
+        /// <summary>Whether Fusion can create an object right now.</summary>
+        public static bool CanSpawn => WorldBridge.CanSpawn;
+
+        /// <summary>The spawned object with this network id, or null.</summary>
+        public static NetworkObject Find(uint rawId) => WorldBridge.Find(rawId);
+
+        /// <summary>The component of type T on the object with this network id, or null.</summary>
+        public static T Find<T>(uint rawId) where T : Component => WorldBridge.Find<T>(rawId);
+
+        /// <summary>
+        /// Takes an object out of the world only if this client simulates it, silently. For the
+        /// line every client runs where exactly one should act.
+        /// </summary>
+        public static bool DespawnIfStateAuthority(NetworkObject obj)
+            => WorldBridge.DespawnIfStateAuthority(obj);
+
+        /// <summary>
+        /// Asks for state authority over an object and waits for it, reporting the outcome
+        /// through <paramref name="granted"/>. How long it waits is not the caller's to say.
+        /// </summary>
+        public static IEnumerator TakeAuthority(NetworkObject obj, Action<bool> granted)
+            => WorldBridge.TakeAuthority(obj, granted);
+
+        /// <summary>The wait, for callers that want to name it in a message.</summary>
+        public static float AuthorityTimeout => WorldBridge.AuthorityTimeout;
 
         private float _nextRecycleAt = float.PositiveInfinity;
 
@@ -57,11 +107,11 @@ namespace GrowAGarden
             // given this peer a player index makes it instantiate the prefab and *then* throw
             // out of Simulation.GetNextId(), leaving an orphan nothing will ever clean up.
             // ShopSlot waits for the same signal for the same reason.
-            if (SceneNetworking.IsNetworkReady) BeginCycling();
-            else SceneNetworking.OnLocalPlayerJoined += BeginCycling;
+            if (WorldBridge.IsNetworkReady) BeginCycling();
+            else WorldBridge.NetworkReady += BeginCycling;
         }
 
-        private void OnDisable() => SceneNetworking.OnLocalPlayerJoined -= BeginCycling;
+        private void OnDisable() => WorldBridge.NetworkReady -= BeginCycling;
 
         private void OnDestroy()
         {
@@ -106,7 +156,7 @@ namespace GrowAGarden
 
         private void Recycle()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             Logger.Info($"Recycle() '{gameObject.name}' — cycling world stock, {(_buyables == null ? 0 : _buyables.Length)} buyables");
             StockRecycled?.Invoke();

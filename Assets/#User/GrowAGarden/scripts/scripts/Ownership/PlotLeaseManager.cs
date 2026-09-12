@@ -1,5 +1,5 @@
+using CommunityModules;
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using System.Collections;
 using System.Collections.Generic;
@@ -73,16 +73,16 @@ namespace GrowAGarden
                 return;
             }
             _networkBridge.OnMessageToAll += OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         /// <summary>A late joiner never saw any past OwnerChanged broadcast — Fusion does not
         /// replay RPCs — so without this its shadow copy of OwnerId reads "unclaimed" regardless
         /// of the truth. Harmless while the master stays the master, but a real correctness bug
         /// the moment host migration hands that client the role.</summary>
-        private void OnOtherPlayerJoined(PlayerRef player)
+        private void OnOtherPlayerJoined()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             AnnounceOwner(OwnerId);
             AnnounceTeammates();
         }
@@ -105,12 +105,12 @@ namespace GrowAGarden
         {
             SetCurrentDeed(null);
             if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
         private void Update()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
 
             // Unity's overloaded null check catches a despawned deed here with no event needed —
             // a destroyed UnityEngine.Object compares equal to null even though the C# reference
@@ -145,7 +145,7 @@ namespace GrowAGarden
         /// </summary>
         private void OnDeedTakeRequested(CollectibleEntity deed)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (deed != _currentDeed) return;
             if (deed.IsTaken || !deed.InDispenser) return;
             if (_resolvingClaim) return;   // already retrying this exact request
@@ -165,7 +165,7 @@ namespace GrowAGarden
             _resolvingClaim = true;
 
             float waited = 0f;
-            ISomniumPlayer holder = null;
+            PlayerIdentity holder = PlayerIdentity.None;
             while (waited < DEED_RETRY_TIMEOUT_SECONDS)
             {
                 if (deed == null || deed != _currentDeed || deed.IsTaken || !deed.InDispenser)
@@ -175,7 +175,7 @@ namespace GrowAGarden
                 }
 
                 holder = deed.GetGrabber();
-                if (holder != null && deed.HasKnownAuthority) break;
+                if (holder.Exists && deed.HasKnownAuthority) break;
 
                 yield return new WaitForSeconds(DEED_RETRY_SECONDS);
                 waited += DEED_RETRY_SECONDS;
@@ -183,7 +183,7 @@ namespace GrowAGarden
 
             _resolvingClaim = false;
 
-            if (holder == null)
+            if (!holder.Exists)
             {
                 Logger.Warn($"OnDeedTakeRequested() '{gameObject.name}' — requested but holder unknown on this client after {DEED_RETRY_TIMEOUT_SECONDS}s; ignoring");
                 yield break;
@@ -195,7 +195,7 @@ namespace GrowAGarden
                 yield break;
             }
 
-            Claim(holder.Properties.Id);
+            Claim(holder.Id);
         }
 
         /// <summary>Master only. Records the owner, announces it to everyone, and removes the
@@ -234,7 +234,7 @@ namespace GrowAGarden
         /// not built.</summary>
         public void Relinquish()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             AnnounceOwner(null);
 
             // Load-bearing, not defensive: without this a later claimant would silently inherit
@@ -253,7 +253,7 @@ namespace GrowAGarden
         /// and PlotApplication already logs the outcome of the application that led here.</summary>
         public void AddTeammate(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (string.IsNullOrEmpty(playerId)) return;
             if (playerId == OwnerId) return;
             if (_teammateIds.Contains(playerId)) return;
@@ -277,7 +277,7 @@ namespace GrowAGarden
 
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(playerId);
             var writer = new BytesWriter(size);
-            writer.AddString(playerId);
+            writer.AddAutoString(playerId);
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.TeammateRemoveRequest, writer.Data);
         }
 
@@ -288,7 +288,7 @@ namespace GrowAGarden
         /// Plot — GardenLease loops every Plot without checking membership first.</summary>
         public void RemoveTeammate(string playerId)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!_teammateIds.Remove(playerId)) return;
 
             AnnounceTeammates();
@@ -299,7 +299,7 @@ namespace GrowAGarden
         /// format the way 24 occupancy bits was.</summary>
         private void AnnounceTeammates()
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             int size = BytesWriter.ByteSize;
             foreach (string id in _teammateIds)
@@ -307,7 +307,7 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(size);
             writer.AddByte((byte)_teammateIds.Count);
-            foreach (string id in _teammateIds) writer.AddString(id);
+            foreach (string id in _teammateIds) writer.AddAutoString(id);
 
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.TeammatesChanged, writer.Data);
         }
@@ -316,12 +316,12 @@ namespace GrowAGarden
         /// shape as PlantSlot.AnnounceOccupancy.</summary>
         private void AnnounceOwner(string ownerId)
         {
-            if (!SceneNetworking.IsMasterClient || _networkBridge == null) return;
+            if (!PlayerManager.IsMaster || _networkBridge == null) return;
 
             string owner = ownerId ?? string.Empty;
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
             var writer = new BytesWriter(size);
-            writer.AddString(owner);
+            writer.AddAutoString(owner);
             _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.OwnerChanged, writer.Data);
         }
 
@@ -332,7 +332,7 @@ namespace GrowAGarden
                 case PlotMessageType.OwnerChanged:
                     var ownerReader = new BytesReader(data);
                     if (!ownerReader.IsValid) return;
-                    string owner = ownerReader.NextString();
+                    string owner = ownerReader.NextAutoString();
                     OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
                     OwnerChanged?.Invoke(this);
                     break;
@@ -342,15 +342,15 @@ namespace GrowAGarden
                     if (!teamReader.IsValid) return;
                     int count = teamReader.NextByte();
                     _teammateIds.Clear();
-                    for (int i = 0; i < count; i++) _teammateIds.Add(teamReader.NextString());
+                    for (int i = 0; i < count; i++) _teammateIds.Add(teamReader.NextAutoString());
                     TeammatesChanged?.Invoke(this);
                     break;
 
                 case PlotMessageType.TeammateRemoveRequest:
-                    if (!SceneNetworking.IsMasterClient) return;
+                    if (!PlayerManager.IsMaster) return;
                     var removeReader = new BytesReader(data);
                     if (!removeReader.IsValid) return;
-                    RemoveTeammate(removeReader.NextString());
+                    RemoveTeammate(removeReader.NextAutoString());
                     break;
 
                 default:
@@ -391,7 +391,7 @@ namespace GrowAGarden
         /// readiness and orphan-avoidance reasoning, identical here.</summary>
         private void SpawnDeed()
         {
-            if (!CanSpawn()) return;
+            if (!WorldBridge.CanSpawn) return;
 
             CollectibleEntity spawned = SpawnFreshDeed();
             if (spawned == null) return;
@@ -404,51 +404,11 @@ namespace GrowAGarden
             StartCoroutine(AnnounceStock(spawned));
         }
 
-        private bool CanSpawn()
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            return runner != null
-                && runner.IsRunning
-                && runner.LocalPlayer.IsRealPlayer
-                && SceneNetworking.IsNetworkReady;
-        }
-
         private CollectibleEntity SpawnFreshDeed()
         {
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (_deedPrefab == null)
-            {
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — no deed prefab set");
-                return null;
-            }
-
-            if (!net.NetworkPrefabs.TryGetValue(_deedPrefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Warn($"SpawnFreshDeed() '{gameObject.name}' — '{_deedPrefab.name}' is not registered on SceneNetworking yet");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, _deedSocket.transform.position, _deedSocket.transform.rotation,
-                                       null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — Fusion threw spawning '{_deedPrefab.name}': {e.Message}");
-                return null;
-            }
-
-            if (spawned == null)
-            {
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — Fusion refused to spawn '{_deedPrefab.name}'");
-                return null;
-            }
+            NetworkObject spawned = WorldBridge.Spawn(_deedPrefab, _deedSocket.transform.position, _deedSocket.transform.rotation,
+                                                      $"SpawnFreshDeed() '{gameObject.name}'");
+            if (spawned == null) return null;
 
             CollectibleEntity deed = spawned.GetComponent<CollectibleEntity>();
             if (deed == null)

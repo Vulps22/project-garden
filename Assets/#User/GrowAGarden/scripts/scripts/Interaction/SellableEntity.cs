@@ -108,8 +108,7 @@ namespace GrowAGarden
         protected virtual void OnSold()
         {
             NetworkObject obj = _networkBridge == null ? null : _networkBridge.Object;
-            if (obj == null || !obj.HasStateAuthority) return;
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldManager.DespawnIfStateAuthority(obj);
         }
 
         private void OnValidate()

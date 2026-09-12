@@ -1,5 +1,5 @@
+using CommunityModules;
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
@@ -34,10 +34,10 @@ namespace GrowAGarden
         /// Who paid for this. Set by the master at the moment of purchase and replicated, because
         /// ownership is a fact and facts come from the master.
         ///
-        /// Deliberately not Fusion state authority. Authority transfers on *hover* — see
-        /// NetworkGrabbable.OnHover — so a player reaching towards a dropped seed would become its
-        /// owner without ever grabbing it. Authority answers "who is simulating this"; this answers
-        /// "whose is it", and those have different lifetimes.
+        /// Deliberately not Fusion state authority. Authority follows a grab but never comes back
+        /// on release, so a player who put this down ten minutes ago is still simulating it.
+        /// Authority answers "who is simulating this"; this answers "whose is it", and those have
+        /// different lifetimes.
         /// </summary>
         public string OwnerId { get; private set; }
 
@@ -68,12 +68,12 @@ namespace GrowAGarden
         public bool ShouldMasterOwn => InShop && string.IsNullOrEmpty(HolderId);
 
         private HoveringEntity _hovering;
-        private ISomniumPlayer _grabber;
+        private PlayerIdentity _grabber;
 
         /// <summary>Bought, on the ground, and in nobody's hand. The one condition that floats.</summary>
         private bool IsLooseInWorld => !InShop && !IsHeld;
 
-        public string HolderId => _grabber?.Properties?.Id;
+        public string HolderId => _grabber.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace GrowAGarden
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
@@ -123,7 +123,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToAll -= OnMessageToAll;
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
@@ -137,8 +137,8 @@ namespace GrowAGarden
         /// </summary>
         private void OnPlayerLeft(string playerId)
         {
-            if (_grabber == null || _grabber.Properties?.Id != playerId) return;
-            _grabber = null;
+            if (!_grabber.Exists || _grabber.Id != playerId) return;
+            _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
 
@@ -160,12 +160,12 @@ namespace GrowAGarden
         /// Re-sends state once a transfer lands, but only on the master.
         ///
         /// A client that has just gained authority knows least about the object — it was a proxy a
-        /// moment ago, and with hover-transfer it may have gained authority by accident. The master
+        /// moment ago, and may hold authority only because it was the last to grab this. The master
         /// is the one client whose view is authoritative, so it is the only one allowed to assert.
         /// </summary>
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
-            if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();
+            if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
         private void OnSpawned()
@@ -173,7 +173,7 @@ namespace GrowAGarden
             if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
         }
 
-        private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
+        private void OnOtherPlayerJoined() => broadcastState();
 
         // ── Shop ──────────────────────────────────────────────────────────────────
 
@@ -237,14 +237,14 @@ namespace GrowAGarden
         {
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(buyerId ?? string.Empty);
             var writer = new BytesWriter(size);
-            writer.AddString(buyerId ?? string.Empty);
+            writer.AddAutoString(buyerId ?? string.Empty);
             networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.purchased, writer.Data);
         }
 
         private void ApplyPurchase(byte[] data)
         {
             var reader = new BytesReader(data);
-            OwnerId = reader.IsValid ? reader.NextString() : null;
+            OwnerId = reader.IsValid ? reader.NextAutoString() : null;
             InShop = false;
             IsBought = true;
             ClearShopClaim();
@@ -306,7 +306,7 @@ namespace GrowAGarden
             foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) if (r != null) r.enabled = false;
             foreach (Collider c in GetComponentsInChildren<Collider>(true)) if (c != null) c.enabled = false;
 
-            _grabber = null;
+            _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
 
@@ -324,7 +324,7 @@ namespace GrowAGarden
         /// </summary>
         public bool Discard()
         {
-            if (!SceneNetworking.IsMasterClient) return false;
+            if (!PlayerManager.IsMaster) return false;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (obj == null)
@@ -332,14 +332,8 @@ namespace GrowAGarden
                 Logger.Warn($"Discard() '{gameObject.name}' — no NetworkObject; nothing despawned");
                 return false;
             }
-            if (!obj.HasStateAuthority)
-            {
-                Logger.Warn($"Discard() '{gameObject.name}' — no state authority (authority known={HasKnownAuthority}); NOT despawned");
-                return false;
-            }
 
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
-            return true;
+            return WorldManager.Despawn(obj, $"Discard() '{gameObject.name}' (authority known={HasKnownAuthority})");
         }
 
         // ── State ─────────────────────────────────────────────────────────────────
@@ -354,7 +348,7 @@ namespace GrowAGarden
             BytesWriter writer = new BytesWriter(size);
             writer.AddByte(InShop ? (byte)1 : (byte)0);
             writer.AddByte(IsBought ? (byte)1 : (byte)0);
-            writer.AddString(owner);
+            writer.AddAutoString(owner);
             networkBridge.RPC_SendMessageToProxies((byte)SeedMessageType.stateSync, writer.Data);
         }
 
@@ -369,9 +363,9 @@ namespace GrowAGarden
                     // this seed reads HolderId, and until now nothing recorded whether the id on
                     // the wire ever resolved to a player — a lookup miss and an empty hand are
                     // indistinguishable downstream, and both read as "nobody is holding it".
-                    string grabberId = hasGrabber ? grabReader.NextString() : null;
-                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : null;
-                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={(_grabber != null)} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
+                    string grabberId = hasGrabber ? grabReader.NextAutoString() : null;
+                    _grabber = hasGrabber ? PlayerManager.GetPlayer(grabberId) : PlayerIdentity.None;
+                    Logger.Info($"OnMessageToAll() '{gameObject.name}' — grabber id='{grabberId ?? "<none>"}' resolved={_grabber.Exists} HolderId='{HolderId ?? "<null>"}' authority={HasLocalAuthority}");
                     // Who holds it is lifecycle. This is the one place _grabber changes on every
                     // client, so raising here lets AuthorityController reclaim a shop seed the
                     // moment it leaves a player's hand.
@@ -399,7 +393,7 @@ namespace GrowAGarden
             BytesReader reader = new BytesReader(data);
             InShop = reader.NextByte() == 1;
             IsBought = reader.NextByte() == 1;
-            string owner = reader.NextString();
+            string owner = reader.NextAutoString();
             OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
 
             _grabInteractable.enabled = true;
@@ -416,12 +410,12 @@ namespace GrowAGarden
             if (_grabInteractable != null) _grabInteractable.enabled = false;
         }
 
-        public ISomniumPlayer GetGrabber() => _grabber;
+        public PlayerIdentity GetGrabber() => _grabber;
 
         public void OnGrabSelected(SelectEnterEventArgs args)
         {
             _grabber = PlayerManager.GetLocalPlayer();
-            if (_grabber == null)
+            if (!_grabber.Exists)
             {
                 Logger.Warn($"OnGrabSelected() '{gameObject.name}' — local player unavailable, grabber not broadcast");
                 return;
@@ -429,11 +423,11 @@ namespace GrowAGarden
 
             if (!CanSendRpc) return;
 
-            string id = _grabber.Properties.Id;
+            string id = _grabber.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
             var writer = new BytesWriter(size);
             writer.AddByte(1);
-            writer.AddString(id);
+            writer.AddAutoString(id);
             networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.grabber, writer.Data);
         }
 

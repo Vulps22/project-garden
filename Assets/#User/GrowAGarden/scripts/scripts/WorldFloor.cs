@@ -41,10 +41,6 @@ namespace GrowAGarden
                  "there is going anywhere.")]
         [SerializeField] private float _sweepInterval = 0.5f;
 
-        [Tooltip("Seconds to wait for state authority before giving up on despawning one object. " +
-                 "Same shape as PlotStateManager's, and for the same reason — whoever last waved a " +
-                 "hand near it may still own it.")]
-        [SerializeField] private float _authorityTimeout = 2f;
 
         /// <summary>
         /// True from crossing the floor until the player is safely back above it. Not just "while
@@ -94,7 +90,7 @@ namespace GrowAGarden
         /// </summary>
         private void Sweep()
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (Time.time < _nextSweepAt) return;
             _nextSweepAt = Time.time + Mathf.Max(0.1f, _sweepInterval);
 
@@ -141,29 +137,21 @@ namespace GrowAGarden
                 yield break;
             }
 
-            if (!obj.HasStateAuthority)
-            {
-                obj.RequestStateAuthority();
-                float waited = 0f;
-                while (obj != null && !obj.HasStateAuthority && waited < _authorityTimeout)
-                {
-                    yield return null;
-                    waited += Time.deltaTime;
-                }
-            }
+            bool granted = false;
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
 
             if (obj == null) yield break;
 
-            if (!obj.HasStateAuthority)
+            if (!granted)
             {
-                Logger.Warn($"Discard() '{go.name}' — no authority within {_authorityTimeout}s; " +
+                Logger.Warn($"Discard() '{go.name}' — no authority within {WorldManager.AuthorityTimeout}s; " +
                             $"it stays below the floor and the next sweep will try again");
                 new XRGrabInteractableRef(go).SetEnabled(true);
                 yield break;
             }
 
             Logger.Info($"Discard() '{go.name}' — fell past the floor at y={go.transform.position.y:F1}, despawned");
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldManager.Despawn(obj, $"Discard() '{go.name}'");
         }
 
         /// <summary>
@@ -220,8 +208,7 @@ namespace GrowAGarden
                 return;
             }
 
-            var motion = PlayerManager.GetLocalPlayer()?.Features?.Motion;
-            if (motion == null)
+            if (!PlayerManager.CanDriveLocalPlayer)
             {
                 Logger.Error($"Rescue() '{gameObject.name}' — no Motion feature; cannot teleport from y={fellTo:F1}");
                 return;
@@ -241,7 +228,7 @@ namespace GrowAGarden
             // — that is what the 'done' parameter is for — and starting 20 seconds of narration
             // about having been teleported while the teleport is still in flight gets the order
             // backwards for no reason, when the API hands us the right moment for free.
-            motion.DoTeleportToPoint(target, direction, () =>
+            PlayerManager.TeleportLocalPlayer(target, direction, () =>
             {
                 Logger.Info($"Rescue() '{gameObject.name}' — teleport complete, playing the falling tip");
                 TutorialManager.GetInstance()?.TriggerTooltip(TutorialManager.Tooltips.Tips.Falling);

@@ -311,9 +311,9 @@ the hand approaches. Two consequences:
 | where a carried produce is this frame | **simulation** | Fusion transform replication |
 
 **`OnStateAuthorityChanged`** — copy `PlantSeed`'s corrected form:
-`if (hasAuthority && SceneNetworking.IsMasterClient) broadcastState();`. A client that has just
-gained authority knows *least* about the object, and with hover-transfer may have gained it by
-accident.
+`if (hasAuthority && PlayerManager.IsMaster) broadcastState();`. A client that has just gained
+authority knows *least* about the object — it may hold it only because it was the last to grab
+the thing, long after putting it down.
 
 **Spawned objects and RPCs.** A spawn reaches other clients a few ticks after the spawner, so an RPC
 about it can arrive before the object does and be dropped. See `runtime-spawn.md` §4g and

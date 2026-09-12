@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using SomniumSpace.Bridge.Player;
 using UnityEngine;
 using UnityEngine.XR;
 
@@ -11,8 +10,7 @@ namespace GrowAGarden
     ///
     /// **Lives on SceneManager, not on the player**, for the same reason PlayerManager does: the
     /// player does not exist at scene load — the Somnium client spawns it — so there is nothing to
-    /// attach to. This is a scene-resident manager that looks the player up at runtime and reaches
-    /// into it, and SomniumPlayersContainer is already sat beside it doing exactly that.
+    /// attach to. It asks PlayerManager for the rig each time rather than holding one.
     ///
     /// Entirely local. The player moves their own Root and Somnium replicates the avatar as it
     /// always has, so there is no RPC, no master decision and no authority anywhere in here.
@@ -118,7 +116,6 @@ namespace GrowAGarden
         public enum HandAxis { Forward, Up, Right }
 
         private FlightModel _model;
-        private ISomniumPlayer _player;
         private Transform _root, _head, _leftHand, _rightHand;
 
         private bool _flying;
@@ -326,21 +323,20 @@ namespace GrowAGarden
             if (flying && !was) Launched?.Invoke();
             else if (!flying && was) Landed?.Invoke(Time.time - _airborneSince);
 
-            var motion = _player?.Features?.Motion;
-            if (motion == null) return;
+            if (!PlayerManager.CanDriveLocalPlayer) return;
 
             if (flying)
             {
-                if (_takeGravity) motion.SetGravity(0f, 0f);
-                if (_takeLocomotion) motion.SetMovementSpeed(0f, 0f, 0f);
+                if (_takeGravity) PlayerManager.SetLocalGravityScale(0f);
+                if (_takeLocomotion) PlayerManager.SetLocalMovementScale(0f);
                 _airborneSince = Time.time;
                 _flapSpent = false;
                 _model.Reset();
             }
             else
             {
-                if (_takeGravity) motion.SetGravity(1f, 1f);
-                if (_takeLocomotion) motion.SetMovementSpeed(1f, 1f, 1f);
+                if (_takeGravity) PlayerManager.SetLocalGravityScale(1f);
+                if (_takeLocomotion) PlayerManager.SetLocalMovementScale(1f);
             }
 
             Logger.Info($"SetFlying() '{gameObject.name}' — {(flying ? "airborne" : "grounded")} at {_root.position}");
@@ -352,25 +348,16 @@ namespace GrowAGarden
         {
             if (_root != null && _leftHand != null && _rightHand != null) return true;
 
-            _player = PlayerManager.GetLocalPlayer();
-            var body = _player?.References?.Body;
-            if (body == null) return false;
+            PlayerRig rig = PlayerManager.LocalPlayerRig;
+            if (!rig.IsUsable) return false;
 
-            if (body.Root == null || body.LeftHand == null || body.RightHand == null) return false;
+            _root = rig.Root;
+            _head = rig.Head;
+            _leftHand = rig.LeftHand;
+            _rightHand = rig.RightHand;
 
-            _root = body.Root;
-            _head = body.Head;
-            _leftHand = body.LeftHand;
-            _rightHand = body.RightHand;
-
-            var motion = _player.Features?.Motion;
-            if (motion == null)
+            if (!PlayerManager.SuppressSomniumLocomotion())
                 Logger.Error($"Resolve() '{gameObject.name}' — no Motion feature; Somnium's flight stays on and will fight this");
-            else
-            {
-                motion.SetFlyModeDisableState(true);
-                motion.SetGlideDisableState(true);
-            }
 
             _ownColliders = _root.GetComponentsInChildren<Collider>(true);
 

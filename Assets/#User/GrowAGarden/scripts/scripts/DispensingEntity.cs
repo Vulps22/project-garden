@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Bridge.Player;
 using System.Collections;
 using UnityEngine;
 
@@ -57,7 +56,7 @@ namespace GrowAGarden
         private void Update()
         {
             if (!_wantsStock) return;
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (_currentItem != null) { _wantsStock = false; return; }
 
             if (Time.time - _lastStockAttempt < RESTOCK_RETRY_SECONDS) return;
@@ -92,7 +91,7 @@ namespace GrowAGarden
                 return;
             }
 
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (!string.IsNullOrEmpty(item.HolderId)) return;   // someone else has it; their client will ask
 
             ReturnToSocket(item, "left the socket with nobody holding it");
@@ -144,7 +143,7 @@ namespace GrowAGarden
         /// seed was sent home on everyone else's; a free take is no different a decision.</summary>
         private void OnTakeRequested(CollectibleEntity item)
         {
-            if (!SceneNetworking.IsMasterClient) return;
+            if (!PlayerManager.IsMaster) return;
             if (item != _currentItem) return;
             if (item.IsTaken || !item.InDispenser) return;
             if (_resolvingTake) return;   // already retrying this exact request
@@ -167,7 +166,7 @@ namespace GrowAGarden
             _resolvingTake = true;
 
             float waited = 0f;
-            ISomniumPlayer taker = null;
+            PlayerIdentity taker = PlayerIdentity.None;
             while (waited < TAKE_RETRY_TIMEOUT_SECONDS)
             {
                 if (item == null || item != _currentItem || item.IsTaken || !item.InDispenser)
@@ -177,7 +176,7 @@ namespace GrowAGarden
                 }
 
                 taker = item.GetGrabber();
-                if (taker != null && item.HasKnownAuthority) break;
+                if (taker.Exists && item.HasKnownAuthority) break;
 
                 yield return new WaitForSeconds(TAKE_RETRY_SECONDS);
                 waited += TAKE_RETRY_SECONDS;
@@ -185,7 +184,7 @@ namespace GrowAGarden
 
             _resolvingTake = false;
 
-            if (taker == null)
+            if (!taker.Exists)
             {
                 ReturnToSocket(item, "was requested by a taker this client does not know yet");
                 yield break;
@@ -198,7 +197,7 @@ namespace GrowAGarden
             }
 
             // No price to check — the only thing a purchase's balance gate was ever protecting.
-            item.Take(taker.Properties.Id);
+            item.Take(taker.Id);
         }
 
         private void ReturnToSocket(CollectibleEntity item, string why)
@@ -213,8 +212,8 @@ namespace GrowAGarden
 
         private void SpawnStock()
         {
-            if (!SceneNetworking.IsMasterClient) return;
-            if (!CanSpawn()) return;
+            if (!PlayerManager.IsMaster) return;
+            if (!WorldManager.CanSpawn) return;
 
             CollectibleEntity spawned = SpawnFreshItem();
             if (spawned == null) return;   // SpawnFreshItem has already said why; Update retries
@@ -228,54 +227,11 @@ namespace GrowAGarden
             StartCoroutine(AnnounceStock(spawned));
         }
 
-        /// <summary>See BuyPoint.CanSpawn — same Fusion readiness check, same reason.</summary>
-        private bool CanSpawn()
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            return runner != null
-                && runner.IsRunning
-                && runner.LocalPlayer.IsRealPlayer
-                && SceneNetworking.IsNetworkReady;
-        }
-
         private CollectibleEntity SpawnFreshItem()
         {
-            SceneNetworking net = SceneNetworking.Instance;
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (net == null || runner == null) return null;
-
-            if (_itemPrefab == null)
-            {
-                Logger.Error($"SpawnFreshItem() '{gameObject.name}' — no item prefab set");
-                return null;
-            }
-
-            if (!net.NetworkPrefabs.TryGetValue(_itemPrefab, out NetworkPrefabId prefabId))
-            {
-                Logger.Warn($"SpawnFreshItem() '{gameObject.name}' — '{_itemPrefab.name}' is not registered on SceneNetworking yet");
-                return null;
-            }
-
-            NetworkObject spawned;
-            try
-            {
-                spawned = runner.Spawn(prefabId, _socket.transform.position, _socket.transform.rotation,
-                                       null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
-            }
-            catch (System.Exception e)
-            {
-                // See BuyPoint.SpawnFreshSeed's catch — same orphan risk, same reason it is caught
-                // rather than left to propagate.
-                Logger.Error($"SpawnFreshItem() '{gameObject.name}' — Fusion threw spawning '{_itemPrefab.name}': {e.Message}");
-                return null;
-            }
-
-            if (spawned == null)
-            {
-                Logger.Error($"SpawnFreshItem() '{gameObject.name}' — Fusion refused to spawn '{_itemPrefab.name}'");
-                return null;
-            }
+            NetworkObject spawned = WorldManager.Spawn(_itemPrefab, _socket.transform.position, _socket.transform.rotation,
+                                                      $"SpawnFreshItem() '{gameObject.name}'");
+            if (spawned == null) return null;
 
             CollectibleEntity item = spawned.GetComponent<CollectibleEntity>();
             if (item == null)

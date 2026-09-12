@@ -420,7 +420,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3517095199874354261}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 715daecd0cbb4c62b26f59418853ef09, type: 3}
+  m_Script: {fileID: 11500000, guid: f8f14f1198a49cb418d604114edc06a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
   _grabInteracable: {fileID: 3767036565027619042}

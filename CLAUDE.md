@@ -267,15 +267,18 @@ Master-client authoritative, with **three** distinct notions of ownership — do
   decisions and slot bookkeeping. It resolves to the **first player to join** (confirmed empirically,
   though not yet in a busy multi-client session — treat as confirmed-but-provisional).
 - `networkBridge.Object.HasStateAuthority` — **per-NetworkObject** Fusion authority: who *simulates*
-  this object and who may despawn it. It transfers on **hover**, not on grab (`NetworkGrabbable`
-  calls `RequestControl()` from `firstHoverEntered`), so **authority is not evidence of anything** —
-  a player who waves a hand near a ripe pumpkin owns it, having harvested nothing.
+  this object and who may despawn it. `NetworkGrabbable` requests it from `firstSelectEntered`, so it
+  follows a grab — but it is still **not evidence of whose something is**: it never transfers back on
+  release, so whoever last grabbed an object keeps simulating it until someone else grabs it or
+  `AuthorityController` hands it back to the master, and it vanishes entirely when that player
+  disconnects. (It transferred on *hover* until 2026-09-09; `OnHover`'s `RequestControl()` is
+  commented out rather than deleted, because restoring it is one line if the retest exonerates it.)
 - `OwnerId` on a plot or seed — **whose it is**. A replicated fact decided by the master, in the
   same shape as `IHeldObject.HolderId`. See "Ownership is a fact, not state authority" below.
 
 A plant is simulated only by its state authority; every other client is a passive proxy applying RPC
-state. Because authority transfers on hover, every decision that matters must be *announced* by the
-master, never inferred from who happens to own an object.
+state. Because authority outlives the grab that caused it, every decision that matters must be
+*announced* by the master, never inferred from who happens to hold authority over an object.
 
 ### The governing rule: the master is the source of truth
 
@@ -307,7 +310,7 @@ transition is the clock crossing a line that everyone can already see, not an ev
 **And the clause that keeps it playable: optimistic locally, authoritative eventually.** The player
 takes the seed the instant they grab it; the master confirms ~200 ms later and only intervenes if
 the answer was no. Without this the rule reads as "wait for the master", which is exactly the
-flicker the hover-authority fix removed. A decision may be slow. A hand must not be.
+flicker that produced the hover-transfer experiment. A decision may be slow. A hand must not be.
 
 Practical consequences, all of which the code should honour and some of which it does not yet:
 
@@ -466,11 +469,11 @@ than requiring it. `SellPoint` therefore has no idea what a crop is.
 Plots carry `OwnerId` — a Somnium player id, decided by the master and replicated, exactly as
 `IHeldObject.HolderId` is one level down. Seeds carry their own, because they leave the garden.
 
-**Do not reach for Fusion state authority for this.** `NetworkGrabbable` calls `RequestControl()` on
-`firstHoverEntered`, so authority transfers to anyone whose hand comes *near* a seed or produce —
-ownership by proximity, without a grab. Authority is also the master's channel for acting on objects
-at all (`SellPoint`, `ShopSlot` and `AuthorityController` all take it as routine business), and it
-vanishes the moment a player disconnects.
+**Do not reach for Fusion state authority for this.** It follows a grab, but it never comes back on
+release — whoever last grabbed a seed goes on simulating it after they put it down, so authority
+lags "whose is it" by however long since anyone touched it. Authority is also the master's channel
+for acting on objects at all (`SellPoint`, `BuyPoint` and `AuthorityController` all take it as
+routine business), and it vanishes the moment a player disconnects.
 
 `GardenLease` holds a departed player's garden for **120 seconds** before freeing their plots and
 despawning what stands in them — a dropout is indistinguishable from leaving, and
@@ -579,6 +582,89 @@ Note `RemoveBalance` deliberately applies locally on non-master clients before t
 Because the table is cleared and rebuilt on every broadcast, `GetLocalPlayer()` can be **transiently
 null**. Refuse rather than guess when it is; the next broadcast restores it.
 
+## Layers
+
+```
+components (Seed, Plant, BuyPoint, SellPoint)   the thing a hand touches
+orchestrators (PlayerLifecycle)                 listen, then command
+managers (Economy, Player, World, PlotState)    own state; the only caller of a bridge
+bridges (WorldBridge, PlayerBridge)             the only code that names anything outside ours
+```
+
+It is the shape of a server, and the analogy is worth keeping in mind: **bridges are DAOs, managers
+are services, orchestrators and components are handlers.** Everything below follows from that.
+
+**Each layer calls the one below it and no further.** Components and orchestrators call managers.
+Managers call bridges. Bridges call Fusion, Photon, the ProSDK and Community Modules. A component
+reaching past its manager straight to a bridge is the same mistake as reaching past the bridge to
+the SDK — it has only travelled one layer further before making it.
+
+**No layer talks sideways.** A bridge does not call another bridge; a manager does not call another
+manager. Two things in the same layer that need each other are coordinated from **above** — an
+orchestrator subscribes and calls them both, so the order is written down, or a component does it
+where a component is the suitable place. Manager-to-manager is the one that keeps getting
+attempted: two managers reacting to the same event have an order decided by `Awake` order, which is
+neither controlled nor visible, and nobody finds out until the day it flips.
+
+Components may subscribe freely — a `Seed` dropping a departed player's `HolderId` reacts to a fact
+that is already true and nothing waits on it. The line is **notification versus decision**, not who
+is allowed to listen. A notification is "this is true, update yourselves"; a decision is "given
+this, do these things, in this order".
+
+**A bridge is where our code touches anything that is not ours.** Not "the wrapper over Community
+Modules" — the boundary is `Assets/#User/GrowAGarden/`, and everything on the far side of it is the
+same kind of dependency: Fusion, Photon, the Somnium ProSDK, Community Modules, the `NetworkBridge`
+transport. None of them are ours, none of them are stable, and none of them announce a breaking
+change as a compile error — the ProSDK ships as opaque DLLs, so a deprecation arrives as a world
+that does not work.
+
+The one thing deliberately *not* behind a bridge is Unity itself. `transform`, `Rigidbody` and XRI
+are not the unstable dependency here and wrapping them buys nothing; see `docs/world-bridge.md`.
+
+**A manager that is a pure passthrough is still doing its job.** Being the callsite *is* the job.
+When behaviour has to be added later — a guard, a cache, a correction, a log line — it lands in one
+method. Skip the layer and the same change means finding every reference across a hundred seeds,
+plants and points, which is the cost this layer exists to avoid. A method that forwards one line
+today is a place reserved, not a wasted one.
+
+**Managers do not speak to Fusion or the SDK.** A manager that names an outside type has become a
+bridge with a manager's name on it, and the churn it was meant to absorb passes straight through it.
+It calls a bridge instead.
+
+`WorldBridge` is object lifecycle only — spawn, place, despawn, take authority. Session and player
+facts belong to `PlayerBridge`.
+
+**Every function states its own rules.** If a behaviour is master-only, that function guards —
+regardless of whether its caller already did. Not duplication: the guard is part of what the
+behaviour *is*. You don't check the kitchen to see if the oven is on; you check the oven. Guards are
+a silent `if (!PlayerManager.IsMaster) return;`, because `PlayerJoined` and friends fire on every
+client and a proxy reaching one is the normal case.
+
+**A bridge must not re-export the types it fronts.** A bridge that hands an outside type back to its
+callers has moved the coupling, not removed it — every caller still names the thing that will
+change.
+
+### The two bridges
+
+**`PlayerBridge`** fronts Somnium's player list, avatar rig and locomotion, plus `SceneNetworking`'s
+master-client flag. It is a MonoBehaviour on `SceneManager` — Somnium publishes its player list as
+UnityEvents and something has to be alive to add and remove listeners — with static accessors, and
+its own currency in place of the SDK's: `PlayerIdentity` (an id and a name, a snapshot rather than a
+handle) and `PlayerRig` (root, head, hands, with `IsUsable` because Somnium assembles the rig after
+the player joins). `ISomniumPlayer` and `SomniumPlayersContainer` are named in that one file.
+
+**`PlayerManager`** is the callsite for everything else — the grace clock, the pending table, the
+departure events, and a row of one-line forwards to the bridge for identity, rig, locomotion and
+`IsMaster`. Components and orchestrators call it and never the bridge.
+
+`PlayerIdentity` is a struct, so `== null` on one silently always passes. Ask `.Exists`.
+
+### Where the tree does not match this yet
+
+- **`NetworkBridge` is a serialized field on nine crop prefabs** and on several managers, so the
+  messaging triplet is named all over the component layer. No wrapper hides Inspector wiring, so
+  this is the one that cannot land in a single upload — see "What has not" in `docs/world-bridge.md`.
+
 ## Conventions
 
 - **Commits:** `#<issue> <imperative description>` — e.g. `#42 Add null socket guard in BearingPlant.Awake`.
@@ -596,8 +682,11 @@ null**. Refuse rather than guess when it is; the next broadcast restores it.
   event of ours out of step and should become `PlayerBalanceChanged`.
 - Fields are `_camelCase` private + `[SerializeField]`; wire references in the Inspector, and use
   `OnValidate()` to auto-populate same-GameObject components.
-- **Comments explain why, not what.** The existing docstrings record the bug each guard exists for.
-  Preserve that when editing; a guard with no rationale gets removed by the next person.
+- **Comments: one line per function signature.** Say what the function does. If it needs more than a
+  line it has stopped being a "what does this do" comment and become history, justification, or a
+  note to self. Never what changed, what it used to do, why the refactor happened, what a decision
+  was weighed against, or why the code is arranged as it is — the arrangement is visible, and git
+  holds the rest. A line that would survive being moved into a commit message belongs there.
 
 ## Debug utilities
 
@@ -618,6 +707,26 @@ because the logs used to report the position we *asked for* rather than the one 
 that cost two uploads. Delete it once late-join, player-leave and master-leave are tested.
 
 ## Current state
+
+**Working directory moved.** The project is `~/Documents/project-garden` (2026-09-11) — a fresh SDK
+extract with the repo checked out into it. The old `~/Documents/Somnium ProSDK V3` is stale.
+Somnilux is backed up at `~/Desktop/somnium/somniluxSDK/` with a REAPPLY.md.
+
+Branch **`refactor-to-community-modules`**, PR #48 open. Asset packages are listed in
+`docs/packaging.md`; `Cartoon_Farm_Crops` and `GVOZDY` are no longer tracked.
+
+**⚠ `PlayerLifecycle` is not in the scene yet.** Until the component exists, a departing player's
+plots are never freed and their balance row never removed — both regressions against the
+subscriptions it replaced.
+
+**13 materials were converted to URP by hand** (Blinktool rock, Medieval houses, VFXPACK fire). They
+live inside untracked asset packages, so a fresh clone gets magenta again.
+
+**`PlayerBridge` exists** (2026-09-12) and `PlayerManager` no longer names Somnium — see Layers.
+The `.Features.Motion` half is wrapped too (`SuppressSomniumLocomotion`, `SetLocalGravityScale`,
+`SetLocalMovementScale`, `TeleportLocalPlayer`), which is what flight was said to be blocked on;
+untested in-world, and flight still has no supported speed API behind it.
+
 
 Branch **`add-advanced-flight`**, cut from `main` on 2026-09-09. `main` is pushed and current.
 Tags `MVP`, `add-turnip` are historical.
@@ -645,7 +754,9 @@ later. Link both ways, and do not create a step doc until the step has real desi
   the code still owes it. Several of these words used to mean something else, and the scripts still
   use "plot" to mean PlantSlot.
 - `roadmap.md` — **start here after that.** Plot ownership, upgrades, generalised spawn slots, world
-  cycling, and a future section on procedurally generated islands.
+  cycling, then future sections: procgen islands, buying more garden, the world growing a plot at a
+  time, the warehouse seed, and the tournament format. **The warehouse is the one that forces a
+  persistence decision** — everything else is deliberately session-scoped.
 - `plot-ownership.md` — step 1's mechanism: the deed, the application scroll, the shed as the one
   place ownership changes are committed. Designed, not built.
 - `runtime-spawn.md` — what replaced pooling, and the four traps.
@@ -653,7 +764,8 @@ later. Link both ways, and do not create a step doc until the step has real desi
 - `bearing-plants-and-produce.md` — the Seed/Plant/Produce design.
 - `tutorial.md` — the narrator: the ten-line script and what fires each line, and the four
   tips parked for pass 2.
-- `world-bridge.md` — a deferred refactor; see below.
+- `world-bridge.md` — the bridge layer: why it exists, what `WorldBridge` and `PlayerBridge` each
+  front, who may call one, and what is still raw. Built, not finished.
 
 ### ⚠ Reset before this is anything but a test build
 
@@ -699,9 +811,9 @@ What is genuinely left over from that testing:
 - **`MultiHarvestPlant` has no ending** (#43). With plants ungrabbable there is no uproot gesture at
   all, so an apple tree holds its plot until its owner's lease expires. Needs a real answer — a tool,
   a hold-to-remove on the plot, or a lifespan — before a crop uses it.
-- **`WorldBridge` refactor**, agreed and deferred: one seam over the SDK so churn touches one file
-  rather than every script *and every prefab*. `docs/world-bridge.md`. Unblocked; start with
-  spawn/despawn/take-authority, which are pure de-duplication.
+- **Messaging is still raw `NetworkBridge`** — the last unbridged dependency, and the expensive one:
+  it is a serialized field on nine crop prefabs, so no wrapper hides it and it cannot be verified in
+  a single upload. `docs/world-bridge.md`.
 - **#44**, **#47** are seed ideas. `PlantableEntity` — planting a sword to grow an auto-harvester — is
   a future idea, not a plan; the architecture already allows it, since what grows is a prefab
   reference on the thing being planted.
