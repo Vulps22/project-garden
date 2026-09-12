@@ -93,7 +93,7 @@ namespace GrowAGarden
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
@@ -109,7 +109,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToAll -= OnMessageToAll;
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
@@ -147,7 +147,7 @@ namespace GrowAGarden
             if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
         }
 
-        private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
+        private void OnOtherPlayerJoined() => broadcastState();
 
         // ── Dispenser ─────────────────────────────────────────────────────────────
 
@@ -241,14 +241,7 @@ namespace GrowAGarden
                 Logger.Warn($"Discard() '{gameObject.name}' — no NetworkObject; nothing despawned");
                 return false;
             }
-            if (!obj.HasStateAuthority)
-            {
-                Logger.Warn($"Discard() '{gameObject.name}' — no state authority (authority known={HasKnownAuthority}); NOT despawned");
-                return false;
-            }
-
-            SceneNetworking.NetworkRunnerRef.Despawn(obj);
-            return true;
+            return WorldManager.Despawn(obj, $"Discard() '{gameObject.name}' (authority known={HasKnownAuthority})");
         }
 
         // ── State ─────────────────────────────────────────────────────────────────

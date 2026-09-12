@@ -55,13 +55,13 @@ namespace GrowAGarden
                 return;
             }
             _networkBridge.OnMessageToAll += OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         private void OnDestroy()
         {
             if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace GrowAGarden
         /// correctness bug the moment host migration ever hands that client the role: it would
         /// make planting decisions off a copy it never actually received.
         /// </summary>
-        private void OnOtherPlayerJoined(PlayerRef player)
+        private void OnOtherPlayerJoined()
         {
             if (PlayerManager.IsMaster) BroadcastFullState();
         }
@@ -316,12 +316,7 @@ namespace GrowAGarden
             }
         }
 
-        private NetworkObject FindObject(uint rawId)
-        {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null || rawId == 0) return null;
-            return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) ? obj : null;
-        }
+        private NetworkObject FindObject(uint rawId) => WorldBridge.Find(rawId);
 
         private IPlantable FindPlantable(uint rawId)
         {

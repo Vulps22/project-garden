@@ -68,6 +68,20 @@ namespace GrowAGarden
         /// <summary>Whether the local player is the one who decides things for the world.</summary>
         public static bool IsMaster => PlayerBridge.IsMaster;
 
+        /// <summary>A remote peer entered the room and can now receive RPCs. Push it state.</summary>
+        public static event System.Action OtherPlayerJoined
+        {
+            add { PlayerBridge.OtherPlayerJoined += value; }
+            remove { PlayerBridge.OtherPlayerJoined -= value; }
+        }
+
+        /// <summary>The local player is now the one who decides things for the world.</summary>
+        public static event System.Action BecameWorldMaster
+        {
+            add { PlayerBridge.BecameWorldMaster += value; }
+            remove { PlayerBridge.BecameWorldMaster -= value; }
+        }
+
         /// <summary>
         /// The player with this id, or <see cref="PlayerIdentity.None"/> if nobody in the session
         /// has it.

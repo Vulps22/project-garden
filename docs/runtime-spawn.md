@@ -93,7 +93,7 @@ it is not, and the checking is worth writing down:
 - **So the answer to "what needs transferring to a new master?" is: after phase B, nothing.**
   `ReassignNullObjectsAuthority` will be sweeping a set of objects that do not care, and every
   object that does care will be spawned and therefore outside its reach.
-- **The unowned case self-heals.** `NetworkGrabbable` requests authority on hover, and taking it
+- **The unowned case self-heals.** `NetworkGrabbable` requests authority on grab, and taking it
   from `None` succeeds, so an abandoned seed becomes owned again the moment anyone reaches for it.
   Until then it simply does not simulate — which for a seed lying on the ground is invisible.
 

@@ -325,11 +325,7 @@ namespace GrowAGarden
         /// </summary>
         private SellableEntity FindSellable(uint rawId)
         {
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null || rawId == 0) return null;
-            return runner.TryFindObject(new NetworkId { Raw = rawId }, out NetworkObject obj) && obj != null
-                ? obj.GetComponent<SellableEntity>()
-                : null;
+            return WorldManager.Find<SellableEntity>(rawId);
         }
 
         private void OnValidate()

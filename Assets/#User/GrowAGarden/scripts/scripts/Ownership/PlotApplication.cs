@@ -125,11 +125,7 @@ namespace GrowAGarden
         {
             if (AssociatedPlotId == 0) return null;
 
-            NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
-            if (runner == null) return null;
-            if (!runner.TryFindObject(new NetworkId { Raw = AssociatedPlotId }, out NetworkObject obj) || obj == null) return null;
-
-            return obj.GetComponent<PlotLeaseManager>();
+            return WorldManager.Find<PlotLeaseManager>(AssociatedPlotId);
         }
 
         private void OnValidate()

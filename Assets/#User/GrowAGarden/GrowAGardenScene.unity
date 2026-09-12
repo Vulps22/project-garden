@@ -244,6 +244,7 @@ GameObject:
   - component: {fileID: 163550773}
   - component: {fileID: 163550774}
   - component: {fileID: 163550775}
+  - component: {fileID: 163550776}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -513,6 +514,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlayerBridge
   _players: {fileID: 163550769}
+--- !u!114 &163550776
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d81ed5bee71a08877ba3367e9915d8dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlayerLifecycle
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -908,7 +921,6 @@ MonoBehaviour:
   _returnTo: {fileID: 314732374}
   _rearmMargin: 5
   _sweepInterval: 0.5
-  _authorityTimeout: 2
 --- !u!114 &311160986
 MonoBehaviour:
   m_ObjectHideFlags: 0

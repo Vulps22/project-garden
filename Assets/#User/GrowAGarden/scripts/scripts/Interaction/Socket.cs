@@ -6,21 +6,7 @@ using UnityEngine;
 
 namespace GrowAGarden
 {
-    /// <summary>
-    /// A fixture that displays one object and tidies it. It knows nothing about seeds, crops,
-    /// prices or shops — a barrow, a scroll barrel, a shed shelf and an exploration cache are all
-    /// this component with something else deciding what goes in them.
-    ///
-    /// It is the anchor side of what ReturnableEntity and AlignableEntity are the object side of,
-    /// and it belongs to the same family: it writes nothing until it is told to act.
-    ///
-    /// Its one piece of real knowledge is geometry. OnTriggerExit cannot be trusted — Unity
-    /// re-creates the PhysX actor whenever isKinematic, detectCollisions or a collider's enabled
-    /// flag changes, and fires exits for everything it was overlapping with nothing having moved.
-    /// Grabbing a seed therefore raised an exit while it sat motionless on the shelf, and the
-    /// purchase path charged for it. Turning that untrustworthy event into a fact by checking
-    /// where the object actually is, is the reason this class owns the trigger at all.
-    /// </summary>
+    /// <summary>A fixture that displays one object and tidies it.</summary>
     public class Socket : MonoBehaviour
     {
         [Tooltip("The volume that decides whether something is still here. Defaults to the " +
@@ -28,13 +14,10 @@ namespace GrowAGarden
         [SerializeField] private Collider _bounds;
 
 
-        /// <summary>Something is in the volume and nothing is held. Whoever owns this socket
-        /// decides whether it is worth holding, and calls Hold() if so.</summary>
+        /// <summary>Something is in the volume and nothing is held.</summary>
         public event Action<GameObject> Entered;
 
-        /// <summary>The held object has genuinely left the volume. Nothing has been decided yet
-        /// — this is the alarm, not the verdict, and the socket still holds it. Raised on every
-        /// client, because the decision that follows is split between the holder and the master.</summary>
+        /// <summary>The held object has genuinely left the volume. Raised on every client.</summary>
         public event Action<GameObject> Leaving;
 
         /// <summary>The socket has let go. It is empty and wants restocking.</summary>
@@ -46,16 +29,7 @@ namespace GrowAGarden
         private Collider[] _propColliders;
 
 
-        /// <summary>
-        /// Takes an object onto the shelf.
-        ///
-        /// Ignoring prop collisions runs on every client: Physics.IgnoreCollision is a local
-        /// setting, so skipping it on proxies leaves the stock bouncing around inside the barrow
-        /// on everyone else's screen. Arming recall and realign is bookkeeping about where the
-        /// object *should* be, so only the master does it — armed everywhere, each client would
-        /// independently decide the object had wandered while only the clearing half is
-        /// authority-gated, which is how a bought seed gets dragged back to the shop.
-        /// </summary>
+        /// <summary>Takes an object onto the shelf.</summary>
         public void Hold(GameObject held)
         {
             if (held == null) return;
@@ -73,8 +47,6 @@ namespace GrowAGarden
                 ret.SetAutoRecall(true);   // a nudge tidies itself up
             }
 
-            // Whatever it is facing now is correct — the socket never names a rotation, because
-            // whoever placed it here has already set it to this transform's.
             var align = held.GetComponent<AlignableEntity>();
             if (align != null)
             {
@@ -83,10 +55,7 @@ namespace GrowAGarden
             }
         }
 
-        /// <summary>
-        /// Lets go. The object belongs to someone else now, so every claim on it is dropped and
-        /// the socket announces that it is empty.
-        /// </summary>
+        /// <summary>Drops every claim on the held object and announces the socket is empty.</summary>
         public void Release()
         {
             GameObject released = Held;
@@ -115,15 +84,7 @@ namespace GrowAGarden
             Left?.Invoke(released);
         }
 
-        /// <summary>
-        /// Brings the held object home — taking ownership of it first.
-        ///
-        /// Recall moves a rigidbody, and a client without state authority cannot move a networked
-        /// one: ReturnableEntity.FixedUpdate bails at `if (!hasAuthority) return;`. The socket
-        /// used to suspend its own copy's collisions and grab, wait for a trip that could never
-        /// start, and time out after twenty seconds — during which its copy was untouchable while
-        /// the player carried the real one away. A shelf has to own what it puts back on itself.
-        /// </summary>
+        /// <summary>Brings the held object home, taking state authority first.</summary>
         public void Recall()
         {
             if (Held == null) return;
@@ -182,8 +143,7 @@ namespace GrowAGarden
             Leaving?.Invoke(leaving);
         }
 
-        /// <summary>Whether the object is genuinely outside the volume, rather than the trigger
-        /// event having come from a physics-state toggle. See the class note.</summary>
+        /// <summary>Whether the object is genuinely outside the volume, rather than a stale trigger event.</summary>
         public bool HasLeft(GameObject candidate)
         {
             if (_bounds == null) _bounds = GetComponent<Collider>();
@@ -193,22 +153,7 @@ namespace GrowAGarden
 
         // ── The prop this socket sits in ──────────────────────────────────────────
 
-        /// <summary>
-        /// Lets the held object and the prop it sits in pass through each other.
-        ///
-        /// The anchor is inside the prop's mesh — the barrow collider spans roughly y=0.4 to 1.8
-        /// and the anchor sits at 1.16 — so stock hangs in a bowl and any nudge bounced it off the
-        /// inside walls once it became physical. The tether is anchored to this transform rather
-        /// than to the prop, so removing the collision between them changes nothing about where
-        /// the object is held.
-        ///
-        /// Done per collider pair rather than through layers: the physics collision matrix lives
-        /// in ProjectSettings, which does not travel inside an exported asset bundle, so a
-        /// layer-based rule would work in the Editor and quietly do nothing in-world.
-        ///
-        /// Re-applied on every Hold() because Unity drops ignored pairs when a collider is
-        /// disabled and re-enabled, which a visual state change does.
-        /// </summary>
+        /// <summary>Lets the held object and the prop it sits in pass through each other.</summary>
         private void IgnorePropCollisions(GameObject held, bool ignore)
         {
             if (_propColliders == null) CachePropColliders();

@@ -391,7 +391,7 @@ does.
 - **Prefer despawning to hiding.** "Stops rendering for everyone else" could be the visibility gate
   from *buying more garden* — hide the collider with the renderer, a veil not a secret. But that
   leaves a live `NetworkObject` nobody but the owner can see, which is also an object other players
-  can walk into, hover, and take state authority over. If storage despawns and retrieval spawns from
+  can walk into, grab, and take state authority over. If storage despawns and retrieval spawns from
   persistence, the privacy is structural rather than enforced. Worth deciding early; it changes what
   persistence has to record.
 - **⚠ A stored item is a prefab id, and prefab ids must outlive builds.** Persisting "anything you

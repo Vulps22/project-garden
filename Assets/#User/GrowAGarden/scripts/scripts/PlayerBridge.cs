@@ -1,4 +1,5 @@
 using System;
+using Fusion;
 using SomniumSpace.Bridge.Components;
 using SomniumSpace.Bridge.Player;
 using UnityEngine;
@@ -35,6 +36,16 @@ namespace GrowAGarden
 
         /// <summary>Somnium admitted the local player.</summary>
         public static event Action<PlayerIdentity> LocalPlayerAdded;
+
+        /// <summary>A remote peer entered the room and can now receive RPCs. Push it state.</summary>
+        public static event Action OtherPlayerJoined;
+
+        /// <summary>The local player is now the one who decides things for the world.</summary>
+        public static event Action BecameWorldMaster
+        {
+            add { SceneNetworking.OnBecomeWorldMaster += value; }
+            remove { SceneNetworking.OnBecomeWorldMaster -= value; }
+        }
 
         /// <summary>
         /// Whether there is a player list behind this at all — false if the component is missing
@@ -175,6 +186,8 @@ namespace GrowAGarden
 
         private void Awake()
         {
+            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+
             if (_players == null)
             {
                 Logger.Error($"Awake() '{gameObject.name}' — no SomniumPlayersContainer; no player will ever be seen to arrive or leave");
@@ -189,6 +202,7 @@ namespace GrowAGarden
 
         private void OnDestroy()
         {
+            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
             _container = null;
 
             // Statics outlive a scene when domain reload is off, and a head from the last session
@@ -204,7 +218,19 @@ namespace GrowAGarden
         private void OnSdkPlayerAdded(ISomniumPlayer player)
         {
             PlayerIdentity who = Identify(player);
-            if (who.Exists) PlayerAdded?.Invoke(who);
+            if (!who.Exists) return;
+
+            // Temporary: ordering probe against OtherPlayerJoined. Delete once read in-world.
+            Logger.Info($"OnSdkPlayerAdded() '{gameObject.name}' — '{who.Id}' t={Time.realtimeSinceStartup:F3} frame={Time.frameCount}");
+            PlayerAdded?.Invoke(who);
+        }
+
+        /// <summary>A remote peer joined the Fusion room.</summary>
+        private void OnOtherPlayerJoined(PlayerRef player)
+        {
+            // Temporary: ordering probe against OnSdkPlayerAdded. Delete once read in-world.
+            Logger.Info($"OnOtherPlayerJoined() '{gameObject.name}' — peer={player.PlayerId} t={Time.realtimeSinceStartup:F3} frame={Time.frameCount}");
+            OtherPlayerJoined?.Invoke();
         }
 
         private void OnSdkPlayerRemoved(ISomniumPlayer player)

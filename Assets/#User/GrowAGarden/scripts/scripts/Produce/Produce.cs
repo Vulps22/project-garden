@@ -123,7 +123,7 @@ namespace GrowAGarden
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.OnMessageToAll += OnMessageToAll;
             networkBridge.OnMessageToProxies += OnMessageToProxies;
-            SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
             _grabInteractable.selectExited.AddListener(OnGrabDeselected);
@@ -141,7 +141,7 @@ namespace GrowAGarden
                 networkBridge.OnMessageToAll -= OnMessageToAll;
                 networkBridge.OnMessageToProxies -= OnMessageToProxies;
             }
-            SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
             _grabInteractable.selectEntered.RemoveListener(OnGrabSelected);
             _grabInteractable.selectExited.RemoveListener(OnGrabDeselected);
@@ -164,7 +164,7 @@ namespace GrowAGarden
             RaiseLifecycleChanged();
         }
 
-        private void OnOtherPlayerJoined(PlayerRef player) => broadcastState();
+        private void OnOtherPlayerJoined() => broadcastState();
 
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
@@ -262,7 +262,8 @@ namespace GrowAGarden
         ///
         /// The holder asks because only the holder knows its own hand closed on the fruit — and it
         /// must be asked for explicitly, never inferred from authority: NetworkGrabbable takes
-        /// authority on *hover*, so a player who merely waves a hand near a ripe pumpkin owns it,
+        /// authority on *grab* and never gives it back, so the last player to have touched a ripe
+        /// pumpkin still holds it,
         /// having harvested nothing.
         /// </summary>
         public void RequestHarvest()
@@ -323,7 +324,7 @@ namespace GrowAGarden
             _slotIndex = -1;
 
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
-            if (obj != null && obj.HasStateAuthority) SceneNetworking.NetworkRunnerRef.Despawn(obj);
+            WorldManager.DespawnIfStateAuthority(obj);
         }
 
         // ── State ─────────────────────────────────────────────────────────────────

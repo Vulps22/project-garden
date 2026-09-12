@@ -92,9 +92,19 @@ plant and point that asked. `PlayerManager` is the worked example — a row of f
    that inherited the silence would be worse than no abstraction.
 3. **Take authority, then act.** The three duplicated coroutines, with one timeout, as
    `TakeAuthority(obj, timeout, granted)`.
-4. **World and player queries.** `IsMaster` went behind `PlayerBridge` and reads
-   `PlayerManager.IsMaster` everywhere else — 50 call sites across 19 files. Identity, the rig and
-   locomotion went with it.
+4. **World and player queries.** `IsMaster`, identity, the avatar rig and locomotion went behind
+   `PlayerBridge`; find-by-network-id and the Fusion readiness check behind `WorldBridge`, each of
+   which had been hand-rolled five and three times over.
+5. **The vendored events.** `OtherPlayerJoined`, `BecameWorldMaster` and `NetworkReady` are the
+   bridges' now, with the `On` prefix dropped because an event is the fact. `OtherPlayerJoined`
+   loses its `PlayerRef` on the way through — no subscriber used it, and a bridge does not hand out
+   the types it fronts.
+
+`SceneNetworking` is named in `PlayerBridge` and `WorldBridge` and nowhere else in the game.
+
+**Who calls which:** components and orchestrators call `WorldManager` or `PlayerManager`; those two
+call the bridges; `PlotStateManager`, `PlotLeaseManager` and `EconomyManager` call a bridge directly,
+because a manager calling a manager is the sideways call.
 
 ## What has not
 
@@ -103,20 +113,6 @@ its receive events are still raw `NetworkBridge`, and `NetworkBridge` is not mer
 **serialized field on nine crop prefabs** plus several managers. No wrapper hides Inspector wiring.
 Removing that coupling means our own messaging component owning the reference and every class
 talking to *that* — it touches every class in the game and cannot be verified in a single upload.
-
-**Six components still call `WorldBridge` directly**: `Plant`, `Socket`, `SellPoint`, `BuyPoint`,
-`WorldFloor`, `DispensingEntity`. Only `PlotStateManager` and `PlotLeaseManager` reach it from the
-right place. Closing this needs a manager between them, and there is no obvious existing home —
-`WorldManager` today owns the heartbeat and the buyables catalogue, which is a different job.
-Two options, and the choice has not been made:
-
-- **Give it to `WorldManager`.** Objects entering and leaving the world is a world-level concern and
-  it already owns what may be stocked. Costs nothing new; risks making `WorldManager` two things.
-- **A dedicated lifecycle manager.** Cleaner seam, one more class, and a near-pure passthrough on
-  day one — which the Layers rule says is fine.
-
-Either way it is six call sites and no behaviour change, so it is a safe upload to pair with
-something else.
 
 **Not Unity itself.** `transform`, `Rigidbody` and XRI are not the unstable dependency here and have
 decades of stability behind them; hiding them buys nothing and costs readability.
