@@ -1,5 +1,4 @@
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -26,7 +25,7 @@ namespace GrowAGarden
         [Tooltip("What this is worth, when nothing on this object implements ISellValueSource.")]
         [SerializeField] private int _value;
 
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
 
         private ISellValueSource _source;
         private Renderer[] _renderers;
@@ -113,7 +112,7 @@ namespace GrowAGarden
 
         private void OnValidate()
         {
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
         }
     }
 }

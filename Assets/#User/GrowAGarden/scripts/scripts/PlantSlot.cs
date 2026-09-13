@@ -3,11 +3,11 @@ using UnityEngine;
 namespace GrowAGarden
 {
     /// <summary>
-    /// A physical marker: where a seed goes and a plant grows. Owns no state and no NetworkBridge
+    /// A physical marker: where a seed goes and a plant grows. Owns no state and no NetworkMessenger
     /// of its own any more — that used to mean 24 separate NetworkObjects per Plot, one per slot,
     /// which is what drove the ~100 lines of ReassignNullObjectsAuthority churn per master
     /// transfer that plot-ownership.md's "structural half" flagged. All of that moved up to
-    /// PlotStateManager, which owns the Plot's single shared NetworkObject/NetworkBridge instead.
+    /// PlotStateManager, which owns the Plot's single shared NetworkObject/NetworkMessenger instead.
     ///
     /// This class does not even know its own index among the Plot's 24 slots — PlotStateManager
     /// injects itself via AttachTo() at Awake and resolves the index internally. A slot that

@@ -55,16 +55,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
-  _SyncByteArray: 
-  _SyncIntArray: 
-  _SyncFloatArray: []
-  _SyncVector2Array: []
-  _SyncVector3Array: []
-  _SyncVector4Array: []
-  _SyncStringArray: []
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
 --- !u!114 &4360997998222114339
 MonoBehaviour:
   m_ObjectHideFlags: 0

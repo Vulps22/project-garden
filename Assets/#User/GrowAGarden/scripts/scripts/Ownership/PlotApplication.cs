@@ -1,6 +1,5 @@
 using CommunityModules;
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -12,7 +11,7 @@ namespace GrowAGarden
     /// A sibling component, not a subclass — CollectibleEntity's Awake is private, so a derived
     /// class's own Awake would not override it (a fragile, non-obvious trap), and this codebase's
     /// own convention is small components reading a host's small public API rather than
-    /// subclassing MonoBehaviours. This shares CollectibleEntity's own NetworkBridge (each
+    /// subclassing MonoBehaviours. This shares CollectibleEntity's own NetworkMessenger (each
     /// dispensed scroll is its own NetworkObject) and adds message ids 5-7, appended to
     /// CollectibleMessageType rather than a second enum — see that enum's own note.
     ///
@@ -26,19 +25,19 @@ namespace GrowAGarden
     public class PlotApplication : MonoBehaviour
     {
         [SerializeField] private CollectibleEntity _collectible;
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
 
         /// <summary>Which Plot this scroll was last dropped on. 0 = not yet dropped anywhere.</summary>
         public uint AssociatedPlotId { get; private set; }
 
         private void Awake()
         {
-            _networkBridge.OnMessageToAll += OnMessageToAll;
+            _networkBridge.MessageToAll += OnMessageToAll;
         }
 
         private void OnDestroy()
         {
-            if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
+            if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
         }
 
         /// <summary>The holder walked this scroll onto a Plot — see PlotApplicationZone. Every
@@ -47,7 +46,7 @@ namespace GrowAGarden
         {
             var writer = new BytesWriter(BytesWriter.IntSize);
             writer.AddInt((int)plotId);
-            _networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.associateRequest, writer.Data);
+            _networkBridge.SendToAll((byte)CollectibleMessageType.associateRequest, writer.Data);
         }
 
         /// <summary>The holder walked this scroll into the hut's accept zone — see
@@ -55,7 +54,7 @@ namespace GrowAGarden
         /// holder off state everyone already has.</summary>
         public void RequestAccept()
         {
-            _networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.acceptRequest, new byte[0]);
+            _networkBridge.SendToAll((byte)CollectibleMessageType.acceptRequest, new byte[0]);
         }
 
         private void OnMessageToAll(byte id, byte[] data)
@@ -87,7 +86,7 @@ namespace GrowAGarden
         {
             var writer = new BytesWriter(BytesWriter.IntSize);
             writer.AddInt((int)plotId);
-            _networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.associated, writer.Data);
+            _networkBridge.SendToAll((byte)CollectibleMessageType.associated, writer.Data);
         }
 
         /// <summary>
@@ -132,7 +131,7 @@ namespace GrowAGarden
         private void OnValidate()
         {
             if (_collectible == null) _collectible = GetComponent<CollectibleEntity>();
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
         }
     }
 }

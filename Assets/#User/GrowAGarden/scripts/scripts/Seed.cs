@@ -1,6 +1,5 @@
 using CommunityModules;
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -21,7 +20,7 @@ namespace GrowAGarden
                         ILifecycleNotifier, IPlantable
     {
         [SerializeField] public SeedDefinition seedDefinition;
-        [SerializeField] public NetworkBridge networkBridge;
+        [SerializeField] public NetworkMessenger networkBridge;
         [SerializeField] protected XRGrabInteractable _grabInteractable;
 
         [Tooltip("What grows when this is planted. Must also be listed on SceneNetworking.")]
@@ -105,8 +104,8 @@ namespace GrowAGarden
 
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
-            networkBridge.OnMessageToAll += OnMessageToAll;
-            networkBridge.OnMessageToProxies += OnMessageToProxies;
+            networkBridge.MessageToAll += OnMessageToAll;
+            networkBridge.MessageToProxies += OnMessageToProxies;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
@@ -120,8 +119,8 @@ namespace GrowAGarden
             {
                 networkBridge.OnSpawned -= OnSpawned;
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
-                networkBridge.OnMessageToAll -= OnMessageToAll;
-                networkBridge.OnMessageToProxies -= OnMessageToProxies;
+                networkBridge.MessageToAll -= OnMessageToAll;
+                networkBridge.MessageToProxies -= OnMessageToProxies;
             }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
@@ -187,7 +186,7 @@ namespace GrowAGarden
         /// </summary>
         public void RequestPurchase()
         {
-            networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.purchaseRequest, new byte[0]);
+            networkBridge.SendToAll((byte)SeedMessageType.purchaseRequest, new byte[0]);
         }
 
         public void PlaceInShop(Vector3 position, Quaternion rotation)
@@ -203,7 +202,7 @@ namespace GrowAGarden
         /// </summary>
         public void RestoreToShop()
         {
-            networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.restoredToShop, new byte[0]);
+            networkBridge.SendToAll((byte)SeedMessageType.restoredToShop, new byte[0]);
         }
 
         private void ApplyRestoreToShop()
@@ -238,7 +237,7 @@ namespace GrowAGarden
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(buyerId ?? string.Empty);
             var writer = new BytesWriter(size);
             writer.AddAutoString(buyerId ?? string.Empty);
-            networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.purchased, writer.Data);
+            networkBridge.SendToAll((byte)SeedMessageType.purchased, writer.Data);
         }
 
         private void ApplyPurchase(byte[] data)
@@ -349,7 +348,7 @@ namespace GrowAGarden
             writer.AddByte(InShop ? (byte)1 : (byte)0);
             writer.AddByte(IsBought ? (byte)1 : (byte)0);
             writer.AddAutoString(owner);
-            networkBridge.RPC_SendMessageToProxies((byte)SeedMessageType.stateSync, writer.Data);
+            networkBridge.SendToProxies((byte)SeedMessageType.stateSync, writer.Data);
         }
 
         private void OnMessageToAll(byte id, byte[] data)
@@ -428,7 +427,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(size);
             writer.AddByte(1);
             writer.AddAutoString(id);
-            networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.grabber, writer.Data);
+            networkBridge.SendToAll((byte)SeedMessageType.grabber, writer.Data);
         }
 
         public void OnGrabDeselected(SelectExitEventArgs args)
@@ -439,7 +438,7 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(BytesWriter.ByteSize);
             writer.AddByte(0);
-            networkBridge.RPC_SendMessageToAll((byte)SeedMessageType.grabber, writer.Data);
+            networkBridge.SendToAll((byte)SeedMessageType.grabber, writer.Data);
         }
 
         // ── Temporary instrumentation ─────────────────────────────────────────────
@@ -485,13 +484,13 @@ namespace GrowAGarden
 
         private void OnValidate()
         {
-            if (networkBridge == null) networkBridge = GetComponent<NetworkBridge>();
+            if (networkBridge == null) networkBridge = GetComponent<NetworkMessenger>();
             if (_grabInteractable == null) _grabInteractable = GetComponent<XRGrabInteractable>();
         }
     }
 
     /// <summary>
-    /// Message ids are scoped per NetworkBridge, so this starts at 0 without colliding with
+    /// Message ids are scoped per NetworkMessenger, so this starts at 0 without colliding with
     /// PlantMessageType or ProduceMessageType. Append new values, never insert — these are wire
     /// ids, and renumbering makes two builds disagree about what a message means.
     /// </summary>

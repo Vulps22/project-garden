@@ -1,4 +1,3 @@
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -17,7 +16,7 @@ namespace GrowAGarden
     /// </summary>
     public class AuthorityController : MonoBehaviour
     {
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
 
         private IAuthoritySource _source;
         private ILifecycleNotifier _notifier;
@@ -61,7 +60,7 @@ namespace GrowAGarden
 
         private void OnValidate()
         {
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
         }
     }
 }

@@ -67,7 +67,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.Socket
   _bounds: {fileID: 3487002543605584581}
-  _authorityTimeout: 2
 --- !u!1 &7579675108711353300
 GameObject:
   m_ObjectHideFlags: 0
@@ -148,11 +147,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: SalePoint
       objectReference: {fileID: 0}
-    - target: {fileID: 1123540765777463096, guid: 4a55a03c8b29c2a49bfab53de73c7906,
-        type: 3}
-      propertyPath: m_text
-      value: Carrot
-      objectReference: {fileID: 0}
     - target: {fileID: 2905341716527164169, guid: 4a55a03c8b29c2a49bfab53de73c7906,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -203,20 +197,7 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3276109284240118949, guid: 4a55a03c8b29c2a49bfab53de73c7906,
-        type: 3}
-      propertyPath: m_text
-      value: 'B: 10'
-      objectReference: {fileID: 0}
-    - target: {fileID: 4193326595336203925, guid: 4a55a03c8b29c2a49bfab53de73c7906,
-        type: 3}
-      propertyPath: m_text
-      value: 'S: 15'
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 5270338515927244873, guid: 4a55a03c8b29c2a49bfab53de73c7906, type: 3}
-    - {fileID: -4522127933129034046, guid: 4a55a03c8b29c2a49bfab53de73c7906, type: 3}
-    - {fileID: -5139575569381887900, guid: 4a55a03c8b29c2a49bfab53de73c7906, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

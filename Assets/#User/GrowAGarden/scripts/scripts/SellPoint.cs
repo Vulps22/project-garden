@@ -1,6 +1,5 @@
 using CommunityModules;
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using System.Collections;
 using UnityEngine;
 
@@ -21,13 +20,13 @@ namespace GrowAGarden
     /// could miss the volume entirely and the sale simply would not happen. Now the only client
     /// whose copy is authoritative — the one holding it — says so, and the shop decides.
     ///
-    /// This has its own NetworkBridge rather than riding the plant's, because the seller is
+    /// This has its own NetworkMessenger rather than riding the plant's, because the seller is
     /// addressing the shop, not the plant. The plant is named by its NetworkId inside the
     /// payload, so the message survives whatever is happening to the plant itself.
     /// </summary>
     public class SellPoint : MonoBehaviour
     {
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
 
 
         // Master-only bookkeeping for the sale in progress. Captured up front because announcing
@@ -60,12 +59,12 @@ namespace GrowAGarden
                 Logger.Error($"Start() '{gameObject.name}' — _networkBridge is NULL! Nothing can be sold here.");
                 return;
             }
-            _networkBridge.OnMessageToAll += OnMessageToAll;
+            _networkBridge.MessageToAll += OnMessageToAll;
         }
 
         private void OnDestroy()
         {
-            if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
+            if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
 
             // Statics outlive a scene when domain reload is off, and a subscriber from the last
             // session is a destroyed object waiting to be called.
@@ -111,7 +110,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(size);
             writer.AddInt((int)NetworkIdOf(sellable));
             writer.AddAutoString(id);
-            _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SellRequest, writer.Data);
+            _networkBridge.SendToAll((byte)SellMessageType.SellRequest, writer.Data);
 
             // Optimistic, and only ever local: it is out of my hands the moment I put it down.
             // If the shop refuses, SaleRejected puts it back.
@@ -255,7 +254,7 @@ namespace GrowAGarden
         {
             var writer = new BytesWriter(BytesWriter.IntSize);
             writer.AddInt((int)NetworkIdOf(sellable));
-            _networkBridge.RPC_SendMessageToAll((byte)type, writer.Data);
+            _networkBridge.SendToAll((byte)type, writer.Data);
         }
 
         /// <summary>
@@ -277,7 +276,7 @@ namespace GrowAGarden
             writer.AddInt((int)NetworkIdOf(sellable));
             writer.AddAutoString(sellerId);
             writer.AddInt(value);
-            _networkBridge.RPC_SendMessageToAll((byte)SellMessageType.SaleAccepted, writer.Data);
+            _networkBridge.SendToAll((byte)SellMessageType.SaleAccepted, writer.Data);
         }
 
         /// <summary>Applies an accepted sale on every client, the sender included.</summary>
@@ -331,7 +330,7 @@ namespace GrowAGarden
 
         private void OnValidate()
         {
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
         }
 
         private enum SellMessageType : byte

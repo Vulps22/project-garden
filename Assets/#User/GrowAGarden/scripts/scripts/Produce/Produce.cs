@@ -1,6 +1,5 @@
 using CommunityModules;
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -21,7 +20,7 @@ namespace GrowAGarden
                            ILifecycleNotifier, ISellValueSource, IPlotOccupant
     {
         [SerializeField] public SeedDefinition seedDefinition;
-        [SerializeField] public NetworkBridge networkBridge;
+        [SerializeField] public NetworkMessenger networkBridge;
         [SerializeField] protected XRGrabInteractable _grabInteractable;
         [SerializeField] private SellableEntity _sellable;
 
@@ -122,8 +121,8 @@ namespace GrowAGarden
             // prefab, before Unity reaches Start. See runtime-spawn.md.
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
-            networkBridge.OnMessageToAll += OnMessageToAll;
-            networkBridge.OnMessageToProxies += OnMessageToProxies;
+            networkBridge.MessageToAll += OnMessageToAll;
+            networkBridge.MessageToProxies += OnMessageToProxies;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
@@ -139,8 +138,8 @@ namespace GrowAGarden
             {
                 networkBridge.OnSpawned -= OnSpawned;
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
-                networkBridge.OnMessageToAll -= OnMessageToAll;
-                networkBridge.OnMessageToProxies -= OnMessageToProxies;
+                networkBridge.MessageToAll -= OnMessageToAll;
+                networkBridge.MessageToProxies -= OnMessageToProxies;
             }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
@@ -270,7 +269,7 @@ namespace GrowAGarden
         public void RequestHarvest()
         {
             if (IsHarvested || !IsRipe) return;
-            networkBridge.RPC_SendMessageToAll((byte)ProduceMessageType.harvestRequest, new byte[0]);
+            networkBridge.SendToAll((byte)ProduceMessageType.harvestRequest, new byte[0]);
         }
 
         /// <summary>The master decides. Everyone else ignores the request.</summary>
@@ -279,7 +278,7 @@ namespace GrowAGarden
             if (!PlayerManager.IsMaster) return;
             if (IsHarvested || !IsRipe) return;
 
-            networkBridge.RPC_SendMessageToAll((byte)ProduceMessageType.harvested, new byte[0]);
+            networkBridge.SendToAll((byte)ProduceMessageType.harvested, new byte[0]);
         }
 
         /// <summary>
@@ -339,7 +338,7 @@ namespace GrowAGarden
             writer.AddInt((int)(_ripenTimestamp >> 32));
             writer.AddInt((int)(_ripenTimestamp & 0xFFFFFFFFL));
             writer.AddByte(IsHarvested ? (byte)1 : (byte)0);
-            networkBridge.RPC_SendMessageToProxies((byte)ProduceMessageType.stateSync, writer.Data);
+            networkBridge.SendToProxies((byte)ProduceMessageType.stateSync, writer.Data);
         }
 
         private void OnMessageToAll(byte id, byte[] data)
@@ -405,7 +404,7 @@ namespace GrowAGarden
                 var writer = new BytesWriter(size);
                 writer.AddByte(1);
                 writer.AddAutoString(id);
-                networkBridge.RPC_SendMessageToAll((byte)ProduceMessageType.grabber, writer.Data);
+                networkBridge.SendToAll((byte)ProduceMessageType.grabber, writer.Data);
             }
 
             if (!IsHarvested) RequestHarvest();
@@ -419,19 +418,19 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(BytesWriter.ByteSize);
             writer.AddByte(0);
-            networkBridge.RPC_SendMessageToAll((byte)ProduceMessageType.grabber, writer.Data);
+            networkBridge.SendToAll((byte)ProduceMessageType.grabber, writer.Data);
         }
 
         protected virtual void OnValidate()
         {
-            if (networkBridge == null) networkBridge = GetComponent<NetworkBridge>();
+            if (networkBridge == null) networkBridge = GetComponent<NetworkMessenger>();
             if (_grabInteractable == null) _grabInteractable = GetComponent<XRGrabInteractable>();
             if (_sellable == null) _sellable = GetComponent<SellableEntity>();
             if (_bodyToScale == null) _bodyToScale = transform;
         }
     }
 
-    /// <summary>Scoped to the produce's own NetworkBridge, so starting at 0 collides with nothing.</summary>
+    /// <summary>Scoped to the produce's own NetworkMessenger, so starting at 0 collides with nothing.</summary>
     enum ProduceMessageType : byte
     {
         stateSync = 0,

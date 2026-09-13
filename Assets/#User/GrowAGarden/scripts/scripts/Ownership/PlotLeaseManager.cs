@@ -1,6 +1,5 @@
 using CommunityModules;
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,7 +15,7 @@ namespace GrowAGarden
     /// deed does not live on the Plot once claimed. Reusing that logic would print a duplicate deed
     /// for a Plot that already has an owner, and let a second player claim the same Plot.
     ///
-    /// OwnerId is a fact, broadcast the Plot's own scene-placed NetworkBridge, RPC_SendMessageToAll,
+    /// OwnerId is a fact, broadcast the Plot's own scene-placed NetworkMessenger, SendToAll,
     /// no authority dance needed for a plain announcement — the same shared bridge PlotStateManager
     /// broadcasts slot occupancy on, coordinated via PlotMessageType so the two never collide. A
     /// first pass here treated Plot having its own NetworkObject as an unsolved problem needing a
@@ -25,7 +24,7 @@ namespace GrowAGarden
     /// </summary>
     public class PlotLeaseManager : MonoBehaviour
     {
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
 
         [Tooltip("Where the deed sits, roughly a metre above the plot centre.")]
         [SerializeField] private Socket _deedSocket;
@@ -72,7 +71,7 @@ namespace GrowAGarden
                 Logger.Error($"Start() '{gameObject.name}' — _networkBridge is NULL! Ownership will never leave this client!");
                 return;
             }
-            _networkBridge.OnMessageToAll += OnMessageToAll;
+            _networkBridge.MessageToAll += OnMessageToAll;
             PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
@@ -104,7 +103,7 @@ namespace GrowAGarden
         private void OnDestroy()
         {
             SetCurrentDeed(null);
-            if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
+            if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
             PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
@@ -278,7 +277,7 @@ namespace GrowAGarden
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(playerId);
             var writer = new BytesWriter(size);
             writer.AddAutoString(playerId);
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.TeammateRemoveRequest, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.TeammateRemoveRequest, writer.Data);
         }
 
         /// <summary>Master only. Public for GardenLease — a departed player is removed from
@@ -309,7 +308,7 @@ namespace GrowAGarden
             writer.AddByte((byte)_teammateIds.Count);
             foreach (string id in _teammateIds) writer.AddAutoString(id);
 
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.TeammatesChanged, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.TeammatesChanged, writer.Data);
         }
 
         /// <summary>The only place OwnerId is written. Master only; announced to everyone, same
@@ -322,7 +321,7 @@ namespace GrowAGarden
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
             var writer = new BytesWriter(size);
             writer.AddAutoString(owner);
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.OwnerChanged, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.OwnerChanged, writer.Data);
         }
 
         private void OnMessageToAll(byte id, byte[] data)
@@ -433,7 +432,7 @@ namespace GrowAGarden
 
         private void OnValidate()
         {
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
             if (_deedSocket == null) _deedSocket = GetComponentInChildren<Socket>(true);
         }
     }

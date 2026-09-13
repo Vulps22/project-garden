@@ -1,7 +1,6 @@
 using CommunityModules;
 using Fusion;
 using Fusion.Addons.Physics;
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 
 namespace GrowAGarden
@@ -24,7 +23,7 @@ namespace GrowAGarden
     public abstract class Plant : MonoBehaviour, IAuthoritySource, ILifecycleNotifier, IPlotOccupant
     {
         [SerializeField] public SeedDefinition seedDefinition;
-        [SerializeField] public NetworkBridge networkBridge;
+        [SerializeField] public NetworkMessenger networkBridge;
 
         [Tooltip("The body that scales as the plant grows. Usually the root.")]
         [SerializeField] protected Transform _bodyToScale;
@@ -82,7 +81,7 @@ namespace GrowAGarden
             // prefab, before Unity reaches Start. See runtime-spawn.md.
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
-            networkBridge.OnMessageToProxies += OnMessageToProxies;
+            networkBridge.MessageToProxies += OnMessageToProxies;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
@@ -92,7 +91,7 @@ namespace GrowAGarden
             {
                 networkBridge.OnSpawned -= OnSpawned;
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
-                networkBridge.OnMessageToProxies -= OnMessageToProxies;
+                networkBridge.MessageToProxies -= OnMessageToProxies;
             }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
@@ -214,7 +213,7 @@ namespace GrowAGarden
             writer.AddInt((int)(_witherTimestamp >> 32));
             writer.AddInt((int)(_witherTimestamp & 0xFFFFFFFFL));
             OnWriteBroadcastState(writer);
-            networkBridge.RPC_SendMessageToProxies((byte)PlantMessageType.stateSync, writer.Data);
+            networkBridge.SendToProxies((byte)PlantMessageType.stateSync, writer.Data);
         }
 
         private void OnMessageToProxies(byte id, byte[] data)
@@ -281,12 +280,12 @@ namespace GrowAGarden
 
         protected virtual void OnValidate()
         {
-            if (networkBridge == null) networkBridge = GetComponent<NetworkBridge>();
+            if (networkBridge == null) networkBridge = GetComponent<NetworkMessenger>();
             if (_bodyToScale == null) _bodyToScale = transform;
         }
     }
 
-    /// <summary>Scoped to the plant's own NetworkBridge, so starting at 0 collides with nothing.</summary>
+    /// <summary>Scoped to the plant's own NetworkMessenger, so starting at 0 collides with nothing.</summary>
     enum PlantMessageType : byte
     {
         stateSync = 0

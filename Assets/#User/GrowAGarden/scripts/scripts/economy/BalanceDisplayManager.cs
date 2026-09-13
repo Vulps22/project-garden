@@ -1,5 +1,4 @@
 using CommunityModules;
-using SomniumSpace.Network.Bridge;
 using TMPro;
 using UnityEngine;
 
@@ -9,7 +8,7 @@ namespace GrowAGarden
     {
         private const byte MESSAGE_ID = 0;
 
-        [SerializeField] private NetworkBridge _bridge;
+        [SerializeField] private NetworkMessenger _bridge;
         [SerializeField] private GameObject[] _displays;
 
         private TMP_Text[] _nameTexts;
@@ -18,7 +17,7 @@ namespace GrowAGarden
         private void Start()
         {
             Logger.Log($"[BalanceDisplayManager] Start - bridge={(_bridge == null ? "NULL" : "OK")}, displays={_displays?.Length ?? 0}");
-            _bridge.OnMessageToAll += OnMessageToAll;
+            _bridge.MessageToAll += OnMessageToAll;
 
             _nameTexts = new TMP_Text[_displays.Length];
             _balanceTexts = new TMP_Text[_displays.Length];
@@ -32,7 +31,7 @@ namespace GrowAGarden
 
         private void OnDestroy()
         {
-            _bridge.OnMessageToAll -= OnMessageToAll;
+            _bridge.MessageToAll -= OnMessageToAll;
         }
 
         /// <summary>
@@ -63,7 +62,7 @@ namespace GrowAGarden
                 writer.AddInt(balances[i]);
             }
 
-            _bridge.RPC_SendMessageToAll(MESSAGE_ID, writer.Data);
+            _bridge.SendToAll(MESSAGE_ID, writer.Data);
             Logger.Log($"[BalanceDisplayManager] Set - RPC sent");
         }
 

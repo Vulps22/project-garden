@@ -1,4 +1,3 @@
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
@@ -23,7 +22,7 @@ namespace GrowAGarden
     public class KinematicController : MonoBehaviour
     {
         [SerializeField] private Rigidbody _rigidbody;
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
         [SerializeField] private XRGrabInteractable _grabInteractable;
 
         private IKinematicSource _source;
@@ -101,7 +100,7 @@ namespace GrowAGarden
         private void OnValidate()
         {
             if (_rigidbody == null) _rigidbody = GetComponent<Rigidbody>();
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
             if (_grabInteractable == null) _grabInteractable = GetComponent<XRGrabInteractable>();
         }
     }

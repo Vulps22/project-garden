@@ -1,6 +1,5 @@
 using CommunityModules;
 using Fusion;
-using SomniumSpace.Network.Bridge;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
@@ -29,7 +28,7 @@ namespace GrowAGarden
 
         public string displayName;
 
-        [SerializeField] public NetworkBridge networkBridge;
+        [SerializeField] public NetworkMessenger networkBridge;
         [SerializeField] protected XRGrabInteractable _grabInteractable;
 
         public bool InDispenser { get; private set; }
@@ -92,8 +91,8 @@ namespace GrowAGarden
 
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
-            networkBridge.OnMessageToAll += OnMessageToAll;
-            networkBridge.OnMessageToProxies += OnMessageToProxies;
+            networkBridge.MessageToAll += OnMessageToAll;
+            networkBridge.MessageToProxies += OnMessageToProxies;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
@@ -107,8 +106,8 @@ namespace GrowAGarden
             {
                 networkBridge.OnSpawned -= OnSpawned;
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
-                networkBridge.OnMessageToAll -= OnMessageToAll;
-                networkBridge.OnMessageToProxies -= OnMessageToProxies;
+                networkBridge.MessageToAll -= OnMessageToAll;
+                networkBridge.MessageToProxies -= OnMessageToProxies;
             }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
@@ -156,7 +155,7 @@ namespace GrowAGarden
         /// Seed.RequestPurchase for why the holder is the one asking.</summary>
         public void RequestTake()
         {
-            networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.takeRequest, new byte[0]);
+            networkBridge.SendToAll((byte)CollectibleMessageType.takeRequest, new byte[0]);
         }
 
         public void PlaceInDispenser(Vector3 position, Quaternion rotation)
@@ -170,7 +169,7 @@ namespace GrowAGarden
         /// teleported, so a glide-back reads as a glide-back.</summary>
         public void RestoreToDispenser()
         {
-            networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.restoredToDispenser, new byte[0]);
+            networkBridge.SendToAll((byte)CollectibleMessageType.restoredToDispenser, new byte[0]);
         }
 
         private void ApplyRestoreToDispenser()
@@ -197,7 +196,7 @@ namespace GrowAGarden
             int size = sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(takerId ?? string.Empty);
             var writer = new BytesWriter(size);
             writer.AddAutoString(takerId ?? string.Empty);
-            networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.taken, writer.Data);
+            networkBridge.SendToAll((byte)CollectibleMessageType.taken, writer.Data);
         }
 
         private void ApplyTaken(byte[] data)
@@ -258,7 +257,7 @@ namespace GrowAGarden
             writer.AddByte(InDispenser ? (byte)1 : (byte)0);
             writer.AddByte(IsTaken ? (byte)1 : (byte)0);
             writer.AddAutoString(takenBy);
-            networkBridge.RPC_SendMessageToProxies((byte)CollectibleMessageType.stateSync, writer.Data);
+            networkBridge.SendToProxies((byte)CollectibleMessageType.stateSync, writer.Data);
         }
 
         private void OnMessageToAll(byte id, byte[] data)
@@ -335,7 +334,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(size);
             writer.AddByte(1);
             writer.AddAutoString(id);
-            networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.grabber, writer.Data);
+            networkBridge.SendToAll((byte)CollectibleMessageType.grabber, writer.Data);
         }
 
         public void OnGrabDeselected(SelectExitEventArgs args)
@@ -344,17 +343,17 @@ namespace GrowAGarden
 
             var writer = new BytesWriter(BytesWriter.ByteSize);
             writer.AddByte(0);
-            networkBridge.RPC_SendMessageToAll((byte)CollectibleMessageType.grabber, writer.Data);
+            networkBridge.SendToAll((byte)CollectibleMessageType.grabber, writer.Data);
         }
 
         private void OnValidate()
         {
-            if (networkBridge == null) networkBridge = GetComponent<NetworkBridge>();
+            if (networkBridge == null) networkBridge = GetComponent<NetworkMessenger>();
             if (_grabInteractable == null) _grabInteractable = GetComponent<XRGrabInteractable>();
         }
     }
 
-    /// <summary>Message ids are scoped per NetworkBridge — see SeedMessageType. Append new values,
+    /// <summary>Message ids are scoped per NetworkMessenger — see SeedMessageType. Append new values,
     /// never insert. 5-7 belong to PlotApplication, a sibling component on the same bridge for
     /// prefabs that need "which Plot is this application for" on top of the base take/holder
     /// shape — kept in this shared enum rather than a second one, since two independently-numbered

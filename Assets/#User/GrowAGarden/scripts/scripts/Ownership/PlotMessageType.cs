@@ -1,10 +1,10 @@
 namespace GrowAGarden
 {
     /// <summary>
-    /// Every message id sent on a Plot's single shared NetworkBridge, across every manager that
+    /// Every message id sent on a Plot's single shared NetworkMessenger, across every manager that
     /// subscribes to it (PlotLeaseManager, PlotStateManager, anything added later).
     ///
-    /// One list because the bridge has one OnMessageToAll event, not one per subscriber — two
+    /// One list because the bridge has one MessageToAll event, not one per subscriber — two
     /// managers each independently starting their own enum at 0 collide silently, since the
     /// receiver never throws, it just misreads the payload as whatever its own enum says byte 0
     /// means. Append new values, never renumber or reuse — these are wire ids.

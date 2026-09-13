@@ -1,5 +1,4 @@
 using CommunityModules;
-using SomniumSpace.Network.Bridge;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +14,7 @@ namespace GrowAGarden
         public static EconomyManager Instance;
         public static event Action<int, int> OnPlayerBalanceChanged;
 
-        [SerializeField] private NetworkBridge _bridge;
+        [SerializeField] private NetworkMessenger _bridge;
         [SerializeField] private BalanceDisplayManager _balanceDisplayManager;
         [SerializeField] private int _startingBalance;
 
@@ -36,13 +35,13 @@ namespace GrowAGarden
 
         private void Start()
         {
-            _bridge.OnMessageToAll += OnMessageToAll;
+            _bridge.MessageToAll += OnMessageToAll;
             PlayerBridge.BecameWorldMaster += OnBecomeWorldMaster;
         }
 
         private void OnDestroy()
         {
-            _bridge.OnMessageToAll -= OnMessageToAll;
+            _bridge.MessageToAll -= OnMessageToAll;
             PlayerBridge.BecameWorldMaster -= OnBecomeWorldMaster;
             PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
         }
@@ -184,7 +183,7 @@ namespace GrowAGarden
                 writer.AddInt(b.GetBalance());
             }
 
-            _bridge.RPC_SendMessageToAll(MESSAGE_ID, writer.Data);
+            _bridge.SendToAll(MESSAGE_ID, writer.Data);
         }
 
         private void OnMessageToAll(byte id, byte[] data)

@@ -1,7 +1,6 @@
 using CommunityModules;
 using Fusion;
 using Fusion.Addons.Physics;
-using SomniumSpace.Network.Bridge;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,7 @@ using UnityEngine;
 namespace GrowAGarden
 {
     /// <summary>
-    /// Owns all 24 of a Plot's PlantSlots through the Plot's one shared NetworkObject/NetworkBridge
+    /// Owns all 24 of a Plot's PlantSlots through the Plot's one shared NetworkObject/NetworkMessenger
     /// — the same one PlotLeaseManager already uses, not a second one. This is what used to be 24
     /// separate NetworkObjects, one per slot, each with its own bridge and its own broadcasting;
     /// see PlantSlot's docstring for why that was wrong, and this project's own logs for what it
@@ -22,7 +21,7 @@ namespace GrowAGarden
     /// </summary>
     public class PlotStateManager : MonoBehaviour
     {
-        [SerializeField] private NetworkBridge _networkBridge;
+        [SerializeField] private NetworkMessenger _networkBridge;
 
         [Tooltip("The Plot's ownership authority. Planting checks this: an unclaimed Plot allows " +
                  "no planting at all, and a claimed one allows only its owner.")]
@@ -55,13 +54,13 @@ namespace GrowAGarden
                 Logger.Error($"Start() '{gameObject.name}' — _networkBridge is NULL! Slot state will never leave this client!");
                 return;
             }
-            _networkBridge.OnMessageToAll += OnMessageToAll;
+            _networkBridge.MessageToAll += OnMessageToAll;
             PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         private void OnDestroy()
         {
-            if (_networkBridge != null) _networkBridge.OnMessageToAll -= OnMessageToAll;
+            if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
             PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
@@ -96,7 +95,7 @@ namespace GrowAGarden
             writer.AddByte((byte)slotIndex);
             writer.AddInt((int)plantable.NetworkId);
             writer.AddAutoString(owner);
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.PlantRequest, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.PlantRequest, writer.Data);
         }
 
         // ── Plot's side ───────────────────────────────────────────────────────────
@@ -166,7 +165,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(BytesWriter.ByteSize + BytesWriter.IntSize);
             writer.AddByte((byte)slotIndex);
             writer.AddInt((int)plantableId);
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.Planted, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.Planted, writer.Data);
 
             Logger.Info($"OnPlantRequested() '{gameObject.name}' — planted '{plant.name}' at slot {slotIndex} for '{ownerId}'");
             StartCoroutine(TakeOwnershipAndDespawn(plantableId));
@@ -247,7 +246,7 @@ namespace GrowAGarden
             var writer = new BytesWriter(BytesWriter.ByteSize * 2);
             writer.AddByte((byte)slotIndex);
             writer.AddByte(_slots[slotIndex].IsOccupied ? (byte)1 : (byte)0);
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.SlotOccupancyChanged, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.SlotOccupancyChanged, writer.Data);
         }
 
         /// <summary>All 24 slots as one 3-byte bitmask, per plot-ownership.md's own sizing note —
@@ -274,7 +273,7 @@ namespace GrowAGarden
             writer.AddByte(b0);
             writer.AddByte(b1);
             writer.AddByte(b2);
-            _networkBridge.RPC_SendMessageToAll((byte)PlotMessageType.FullStateSync, writer.Data);
+            _networkBridge.SendToAll((byte)PlotMessageType.FullStateSync, writer.Data);
         }
 
         private void OnMessageToAll(byte id, byte[] data)
@@ -327,7 +326,7 @@ namespace GrowAGarden
 
         private void OnValidate()
         {
-            if (_networkBridge == null) _networkBridge = GetComponent<NetworkBridge>();
+            if (_networkBridge == null) _networkBridge = GetComponent<NetworkMessenger>();
             if (_lease == null) _lease = GetComponent<PlotLeaseManager>();
         }
     }
