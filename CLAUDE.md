@@ -9,7 +9,8 @@ from shop points, plant them in slots, wait for them to grow, then carry the gro
 point for currency (**Thatch**).
 
 - Unity **6000.3.5f2**, URP 17.3.0, XR Interaction Toolkit 3.3.1
-- Networking: **Photon Fusion** (via the Somnium `NetworkBridge` wrapper), Photon 2.0.5 + addons
+- Networking: **Photon Fusion** (via `NetworkMessenger`, our wrapper over the Somnium
+  `NetworkBridgeEvents` transport), Photon 2.0.5 + addons
 - Requires **Somnium ProSDK v2.1**; the SDK on this machine is the 3.1.x line
 
 **Somnium Space supports neither its SDK nor its client on Linux, and this machine is Nobara.**
@@ -50,8 +51,9 @@ scripts/                    see "Where the code lives" below
 ### Two things that live outside this repo
 
 **`Assets/#User/Community Modules/`** — template-supplied, untracked, and the source of the
-`SomniumSpace.Network` assembly (`NetworkBridge`, the RPC transport everything is built on). If
-`NetworkBridge` fails to resolve, the template is missing Community Modules; it is not a code bug.
+`SomniumSpace.Network` assembly (`NetworkBridgeEvents`, the RPC transport everything is built on,
+and the legacy `NetworkBridge` beside it). If `NetworkBridgeEvents` fails to resolve, the template is
+missing Community Modules; it is not a code bug.
 See the vendoring rules below — they are the opposite of what they used to be.
 
 **`Packages/com.somnilux.sdk/`** — "Somnilux", Vulps's own Editor-only local package
@@ -106,8 +108,12 @@ So the V2-era workflow is still necessary in V3, but the *discipline* around it 
 - Also strip editor-only code. The server compile scans the assembly and an `#if UNITY_EDITOR` guard
   does **not** help, because the Editor-compiled assembly still carries the reference.
 
-Currently vendored under `scripts/Networking Plugin/`: `SceneNetworking.cs`, `NetworkGrabbable.cs`,
-`Utils/{BytesReader,BytesWriter}.cs`.
+**On `refactor-to-community-modules`, nothing is vendored.** `a2aa631` deleted
+`scripts/Networking Plugin/` and referenced the `CommunityModules` assembly from
+`GrowAGarden.asmdef` instead, so `SceneNetworking`, `NetworkGrabbable` and
+`Utils/{BytesReader,BytesWriter}` are used from CM directly. That is the whole point of the branch,
+and it is the thing the uploader rules above say will be rejected — untested against a real upload.
+On `main` the vendored copies are still there and the paragraphs below still describe it.
 
 `SceneNetworking` has **one deliberate divergence** from CM V3 — `UnityEditor.PrefabUtility.
 IsPartOfPrefabAsset(no)` replaced by the runtime-safe `!no.gameObject.scene.IsValid()`, for exactly
@@ -130,9 +136,6 @@ scripts/scripts/                 game logic
                                  ISellValueSource, XRGrabInteractableRef
   Seed, ShopSlot, PlantSlot, SellPoint, SeedDefinition, IPlantable, Logger, ExceptionAlarm
 scripts/Seeds/                   CarrotSeed, TurnipSeed, PumpkinSeed (SeedDefinition subclasses)
-scripts/Networking Plugin/       vendored CM (see above)
-scripts/{Interactions Plugin, ARS Additional, Networked Components, Interactions Examples}/
-                                 GAG-only scripts with no CM counterpart
 scripts/#Scripts Backup/         dead .txt snapshots from 2026-02-23. Ignore it; never edit it.
 ```
 
@@ -170,7 +173,8 @@ package. `unity status` should then show a port and `ready`. If `Server Reachabl
 ```bash
 unity command recompile                  # returns immediately; "up_to_date" if nothing changed
 unity command recompile_status --json    # poll -> {"status":"completed","failed":bool,"errors":[...]}
-unity command get_console_logs --json    # structured Editor console, with stack traces
+unity command console --json             # structured Editor console, with stack traces
+unity command clear_console              # so the next read shows only what you caused
 ```
 
 Also useful: `eval` / `eval_file` run C# against the live Editor via Roslyn — the practical way to
@@ -388,12 +392,22 @@ height 0.25, rise 0.6 m/s, fall gravity scale 0.35, max fall 2.5 m/s, spin 20°/
 
 ### Networking: hand-rolled byte packing
 
-All sync goes through `NetworkBridge` RPCs carrying `(byte messageId, byte[] data)`, serialized manually
+All sync goes through `NetworkMessenger` carrying `(byte messageId, byte[] data)`, serialized manually
 with `BytesWriter`/`BytesReader`. There is no Fusion `[Networked]` property anywhere.
+
+`NetworkMessenger` is ours, over CM's `NetworkBridgeEvents`. The transport underneath takes a bare
+`byte[]`, so the messenger frames the id into **byte 0** and unpacks it on the way out — the format
+lives in that one file rather than in every send site and every handler. `SendToAll`,
+`SendToProxies`, `SendToController` and `SendToPlayer` send; `MessageToAll`, `MessageToProxies`,
+`MessageToController` and `MessageToPlayer` receive. `OnSpawned` and `OnStateAuthorityChanged` are
+inherited from the transport and keep their SDK names.
+
+It replaced `NetworkBridge`, which carried seven networked arrays on every instance whether used or
+not — this game used none of them. CM's own source now marks that class `LEGACY - DO NOT USE ANYMORE`.
 
 - Each component defines its **own private `enum ...MessageType : byte`** — `SeedMessageType`,
   `PlantMessageType`, `ProduceMessageType`, `PlantSlotMessageType`, `SellMessageType`. IDs are scoped
-  per NetworkBridge, so `0` in one is unrelated to `0` in another, and each starts at 0. **Append new
+  per NetworkMessenger, so `0` in one is unrelated to `0` in another, and each starts at 0. **Append new
   values, never insert** — these are wire ids, and renumbering makes two builds disagree about what a
   message means.
 - `BytesWriter` is **pre-sized** — you must compute the exact byte count up front. Adding a field to a
@@ -491,7 +505,7 @@ the client that owns it** — which is what closed the gap behind most of the 20
 
 Four traps, each of which cost an upload. `docs/runtime-spawn.md` §4 has the full list.
 
-- **`Spawned()` runs before `Start()`.** Subscribe to `NetworkBridge.OnSpawned` in `Awake`.
+- **`Spawned()` runs before `Start()`.** Subscribe to `NetworkMessenger.OnSpawned` in `Awake`.
 - **Never gate a spawn on our own statics.** `IsSharedModeMasterClient` goes true as soon as the peer
   is in a room, and `IsNetworkReady` is a static that outlives its scene. Ask the runner:
   `runner.IsRunning && runner.LocalPlayer.IsRealPlayer`. Spawning early makes Fusion instantiate the
@@ -588,7 +602,7 @@ null**. Refuse rather than guess when it is; the next broadcast restores it.
 components (Seed, Plant, BuyPoint, SellPoint)   the thing a hand touches
 orchestrators (PlayerLifecycle)                 listen, then command
 managers (Economy, Player, World, PlotState)    own state; the only caller of a bridge
-bridges (WorldBridge, PlayerBridge)             the only code that names anything outside ours
+bridges (World, Player, Storage, Messenger)     the only code that names anything outside ours
 ```
 
 It is the shape of a server, and the analogy is worth keeping in mind: **bridges are DAOs, managers
@@ -613,10 +627,10 @@ this, do these things, in this order".
 
 **A bridge is where our code touches anything that is not ours.** Not "the wrapper over Community
 Modules" — the boundary is `Assets/#User/GrowAGarden/`, and everything on the far side of it is the
-same kind of dependency: Fusion, Photon, the Somnium ProSDK, Community Modules, the `NetworkBridge`
-transport. None of them are ours, none of them are stable, and none of them announce a breaking
-change as a compile error — the ProSDK ships as opaque DLLs, so a deprecation arrives as a world
-that does not work.
+same kind of dependency: Fusion, Photon, the Somnium ProSDK, Community Modules, the
+`NetworkBridgeEvents` transport. None of them are ours, none of them are stable, and none of them
+announce a breaking change as a compile error — the ProSDK ships as opaque DLLs, so a deprecation
+arrives as a world that does not work.
 
 The one thing deliberately *not* behind a bridge is Unity itself. `transform`, `Rigidbody` and XRI
 are not the unstable dependency here and wrapping them buys nothing; see `docs/world-bridge.md`.
@@ -632,7 +646,7 @@ bridge with a manager's name on it, and the churn it was meant to absorb passes 
 It calls a bridge instead.
 
 `WorldBridge` is object lifecycle only — spawn, place, despawn, take authority. Session and player
-facts belong to `PlayerBridge`.
+facts belong to `PlayerBridge`, persistence to `StorageBridge`, messaging to `NetworkMessenger`.
 
 **Every function states its own rules.** If a behaviour is master-only, that function guards —
 regardless of whether its caller already did. Not duplication: the guard is part of what the
@@ -644,7 +658,7 @@ client and a proxy reaching one is the normal case.
 callers has moved the coupling, not removed it — every caller still names the thing that will
 change.
 
-### The two bridges
+### The bridges
 
 **`PlayerBridge`** fronts Somnium's player list, avatar rig and locomotion, plus `SceneNetworking`'s
 master-client flag. It is a MonoBehaviour on `SceneManager` — Somnium publishes its player list as
@@ -659,11 +673,23 @@ departure events, and a row of one-line forwards to the bridge for identity, rig
 
 `PlayerIdentity` is a struct, so `== null` on one silently always passes. Ask `.Exists`.
 
+**`StorageBridge`** fronts Somnium's per-player local storage: `Exists`, `Read<T>`, `Write<T>`, each
+taking a context string for the log line. `SomniumBridge.LocalStorage` is named in that one file.
+**Nothing it exposes throws** — both callers reach it from `Awake`, where an unguarded throw takes
+the component down with it, and the read and write halves of that API are still unconfirmed in-world
+(the SDK documents `JsonExists` and the housekeeping calls, not `ReadJson`/`WriteJson`). A failure is
+logged and swallowed and the caller uses its defaults. `Read<T>` carries the SDK's `new()`
+constraint. **The failure latch is shared**, where `GameSettings` and `TutorialManager` used to latch
+separately: what throws is the API rather than any one key.
+
+**`NetworkMessenger`** is the messaging seam — see "Networking" above. It is the odd one out, a
+component on each networked prefab rather than a static class, because messages belong to an object.
+
 ### Where the tree does not match this yet
 
-- **`NetworkBridge` is a serialized field on nine crop prefabs** and on several managers, so the
-  messaging triplet is named all over the component layer. No wrapper hides Inspector wiring, so
-  this is the one that cannot land in a single upload — see "What has not" in `docs/world-bridge.md`.
+- **`NetworkMessenger` is a serialized field on the crop prefabs** and on several managers, so the
+  messaging component is wired all over the component layer. That is now our own type rather than
+  CM's, but no wrapper hides Inspector wiring, so a change to it still touches every prefab.
 
 ## Conventions
 
@@ -676,7 +702,7 @@ departure events, and a row of one-line forwards to the bridge for identity, rig
   step 5 depends on that shape.
 - **Events:** an event we declare is named for **the fact** — `Sold`, `Harvested`, `PurchaseRequested`,
   `PlayerGone` — and a handler is `On` + that name, so it reads `Seed.PurchaseRequested +=
-  OnPurchaseRequested`. The `On`-prefixed *events* in the tree (`NetworkBridge.OnSpawned`,
+  OnPurchaseRequested`. The `On`-prefixed *events* in the tree (`NetworkBridgeEvents.OnSpawned`,
   `SceneNetworking.OnOtherPlayerJoined`, `OnBecomeWorldMaster`) are **vendored or SDK, not ours** —
   that is the whole of the apparent inconsistency. `EconomyManager.OnPlayerBalanceChanged` is the one
   event of ours out of step and should become `PlayerBalanceChanged`.
@@ -727,9 +753,26 @@ The `.Features.Motion` half is wrapped too (`SuppressSomniumLocomotion`, `SetLoc
 `SetLocalMovementScale`, `TeleportLocalPlayer`), which is what flight was said to be blocked on;
 untested in-world, and flight still has no supported speed API behind it.
 
+**`StorageBridge` exists** (2026-09-13). `GameSettings` and `TutorialManager` were the last game
+scripts reaching past the seam to the SDK, both for `SomniumBridge.LocalStorage`, and both carrying
+their own copy of the try/catch and the latch. `SomniumBridge` is now named in one file.
 
-Branch **`add-advanced-flight`**, cut from `main` on 2026-09-09. `main` is pushed and current.
-Tags `MVP`, `add-turnip` are historical.
+**Messaging moved onto `NetworkMessenger`** (2026-09-13) — 33 send sites, 26 subscriptions, 15
+prefabs and the scene. The component was swapped by GUID rather than re-added, so every serialized
+reference kept its `fileID`; a reflection pass over every prefab found 73 messenger fields and none
+null. Compiles clean, **untested in-world, and it is a wire-format change**.
+
+**Four folders of vendored CM scripts were deleted** (2026-09-13): `ARS Additional`,
+`Interactions Examples`, `Interactions Plugin`, `Networked Components`. CLAUDE.md had called them
+GAG-only work with no CM counterpart; they were re-namespaced CM, and six of the seven files were
+referenced by nothing at all.
+
+
+Branch **`refactor-to-community-modules`**. `main` is pushed and current; the three commits above
+are local to this branch. Tags `MVP`, `add-turnip` are historical.
+
+The paragraph below describes `add-advanced-flight`, which this section named before, and is kept
+because the procgen/flight dependency it records has not changed.
 
 **Why this branch exists, and what it blocks.** `feature/procgen` was opened to start procedural
 islands, produced the island scale box and `docs/procgen-islands.md`, and was **merged to `main` and
@@ -811,9 +854,10 @@ What is genuinely left over from that testing:
 - **`MultiHarvestPlant` has no ending** (#43). With plants ungrabbable there is no uproot gesture at
   all, so an apple tree holds its plot until its owner's lease expires. Needs a real answer — a tool,
   a hold-to-remove on the plot, or a lifespan — before a crop uses it.
-- **Messaging is still raw `NetworkBridge`** — the last unbridged dependency, and the expensive one:
-  it is a serialized field on nine crop prefabs, so no wrapper hides it and it cannot be verified in
-  a single upload. `docs/world-bridge.md`.
+- **The `NetworkMessenger` cutover is unverified.** Messaging moved off `NetworkBridge` on
+  2026-09-13 and compiles clean, but framing the id into byte 0 is a **wire-format change**: a build
+  on the old framing and one on the new cannot talk to each other. Needs an upload and two real
+  clients before it counts. `docs/world-bridge.md`.
 - **#44**, **#47** are seed ideas. `PlantableEntity` — planting a sword to grow an auto-harvester — is
   a future idea, not a plan; the architecture already allows it, since what grows is a prefab
   reference on the thing being planted.
