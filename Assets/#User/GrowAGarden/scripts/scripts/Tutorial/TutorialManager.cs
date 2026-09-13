@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using SomniumSpace.Bridge;
 
 namespace GrowAGarden
 {
@@ -254,9 +253,6 @@ namespace GrowAGarden
         private string _followUpId;
         private float _followUpAt;
 
-        /// <summary>Set once LocalStorage has thrown, so it is not asked again this session.</summary>
-        private bool _storageFailed;
-
         /// <summary>
         /// The shape LocalStorage round-trips. A flat string array rather than a dictionary or a
         /// set, because JsonUtility serializes neither.
@@ -341,11 +337,11 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Every LocalStorage call is wrapped, because the read and write halves of that API are
-        /// not confirmed in-world — docs/flight.md records that the SDK's XML documents only the
-        /// housekeeping calls (JsonExists, DeleteJson, GetAllJsonNames...) and not these two. An
-        /// unguarded throw here happens inside Awake and takes the whole narrator down with it, so
-        /// the failure mode would be total silence with no clue why.
+        /// StorageBridge swallows and latches its own failures, because the read and write halves
+        /// of LocalStorage are not confirmed in-world — docs/flight.md records that the SDK's XML
+        /// documents only the housekeeping calls (JsonExists, DeleteJson, GetAllJsonNames...) and
+        /// not these two. This runs inside Awake, where an unguarded throw would take the whole
+        /// narrator down and the failure mode would be total silence with no clue why.
         ///
         /// Forgetting is the right way to fail: a player who hears a line twice has a blemish, a
         /// player who hears nothing has no tutorial.
@@ -359,48 +355,25 @@ namespace GrowAGarden
                 return;
             }
 
-            try
-            {
-                if (!SomniumBridge.LocalStorage.JsonExists(StorageKey)) return;
+            if (!StorageBridge.Exists(StorageKey, gameObject.name)) return;
 
-                TooltipProgress progress = SomniumBridge.LocalStorage.ReadJson<TooltipProgress>(StorageKey);
-                if (progress == null || progress.played == null) return;
+            TooltipProgress progress = StorageBridge.Read<TooltipProgress>(StorageKey, gameObject.name);
+            if (progress == null || progress.played == null) return;
 
-                foreach (string tooltipId in progress.played)
-                    if (!string.IsNullOrEmpty(tooltipId)) _played.Add(tooltipId);
+            foreach (string tooltipId in progress.played)
+                if (!string.IsNullOrEmpty(tooltipId)) _played.Add(tooltipId);
 
-                Logger.Info($"LoadProgress() '{gameObject.name}' — {_played.Count} tooltips already heard, " +
-                            $"resuming at step {NextStep()}");
-            }
-            catch (Exception e)
-            {
-                // Start from nothing rather than from half a file. A partial read would leave the
-                // step counter somewhere the player has never actually been.
-                _played.Clear();
-                _storageFailed = true;
-                Logger.Error($"LoadProgress() '{gameObject.name}' — LocalStorage read failed, starting " +
-                             $"fresh and not saving: {e.GetType().Name}: {e.Message}");
-            }
+            Logger.Info($"LoadProgress() '{gameObject.name}' — {_played.Count} tooltips already heard, " +
+                        $"resuming at step {NextStep()}");
         }
 
         private void SaveProgress()
         {
-            if (!_rememberProgress || _storageFailed) return;
+            if (!_rememberProgress) return;
 
-            try
-            {
-                TooltipProgress progress = new TooltipProgress();
-                progress.played = new List<string>(_played).ToArray();
-                SomniumBridge.LocalStorage.WriteJson(StorageKey, progress);
-            }
-            catch (Exception e)
-            {
-                // Latched, not retried. Whatever makes WriteJson throw will make the next one throw
-                // too, and a line per tooltip is how a client log reaches hundreds of megabytes.
-                _storageFailed = true;
-                Logger.Error($"SaveProgress() '{gameObject.name}' — LocalStorage write failed, progress " +
-                             $"will not persist this session: {e.GetType().Name}: {e.Message}");
-            }
+            TooltipProgress progress = new TooltipProgress();
+            progress.played = new List<string>(_played).ToArray();
+            StorageBridge.Write(StorageKey, progress, gameObject.name);
         }
 
         /// <summary>

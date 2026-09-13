@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using SomniumSpace.Bridge;
 
 namespace GrowAGarden
 {
@@ -11,7 +10,7 @@ namespace GrowAGarden
     /// it. That is what makes this the cheapest thing in the project to add to: no RPC, no master
     /// decision, no wire id.
     ///
-    /// Persisted through SomniumBridge.LocalStorage, which is the point rather than a nicety: a
+    /// Persisted through StorageBridge, which is the point rather than a nicety: a
     /// trim you have to re-dial on every join is worse than no trim at all, because you would never
     /// bother, and a comfort setting that forgets you is actively hostile.
     /// </summary>
@@ -54,9 +53,6 @@ namespace GrowAGarden
             public bool skipTutorial;
             public bool disableVoiceTips;
         }
-
-        /// <summary>Set once LocalStorage has thrown, so it is not asked again this session.</summary>
-        private bool _storageFailed;
 
         private void Awake()
         {
@@ -105,10 +101,9 @@ namespace GrowAGarden
         }
 
         /// <summary>
-        /// Wrapped for the same reason TutorialManager's are: the read and write halves of
-        /// LocalStorage are not confirmed in-world, and an unguarded throw in Awake would take the
-        /// settings object down and with it the trim, silently, leaving the player fighting their
-        /// own wrists with no clue why.
+        /// StorageBridge swallows and latches its own failures, so nothing here can throw out of
+        /// Awake and take the settings object down with it — and with it the trim, silently,
+        /// leaving the player fighting their own wrists with no clue why.
         /// </summary>
         private void Load()
         {
@@ -118,53 +113,31 @@ namespace GrowAGarden
             // that made a dead panel impossible to diagnose from a log.
             Logger.Info($"Load() '{gameObject.name}' — settings object alive, reading '{StorageKey}'");
 
-            try
+            if (!StorageBridge.Exists(StorageKey, gameObject.name))
             {
-                if (!SomniumBridge.LocalStorage.JsonExists(StorageKey))
-                {
-                    Logger.Info($"Load() '{gameObject.name}' — nothing stored yet, using defaults");
-                    return;
-                }
-
-                Stored s = SomniumBridge.LocalStorage.ReadJson<Stored>(StorageKey);
-                if (s == null) return;
-
-                TrimDegrees = Mathf.Clamp(s.trim, -45f, 45f);
-                SkipTutorial = s.skipTutorial;
-                DisableVoiceTips = s.disableVoiceTips;
-
-                Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} skipTutorial={SkipTutorial} " +
-                            $"disableVoiceTips={DisableVoiceTips}");
+                Logger.Info($"Load() '{gameObject.name}' — nothing stored yet, using defaults");
+                return;
             }
-            catch (Exception e)
-            {
-                _storageFailed = true;
-                Logger.Error($"Load() '{gameObject.name}' — settings read failed, using defaults and not " +
-                             $"saving: {e.GetType().Name}: {e.Message}");
-            }
+
+            Stored s = StorageBridge.Read<Stored>(StorageKey, gameObject.name);
+            if (s == null) return;
+
+            TrimDegrees = Mathf.Clamp(s.trim, -45f, 45f);
+            SkipTutorial = s.skipTutorial;
+            DisableVoiceTips = s.disableVoiceTips;
+
+            Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} skipTutorial={SkipTutorial} " +
+                        $"disableVoiceTips={DisableVoiceTips}");
         }
 
         private void Save()
         {
-            if (_storageFailed) return;
-
-            try
+            StorageBridge.Write(StorageKey, new Stored
             {
-                SomniumBridge.LocalStorage.WriteJson(StorageKey, new Stored
-                {
-                    trim = TrimDegrees,
-                    skipTutorial = SkipTutorial,
-                    disableVoiceTips = DisableVoiceTips,
-                });
-            }
-            catch (Exception e)
-            {
-                // Latched: whatever makes the write throw will throw again, and one line per button
-                // press is how a client log reaches hundreds of megabytes.
-                _storageFailed = true;
-                Logger.Error($"Save() '{gameObject.name}' — settings write failed, they will not persist " +
-                             $"this session: {e.GetType().Name}: {e.Message}");
-            }
+                trim = TrimDegrees,
+                skipTutorial = SkipTutorial,
+                disableVoiceTips = DisableVoiceTips,
+            }, gameObject.name);
         }
     }
 }
