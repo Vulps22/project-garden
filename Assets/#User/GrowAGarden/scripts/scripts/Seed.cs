@@ -1,4 +1,4 @@
-using CommunityModules;
+using GrowAGarden.Community;
 using Fusion;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;

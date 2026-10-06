@@ -1,4 +1,4 @@
-using CommunityModules;
+using GrowAGarden.Community;
 using System;
 using Fusion;
 using SomniumSpace.Bridge.Components;

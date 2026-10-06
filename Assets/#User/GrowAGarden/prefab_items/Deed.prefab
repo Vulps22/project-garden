@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 5343519784740636641}
   - component: {fileID: 1030967210836959154}
   - component: {fileID: 7259190285203164959}
+  - component: {fileID: 6429525132429869011}
   m_Layer: 0
   m_Name: Deed
   m_TagString: Untagged
@@ -58,6 +59,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 6429525132429869011}
 --- !u!114 &4360997998222114339
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,8 +77,8 @@ MonoBehaviour:
   Flags: 524289
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 1872664296389260042}
   - {fileID: 5547742860702557159}
+  - {fileID: 6429525132429869011}
   ForceRemoteRenderTimeframe: 0
 --- !u!54 &1686967113499795618
 Rigidbody:
@@ -137,7 +139,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7865445560042903941}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8f14f1198a49cb418d604114edc06a7, type: 3}
+  m_Script: {fileID: 11500000, guid: d6c4455478e44353864bbdbf89eb3494, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
   _grabInteracable: {fileID: 7802783851439514983}
@@ -412,6 +414,18 @@ MonoBehaviour:
   displayName: Deed
   networkBridge: {fileID: 1872664296389260042}
   _grabInteractable: {fileID: 7802783851439514983}
+--- !u!114 &6429525132429869011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1001 &3316487622308164166
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -426,15 +440,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0.25
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalPosition.x
@@ -487,6 +501,11 @@ PrefabInstance:
       value: 
       objectReference: {fileID: -6730898385207601688, guid: 07449da6a00d8a2479a5ae2728131435,
         type: 3}
+    - target: {fileID: 64000012162240616, guid: 56b36da289d9a9e4cb37c5f588e23748,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

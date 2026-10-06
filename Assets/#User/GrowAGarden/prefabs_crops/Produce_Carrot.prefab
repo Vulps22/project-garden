@@ -24,6 +24,7 @@ GameObject:
   - component: {fileID: 4225665940148924594}
   - component: {fileID: 7960585365031774276}
   - component: {fileID: 8680884562149606297}
+  - component: {fileID: 1904810602212056260}
   m_Layer: 0
   m_Name: Produce_Carrot
   m_TagString: Untagged
@@ -59,6 +60,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 1904810602212056260}
 --- !u!114 &5724602667579792080
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -76,8 +78,8 @@ MonoBehaviour:
   Flags: 524289
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 7899606555142584734}
   - {fileID: 5403508093087957038}
+  - {fileID: 1904810602212056260}
   ForceRemoteRenderTimeframe: 0
 --- !u!54 &2616111786167047377
 Rigidbody:
@@ -138,7 +140,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 969558867835806848}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8f14f1198a49cb418d604114edc06a7, type: 3}
+  m_Script: {fileID: 11500000, guid: d6c4455478e44353864bbdbf89eb3494, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
   _grabInteracable: {fileID: 3063615907941770913}
@@ -435,6 +437,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.SellableEntity
   _value: 0
   _networkBridge: {fileID: 7899606555142584734}
+--- !u!114 &1904810602212056260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969558867835806848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1001 &7291801216778589806
 PrefabInstance:
   m_ObjectHideFlags: 0

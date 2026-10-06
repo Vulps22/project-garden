@@ -114,6 +114,7 @@ GameObject:
   - component: {fileID: 3115933796996908618}
   - component: {fileID: 1237277360348233625}
   - component: {fileID: 1567149210286220599}
+  - component: {fileID: 4451775359085784924}
   m_Layer: 0
   m_Name: BalanceBoard
   m_TagString: Untagged
@@ -168,7 +169,7 @@ MonoBehaviour:
   Flags: 131073
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 1237277360348233625}
+  - {fileID: 4451775359085784924}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &1237277360348233625
 MonoBehaviour:
@@ -182,6 +183,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 4451775359085784924}
 --- !u!114 &1567149210286220599
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -206,6 +208,18 @@ MonoBehaviour:
   - {fileID: 9202556795411735861}
   - {fileID: 3400177342706767671}
   - {fileID: 8906124522436187813}
+--- !u!114 &4451775359085784924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7149506393599241409}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1 &8905557113469389728
 GameObject:
   m_ObjectHideFlags: 0

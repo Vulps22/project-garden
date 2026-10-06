@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2208384793766301172}
   - component: {fileID: 9007863502847404369}
   - component: {fileID: 4659970642434972318}
+  - component: {fileID: 2514790182078444192}
   m_Layer: 0
   m_Name: SellPoint
   m_TagString: Untagged
@@ -79,7 +80,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SellPoint
   _networkBridge: {fileID: 4659970642434972318}
-  _authorityTimeout: 2
 --- !u!114 &9007863502847404369
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97,7 +97,7 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 4659970642434972318}
+  - {fileID: 2514790182078444192}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4659970642434972318
 MonoBehaviour:
@@ -111,6 +111,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 2514790182078444192}
+--- !u!114 &2514790182078444192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5878499844870590353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1001 &605638872191656104
 PrefabInstance:
   m_ObjectHideFlags: 0

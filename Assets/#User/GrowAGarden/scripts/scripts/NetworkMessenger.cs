@@ -1,12 +1,27 @@
 using System;
 using Fusion;
 using SomniumSpace.Network.Bridge;
+using UnityEngine;
 
 namespace GrowAGarden
 {
     /// <summary>Sends and receives this game's messages on one networked object.</summary>
-    public class NetworkMessenger : NetworkBridgeEvents
+    [RequireComponent(typeof(NetworkBridgeEvents))]
+    public class NetworkMessenger : MonoBehaviour
     {
+        [SerializeField] private NetworkBridgeEvents _transport;
+
+        private NetworkBridgeEvents Transport => _transport != null ? _transport : _transport = GetComponent<NetworkBridgeEvents>();
+
+        /// <summary>The NetworkObject this messenger sends on.</summary>
+        public NetworkObject Object => Transport != null ? Transport.Object : null;
+
+        /// <summary>The object was spawned on the network.</summary>
+        public event Action OnSpawned { add => Transport.OnSpawned += value; remove { if (Transport != null) Transport.OnSpawned -= value; } }
+
+        /// <summary>This client gained or lost state authority over the object.</summary>
+        public event Action<bool> OnStateAuthorityChanged { add => Transport.OnStateAuthorityChanged += value; remove { if (Transport != null) Transport.OnStateAuthorityChanged -= value; } }
+
         /// <summary>A message reached every client, including whoever sent it.</summary>
         public event Action<byte, byte[]> MessageToAll;
 
@@ -23,32 +38,38 @@ namespace GrowAGarden
         public bool CanSend => Object != null;
 
         /// <summary>Tells everyone, sender included.</summary>
-        public void SendToAll(byte id, byte[] data) => RPC_SendMessageToAll(Pack(id, data));
+        public void SendToAll(byte id, byte[] data) => Transport.RPC_SendMessageToAll(Pack(id, data));
 
         /// <summary>Tells everyone but the state authority, which already has the state.</summary>
-        public void SendToProxies(byte id, byte[] data) => RPC_SendMessageToProxies(Pack(id, data));
+        public void SendToProxies(byte id, byte[] data) => Transport.RPC_SendMessageToProxies(Pack(id, data));
 
         /// <summary>Tells the state authority.</summary>
-        public void SendToController(byte id, byte[] data) => RPC_SendMessageToController(Pack(id, data));
+        public void SendToController(byte id, byte[] data) => Transport.RPC_SendMessageToController(Pack(id, data));
 
         /// <summary>Tells one player — the late-join push, rather than telling the room.</summary>
         public void SendToPlayer(PlayerRef player, byte id, byte[] data) =>
-            RPC_SendMessageToPlayer(player, Pack(id, data));
+            Transport.RPC_SendMessageToPlayer(player, Pack(id, data));
 
         private void Awake()
         {
-            OnMessageToAll += RaiseToAll;
-            OnMessageToProxies += RaiseToProxies;
-            OnMessageToController += RaiseToController;
-            OnMessageToPlayer += RaiseToPlayer;
+            Transport.OnMessageToAll += RaiseToAll;
+            Transport.OnMessageToProxies += RaiseToProxies;
+            Transport.OnMessageToController += RaiseToController;
+            Transport.OnMessageToPlayer += RaiseToPlayer;
         }
 
         private void OnDestroy()
         {
-            OnMessageToAll -= RaiseToAll;
-            OnMessageToProxies -= RaiseToProxies;
-            OnMessageToController -= RaiseToController;
-            OnMessageToPlayer -= RaiseToPlayer;
+            if (Transport == null) return;
+            Transport.OnMessageToAll -= RaiseToAll;
+            Transport.OnMessageToProxies -= RaiseToProxies;
+            Transport.OnMessageToController -= RaiseToController;
+            Transport.OnMessageToPlayer -= RaiseToPlayer;
+        }
+
+        private void OnValidate()
+        {
+            if (_transport == null) _transport = GetComponent<NetworkBridgeEvents>();
         }
 
         // The transport carries a bare byte[]; the message id rides in byte 0. One copy per
