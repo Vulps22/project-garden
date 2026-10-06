@@ -200,7 +200,7 @@ namespace GrowAGarden
                 bool grounded = touching && Time.time - _airborneSince > _launchGrace;
                 if (grounded || !ArmsOut(_armRetract)) SetFlying(false);
             }
-            else if (!touching && ArmsOut(_armExtension) && FlightUnlocked())
+            else if (!touching && ArmsOut(_armExtension))
             {
                 SetFlying(true);
             }
@@ -377,42 +377,6 @@ namespace GrowAGarden
         /// _handPitchOffset stays as the authored default and as the thing that works before the
         /// settings panel has loaded — and it should stay at 0, which is what the horizon is.
         /// </summary>
-        /// <summary>
-        /// Whether the player has been told how to fly yet.
-        ///
-        /// The tutorial is a fixed order, and a step that fires out of turn burns the ones before
-        /// it — "skipped steps stay skipped". Falling off an island and instinctively opening your
-        /// arms is enough to trigger the flight lesson, which then pushes the counter past the
-        /// exploration intro that was supposed to set it up, and that line is gone for good. So the
-        /// wings simply do not work until the narrator has offered them.
-        ///
-        /// **Fails open, deliberately.** No TutorialManager in the scene, or the tutorial switched
-        /// off in settings, and flight behaves exactly as it always did. A gate that silently
-        /// disables the game's main mechanic when its narrator is missing is a far worse bug than
-        /// the one it prevents.
-        /// </summary>
-        private bool FlightUnlocked()
-        {
-            GameSettings settings = GameSettings.GetInstance();
-            if (settings != null && settings.SkipTutorial) return true;
-
-            TutorialManager tutorial = TutorialManager.GetInstance();
-            if (tutorial == null) return true;
-
-            if (tutorial.HasPlayed(TutorialManager.Tooltips.Tutorial.ExplorationIntro)) return true;
-
-            // Rate-limited: this is asked every frame the arms are out, and the player holding them
-            // out in confusion is exactly when it would spam hardest.
-            if (Time.time >= _nextLockedLogAt)
-            {
-                _nextLockedLogAt = Time.time + 5f;
-                Logger.Info($"FlightUnlocked() '{gameObject.name}' — flight is locked until the exploration intro has played");
-            }
-            return false;
-        }
-
-        private float _nextLockedLogAt;
-
         private float Trim()
         {
             GameSettings settings = GameSettings.GetInstance();
