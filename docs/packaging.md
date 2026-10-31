@@ -1,3 +1,9 @@
+---
+aliases:
+  - "Dependencies"
+tags:
+  - reference
+---
 # Dependencies
 
 Asset Store packages, installed into `Assets/`. The folder name must match the left column.

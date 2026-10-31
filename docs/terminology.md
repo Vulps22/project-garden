@@ -1,3 +1,10 @@
+---
+aliases:
+  - "Terminology"
+tags:
+  - reference
+  - rules
+---
 # Terminology
 
 Locked 2026-09-03. These words are load-bearing. The prefabs already agree with them; the scripts do
@@ -43,7 +50,7 @@ becomes a class**, or the ambiguity gets baked into new code:
 - `IPlotOccupant` → `IPlantSlotOccupant`. Its occupants are a `Plant` and a `RootedProduce`, and both
   stand in a PlantSlot.
 - ~45 lowercase uses of "plot" in comments and docstrings that mean **PlantSlot** — including
-  CLAUDE.md's "RootedProduce earns its class by owning the plot until it is pulled".
+  [[crops]]'s "RootedProduce earns its class by owning the plot until it is pulled".
 - Turn the Garden into the `GardenIsland` prefab.
 
 Nothing in the code says "garden" except `GardenLease`, so the rename surface is small. It is the

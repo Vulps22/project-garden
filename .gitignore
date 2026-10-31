@@ -37,3 +37,5 @@ Assets/#User/Community Modules/Scripts/*
 # Ad-hoc screenshots dropped in the repo root for review
 /screenshot.png
 
+# Obsidian per-user layout
+/docs/.obsidian/workspace*.json

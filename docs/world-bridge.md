@@ -1,10 +1,17 @@
+---
+aliases:
+  - "Bridges — one seam per thing that isn't ours"
+  - "Bridges"
+tags:
+  - tech
+---
 # Bridges — one seam per thing that isn't ours
 
 Status: **`WorldBridge` built 2026-09-11** (`20fa8fe`), **`PlayerBridge` built 2026-09-12**. Both are
 in use and neither is finished — what remains is at the bottom.
 
 This started as a design for a single wrapper over the SDK and is now the record of a layer with two
-of them in it. The layer's rules live in CLAUDE.md under **Layers**; this doc is the mechanism and
+of them in it. The layer's rules live in [[layers]]; this doc is the mechanism and
 the history.
 
 ---

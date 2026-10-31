@@ -1,3 +1,10 @@
+---
+aliases:
+  - "Roadmap — from a working loop to a game"
+tags:
+  - arc
+  - tracking
+---
 # Roadmap — from a working loop to a game
 
 Written 2026-09-03, the night the core loop first ran end to end. Vulps's design; the engineering
@@ -12,7 +19,7 @@ upgrades worth rolling for.
 ## Terminology
 
 **World / Island / Garden / Plot / PlantSlot**, locked 2026-09-03 and recorded in
-[`terminology.md`](terminology.md), along with the renames the code still owes it. Read that first if
+[[terminology]], along with the renames the code still owes it. Read that first if
 any of the words below feel ambiguous — several of them used to mean something else.
 
 ---
@@ -27,7 +34,7 @@ for a Plot, a rare find matters because what it grows into is yours, and a world
 only tolerable if what you have claimed survives the re-roll.
 
 Claiming, teammates, and the check on **harvest** — currently open to anyone who can reach the
-produce — are designed in **[`plot-ownership.md`](plot-ownership.md)**: a deed you carry, an
+produce — are designed in **[[plot-ownership]]**: a deed you carry, an
 application scroll the applicant issues, and a shed where every ownership change is committed.
 
 ## 2. Upgrades — sell the seed, or grow it and keep it standing
@@ -149,7 +156,7 @@ different map now. The world gets a heartbeat.
   extra ownership check is needed — the existing structure already draws the line in the right place.
 - **What does need care: a despawn must end the grab first.** `Runner.Despawn` destroys the object on
   every client, and XRI left holding a destroyed object is its own bug. This is the same rule as
-  `runtime-spawn.md` §4d and it applies to every despawn path — cycling, `GardenLease` clearing a
+  [[runtime-spawn]] §4d and it applies to every despawn path — cycling, `GardenLease` clearing a
   departed player's seeds, and anything else that removes something a hand might be on.
 - **Design question worth settling before building it:** a cycle can destroy a sub-1% find before the
   player who spotted it gets there. Options — rare items are exempt from cycling; a slot only
@@ -175,7 +182,7 @@ Nothing here needs a new networking concept. That is the good sign.
 
 ## Future — islands that generate themselves
 
-Scoped in **[`procgen-islands.md`](procgen-islands.md)** (2026-09-09), which supersedes the sketch
+Scoped in **[[procgen-islands]]** (2026-09-09), which supersedes the sketch
 below where the two disagree — notably that islands are **premade prefabs placed by the seed**
 rather than generated geometry, that nothing is ever planted on one, and that the rarity roll has to
 be *derived* rather than master-decided because §3's premise breaks at distance. That doc is parked
@@ -264,7 +271,7 @@ plausibly reach it.
 - **Prefer "you own two Plots" over "two Plots become one".** A claim is per-Plot and a player can
   already hold several, so expansion needs no data-model change — merging is roads and borders, a
   visual concern. Making a composite Plot means a second kind of claimable thing, and
-  `plot-ownership.md` would need reopening.
+  [[plot-ownership]] would need reopening.
 - **Placement is a master decision with an optimistic ghost.** The client draws the preview
   immediately from the grid it can already see; the master confirms what actually spawns. Standard
   shape — a decision may be slow, a hand must not be.
@@ -315,7 +322,7 @@ it.** It would also break the physical continuity that makes carrying anything m
   spawnable chunks. Build the grid once.
 - **⚠ Object count.** Each island is four Plots of 24 PlantSlots, and every PlantSlot carries a
   NetworkObject and a NetworkBridge — 96 NetworkObjects per island before a single crop exists.
-  Three islands is 288, just for dirt. `runtime-spawn.md` §4c notes Somnium may have a per-world
+  Three islands is 288, just for dirt. [[runtime-spawn]] §4c notes Somnium may have a per-world
   limit nobody has found yet; appending islands is the thing most likely to find it. Worth measuring
   before it is built.
 
@@ -344,7 +351,7 @@ World (scene)
 
 The same tidy is the moment to make **one Plot one NetworkObject with 24 sockets** instead of 24
 separate ones — that is the structural half of step 1's ownership change, and
-[`plot-ownership.md`](plot-ownership.md) carries it. It takes an island from 96 NetworkObjects to 4,
+[[plot-ownership]] carries it. It takes an island from 96 NetworkObjects to 4,
 which is what makes appending islands affordable at all.
 
 **Do this in two steps, and only the second one is dangerous.** Grouping the island into a prefab
@@ -497,7 +504,7 @@ sort on a **supplied** metric instead of a hard-coded one and a plot-count board
 personal-best board is a parameter rather than a rewrite. That is a small change today and an
 irritating one once the shed and the deed exist.
 
-Everything else here should wait. Format, duration, whether it is teams — `plot-ownership.md`'s
+Everything else here should wait. Format, duration, whether it is teams — [[plot-ownership]]'s
 application scroll already makes a team a real thing, and "the plots are yours but she grew half of
 them" is a good problem — are all decisions to make against an economy that does not exist yet, for
 the same reason the Plot Seed's price cannot be set against today's numbers.

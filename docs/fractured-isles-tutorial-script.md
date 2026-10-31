@@ -1,3 +1,9 @@
+---
+aliases:
+  - "Fractured Isles — Tutorial Voice Script"
+tags:
+  - reference
+---
 # Fractured Isles — Tutorial Voice Script
 
 ## 0. Beta Notice

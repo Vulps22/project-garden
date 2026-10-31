@@ -1,3 +1,12 @@
+---
+aliases:
+  - "Seed, Plant, Produce — design"
+  - "Seed, Plant, Produce"
+  - "Bearing plants and produce"
+tags:
+  - crop
+  - mechanic
+---
 # Seed, Plant, Produce — design
 
 Status: **implemented and confirmed in-world 2026-09-03.** Both shapes run the full loop: a rooted
@@ -10,7 +19,7 @@ Supersedes the pooled version of this document. What survives from it: the namin
 the networking rules (§8) and the wire-id trap (§9). What changed: everything that assumed one
 pooled NetworkObject had to be a seed, a plant and a fruit by turns.
 
-Read `CLAUDE.md` and `runtime-spawn.md` first. Method names, not line numbers.
+Read [[principles]], [[networking]] and [[runtime-spawn]] first. Method names, not line numbers.
 
 ---
 
@@ -316,7 +325,7 @@ authority knows *least* about the object — it may hold it only because it was 
 the thing, long after putting it down.
 
 **Spawned objects and RPCs.** A spawn reaches other clients a few ticks after the spawner, so an RPC
-about it can arrive before the object does and be dropped. See `runtime-spawn.md` §4g and
+about it can arrive before the object does and be dropped. See [[runtime-spawn]] §4g and
 `ShopSlot.AnnounceStock`; whatever answer that probe produces applies to `Bear()` too.
 
 ## 9. Wire-id trap
@@ -379,3 +388,50 @@ out leaves, a tree that grows branches, sugar cane or bamboo with stages that ca
 independently. None of that changes the classes here — a plant body's appearance over time is the
 plant's own business, and independently harvestable stages are a `MultiHarvestPlant` with more
 sockets.
+
+## Seed definitions
+
+**Status (2026-09-13):** built and tested in-world. Code: `GrowAGarden/SeedDefinition.cs`, `GrowAGarden/Seeds/`.
+
+`SeedDefinition` is an abstract `MonoBehaviour`, not a ScriptableObject. Its concrete subclasses (`CarrotSeed`,
+`TurnipSeed`, `PumpkinSeed`) **hardcode** id, prices and durations in `Init()`, called from both `OnEnable` and
+`OnValidate`. Balance changes are code changes, not Inspector edits.
+
+**One definition per crop, referenced by all three of its prefabs** (seed, plant and produce), so there is one place
+per crop to read and to change. The plant owns `growthDuration`, the produce owns `ripenDuration`, and a bearing
+plant owns `witherDuration`.
+
+A produce **must not** be handed the plant's definition component. A `RootedPlant` despawns itself the statement
+after it bears, so the produce would spend its life pointing at a component on a destroyed GameObject. Unity's
+overloaded null then makes every `!= null` read false, which is how a carrot came to sell for nothing while its
+ripening still looked right by coincidence.
+
+**To add a crop:** a `SeedDefinition` subclass, three prefabs, all three registered on `SceneNetworking`, and a buy
+point pointed at the seed.
+
+## Balance
+
+**Status (2026-09-13):** current values; tuned for testing, not designed.
+
+| Crop | Buy / sell (Thatch) | Timing |
+|---|---|---|
+| Carrot | 10 / 15 | grows 10 s |
+| Turnip | 18 / 25 | grows 15 s |
+| Pumpkin | 60 / 110 | vine 60 s, fruit ripens 60 s, withers 30 s |
+
+## Growth pivots
+
+**Status (2026-09-13):** open, designed, not built.
+
+Everything scales about its mesh centre, so a pumpkin inflates through its vine and a carrot grows out of the soil as
+much as into it. The fix is an empty `ScalePivot` parent between root and mesh, with the mesh offset so the stem or
+soil line sits at the pivot's origin, and `_bodyToScale` pointed at the pivot. No code change: `_bodyToScale` is
+just a transform.
+
+## A plant positions itself from its plot
+
+**Status (2026-09-13):** built and tested in-world.
+
+Fusion's spawn pose is local to the spawner and not networked, so the plot's `NetworkId` rides in the state payload
+and each client places the plant from it. A plant never moves, so paying for a `NetworkTransform` to replicate a
+value that changes once would be absurd.

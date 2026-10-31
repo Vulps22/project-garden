@@ -1,3 +1,9 @@
+---
+aliases:
+  - "Tutorial Script → MP3 File Mapping"
+tags:
+  - reference
+---
 # Tutorial Script → MP3 File Mapping
 
 ## Tutorials (linear progression)
