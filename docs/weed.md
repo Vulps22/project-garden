@@ -132,3 +132,32 @@ are separate uploads, and step 3 is the one worth watching the logs for.
   and an item that is never sold and never despawns is the shape most likely to find it. Auto-recall
   or a lifetime, decided when it exists.
 - Whether harvesting a bloom should drop anything, or only selling one. As written, only selling.
+
+## Proposed alternative: eat the bloom
+
+**Status (2026-10-31):** proposed by Vulps, not refined. Queued after procgen and the island buy points.
+
+**Both, at two strengths, chosen by the player** (Vulps, 2026-10-31): eating the bloom raw is the **intense** trip;
+selling it and smoking the splif it leaves is the **mellow** one. The bloom is the decision: Thatch plus a gentle
+high, or no Thatch and the full experience. Because the intense version is opted into knowingly, it is free to be as
+warped and disorienting as we like; the mellow version stays comfortable enough for anyone. One trip system with an
+intensity value, not two systems, and the splif may use it instead of shifterhead's.
+
+> [!info] Networking
+> Eating is a fact: the master despawns the bloom, like a sale. The trip is local to the eater and sends nothing.
+
+- **Eating:** held produce within about 20 cm of the local head counts as eaten.
+- **Colour:** a URP Volume enabled only on the eater's client (the scene already has `PostProcessing`), slowly
+  cycling hue shift, saturation and colour filter. No flashing: Somnium forbids seizure-risk effects, so changes stay
+  slow and smooth.
+- **Droop and wobble:** a full-screen distortion needs a renderer feature or the opaque texture, both owned by
+  Somnium's client, and lens distortion is generally unsupported in XR. What the world can do is make **our own**
+  materials droop and wobble from one global shader value: islands, crops and the Garden melt while Somnium's avatars
+  and UI do not. Needs our own shader variants of the rock and crop materials.
+- **Things in the corner of your eye:** no eye-tracking API, so head direction stands in for gaze. Seeds, animals and
+  tools spawn locally 40–60° off head-forward; when one comes within about 15° of centre it dissolves into a swirl of
+  colour.
+- **Comfort:** eased in and out, with an obvious way to end it early at either strength. Whole-view warping is the
+  quickest route to VR sickness, which is what the intense trip is for and the mellow one must avoid.
+- Open: whether Somnium's content rules say anything about drug depiction. Players are all ID-verified adults, so
+  age is not the question.
