@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Motion
 {
     /// <summary>
     /// Declares what physical mode an object should currently be in.

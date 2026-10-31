@@ -1,6 +1,8 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Economy;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Orchestration
 {
     /// <summary>
     /// Runs the response to a player arriving and to one leaving for good: gives them a balance,

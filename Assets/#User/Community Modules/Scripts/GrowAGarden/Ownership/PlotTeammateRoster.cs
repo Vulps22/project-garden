@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// The wall of parchments — one viewer's own teammate list, derived locally from a fact

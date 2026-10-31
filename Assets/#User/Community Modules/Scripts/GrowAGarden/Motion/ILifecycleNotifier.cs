@@ -1,6 +1,6 @@
 using System;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Motion
 {
     /// <summary>
     /// Announces that lifecycle state changed, so behaviours can re-evaluate themselves.

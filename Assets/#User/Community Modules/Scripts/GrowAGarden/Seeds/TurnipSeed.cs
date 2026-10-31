@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Seeds
 {
     /// <summary>
     /// Rooted, like the carrot, but slower and worth more.

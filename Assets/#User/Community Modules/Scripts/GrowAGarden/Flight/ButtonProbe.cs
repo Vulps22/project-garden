@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Flight
 {
     /// <summary>
     /// ⚠ Temporary instrumentation. Delete once the boost has a button.

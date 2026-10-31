@@ -2,8 +2,9 @@ using Fusion;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Vulps.GrowAGarden.Interaction;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// A Plot's claim, and the deed that represents it while it is unclaimed.

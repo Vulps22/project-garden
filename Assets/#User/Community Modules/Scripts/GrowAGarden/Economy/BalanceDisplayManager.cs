@@ -1,7 +1,8 @@
 using TMPro;
 using UnityEngine;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Economy
 {
     public class BalanceDisplayManager : MonoBehaviour
     {

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// The shed's other decision point, alongside DeedClaimZone on the same trigger volume: an

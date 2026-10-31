@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Vulps.GrowAGarden.Crops;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// Owns all 24 of a Plot's PlantSlots through the Plot's one shared NetworkObject/NetworkMessenger

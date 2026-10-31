@@ -2,8 +2,11 @@ using Fusion;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using Vulps.GrowAGarden.Interaction;
+using Vulps.GrowAGarden.Motion;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// The thing a player actually takes: a carrot pulled from the ground, a pumpkin cut from its

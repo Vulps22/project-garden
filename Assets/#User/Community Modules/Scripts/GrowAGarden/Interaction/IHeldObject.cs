@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>
     /// Something that can be held by one player at a time.

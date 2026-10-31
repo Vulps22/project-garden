@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Settings
 {
     /// <summary>
     /// One pressable thing on the settings panel.

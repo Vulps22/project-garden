@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Settings
 {
     /// <summary>
     /// The player's own preferences: what their wrists call level, and how much the narrator talks.

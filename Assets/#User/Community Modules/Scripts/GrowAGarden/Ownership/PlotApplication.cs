@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// Turns a plain CollectibleEntity ("blank_scroll") into a Plot application: which Plot it was

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>
     /// Lets a trait switch an object's grab off without depending on XRI being there.

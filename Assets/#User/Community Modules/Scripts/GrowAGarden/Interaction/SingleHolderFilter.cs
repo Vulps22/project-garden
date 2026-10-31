@@ -2,8 +2,9 @@ using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Filtering;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>
     /// Refuses a grab when someone else is already holding the object. Runs before the grab

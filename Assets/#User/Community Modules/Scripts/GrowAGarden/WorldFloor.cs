@@ -2,6 +2,9 @@ using System.Collections;
 using Fusion;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using Vulps.GrowAGarden.Interaction;
+using Vulps.GrowAGarden.Ownership;
+using Vulps.GrowAGarden.Tutorial;
 
 namespace Vulps.GrowAGarden
 {

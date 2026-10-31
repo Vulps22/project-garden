@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Flight
 {
     /// <summary>
     /// The flight physics, with no Somnium, no bridge and no scene in it.

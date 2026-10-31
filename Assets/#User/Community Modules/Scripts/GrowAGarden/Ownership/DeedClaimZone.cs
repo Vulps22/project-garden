@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// The shed's interior trigger. Carrying a held deed in here is what claims a Plot.

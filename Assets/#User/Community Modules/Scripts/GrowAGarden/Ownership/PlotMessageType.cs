@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// Every message id sent on a Plot's single shared NetworkMessenger, across every manager that

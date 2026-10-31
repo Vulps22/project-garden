@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>
     /// Declares what something is worth right now.

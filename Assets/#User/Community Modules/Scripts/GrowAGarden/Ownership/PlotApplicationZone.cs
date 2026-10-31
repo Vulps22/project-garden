@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// A Plot's own trigger for "an application scroll was dropped here" — separate from

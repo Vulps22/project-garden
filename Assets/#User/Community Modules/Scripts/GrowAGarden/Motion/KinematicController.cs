@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Motion
 {
     /// <summary>
     /// The single writer of Rigidbody.isKinematic. Its only job is to keep the rigidbody in

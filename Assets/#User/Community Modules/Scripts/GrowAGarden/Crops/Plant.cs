@@ -1,7 +1,9 @@
 using Fusion;
 using UnityEngine;
+using Vulps.GrowAGarden.Motion;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// A crop in the ground. Spawned by the master into a PlantSlot, grows there, and is never

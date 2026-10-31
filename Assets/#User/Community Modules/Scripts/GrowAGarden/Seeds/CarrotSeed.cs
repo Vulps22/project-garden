@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Seeds
 {
     /// <summary>
     /// A rooted crop: the plant is the carrot. It grows for ten seconds and is then replaced by its

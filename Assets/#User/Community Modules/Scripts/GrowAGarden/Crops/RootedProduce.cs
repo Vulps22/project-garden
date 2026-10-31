@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// Produce that took its plant's place in the ground, rather than hanging off one: a carrot, a

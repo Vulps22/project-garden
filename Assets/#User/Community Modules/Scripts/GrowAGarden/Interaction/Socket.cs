@@ -3,8 +3,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Vulps.GrowAGarden.Motion;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>A fixture that displays one object and tidies it.</summary>
     public class Socket : MonoBehaviour

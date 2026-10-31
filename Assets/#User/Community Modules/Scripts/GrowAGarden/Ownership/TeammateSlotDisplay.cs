@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// One wall parchment. Purely local and purely visual — shown/hidden/relabeled by

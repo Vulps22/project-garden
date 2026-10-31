@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Vulps.GrowAGarden.Ownership;
+using Vulps.GrowAGarden.Settings;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Tutorial
 {
     /// <summary>
     /// The narrator. Plays one recorded line the first time the player reaches the thing it

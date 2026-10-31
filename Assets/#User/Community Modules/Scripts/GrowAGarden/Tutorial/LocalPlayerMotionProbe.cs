@@ -1,6 +1,7 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Tutorial
 {
     /// <summary>
     /// Raises <see cref="LocalPlayerMoved"/> the first time the local player actually goes

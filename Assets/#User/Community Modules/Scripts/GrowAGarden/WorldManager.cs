@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using Fusion;
 using UnityEngine;
+using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden
 {

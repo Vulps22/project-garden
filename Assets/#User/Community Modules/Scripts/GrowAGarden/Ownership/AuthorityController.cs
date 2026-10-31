@@ -1,6 +1,7 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Motion;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// Returns state authority to the master client for objects that belong to the world rather

@@ -2,8 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Vulps.GrowAGarden.Flight;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Settings
 {
     /// <summary>
     /// The panel on the hut wall. Four buttons and three labels, wired to GameSettings.

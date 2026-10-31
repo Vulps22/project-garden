@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>
     /// Marks something as sellable, and owns the object's half of a sale.

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// One place on a bearing plant where a produce can hang, and what is currently hanging there.

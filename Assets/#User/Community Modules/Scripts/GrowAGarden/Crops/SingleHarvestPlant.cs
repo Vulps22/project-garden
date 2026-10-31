@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// Yields once per socket and then dies: a pumpkin, a pea, a tomato.

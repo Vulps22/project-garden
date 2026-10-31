@@ -1,7 +1,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Ownership
 {
     /// <summary>
     /// Lights the DeedHut's fireplace — flame, smoke and the crackle audio all live under one

@@ -1,7 +1,8 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using Vulps.GrowAGarden.Interaction;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Motion
 {
     /// <summary>
     /// Something that can be recalled to a place.

@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using Vulps.GrowAGarden.Ownership;
+using Vulps.GrowAGarden.Settings;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Flight
 {
     /// <summary>
     /// Drives the local player with <see cref="FlightModel"/>, reading the wrists and writing the

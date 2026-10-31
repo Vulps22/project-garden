@@ -1,4 +1,4 @@
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Seeds
 {
     /// <summary>
     /// A bearing crop. The vine grows for a minute, bears a pumpkin that ripens for another minute,

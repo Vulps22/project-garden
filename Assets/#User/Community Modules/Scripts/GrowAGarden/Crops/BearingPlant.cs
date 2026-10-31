@@ -1,7 +1,8 @@
 using Fusion;
 using UnityEngine;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// A plant that stays put and yields something else: a pumpkin vine, a tomato, an apple tree.

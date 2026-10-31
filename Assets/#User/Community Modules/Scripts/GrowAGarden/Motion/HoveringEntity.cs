@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Motion
 {
     /// <summary>
     /// Makes an object float: it falls, lands, then rises to hover a set distance above whatever

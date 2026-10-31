@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// A plant that *is* its crop: a carrot, a turnip. When it finishes growing it is replaced by

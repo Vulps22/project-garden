@@ -1,6 +1,7 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
     /// Yields again and again: an apple tree, a grape vine, a blueberry bush. (#43)

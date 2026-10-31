@@ -1,6 +1,8 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Crops;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Modules
 {
     /// <summary>
     /// The bespoke layer. A module sits on top of a produce's standard behaviours and does

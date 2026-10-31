@@ -1,6 +1,10 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Crops;
+using Vulps.GrowAGarden.Economy;
+using Vulps.GrowAGarden.Flight;
+using Vulps.GrowAGarden.Ownership;
 
-namespace Vulps.GrowAGarden
+namespace Vulps.GrowAGarden.Tutorial
 {
     /// <summary>
     /// Turns things that happen in the garden into tutorial lines.
