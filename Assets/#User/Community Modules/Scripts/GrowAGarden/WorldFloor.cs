@@ -104,13 +104,9 @@ namespace Vulps.GrowAGarden
                 if (grab == null) continue;
                 if (grab.transform.position.y > _floorY) continue;
 
-                // Never take something out of a hand. HolderId is the replicated answer to "is
-                // anyone holding this" — isSelected would be true on exactly one machine and this
-                // sweep runs on the master, which is usually not that machine. A held object below
-                // the floor is somebody mid-rescue; their own WorldFloor lets go of it first, and
-                // it becomes eligible the moment they do.
                 var held = grab.GetComponent<IHeldObject>();
-                if (held != null && !string.IsNullOrEmpty(held.HolderId)) continue;
+                if (held == null) continue;   // not ours: Somnium's tablet is grabbable too, and rides the player down
+                if (!string.IsNullOrEmpty(held.HolderId)) continue;
 
                 StartCoroutine(Discard(grab.gameObject));
             }
@@ -179,6 +175,7 @@ namespace Vulps.GrowAGarden
             {
                 XRGrabInteractable grab = grabbables[i];
                 if (grab == null || !grab.isSelected) continue;
+                if (grab.GetComponent<IHeldObject>() == null) continue;   // only ours; never the player's own tools
 
                 StartCoroutine(ReleaseThenRearm(grab));
                 dropped++;
