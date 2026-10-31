@@ -34,6 +34,12 @@ namespace GrowAGarden
             NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
             if (net == null || runner == null) return null;
 
+            if (!runner.IsSharedModeMasterClient)
+            {
+                Logger.Warn($"Spawn() '{context}' — refused '{prefab.name}': only the master spawns");
+                return null;
+            }
+
             if (!net.NetworkPrefabs.TryGetValue(prefab, out NetworkPrefabId prefabId))
             {
                 Logger.Error($"Spawn() '{context}' — '{prefab.name}' is not registered on SceneNetworking");
@@ -44,7 +50,7 @@ namespace GrowAGarden
             try
             {
                 spawned = runner.Spawn(prefabId, position, rotation, null, null,
-                                       NetworkSpawnFlags.SharedModeStateAuthMasterClient);
+                                       NetworkSpawnFlags.SharedModeStateAuthLocalPlayer);
             }
             catch (Exception e)
             {
