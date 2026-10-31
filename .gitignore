@@ -9,6 +9,17 @@ Assets/#User/*
 !Assets/#User/GrowAGarden/
 !Assets/#User/GrowAGarden/**
 
+# Our scripts live inside Community Modules; the rest of CM is template-supplied
+!Assets/#User/Community Modules/
+Assets/#User/Community Modules/*
+!Assets/#User/Community Modules/Scripts/
+Assets/#User/Community Modules/Scripts/*
+!Assets/#User/Community Modules/Scripts/GrowAGarden/
+!Assets/#User/Community Modules/Scripts/GrowAGarden/**
+!Assets/#User/Community Modules/Scripts/GrowAGarden.meta
+!Assets/#User/Community Modules/Scripts/Vulps.GrowAGarden.asmdef
+!Assets/#User/Community Modules/Scripts/Vulps.GrowAGarden.asmdef.meta
+
 # Track git and documentation files
 !/.gitignore
 !/.gitattributes
@@ -25,3 +36,4 @@ Assets/#User/*
 
 # Ad-hoc screenshots dropped in the repo root for review
 /screenshot.png
+

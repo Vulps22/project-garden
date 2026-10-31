@@ -83,8 +83,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 4064546076
-  ObjectInterest: 1
-  Flags: 524289
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 524290
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1827452205970128178}

@@ -1,0 +1,22 @@
+{
+  "name": "Vulps.GrowAGarden",
+  "rootNamespace": "Vulps.GrowAGarden",
+  "references": [
+    "GUID:58de1d31e4aad8848b2afdda4b94c61b",
+    "GUID:6055be8ebefd69e48b49212b09b47b2f",
+    "GUID:fe685ec1767f73d42b749ea8045bfe43",
+    "GUID:15fc0a57446b3144c949da3e2b9737a9",
+    "GUID:1baf1ffff1031e948b3b228ab3453251",
+    "GUID:75469ad4d38634e559750d17036d5f7c",
+    "GUID:2bafac87e7f4b9b418d9448d219b01ab"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
