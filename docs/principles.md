@@ -63,10 +63,6 @@ Every serious bug in this project was several components writing the same field 
 `KinematicController` exists to *own* `isKinematic` and `useGravity`, not to do a job. A new shared physical
 property needs an owner ([[entity-components]]).
 
-> [!warning] Fusion 2.1 writes `isKinematic` too
-> With Forecast off, `NetworkTransform` makes a Rigidbody kinematic on every client that does not own it. That is a
-> second writer of a property `KinematicController` owns. Open in [[networking#Fusion 2.1|networking → Fusion 2.1]].
-
 **2. Idle means idle.** ^idle-means-idle
 A component that drives the rigidbody every frame fights XRI, the hands and the solver forever.
 `ReturnableEntity`, `AlignableEntity` and `HoveringEntity` write **nothing at all** until told to act. That removed

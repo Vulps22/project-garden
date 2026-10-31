@@ -48,9 +48,8 @@ The loop is in `docs/testing.md`; the tools in `docs/tooling.md`.
 
 ## Current state
 
-**Fusion 2.1 / Community Modules 4.0 migration done 2026-10-31**, compiles clean, untested in-world. Branch
-`refactor-to-community-modules`, PR #48. What is left before it can be uploaded is the first section of
-`docs/todolist.md`.
+**Fusion 2.1 / Community Modules 4.0 migration done 2026-10-31**, tested in-world and merged to `main`
+(PR #48).
 
 **Late join, a player leaving and the master leaving were tested with real clients on Fusion 2.0 and work.** If a
 multiplayer path looks unverified, a doc is probably stale; ask before asserting it.

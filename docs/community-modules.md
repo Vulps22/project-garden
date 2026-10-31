@@ -13,7 +13,7 @@ Somnium network stubs, installed at `Assets/#User/Community Modules/`. Since 4.0
 
 ## Layout
 
-**Status (2026-10-31):** built, compiles clean; untested in-world.
+**Status (2026-10-31):** built, tested in-world.
 
 ```
 Assets/#User/Community Modules/
@@ -56,7 +56,7 @@ was the worked example.
 
 ## Migration to 4.0 and Fusion 2.1
 
-**Status (2026-10-31):** done, compiles clean; untested in-world. What it changed for networking:
+**Status (2026-10-31):** done, tested in-world. What it changed for networking:
 [[networking#Fusion 2.1|networking → Fusion 2.1]].
 
 Somnium's networking update of 2026-10-20 broke every networked world. The migration ran from the command line

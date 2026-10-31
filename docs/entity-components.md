@@ -34,10 +34,6 @@ they need from the source, so a new behaviour needs no interface change.
 `Seed` and `Produce` supply the answers: `ShouldBeKinematic`, `ShouldUseGravity`, `ShouldMasterOwn`, `HolderId`,
 `IsHeld`. Each is *derived* rather than remembered.
 
-> [!warning] Fusion 2.1
-> `NetworkTransform` now also writes `isKinematic` on clients that don't own the object. See
-> [[networking#Fusion 2.1|networking → Fusion 2.1]].
-
 ## Design notes
 
 - **A produce hovers only once harvested.** Until a player takes it, it is attached to a plant or sitting in the

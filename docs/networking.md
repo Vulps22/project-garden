@@ -40,7 +40,7 @@ never inferred from who happens to hold authority over an object.
 
 ## Messaging
 
-**Status (2026-09-13):** built, compiles; **untested in-world, and a wire-format change** (see below).
+**Status (2026-10-31):** built, tested in-world.
 
 All sync goes through `NetworkMessenger` carrying `(byte messageId, byte[] data)`, serialized by hand with
 `BytesWriter`/`BytesReader` (Community Modules' own, identical to the copies we used to vendor).
@@ -67,12 +67,6 @@ Modules now marks that class `LEGACY - DO NOT USE ANYMORE`.
 - `long` timestamps are split into two `int`s (high/low); the low half must be re-read as `(uint)` to avoid sign
   extension.
 
-> [!warning] Untested: the byte-0 framing
-> Moving onto `NetworkMessenger` (2026-09-13: 33 send sites, 26 subscriptions, 15 prefabs and the scene) changed the
-> wire format. A build on the old framing and one on the new cannot talk to each other. It needs an upload and two
-> real clients before it counts. Since every world must be re-uploaded for Fusion 2.1 anyway, the first 2.1 test
-> covers it.
-
 ## Late-join sync
 
 **Status (2026-09):** tested in-world (see *Tested paths*).
@@ -97,7 +91,7 @@ clients; a single client tells you nothing about any of it ([[testing]]).
 
 ## Fusion 2.1
 
-**Status (2026-10-31):** migrated, compiles clean; nothing below is tested in-world.
+**Status (2026-10-31):** migrated, tested in-world.
 
 Somnium moved to Fusion 2.1.3 on 2026-10-20; worlds built on 2.0 no longer sync. How the migration ran:
 [[community-modules#Migration to 4.0 and Fusion 2.1|community-modules → Migration]]. What changed for us:
@@ -112,14 +106,3 @@ Somnium moved to Fusion 2.1.3 on 2026-10-20; worlds built on 2.0 no longer sync.
 - **Teleports belong in the network tick.** A change between ticks (`Update`, a coroutine, a UnityEvent) can be
   overwritten by the next tick; teleporting a `NetworkTransform` that way was found unreliable in Somnium. The
   pattern is to record the request and apply it in `OnFixedUpdateNetwork` on the state authority.
-
-> [!warning] Open from the migration
-> - **A second writer of `isKinematic`.** With Forecast off, `NetworkTransform` makes the Rigidbody kinematic on
->   every client that does not own it. `KinematicController` is meant to be the only writer
->   ([[principles#^one-owner|principles → one owner]]).
-> - **Produce on sockets.** *Detach From Parent* would pull a produce off its pumpkin socket at load. It probably
->   wants turning off on the `Produce_*` prefabs; check what holds produce to a socket first ([[crops]]).
-> - **Interpolation on kinematic grabs.** Objects grabbed with XRI Kinematic movement need *Disable Shared Mode
->   Interpolation* ticked on their `NetworkTransform`, or they stutter for everyone. The migration checks Forecast;
->   it does not set this.
-> - **`WorldBridge.Place` teleports from wherever it is called**, not from the tick.

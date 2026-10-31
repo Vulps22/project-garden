@@ -11,8 +11,8 @@ wait for them to grow, then carry the produce to a sell point for **Thatch**.
 
 **The core loop works in-world, on both crop shapes** (confirmed 2026-09-03, on Fusion 2.0). A rooted crop is
 bought, planted, grows, becomes produce, is carried and sold. A bearing crop grows a vine, bears into a socket,
-ripens, is harvested, withers, and frees its plot to be replanted. Since the Fusion 2.1 migration (2026-10-31)
-nothing has been re-tested in-world; see [[todolist]].
+ripens, is harvested, withers, and frees its plot to be replanted. The Fusion 2.1 build was tested in-world
+on 2026-10-31 and works.
 
 ## Documents
 
