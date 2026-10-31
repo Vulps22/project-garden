@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 2596616327883126207}
   - component: {fileID: 1366681578920243093}
   - component: {fileID: 5422299156740226707}
+  - component: {fileID: 1210138288798574446}
   m_Layer: 0
   m_Name: Seed_Turnip
   m_TagString: Untagged
@@ -57,16 +58,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 4036554697963305885}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
-  _SyncByteArray: 
-  _SyncIntArray: 
-  _SyncFloatArray: []
-  _SyncVector2Array: []
-  _SyncVector3Array: []
-  _SyncVector4Array: []
-  _SyncStringArray: []
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 1210138288798574446}
 --- !u!114 &4238708424358438818
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -80,12 +75,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 821480928
-  ObjectInterest: 1
-  Flags: 524289
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 524546
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 3825062133355481362}
   - {fileID: 6397603678082433816}
+  - {fileID: 1210138288798574446}
   ForceRemoteRenderTimeframe: 0
 --- !u!54 &3139079582585550662
 Rigidbody:
@@ -252,12 +248,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 4036554697963305885}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 715daecd0cbb4c62b26f59418853ef09, type: 3}
+  m_Script: {fileID: 11500000, guid: f8f14f1198a49cb418d604114edc06a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkGrabbable
   _grabInteracable: {fileID: 2060642639392244118}
   _networkRigidbody: {fileID: 6397603678082433816}
   _rigidbody: {fileID: 3139079582585550662}
+  _respawnDelay: 0
+  _detachFromParent: 1
 --- !u!114 &6397603678082433816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,20 +265,38 @@ MonoBehaviour:
   m_GameObject: {fileID: 4036554697963305885}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0a591d221a634417e9827eb58e17de84, type: 3}
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Fusion.Addons.Physics::Fusion.Addons.Physics.NetworkRigidbody3D
   _stateAuthorityChangeErrorCorrectionDelta: 0
   SyncScale: 1
   SyncParent: 0
-  _interpolationTarget: {fileID: 0}
-  UsePreciseRotation: 0
-  UseRenderSleepThresholds: 1
-  RenderThresholds:
-    UseEnergy: 1
-    Position: 0.01
-    Rotation: 0.01
-    Scale: 0.01
+  _autoAOIOverride: 1
+  ConfigFlags: 0
+  PhysicsSettings:
+    ForecastEnabled: 1
+    DebugPhysics: 0
+    GravityForecast: 2
+    MaxExtrapolationTime: 0.15
+    MinLinearDetectedError: 0.02
+    MinAngularDetectedError: 3
+    DeadzoneVelocityMode: 0
+    MaxLinearError: 0
+    MaxAngularError: 0
+    LowCorrectionProgressThreshold: 0.015
+    HighErrorSimilarityThreshold: 1
+    MaxErrorTotalTime: 0.5
+    MaxRemoteSleepIgnoreTime: 0.5
+    ErrorCorrectionType: 0
+    LinearVelCorrectionMul: 1
+    AngularVelCorrectionMul: 1
+    PositionCorrectionLerp: 0.15
+    RotationCorrectionLerp: 0.15
+    Spring: 75
+    Damper: 2
+    MinImpactfulCollisionAlignment: 0.3
+    ImpactStartCorrectionTime: 0.1
+    ImpactCorrectionTimeComplete: 0.3
 --- !u!65 &1985118068510523639
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -464,6 +480,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.23124848, y: 0.19444577, z: 0.3793785}
   m_Center: {x: 0, y: 0.09722289, z: 0}
+--- !u!114 &1210138288798574446
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4036554697963305885}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1001 &484607368895811444
 PrefabInstance:
   m_ObjectHideFlags: 0

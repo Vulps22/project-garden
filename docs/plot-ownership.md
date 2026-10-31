@@ -1,8 +1,15 @@
+---
+aliases:
+  - "Plot ownership"
+tags:
+  - mechanic
+  - game
+---
 # Plot ownership
 
 The mechanism behind **roadmap step 1, "Plot ownership"**. Designed 2026-09-03, not yet built.
 Vulps's design; the engineering notes are mine and are flagged as such. Words here follow
-[`terminology.md`](terminology.md) — a **Plot** is the claimable patch, a **PlantSlot** is one square
+[[terminology]] — a **Plot** is the claimable patch, a **PlantSlot** is one square
 of dirt inside it, and 24 PlantSlots make a Plot.
 
 ## What it has to do
@@ -104,7 +111,7 @@ request; the master's next broadcast is what actually changes anything.
 - The claim table is **the `EconomyManager` pattern verbatim**: master-owned, master-mutated, whole
   table rebroadcast on change, everyone rebuilding from scratch. Consider putting it beside
   `EconomyManager` rather than in a new singleton.
-- The shed interior is a **derivation** in the CLAUDE.md tier sense — computed from a fact every peer
+- The shed interior is a **derivation** in the [[principles]] tier sense — computed from a fact every peer
   already holds, never sent. Do not be tempted to network the scrolls inside it; they look like the
   application scrolls and behave nothing like them, and if they ever share a prefab someone will
   network the wrong one.
@@ -172,11 +179,28 @@ meaningful, and it survives the socket not being a network object at all. `Plant
 `RequestPlant` comment already says it is "sent on the plot's bridge rather than the seed's", which
 is terminology debt today and becomes literally true afterwards.
 
-**Sequencing.** This depends on the scene tidy in `roadmap.md` — an island cannot be one prefab until
+**Sequencing.** This depends on the scene tidy in [[roadmap]] — an island cannot be one prefab until
 it is one object, and a Plot cannot be one NetworkObject until the hierarchy says which sockets are
 its. Do it as part of that tidy, while the island is still *placed* in the scene rather than spawned:
 that step changes nothing about networking, so a Plot losing 24 NetworkObjects can be tested on its
 own before anything starts spawning islands at runtime.
+
+
+## Departures
+
+**Status (2026-09-13):** built and tested in-world (a player leaving, the master leaving).
+
+Departures are owned by **`PlayerManager`**: one clock, `_graceSeconds = 180`, `OnPlayerRemoved` → grace →
+`PlayerDestroyed`. A dropout is indistinguishable from leaving, so a departed player's garden is held for the grace
+period before anything is freed; Fusion's `DestroyWhenStateAuthorityLeaves` cannot wait. On `PlayerDestroyed`,
+`PlayerLifecycle` has `GardenLease` free the player's plots and despawn what stands in them, then drops their
+balance row ([[economy]]). Plots first, so cleanup never runs against a player the economy has already forgotten.
+
+Their `HolderId`, by contrast, is cleared **immediately**: that is a correction, not cleanup, and leaving it set makes
+`SingleHolderFilter` refuse the object to everyone for the rest of the session.
+
+> [!warning] Stale docstrings
+> Several docstrings still credit `GardenLease` with the clock and still say 120 s.
 
 ## Open questions
 
@@ -194,7 +218,7 @@ and no way to leave one. Three options —
 The middle one is the recommendation, and it preserves the one-verb rule in both directions.
 
 **2. What happens to abandoned scrolls?** Passive rejection leaves a live `NetworkObject` lying
-around, and every ignored application is another one — `runtime-spawn.md` §4c notes Somnium may have
+around, and every ignored application is another one — [[runtime-spawn]] §4c notes Somnium may have
 a per-world object limit nobody has hit yet. Give them a lifetime, or `ReturnableEntity` auto-recall
 back to the barrel, which reads nicely as *the application returns to sender*.
 

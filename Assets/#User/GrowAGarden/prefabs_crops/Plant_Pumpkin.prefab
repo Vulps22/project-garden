@@ -45,6 +45,7 @@ GameObject:
   - component: {fileID: 3861128055438924250}
   - component: {fileID: 4732235958504075059}
   - component: {fileID: 4404531035680793171}
+  - component: {fileID: 1827452205970128178}
   m_Layer: 0
   m_Name: Plant_Pumpkin
   m_TagString: Untagged
@@ -82,11 +83,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 4064546076
-  ObjectInterest: 1
-  Flags: 524289
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 524290
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 600434924158706135}
+  - {fileID: 1827452205970128178}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &600434924158706135
 MonoBehaviour:
@@ -97,16 +99,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 5728594343689381306}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
-  _SyncByteArray: 
-  _SyncIntArray: 
-  _SyncFloatArray: []
-  _SyncVector2Array: []
-  _SyncVector3Array: []
-  _SyncVector4Array: []
-  _SyncStringArray: []
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 1827452205970128178}
 --- !u!114 &3861128055438924250
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162,6 +158,18 @@ MonoBehaviour:
     type: 3}
   _produceSockets:
   - {fileID: 5448310605704809826}
+--- !u!114 &1827452205970128178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5728594343689381306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1001 &3788230869265135781
 PrefabInstance:
   m_ObjectHideFlags: 0

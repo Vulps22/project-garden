@@ -1,0 +1,77 @@
+filters:
+  and:
+    - file.ext == "md"
+formulas:
+  links_in: file.backlinks.length
+  links_out: file.links.length
+properties:
+  formula.links_in:
+    displayName: Linked from
+  formula.links_out:
+    displayName: Links to
+  file.mtime:
+    displayName: Last changed
+views:
+  - type: table
+    name: Rules and tracking
+    filters:
+      or:
+        - file.hasTag("rules")
+        - file.hasTag("tracking")
+        - file.hasTag("index")
+    order:
+      - file.name
+      - aliases
+      - file.tags
+      - file.mtime
+  - type: table
+    name: Crops and mechanics
+    filters:
+      or:
+        - file.hasTag("crop")
+        - file.hasTag("mechanic")
+    order:
+      - file.name
+      - aliases
+      - file.tags
+      - file.mtime
+  - type: table
+    name: Interaction and game
+    filters:
+      or:
+        - file.hasTag("interaction")
+        - file.hasTag("game")
+        - file.hasTag("arc")
+    order:
+      - file.name
+      - aliases
+      - file.tags
+      - file.mtime
+  - type: table
+    name: Tech
+    filters:
+      and:
+        - file.hasTag("tech")
+    order:
+      - file.name
+      - aliases
+      - formula.links_in
+      - file.mtime
+  - type: table
+    name: Reference
+    filters:
+      and:
+        - file.hasTag("reference")
+    order:
+      - file.name
+      - aliases
+      - file.mtime
+  - type: table
+    name: All
+    order:
+      - file.name
+      - aliases
+      - file.tags
+      - formula.links_in
+      - formula.links_out
+      - file.mtime

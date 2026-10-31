@@ -1,14 +1,21 @@
+---
+aliases:
+  - "Flight"
+tags:
+  - arc
+  - mechanic
+---
 # Flight
 
 The step doc for the custom flight that replaces Somnium's. Vulps's design; the engineering notes
 are mine and are flagged as such.
 
-Written 2026-09-09 on `add-advanced-flight`. **This is [`procgen-islands.md`](procgen-islands.md)'s
+Written 2026-09-09 on `add-advanced-flight`. **This is [[procgen-islands]]'s
 blocker** — the world's usable radius is a function of how a player moves through it, so the map
-cannot be sized until this exists. Links back to [`roadmap.md`](roadmap.md)'s exploration steps.
+cannot be sized until this exists. Links back to [[roadmap]]'s exploration steps.
 
 **Flight is locked until the narrator's exploration line has played**, and the three lines after
-it are what teaches flying at all — see [`tutorial.md`](tutorial.md). It fails open: no narrator,
+it are what teaches flying at all — see [[tutorial]]. It fails open: no narrator,
 or the tutorial switched off, and flight behaves as it always did.
 
 ---
@@ -178,7 +185,7 @@ again — so islands are altitude refills and the world is crossed by hopping ra
 glide. That is a much better exploration loop than thermals would give, it needs no new mechanic, and
 it makes landing on an island something a player wants to do rather than a thing they tolerate.
 
-It also produces the one number that ties this doc to [`procgen-islands.md`](procgen-islands.md):
+It also produces the one number that ties this doc to [[procgen-islands]]:
 
 > **flap height × glide ratio = the island spacing ceiling.**
 
@@ -232,7 +239,7 @@ the model. `SetMovementSpeed(0, 0, 0)` while flying, restored on landing.
 
 **Somnium already respawns a player who falls too far.** One `Root moved 35.77m` entry, from
 y=-21 back to spawn — `PlayerController._respawnHeight` doing its job. That answers
-[`procgen-islands.md`](procgen-islands.md)'s open question about the trash-can floor and players:
+[[procgen-islands]]'s open question about the trash-can floor and players:
 nothing needs building.
 
 **⚠ Unresolved: something still pulls Y down about 0.06 m every frame**, X and Z untouched, despite
@@ -289,7 +296,7 @@ Three things to weigh before building it:
 
 - **⚠ It rewrites world-crossing.** At 30 m/s the inverse curve sinks 0.6 m/s — a **50:1 glide
   ratio**, so 100 m of altitude crosses 5 km. That does not merely loosen
-  [`procgen-islands.md`](procgen-islands.md)'s island spacing, it makes distance close to free, and
+  [[procgen-islands]]'s island spacing, it makes distance close to free, and
   the roadmap's "getting it home is the good problem" tension goes with it. That is a world-design
   decision wearing a tuning constant's clothes.
 - **It needs a floor.** Inverse-square gives 20 m/s of sink at 4 m/s airspeed; even inverse gives
@@ -323,7 +330,7 @@ investigate, not a thing to correct for.
 > near-vertical dive on every launch. Modelled at trim 55 the player drops 9.4 m in 39 frames; the
 > 2026-09-09 20:53 client log shows an entire flight lasting 39 frames and dropping 7.3 m, ending
 > below the island at y=-12.24. Two evenings went on the sink curve for this. Reset to 0 the same
-> day. **This is the "deleting a class hands its job to the prefabs" rule in CLAUDE.md, in a scene
+> day. **This is the "deleting a class hands its job to the prefabs" rule in [[runtime-spawn#Deleting a class hands its job to the prefabs, silently|runtime-spawn]], in a scene
 > field** — after removing anything that wrote a serialized value, go and look at what the scene now
 > says about it.
 >
@@ -346,7 +353,7 @@ already answered and one is more work than it looks.
 Players tune their own flight at the hut: **trim**, **arm-extension range**, **basic versus advanced
 flight**, and a toggle back to **Somnium's own flight** for anyone who prefers it.
 
-The hut is the right home for it — [`plot-ownership.md`](plot-ownership.md) already makes it the one
+The hut is the right home for it — [[plot-ownership]] already makes it the one
 place where things are committed rather than merely done, so a settings panel there needs no new
 idea about where the world's controls live.
 

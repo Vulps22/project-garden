@@ -1,3 +1,10 @@
+---
+aliases:
+  - "Roadmap — from a working loop to a game"
+tags:
+  - arc
+  - tracking
+---
 # Roadmap — from a working loop to a game
 
 Written 2026-09-03, the night the core loop first ran end to end. Vulps's design; the engineering
@@ -12,7 +19,7 @@ upgrades worth rolling for.
 ## Terminology
 
 **World / Island / Garden / Plot / PlantSlot**, locked 2026-09-03 and recorded in
-[`terminology.md`](terminology.md), along with the renames the code still owes it. Read that first if
+[[terminology]], along with the renames the code still owes it. Read that first if
 any of the words below feel ambiguous — several of them used to mean something else.
 
 ---
@@ -27,44 +34,82 @@ for a Plot, a rare find matters because what it grows into is yours, and a world
 only tolerable if what you have claimed survives the re-roll.
 
 Claiming, teammates, and the check on **harvest** — currently open to anyone who can reach the
-produce — are designed in **[`plot-ownership.md`](plot-ownership.md)**: a deed you carry, an
+produce — are designed in **[[plot-ownership]]**: a deed you carry, an
 application scroll the applicant issues, and a shed where every ownership change is committed.
 
-## 2. Upgrades — sell the seed, or sell the produce
+## 2. Upgrades — sell the seed, or grow it and keep it standing
 
 The pattern, and the best idea in this document:
 
-> **Sell the seed for money, or plant it and sell the *produce* for the upgrade.**
+> **Sell the seed for money, or plant it and keep the grown thing in the ground for what it does.**
 
-A found fence seed is worth 500 thatch on the spot. Or plant it, grow it, sell what it yields, and
-get fence colliders round your plot so you stop falling off the edge. A raindrop grows into a cloud
-that waters your garden — faster growth, bigger plants, and bigger plants sell for more.
+A found fence seed is worth 500 thatch on the spot. Or plant it, let it reach maturity, and fence
+colliders spawn round your plot so you stop falling off the edge. A raincloud tree bears clouds you
+can harvest and throw in the air — or just drop on a plot — to speed growth and swell the final size
+and value. A weed plant's bloom, planted, sprays white powder over everyone in range until someone
+harvests it.
 
-It is a decision with **no UI**: take the money now, or spend the growth time on something permanent.
-Every rare find becomes a small gamble instead of a pickup. It is also the same shape as an ordinary
-carrot with the stakes raised, which is why it will read as natural rather than bolted on.
+It is a decision with **no UI**: take the money now, or spend the growing time and then keep spending
+the ground. Every rare find becomes a small gamble instead of a pickup, and it is the same shape as
+an ordinary carrot with the stakes raised, which is why it will read as natural rather than bolted on.
 
-**Upgrades last for the session only.** That removes persistence from the problem entirely.
+**An upgrade is the standing crop, not a thing you were granted.** It works while a fully
+harvest-ready upgrade plant is in place, and the moment it is harvested or removed the effect is gone
+until another seed is found. That is the whole rule, and it has two consequences worth stating
+plainly:
+
+- **An upgrade consumes a PlantSlot for as long as you want it.** Not a one-off cost in growing time
+  — a standing rent in ground. Four buffs is four fewer slots for crops, out of 24 per Plot, which is
+  what makes running them a real choice and what makes *buying more garden* worth more than it looks.
+- **Upgrades last for the session only**, and now for free rather than by decree: the crop is the
+  upgrade, and nothing survives a session anyway. That removes persistence from the problem entirely.
+  *The warehouse seed* below leans on this rather than breaking it — the room persists, the key does
+  not.
+
+**What each upgrade affects is its own business.** The fence is plot-scoped, a thrown cloud lands on
+whichever plot it lands on, and the weed reaches every player in range. There is no single rule for
+the target, only for the condition.
 
 **Engineering notes.**
 
+- **The grant condition is a derivation, and that deletes a subsystem.** "Is there a ripe fence plant
+  in this plot" is computable by every client from facts already replicated — what is planted where,
+  and when it was planted. So there is **no upgrade table**: no `playerId → upgrades` dictionary, no
+  broadcast, no rebuild-from-scratch. The plant *is* the record. This is the same move
+  `GetGrowthCompletion()` made, and it is the reason to prefer standing-crop upgrades over granted
+  ones even setting the design aside.
+- **Losing an upgrade needs no mechanism either.** Harvesting is an existing gesture that already
+  raises `LifecycleChanged`; the effect re-evaluates off the same event every other trait uses. There
+  is nothing to revoke.
+- **`BehaviourModule` is exactly this, already built.** A fence that fences, a cloud that waters, a
+  bloom that fogs — the per-crop layer was written for the rare crop that does something particular,
+  reads the produce's condition and owns nothing. These are its first real users. Keep its rule: a
+  module reads, it does not write what already has an owner.
 - Selling a seed is free: `SellableEntity` is a trait, so drop it on the seed prefab with a value.
   The money-printer caveat does not apply to a seed nobody bought.
-- Selling produce *for an upgrade* is a new trait beside the existing six — the produce answers 0
-  through `ISellValueSource`, and a `GrantsUpgradeOnSale` component listens to `SellableEntity.Sold`.
-  `SellPoint` continues to have no idea what a crop is.
-- Session-scoped upgrades are **the `EconomyManager` pattern verbatim**: a master-owned
-  `playerId → upgrades` dictionary, mutated only by the master, whole table rebroadcast on every
-  change, everyone rebuilding from scratch. Consider whether it belongs beside `EconomyManager`
-  rather than in a new singleton.
+- **A carried buff is a decision, so the master makes it.** A cloud thrown in the air or dropped on a
+  plot has to resolve *which* plot, and that answer must be the same everywhere. Optimistic locally —
+  the cloud leaves the hand at once — master-confirmed a couple of hundred milliseconds later.
 - **Growth-rate modifiers fight derived growth.** Completion is `(now − plantedAt) / duration` on
   every client. Change `duration` mid-growth and completion *jumps* — a plant visibly snaps forward
   or back when a cloud drifts over. Fix it the way phases already did: **restamp `_plantedTimestamp`
   when the modifier changes** so completion stays continuous. Invisible until it happens in front of
-  a player.
+  a player. The raincloud is the first thing that will do this.
+- **A player-range effect is a derivation too.** Every client knows where the bloom is and where it
+  is standing, so who is in range needs no message — and a screen effect is local by nature. Nothing
+  about "everyone in range" has to travel.
 - "Bigger plants sell for more" is nearly free — `ISellValueSource` was written to answer *what is
   this worth right now*. Note `SellPoint` captures the value at the moment of offer, deliberately,
   because announcing a sale clears the holder and there would be nobody left to pay.
+- **⚠ A plant that stands until harvested is #43.** `RootedPlant` despawns itself when it bears and
+  `SingleHarvestPlant` withers when its sockets are spent; neither stands. `MultiHarvestPlant` stands
+  and has no ending, which is its open problem — and for most upgrades harvesting *is* the ending,
+  since that is how you end the buff. The exception is any upgrade you never want to harvest, the
+  warehouse being the obvious one. Settle #43 before the first upgrade ships.
+
+**Open:** whether "fully harvest-ready" means ripe-and-harvestable for every upgrade, or whether some
+work from the moment they mature. The fence probably wants the former; a buff you must *not* harvest
+to keep is a strange object to hand a player without saying so.
 
 ## 3. Generalised spawn slots with rarity
 
@@ -111,7 +156,7 @@ different map now. The world gets a heartbeat.
   extra ownership check is needed — the existing structure already draws the line in the right place.
 - **What does need care: a despawn must end the grab first.** `Runner.Despawn` destroys the object on
   every client, and XRI left holding a destroyed object is its own bug. This is the same rule as
-  `runtime-spawn.md` §4d and it applies to every despawn path — cycling, `GardenLease` clearing a
+  [[runtime-spawn]] §4d and it applies to every despawn path — cycling, `GardenLease` clearing a
   departed player's seeds, and anything else that removes something a hand might be on.
 - **Design question worth settling before building it:** a cycle can destroy a sub-1% find before the
   player who spotted it gets there. Options — rare items are exempt from cycling; a slot only
@@ -137,7 +182,7 @@ Nothing here needs a new networking concept. That is the good sign.
 
 ## Future — islands that generate themselves
 
-Scoped in **[`procgen-islands.md`](procgen-islands.md)** (2026-09-09), which supersedes the sketch
+Scoped in **[[procgen-islands]]** (2026-09-09), which supersedes the sketch
 below where the two disagree — notably that islands are **premade prefabs placed by the seed**
 rather than generated geometry, that nothing is ever planted on one, and that the rarity roll has to
 be *derived* rather than master-decided because §3's premise breaks at distance. That doc is parked
@@ -226,7 +271,7 @@ plausibly reach it.
 - **Prefer "you own two Plots" over "two Plots become one".** A claim is per-Plot and a player can
   already hold several, so expansion needs no data-model change — merging is roads and borders, a
   visual concern. Making a composite Plot means a second kind of claimable thing, and
-  `plot-ownership.md` would need reopening.
+  [[plot-ownership]] would need reopening.
 - **Placement is a master decision with an optimistic ghost.** The client draws the preview
   immediately from the grid it can already see; the master confirms what actually spawns. Standard
   shape — a decision may be slow, a hand must not be.
@@ -277,7 +322,7 @@ it.** It would also break the physical continuity that makes carrying anything m
   spawnable chunks. Build the grid once.
 - **⚠ Object count.** Each island is four Plots of 24 PlantSlots, and every PlantSlot carries a
   NetworkObject and a NetworkBridge — 96 NetworkObjects per island before a single crop exists.
-  Three islands is 288, just for dirt. `runtime-spawn.md` §4c notes Somnium may have a per-world
+  Three islands is 288, just for dirt. [[runtime-spawn]] §4c notes Somnium may have a per-world
   limit nobody has found yet; appending islands is the thing most likely to find it. Worth measuring
   before it is built.
 
@@ -306,7 +351,7 @@ World (scene)
 
 The same tidy is the moment to make **one Plot one NetworkObject with 24 sockets** instead of 24
 separate ones — that is the structural half of step 1's ownership change, and
-[`plot-ownership.md`](plot-ownership.md) carries it. It takes an island from 96 NetworkObjects to 4,
+[[plot-ownership]] carries it. It takes an island from 96 NetworkObjects to 4,
 which is what makes appending islands affordable at all.
 
 **Do this in two steps, and only the second one is dangerous.** Grouping the island into a prefab
@@ -315,6 +360,83 @@ objects and keep the SDK's authority sweep. Spawning that prefab at runtime is w
 `SceneNetworking.ReassignNullObjectsAuthority`, which only ever walks `_sceneNetworkObjects`. Step one
 is free tidying and can happen now; step two should wait until orphaned authority is solved for crops,
 because it extends that same gap to the ground itself.
+
+---
+
+## Future — the warehouse seed
+
+A **warehouse** — or barn — stands on the Garden island from the start, shut and derelict. It is
+opened by a **warehouse upgrade seed**, found out in the world and planted like any other upgrade.
+Activated, it lights up and reads as a building in use rather than an abandoned one.
+
+What it does is hold things. A player can carry anything they find in the world into the warehouse
+and it is **kept between sessions**. Inside are shelves; where a player puts something on a shelf is
+kept too, so the room is theirs and arranging it is part of having it.
+
+**The warehouse is private.** Something carried inside stops rendering for every other player — the
+room is unique to its owner, a pocket dimension in the fiction. Carry something back out and it
+leaves persistence again until it is returned.
+
+**And the twist: the seed is an ordinary session-scoped upgrade.** The warehouse is open only while
+a warehouse plant stands ripe in your plot. It is not unlocked once — it is *held* open, at the cost
+of ground and growing time, and a new session finds it shut again. Your things are still in there;
+you have to go back out and find another seed to reach them. The contents persist. The key never
+does.
+
+**Engineering notes.**
+
+- **This is the feature that forces persistence — and only just.** A store that empties at logout is
+  not a store, so the contents have to survive. But that is the *whole* of it: the upgrade stays
+  session-scoped like every other, so there is no "who owns a warehouse" table to keep. One
+  persisted thing, keyed by player, and nothing in the tree persists anything today. The twist is
+  what keeps the ask this small.
+- **Storing is the sale transaction with a different ending.** `SellableEntity` already models
+  "leave the world when offered, come back if refused" (`SetPending`) and defaults `OnSold()` to
+  despawning. Putting something on a shelf is the same movement — an object leaves the world, a fact
+  is recorded — so the warehouse likely wants a trait beside `SellableEntity` rather than a new
+  subsystem, and the door works like `SellPoint`: it accepts, it does not observe.
+- **Prefer despawning to hiding.** "Stops rendering for everyone else" could be the visibility gate
+  from *buying more garden* — hide the collider with the renderer, a veil not a secret. But that
+  leaves a live `NetworkObject` nobody but the owner can see, which is also an object other players
+  can walk into, grab, and take state authority over. If storage despawns and retrieval spawns from
+  persistence, the privacy is structural rather than enforced. Worth deciding early; it changes what
+  persistence has to record.
+- **⚠ A stored item is a prefab id, and prefab ids must outlive builds.** Persisting "anything you
+  find" means persisting *which prefab*, and the only prefab identity in the project is a position
+  in `SceneNetworking._networkPrefabs`. Reorder that array between builds and every warehouse in the
+  game remaps — carrots become pumpkins. This is the wire-id rule one level up: **append, never
+  insert**, and consider a stable per-prefab id that does not depend on array order before the first
+  thing is ever stored.
+- **Shelf placement is a transform snapshot relative to the shelf, not a world pose.** Same shape as
+  `AlignableEntity`'s stored `Quaternion`, and the same caveat: a snapshot goes stale if what defined
+  it moves. Key it to a shelf id so the building can be re-laid-out without emptying everyone's
+  shelves onto the floor.
+- **Private to render is not private to the master.** Whoever decides what is in a warehouse is the
+  master, so the master's client knows every player's inventory. That is the normal authority answer
+  and it is fine — but it means privacy here is a rendering decision, exactly like the visibility
+  gate, and it is a veil rather than a secret for the same reason.
+- **It is step 2's rule with nothing added.** Standing crop grants the effect, harvest or remove it
+  and the effect is gone — the warehouse is just the one where "gone" locks a door rather than
+  dropping a fence. "Lit and in use", and open-versus-shut, are the same derivation every client can
+  already make from what is planted where and how grown it is. Nothing extra on the wire.
+- **⚠ It is the upgrade you never want to harvest**, which is the corner of #43 step 2 flags. Every
+  other buff ends when you harvest it, so the player has a reason to clear the slot; this one you
+  leave standing all session, and there is still no gesture for taking it out when you are done.
+- **Access can fail, and the design has to mean it.** Between sessions the key is gone, so reaching
+  your own things depends on the drop tables in step 3. A rare seed means a session where the
+  warehouse simply does not open. That is the cruelty working as intended — but it is worth deciding
+  deliberately how rare, because it is the difference between a tense errand and a wall.
+
+**Open:**
+
+- **Persistence is undecided** — the word is a placeholder for a system that does not exist. Nothing
+  here should be built until it is chosen, because every note above is downstream of that choice.
+- Whether the warehouse is one per player or one per Plot, once a player can own several plots.
+- What happens when the warehouse plant is uprooted, withers, or the owner's lease expires
+  mid-session — with a player standing inside, or holding something they carried in. The contents are
+  safe by construction; the door closing under someone is the part with no answer yet.
+- Whether anything is *too large* to store, and whether shelves have capacity at all — limits are
+  much easier to add before the first thing is stored than after.
 
 ---
 
@@ -382,7 +504,7 @@ sort on a **supplied** metric instead of a hard-coded one and a plot-count board
 personal-best board is a parameter rather than a rewrite. That is a small change today and an
 irritating one once the shed and the deed exist.
 
-Everything else here should wait. Format, duration, whether it is teams — `plot-ownership.md`'s
+Everything else here should wait. Format, duration, whether it is teams — [[plot-ownership]]'s
 application scroll already makes a team a real thing, and "the plots are yours but she grew half of
 them" is a good problem — are all decisions to make against an economy that does not exist yet, for
 the same reason the Plot Seed's price cannot be set against today's numbers.

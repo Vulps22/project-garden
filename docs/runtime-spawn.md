@@ -1,10 +1,16 @@
+---
+aliases:
+  - "Runtime spawn — what it changes"
+tags:
+  - tech
+---
 # Runtime spawn — what it changes
 
 Status: **phases A-C implemented and working in-world.** Written 2026-09-02 against `main` @ 53abd4f; updated as each
 phase landed.
 
-Companion to `bearing-plants-and-produce.md`, which was designed against the pooled world and is
-**revised by this** (see §7). Read `CLAUDE.md` first; this assumes its Architecture section.
+Companion to [[crops]], which was designed against the pooled world and is
+**revised by this** (see §7). Read [[principles]] and [[networking]] first; this assumes them.
 
 Method names, not line numbers.
 
@@ -14,7 +20,7 @@ Method names, not line numbers.
 
 `SceneNetworking` can register prefabs into Fusion's global `PrefabTable` at runner setup and hand
 back a `NetworkPrefabId`, so anything can be spawned at runtime. The list is `_networkPrefabs: []`
-in the scene — the capability was wired up by the SDK and has never been used here. CLAUDE.md's
+in the scene — the capability was wired up by the SDK and has never been used here. The old CLAUDE.md's
 "nothing is instantiated at runtime" was a belief about this project, not a constraint on it.
 
 Verified from the Fusion 2 assembly docs and the prefab/scene assets, not assumed:
@@ -58,7 +64,7 @@ contact.** That failure mode needs no guard because it has no mechanism.
 
 ## 3. The rules it satisfies structurally
 
-CLAUDE.md's governing rule and its three corollaries stop being things the code must remember:
+[[principles]]'s governing rule and its three corollaries stop being things the code must remember:
 
 | Rule | Today | With spawn |
 |---|---|---|
@@ -93,7 +99,7 @@ it is not, and the checking is worth writing down:
 - **So the answer to "what needs transferring to a new master?" is: after phase B, nothing.**
   `ReassignNullObjectsAuthority` will be sweeping a set of objects that do not care, and every
   object that does care will be spawned and therefore outside its reach.
-- **The unowned case self-heals.** `NetworkGrabbable` requests authority on hover, and taking it
+- **The unowned case self-heals.** `NetworkGrabbable` requests authority on grab, and taking it
   from `None` succeeds, so an abandoned seed becomes owned again the moment anyone reaches for it.
   Until then it simply does not simulate — which for a seed lying on the ground is invisible.
 
@@ -212,13 +218,13 @@ every client computes scale forever. No new sync.
 |---|---|---|
 | **A** ✅ | Register `Unified_Carrot`; the carrot slot spawns, `SellPoint` despawns, turnip and pumpkin keep pooling as the control | **Done 2026-09-02.** Spawning works in an exported world: buy → grow → sell → despawn → restock all completed. Two defects found, see §4f/§4i |
 | **B** ✅ | All three crops spawn. `UnifiedPool`, `PoolManager`, `IsInPool`, `HideForPool()`, `PlantSeed.Sell()`, the 153 scene instances and their three pool containers all deleted. Scene went from 20,093 lines to 1,696, and from 255 scene NetworkObjects to 99 | untested in-world |
-| **C** ✅ | Seed, plant and produce become separate prefabs and classes; planting becomes a master decision. See `bearing-plants-and-produce.md` | **Done 2026-09-03.** Full loop confirmed on both crop shapes. Five failure modes on the way, every one a rule a deleted class used to enforce — see §4j |
-| **D** | `Produce` and the bearing-plant split — `bearing-plants-and-produce.md` phases A–D, minus everything pool-shaped | as that doc describes |
+| **C** ✅ | Seed, plant and produce become separate prefabs and classes; planting becomes a master decision. See [[crops]] | **Done 2026-09-03.** Full loop confirmed on both crop shapes. Five failure modes on the way, every one a rule a deleted class used to enforce — see §4j |
+| **D** | `Produce` and the bearing-plant split — [[crops]] phases A–D, minus everything pool-shaped | as that doc describes |
 
 A and B are deliberately not merged. A is the only phase whose purpose is to answer "does this work
 in Somnium at all", and it wants the pooled path still standing next to it as a control.
 
-## 7. What this revises in `bearing-plants-and-produce.md`
+## 7. What this revises in [[crops]]
 
 That doc was designed against a world where every NetworkObject was pre-placed. It is **unblocked**
 by this, not invalidated — the hierarchy (`BearingPlantSeed` → `SingleHarvest` / `MultiHarvest`), the
@@ -239,3 +245,15 @@ stand unchanged. What changes:
 
 Its §2 note about **renaming `ViningPlantSeed.cs` and keeping its `.meta` GUID** still applies and is
 still the trap most likely to cost an hour.
+
+## Deleting a class hands its job to the prefabs, silently
+
+**Status (2026-09-13):** rule.
+
+Every failure in landing the Seed/Plant/Produce split ([[crops]]) was this shape. `PlaceInShop` used to write the
+pose after a spawn; `OnGrowthUpdated` used to overwrite the root scale every frame; `UpdateVisuals` used to enable
+the renderer; the growth phases used to overwrite the body scale. All four deletions were correct, and all four left
+a prefab holding a value that had never been meaningful and was suddenly the only source of truth.
+
+**After deleting anything that wrote to a component every frame, audit what the prefab now says about it.** The
+prefabs are authoritative for appearance, scale and physical presence, and nothing at runtime second-guesses them.

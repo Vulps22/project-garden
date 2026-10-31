@@ -1,3 +1,10 @@
+---
+aliases:
+  - "The tutorial — a narrator, not a UI"
+tags:
+  - game
+  - interaction
+---
 # The tutorial — a narrator, not a UI
 
 Started 2026-09-09, first pass wired 2026-09-10. A recorded voice that plays one line the first
@@ -6,7 +13,7 @@ never says it twice. There is no tutorial UI, no arrows, no checklist — a head
 to read.
 
 **Entirely local.** No RPCs, no master decisions, nothing replicated: every client hears its own
-tutorial on its own schedule, which is why none of the networking rules in `CLAUDE.md` apply to any
+tutorial on its own schedule, which is why none of the networking rules in [[principles]] apply to any
 of it. Two players in the same world can be at different points in the script and neither is wrong.
 
 Three files, all under `scripts/scripts/Tutorial/`:
@@ -110,5 +117,15 @@ an upgrade or a buff can be found at any point and reads fine on its own.
 
 ---
 
-Related: [`flight.md`](flight.md) — §6 unlocks flight, and §7–§9 teach it.
-[`plot-ownership.md`](plot-ownership.md) — the deed §2 describes.
+Related: [[flight]] — §6 unlocks flight, and §7–§9 teach it.
+[[plot-ownership]] — the deed §2 describes.
+
+## Remembering progress
+
+**Status (2026-09-10):** on.
+
+`TutorialManager._rememberProgress` makes the narrator remember what it has said between sessions. It was off while
+the tutorial was being built, because the loop cannot be walked twice otherwise. If it is turned off again for
+testing, it is one serialized bool on `TutorialManager` in the scene (code default `true`), and the manager logs
+`_rememberProgress is OFF` as a WARN at startup, so the client log says so on every run. Turning it back on is part
+of [[todolist#Before any non-test upload|the pre-upload check]].

@@ -67,7 +67,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.Socket
   _bounds: {fileID: 4947228595861481132}
-  _authorityTimeout: 2
 --- !u!1 &6259685309636070209
 GameObject:
   m_ObjectHideFlags: 0
@@ -148,6 +147,7 @@ GameObject:
   - component: {fileID: 2011646851454114364}
   - component: {fileID: 5277851954152796999}
   - component: {fileID: 8889897950934988560}
+  - component: {fileID: 1877997783647283506}
   m_Layer: 0
   m_Name: Plot
   m_TagString: Untagged
@@ -211,11 +211,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 4206171910
-  ObjectInterest: 1
-  Flags: 1
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 2
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 5277851954152796999}
+  - {fileID: 1877997783647283506}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &5277851954152796999
 MonoBehaviour:
@@ -226,16 +227,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 6468099296292873319}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
-  _SyncByteArray: 
-  _SyncIntArray: 
-  _SyncFloatArray: []
-  _SyncVector2Array: []
-  _SyncVector3Array: []
-  _SyncVector4Array: []
-  _SyncStringArray: []
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 1877997783647283506}
 --- !u!114 &8889897950934988560
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -250,7 +245,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlotStateManager
   _networkBridge: {fileID: 5277851954152796999}
   _lease: {fileID: 2471312826826638800}
-  _authorityTimeout: 2
+--- !u!114 &1877997783647283506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6468099296292873319}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1001 &425496246014350111
 PrefabInstance:
   m_ObjectHideFlags: 0

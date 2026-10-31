@@ -1,6 +1,13 @@
+---
+aliases:
+  - "Procgen islands"
+tags:
+  - arc
+  - game
+---
 # Procgen islands
 
-The step doc for [`roadmap.md`](roadmap.md)'s *Future — islands that generate themselves*. Vulps's
+The step doc for [[roadmap]]'s *Future — islands that generate themselves*. Vulps's
 design; the engineering notes are mine and are flagged as such.
 
 Written 2026-09-09 on `feature/procgen`, and **parked the same day** — see below.
@@ -16,7 +23,7 @@ half-built system waiting to be resumed. A branch parked mid-design rots; a merg
 **Flight is the blocker, and it is a real one.** The world's usable radius is a function of flight
 speed, so nothing here can be sized until flight exists (see *Radius* below). Work continues on
 **`add-advanced-flight`**, cut from `main` at this commit, and is designed in
-**[`flight.md`](flight.md)**.
+**[[flight]]**.
 
 That doc supplies the constraint this one is missing: **flap height x glide ratio = the island
 spacing ceiling** — 240 m at the current starting numbers. Island spacing and flap height are one
@@ -24,7 +31,7 @@ decision, not two.
 
 (An earlier version of this section said flight had no supported API behind it. That was wrong:
 `ISomniumPlayer.References.Body` hands over `Root`, `Head` and both hands as real `Transform`s. See
-`flight.md`.)
+[[flight]].)
 
 Resume this document when flight has a known speed and a known implementation.
 
@@ -66,7 +73,7 @@ high-value goods. Going further is how you find better things.
 **Nothing is ever planted out there.** `GardenIsland` is the only place a player can plant or
 harvest. Exploration islands are places you *find* things, not places you farm. Later, `GardenIsland`
 may start spawning additional gardens to accommodate a larger playerbase — that is a separate
-mechanism from this one (see [`roadmap.md`](roadmap.md)'s *the world grows a plot at a time*).
+mechanism from this one (see [[roadmap]]'s *the world grows a plot at a time*).
 
 ## Flight
 
@@ -99,7 +106,7 @@ below into a bound you deliberately stayed inside rather than a bug waiting to h
 
 ### ⚠ The rarity roll cannot be a master decision
 
-[`roadmap.md`](roadmap.md) §3 says *"the roll is a master decision and the spawned object is its
+[[roadmap]] §3 says *"the roll is a master decision and the spawned object is its
 announcement"*. That holds only while the master has the slot loaded, and at 2 km out it does not.
 
 So **exploration slots derive their roll** — `hash(seed, islandId, cycleIndex)` against a
@@ -215,7 +222,7 @@ world.
 
 `Runner.Despawn` destroys the object on every client and requires state authority, so the floor is a
 **master decision**, not a local trigger — and it must `ForceRelease()` before despawning or XRI is
-left holding a destroyed object ([`runtime-spawn.md`](runtime-spawn.md) §4d). The floor is global
+left holding a destroyed object ([[runtime-spawn]] §4d). The floor is global
 geometry so the master always has it, which is what makes this work where the buy points do not.
 
 Open: what happens to a *player* who falls past it.

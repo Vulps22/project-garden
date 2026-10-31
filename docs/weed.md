@@ -1,3 +1,9 @@
+---
+aliases:
+  - "Weed"
+tags:
+  - crop
+---
 # Weed
 
 Blocked on models from damdamdam. Designed now so the build is assembly rather than decisions.
@@ -122,7 +128,7 @@ are separate uploads, and step 3 is the one worth watching the logs for.
 ## Open
 
 - Where the splif appears — counter or plant. See above; counter recommended.
-- Whether a splif should ever expire. `runtime-spawn.md` §4c notes an unfound per-world object limit,
+- Whether a splif should ever expire. [[runtime-spawn]] §4c notes an unfound per-world object limit,
   and an item that is never sold and never despawns is the shape most likely to find it. Auto-recall
   or a lifetime, decided when it exists.
 - Whether harvesting a bloom should drop anything, or only selling one. As written, only selling.

@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7381897678004519008}
   - component: {fileID: 6696254468634489213}
   - component: {fileID: 7542327473358801173}
+  - component: {fileID: 6789389462082260848}
   m_Layer: 0
   m_Name: Plant_Carrot
   m_TagString: Untagged
@@ -46,16 +47,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 4008196663807714345}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28732b03e6f75884696d521673a4d2b4, type: 3}
+  m_Script: {fileID: 11500000, guid: bcd58b28327cf45b09515e4eb7356fbc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridge
-  _SyncByteArray: 
-  _SyncIntArray: 
-  _SyncFloatArray: []
-  _SyncVector2Array: []
-  _SyncVector3Array: []
-  _SyncVector4Array: []
-  _SyncStringArray: []
+  m_EditorClassIdentifier: GrowAGarden::GrowAGarden.NetworkMessenger
+  _transport: {fileID: 6789389462082260848}
 --- !u!114 &8889210848319893590
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,11 +64,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Fusion.Runtime.dll::Fusion.NetworkObject
   SortKey: 3215531202
-  ObjectInterest: 1
-  Flags: 524289
+  SendPriority: 1
+  EnableInterpolation: 1
+  Flags: 524290
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 8687368478634918862}
+  - {fileID: 6789389462082260848}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &7381897678004519008
 MonoBehaviour:
@@ -128,6 +124,18 @@ MonoBehaviour:
   _maxScale: 0.5
   _producePrefab: {fileID: 5724602667579792080, guid: 1199ec2a21cc592959a9ca077c2f1703,
     type: 3}
+--- !u!114 &6789389462082260848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4008196663807714345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
 --- !u!1 &6372581581137027185
 GameObject:
   m_ObjectHideFlags: 0
