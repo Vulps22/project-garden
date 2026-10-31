@@ -10,32 +10,86 @@ tags:
 The step doc for [[roadmap]]'s *Future — islands that generate themselves*. Vulps's
 design; the engineering notes are mine and are flagged as such.
 
-Written 2026-09-09 on `feature/procgen`, and **parked the same day** — see below.
+Written 2026-09-09 on `feature/procgen` and parked on flight; resumed 2026-10-31 once flight existed.
 
 ---
 
-## ⚠ Status: parked, blocked on flight
+## Phase 1: islands from a seed
 
-`feature/procgen` was merged to `main` rather than left standing, because everything on it is
-finished and independently useful — the island scale box, and this document — and nothing on it is a
-half-built system waiting to be resumed. A branch parked mid-design rots; a merged branch does not.
+**Status (2026-10-31):** built, compiles clean; untested in-world. Code: `GrowAGarden/Islands/`.
 
-**Flight is the blocker, and it is a real one.** The world's usable radius is a function of flight
-speed, so nothing here can be sized until flight exists (see *Radius* below). Work continues on
-**`add-advanced-flight`**, cut from `main` at this commit, and is designed in
-**[[flight]]**.
+- **`WorldSeed`** (on `SceneManager`, message id 1 on its messenger) holds the seed. The first master takes the UTC
+  midnight of the moment it joins, as Unix seconds, and sends it to everyone; it sends it again whenever a player
+  joins and after a master handover. A new master keeps the seed it was given. A client places nothing until it has
+  one, so a player who joins after the next midnight still gets the instance's seed, not today's.
+- **`IslandField`** (root object `IslandField`, at the Garden) derives the layout and sends nothing. The sky is an
+  unbounded grid of cells; a hash of `(seed, cell)` decides whether a cell holds an island, which prefab from
+  `_islands`, its offset inside the cell, its height within `_heightRange` (±25 m) and its yaw. Gardens sit at y=0. Each client instantiates islands
+  within `_viewRadius` of its own head and destroys them beyond it; they are plain scenery with no NetworkObject.
+  **Reordering `_islands` moves every island**, so new islands are appended.
+- **Every island prefab carries `SpawnableIsland`**, and `_islands` accepts nothing else. Its `IslandCategory`
+  (Outcrop, Island, Landmark) fixes how much room it takes: the field treats every island as its category's full
+  box, whatever it contains. Sizes are one table in `SpawnableIsland.MaxSize` (Outcrop 35×60×35, Island 90×100×90,
+  Landmark 250×180×250), the prefab draws its box in the Scene view, and `OnValidate` warns when the contents outgrow
+  it.
+- **Overlap is settled against the seed, not against what has spawned**, so every client agrees whatever order it
+  streams cells in. Each cell proposes an island anywhere in the cell. Where two footprints (the circle a category's
+  box sweeps at any yaw) meet, the lower-ranked island moves directly away, just far enough to clear; rank is a hash.
+  If the move puts it into a third island, or into a Garden's clear zone, it is not placed. Islands may spill into
+  neighbouring cells, which is what lets a Landmark exist on a 150 m grid.
+- **Garden sites** lie on a square lattice `_gardenSpacing` apart (1000 m), site 0 at the Garden, then outward in a
+  square spiral. No island is placed within `_gardenClearRadius` of any site, whether or not a Garden stands there.
+- **Defaults:** cell 150 m, density 0.9, cell margin 0 (an island may sit anywhere in its cell), garden clear 110 m.
+- The hand-placed `Island_A` ring is gone; the field owns the sky.
 
-That doc supplies the constraint this one is missing: **flap height x glide ratio = the island
-spacing ceiling** — 240 m at the current starting numbers. Island spacing and flap height are one
-decision, not two.
+**Phase 2:** more island prefabs, appended to `_islands`.
 
-(An earlier version of this section said flight had no supported API behind it. That was wrong:
-`ISomniumPlayer.References.Body` hands over `Root`, `Head` and both hands as real `Transform`s. See
-[[flight]].)
+## The tablet map
 
-Resume this document when flight has a known speed and a known implementation.
+**Status (2026-10-31):** first version built; zoomed-in islands tested in-world, sectors untested.
 
----
+`MapOverlay` (on `IslandField`) draws the seed's world onto Somnium's own tablet map; `TabletMapBridge` is the one
+file that knows Somnium's map layout (`Tablet.XR(Clone)/…/Tablet.XR.MapTab/…/MapView/Viewport/Content`).
+
+- **Somnium's map is UI over a static picture.** `Content` is an `Image` of the mainland (`MapCombinedRGB`); zoom
+  scales `Content` itself (×0.29 to ×6.6 seen) and drag moves it. We clear the picture, hide `Landmarks`, `Parcels`
+  and `MapPlayer_You`, grow `Content` to ±50 km so scrolling is not clamped, and put our layer inside it, so their
+  zoom and drag carry ours. `PlayersViewContainer` (other players) is left alone; it was empty with one player.
+- **Drawn in world coordinates** from the field's origin, for whatever the viewport shows, redrawn only when the
+  view, the zoom or the player moves. The map centres on the player when opened.
+- **Islands** use a top-down sprite baked per prefab by **Grow A Garden → Bake Island Map Sprites** (Editor-only,
+  `GrowAGarden/Editor/`), stored on `SpawnableIsland` with the metres it spans; an unbaked island is a box. The
+  Garden's sprite is on `MapOverlay`. Re-bake after changing an island.
+- **Sectors** are 1 km squares, Sector 0 centred on the Garden, so every Garden site sits at a sector's centre. When
+  the view spans more than 900 m from its centre the map shows labelled sector tiles (`Sector 0`, `Sector -1,0`)
+  instead of islands; region names may replace the numbers later. Labels use Somnium's own map font.
+- Zoomed fully out with islands drawn, the first version drew 1,500 islands and resolved a 4 km radius four times a
+  second; frame rate collapsed. That is what the sectors are for.
+
+> [!question] Open
+> - Map scale is 1 unit per metre, a guess that looked usable.
+> - Somnium's "centre on me" button scrolls to its hidden dot, not ours.
+> - How other players appear in `PlayersViewContainer`, which needs two clients.
+
+## Phase 1b: Gardens at the sites
+
+**Status (2026-10-31):** decided by Vulps, not built. One upload after phase 1.
+
+- **Gardens appear as players explore**, not by player count. A player who reaches an empty Garden site finds a
+  Garden there, so nobody has to start at the first one. Gardens stay until the instance ends.
+- **Each Garden carries its own deed hut and scoreboard.** `DeedHut` moves into the Garden prefab; the scoreboard is
+  already in it. The scoreboard is later reworked to switch between "this garden" and "global top 10".
+- **Everyone arrives at Garden 0.** Spawning players on empty Gardens may follow, from feedback.
+
+> [!info] Networking
+> A Garden holds network objects (4 Plots, the SellPoint, the scoreboard), so it is a master fact, not a derivation
+> like an island. The client that comes within range of an empty site **asks**; the master spawns the Garden prefab
+> and announces its site index, and every client places it with `IslandField.GardenSite(index)` (Fusion's spawn pose
+> is not networked; [[runtime-spawn]]). The set of spawned sites is re-announced to late joiners.
+
+What the move into one prefab has to rewire: `DeedHut`'s `PlotFireToggle` and `PlotTeammateRoster`, and the deed's
+`PlotClaimSignage`, point at the four Plots through scene references, and `EconomyManager._balanceDisplayManager`
+points at the one scoreboard; with several Gardens it needs every board.
 
 ## The design
 

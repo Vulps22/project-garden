@@ -17,13 +17,9 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 ## Cleanup
 
 - [ ] Missing script in CM's `Networked Script Enable Object Example.prefab`: Vulps's call. [[community-modules]]
-- [ ] Delete `Produce.ReportPlacementOnce()` once the 2.1 build is tested. [[testing#Debug aids|testing → Debug aids]]
 - [ ] Collapse `AnnounceStock`'s three broadcasts to one, after confirming. [[networking#Late-join sync|networking → Late-join sync]]
-- [ ] Docstrings that credit `GardenLease` with the departure clock and say 120 s. [[plot-ownership#Departures|plot-ownership → Departures]]
-- [ ] Rename `EconomyManager.OnPlayerBalanceChanged` to `PlayerBalanceChanged`. [[conventions#Code|conventions → Code]]
-- [ ] Re-check [[shop]]'s purchase flow names against `BuyPoint`/`DispensingEntity`.
-- [ ] Scripts still say "plot" for PlantSlot. [[terminology]]
 - [ ] 13 materials converted to URP by hand live in untracked asset packages; a fresh clone gets magenta. [[packaging]]
+- [ ] Turn the Garden into the `GardenIsland` prefab. [[terminology]]
 
 ## Crops
 
@@ -33,4 +29,5 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 ## Parked
 
-- [ ] Procgen islands, blocked on flight's speed. [[procgen-islands]], [[flight]]
+- [ ] Gardens at the island sites (phase 1b). [[procgen-islands#Phase 1b Gardens at the sites|procgen-islands → Phase 1b]]
+- [ ] Procgen islands phase 2: more island prefabs. [[procgen-islands]]
