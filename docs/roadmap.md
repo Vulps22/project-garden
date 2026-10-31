@@ -156,7 +156,7 @@ different map now. The world gets a heartbeat.
   extra ownership check is needed — the existing structure already draws the line in the right place.
 - **What does need care: a despawn must end the grab first.** `Runner.Despawn` destroys the object on
   every client, and XRI left holding a destroyed object is its own bug. This is the same rule as
-  [[runtime-spawn]] §4d and it applies to every despawn path — cycling, `GardenLease` clearing a
+  [[runtime-spawn]] §4d and it applies to every despawn path — cycling, `PlotCleanup` clearing a
   departed player's seeds, and anything else that removes something a hand might be on.
 - **Design question worth settling before building it:** a cycle can destroy a sub-1% find before the
   player who spotted it gets there. Options — rare items are exempt from cycling; a slot only

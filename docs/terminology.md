@@ -40,18 +40,12 @@ per `Dirt`, four `BorderedPlotWithRoad` instances in `GrowAGardenScene`.
 
 ## What the code still calls things
 
-The scripts use "plot" to mean **PlantSlot** throughout. These should be corrected **before `Plot`
-becomes a class**, or the ambiguity gets baked into new code:
+**Status (2026-10-31):** done, except the Garden prefab.
 
-- `GardenLease` → `PlotCleanup`. It was going to be `PlotLease` — wrong unit *and* wrong level, since
-  it leases neither a Garden nor a PlantSlot — but `PlayerManager` has since taken the timer, so it
-  holds no lease at all now. It frees Plots on an event. The rename is still pending: it touches the
-  scene, and a behaviour change and a scene-touching rename should not share an upload.
-- `IPlotOccupant` → `IPlantSlotOccupant`. Its occupants are a `Plant` and a `RootedProduce`, and both
-  stand in a PlantSlot.
-- ~45 lowercase uses of "plot" in comments and docstrings that mean **PlantSlot** — including
-  [[crops]]'s "RootedProduce earns its class by owning the plot until it is pulled".
-- Turn the Garden into the `GardenIsland` prefab.
-
-Nothing in the code says "garden" except `GardenLease`, so the rename surface is small. It is the
-*comments* that carry the old meaning, and comments are what the next person reads first.
+- `GardenLease` is now `PlotCleanup`: `PlayerManager` owns the departure timer, so it holds no lease. It frees Plots
+  on an event.
+- `IPlotOccupant` is now `IPlantSlotOccupant`. Its occupants are a `Plant` and a `RootedProduce`, and both stand in a
+  PlantSlot.
+- Comments that said "plot" for a single square of dirt now say PlantSlot. A variable named `plot` holds a
+  `PlotStateManager` or `PlotLeaseManager`, which is a Plot.
+- Still open: turn the Garden into the `GardenIsland` prefab ([[todolist]]).

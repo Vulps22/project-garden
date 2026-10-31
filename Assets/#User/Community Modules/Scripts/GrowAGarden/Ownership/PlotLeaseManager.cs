@@ -228,7 +228,7 @@ namespace Vulps.GrowAGarden.Ownership
             }
         }
 
-        /// <summary>Relinquishes the claim, master only. Reachable today from GardenLease when a
+        /// <summary>Relinquishes the claim, master only. Reachable today from PlotCleanup when a
         /// player is gone; the "drag the deed back out" gesture plot-ownership.md describes is
         /// not built.</summary>
         public void Relinquish()
@@ -280,11 +280,11 @@ namespace Vulps.GrowAGarden.Ownership
             _networkBridge.SendToAll((byte)PlotMessageType.TeammateRemoveRequest, writer.Data);
         }
 
-        /// <summary>Master only. Public for GardenLease — a departed player is removed from
+        /// <summary>Master only. Public for PlotCleanup — a departed player is removed from
         /// every Plot's teammate list, not just one, so this is called directly rather than
         /// through the client-request round trip RequestRemoveTeammate exists for. A no-op if
         /// the id was never a teammate here, same as Relinquish() is a no-op on an unclaimed
-        /// Plot — GardenLease loops every Plot without checking membership first.</summary>
+        /// Plot — PlotCleanup loops every Plot without checking membership first.</summary>
         public void RemoveTeammate(string playerId)
         {
             if (!PlayerManager.IsMaster) return;

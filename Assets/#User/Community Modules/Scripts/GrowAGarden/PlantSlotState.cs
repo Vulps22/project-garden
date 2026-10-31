@@ -13,7 +13,7 @@ namespace Vulps.GrowAGarden
     {
         public readonly Transform Anchor;
         public bool IsOccupied;
-        public IPlotOccupant Occupant;
+        public IPlantSlotOccupant Occupant;
 
         public PlantSlotState(Transform anchor) => Anchor = anchor;
     }

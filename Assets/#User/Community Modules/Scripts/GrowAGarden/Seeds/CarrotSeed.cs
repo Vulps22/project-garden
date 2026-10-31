@@ -2,7 +2,7 @@ namespace Vulps.GrowAGarden.Seeds
 {
     /// <summary>
     /// A rooted crop: the plant is the carrot. It grows for ten seconds and is then replaced by its
-    /// produce, which sits in the plot until somebody pulls it. Nothing to ripen, so the produce
+    /// produce, which sits in the PlantSlot until somebody pulls it. Nothing to ripen, so the produce
     /// arrives all but ready.
     ///
     /// Numbers are hardcoded so balance changes are code changes rather than Inspector edits. This

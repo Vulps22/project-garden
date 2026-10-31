@@ -42,7 +42,7 @@ Gotchas, each of which has cost real time:
   `Logs/network.log` for a recent `confirmUploadCdn` first.
 - **A case-only folder rename leaves ghost paths.** Unity keeps the old spelling in its script list
   (`CS2001: Source file '.../economy/...' could not be found`), and neither refresh, reimport nor a round-trip move
-  clears it. Restart the Editor (expected to clear it; unconfirmed). To check the code meanwhile, run Unity's Roslyn on the assembly's response file
+  clears it. Restarting the Editor does. To check the code meanwhile, run Unity's Roslyn on the assembly's response file
   (`Library/Bee/artifacts/*.dag/Vulps.GrowAGarden.rsp`) with the ghost lines removed.
 - Command args are **positional**, not `k=v` (`unity command eval 'return 2+2;'`), and `data.result` is sometimes a
   nested object and sometimes a **JSON-encoded string** needing a second parse.

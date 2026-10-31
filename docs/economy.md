@@ -18,7 +18,7 @@ per crop are in [[crops#Balance|crops → Balance]].
 `EconomyManager` (singleton, on `SceneManager` in the scene) holds `Dictionary<playerId, PlayerBalance>` and is the
 only writer. Mutations are master-only; every change re-broadcasts the **entire** balance table to all clients,
 which rebuild their dictionary from scratch and refresh `BalanceDisplayManager` (a sorted scoreboard).
-`OnPlayerBalanceChanged` fires locally afterward.
+`PlayerBalanceChanged` fires locally afterward.
 
 - `RemoveBalance` deliberately applies locally on non-master clients before the broadcast arrives (optimistic
   deduction, from #39). `AddBalance` does not.

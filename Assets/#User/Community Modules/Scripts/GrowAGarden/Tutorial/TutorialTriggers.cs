@@ -57,7 +57,7 @@ namespace Vulps.GrowAGarden.Tutorial
             DeedClaimZone.DeedCarriedIn += OnDeedCarriedIn;
             Produce.AnyLifecycleChanged += OnProduceChanged;
             SellPoint.SaleCompleted += OnSaleCompleted;
-            EconomyManager.OnPlayerBalanceChanged += OnBalanceChanged;
+            EconomyManager.PlayerBalanceChanged += OnBalanceChanged;
             FlightController.Launched += OnLaunched;
             FlightController.Landed += OnLanded;
         }
@@ -68,7 +68,7 @@ namespace Vulps.GrowAGarden.Tutorial
             DeedClaimZone.DeedCarriedIn -= OnDeedCarriedIn;
             Produce.AnyLifecycleChanged -= OnProduceChanged;
             SellPoint.SaleCompleted -= OnSaleCompleted;
-            EconomyManager.OnPlayerBalanceChanged -= OnBalanceChanged;
+            EconomyManager.PlayerBalanceChanged -= OnBalanceChanged;
             FlightController.Launched -= OnLaunched;
             FlightController.Landed -= OnLanded;
         }
@@ -125,7 +125,7 @@ namespace Vulps.GrowAGarden.Tutorial
         }
 
         /// <summary>
-        /// §5 Exploration Intro. OnPlayerBalanceChanged is already local — EconomyManager derives it
+        /// §5 Exploration Intro. PlayerBalanceChanged is already local — EconomyManager derives it
         /// from GetLocalPlayer() — so there is nobody else's balance to filter out.
         /// </summary>
         private void OnBalanceChanged(int newValue, int oldValue)

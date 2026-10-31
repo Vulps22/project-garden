@@ -18,7 +18,7 @@ namespace Vulps.GrowAGarden.Ownership
     /// external owner to pre-subscribe to: unlike a Deed (always PlotLeaseManager's _currentDeed)
     /// or dispenser stock (always DispensingEntity's _currentItem), a loose application scroll's
     /// target Plot is only known once it has actually been dropped somewhere. Same shape as
-    /// GardenLease.OnPlayerDestroyed: resolve the manager dynamically, master-gate, call a public
+    /// PlotCleanup.OnPlayerDestroyed: resolve the manager dynamically, master-gate, call a public
     /// mutator directly.
     /// </summary>
     public class PlotApplication : MonoBehaviour

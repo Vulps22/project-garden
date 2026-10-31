@@ -13,13 +13,13 @@ namespace Vulps.GrowAGarden.Orchestration
     /// </summary>
     public class PlayerLifecycle : MonoBehaviour
     {
-        private GardenLease _lease;
+        private PlotCleanup _lease;
 
         private void Awake()
         {
-            _lease = FindFirstObjectByType<GardenLease>(FindObjectsInactive.Include);
+            _lease = FindFirstObjectByType<PlotCleanup>(FindObjectsInactive.Include);
             if (_lease == null)
-                Logger.Error($"Awake() '{gameObject.name}' — no GardenLease in the scene; a departed player's plots and seeds will never be cleared");
+                Logger.Error($"Awake() '{gameObject.name}' — no PlotCleanup in the scene; a departed player's plots and seeds will never be cleared");
         }
 
         private void OnEnable()

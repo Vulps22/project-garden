@@ -15,11 +15,11 @@ namespace Vulps.GrowAGarden.Crops
     /// It ripens on its own clock, derived from a timestamp exactly as plant growth is, and it is
     /// not grabbable until it is ripe. Once harvested it becomes a loose object in the world and
     /// behaves like a dropped seed — that is when its HoveringEntity is allowed to start, and not
-    /// a moment before. Until then it belongs to a plant or to a plot and should sit perfectly
+    /// a moment before. Until then it belongs to a plant or to a PlantSlot and should sit perfectly
     /// still, which is rule 2 applied at the right seam.
     /// </summary>
     public class Produce : MonoBehaviour, IHeldObject, IKinematicSource, IAuthoritySource,
-                           ILifecycleNotifier, ISellValueSource, IPlotOccupant
+                           ILifecycleNotifier, ISellValueSource, IPlantSlotOccupant
     {
         [SerializeField] public SeedDefinition seedDefinition;
         [SerializeField] public NetworkMessenger networkBridge;
@@ -51,7 +51,7 @@ namespace Vulps.GrowAGarden.Crops
         /// <see cref="LifecycleChanged"/>, for things that care about produce in general rather
         /// than one they hold a reference to.
         ///
-        /// Static because a produce is spawned at runtime, so nothing outside the plot that grew it
+        /// Static because a produce is spawned at runtime, so nothing outside the PlantSlot that grew it
         /// can subscribe to the instance event in time. Raised from the same places, which means a
         /// listener sees both the harvest itself and the grabber RPC that names the holder — and
         /// those two arrive in either order, so a listener asking "did *I* just harvest this"
@@ -199,29 +199,7 @@ namespace Vulps.GrowAGarden.Crops
         private void Update()
         {
             ApplyRipeness();
-            ReportPlacementOnce();
         }
-
-        /// <summary>
-        /// Says where this actually ended up, once, a second after it was born.
-        ///
-        /// Temporary, and worth the noise: two uploads were spent on "the produce is missing" when
-        /// it had in fact spawned every time, because the only position in the log was the one we
-        /// *asked* for. A second later is after any network tick has had its say, so this
-        /// distinguishes "never placed" from "placed, then moved". Delete once the loop is green.
-        /// </summary>
-        private void ReportPlacementOnce()
-        {
-            if (_placementReported || _ripenTimestamp == 0) return;
-            if (System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() - _ripenTimestamp < 1) return;
-
-            _placementReported = true;
-            Logger.Info($"ReportPlacement() '{gameObject.name}' — at {transform.position} scale={transform.localScale.x:F2} " +
-                        $"bodyScale={(_bodyToScale == null ? -1f : _bodyToScale.localScale.x):F2} ripe={IsRipe} " +
-                        $"kinematic={ShouldBeKinematic} authority={HasLocalAuthority} worth={SellValue}");
-        }
-
-        private bool _placementReported;
 
         /// <summary>
         /// Scales from the clock and opens the grab the moment it is ripe. Runs on every client and
@@ -299,7 +277,7 @@ namespace Vulps.GrowAGarden.Crops
 
             RaiseLifecycleChanged();
 
-            // The plot, and the plant, only care on the master — they make decisions, and decisions
+            // The PlantSlot, and the plant, only care on the master — they make decisions, and decisions
             // happen in one place.
             if (!PlayerManager.IsMaster) return;
 
@@ -317,7 +295,7 @@ namespace Vulps.GrowAGarden.Crops
         /// <summary>
         /// Cleared away with the garden it grew in, because its owner's lease expired. Only ever
         /// reaches unharvested produce — once a player has taken it, it is theirs and is no longer
-        /// standing in anybody's plot.
+        /// standing in anybody's PlantSlot.
         /// </summary>
         public void Uproot()
         {

@@ -16,12 +16,8 @@ namespace Vulps.GrowAGarden.Ownership
     /// correction each object makes to its own state rather than anything this needs to coordinate.
     ///
     /// Long-term persistence across sessions is explicitly out of scope.
-    ///
-    /// Naming: this is no longer a lease now the timer has moved out — it is plot cleanup, and
-    /// terminology.md records the rename as pending. Left alone here so a behaviour change and a
-    /// scene-touching rename do not land in the same upload.
     /// </summary>
-    public class GardenLease : MonoBehaviour
+    public class PlotCleanup : MonoBehaviour
     {
         /// <summary>
         /// Frees every Plot the player held, uproots what stands in every one of its slots, and

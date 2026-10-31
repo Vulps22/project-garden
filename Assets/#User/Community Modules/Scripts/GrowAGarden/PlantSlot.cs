@@ -25,7 +25,7 @@ namespace Vulps.GrowAGarden
         internal void AttachTo(PlotStateManager plot) => _plot = plot;
 
         /// <summary>
-        /// Offers something to this plot. Called by the holder's own client, because only that
+        /// Offers something to this PlantSlot. Called by the holder's own client, because only that
         /// machine knows its hand is on the thing being offered — see Seed.OnTriggerEnter.
         /// </summary>
         public void RequestPlant(IPlantable plantable) => _plot?.RequestPlant(this, plantable);

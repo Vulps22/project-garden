@@ -12,7 +12,7 @@ namespace Vulps.GrowAGarden.Economy
         private const byte MESSAGE_ID = 0;
 
         public static EconomyManager Instance;
-        public static event Action<int, int> OnPlayerBalanceChanged;
+        public static event Action<int, int> PlayerBalanceChanged;
 
         [SerializeField] private NetworkMessenger _bridge;
         [SerializeField] private BalanceDisplayManager _balanceDisplayManager;
@@ -158,7 +158,7 @@ namespace Vulps.GrowAGarden.Economy
             if (newValue == oldValue) return;
             if (string.IsNullOrEmpty(_localPlayerId) || playerId != _localPlayerId) return;
 
-            OnPlayerBalanceChanged?.Invoke(newValue, oldValue);
+            PlayerBalanceChanged?.Invoke(newValue, oldValue);
         }
 
         private void BroadcastBalances()
@@ -220,7 +220,7 @@ namespace Vulps.GrowAGarden.Economy
                 int newValue = localBalance.GetBalance();
                 int oldValue = oldBalance.GetBalance();
                 if (newValue != oldValue)
-                    OnPlayerBalanceChanged?.Invoke(newValue, oldValue);
+                    PlayerBalanceChanged?.Invoke(newValue, oldValue);
             }
         }
 

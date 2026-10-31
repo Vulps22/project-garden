@@ -215,7 +215,7 @@ namespace Vulps.GrowAGarden
         ///
         /// So the master asks, and keeps asking, until it has authority — then despawns. Discard()
         /// is silent without authority, since Fusion's Despawn simply does nothing, which is the
-        /// same failure GardenLease was counting as a success before it started reporting.
+        /// same failure PlotCleanup was counting as a success before it started reporting.
         ///
         /// The only exits are the seed being destroyed under us or bought while we waited, and
         /// both mean the shelf is already clear.

@@ -5,17 +5,17 @@ namespace Vulps.GrowAGarden
     /// <summary>
     /// Something a player can put in the ground.
     ///
-    /// A trait rather than "a Seed", deliberately. What a plot needs to know is who is offering,
+    /// A trait rather than "a Seed", deliberately. What a PlantSlot needs to know is who is offering,
     /// whose it is, and what should grow — none of which is specific to seeds. Planting a sword to
     /// grow an auto-harvester is then a prefab and an Inspector field rather than a refactor, and
     /// it costs nothing to leave the door open now.
     /// </summary>
     public interface IPlantable
     {
-        /// <summary>Fusion id, so a plot can name this in an RPC.</summary>
+        /// <summary>Fusion id, so a PlantSlot can name this in an RPC.</summary>
         uint NetworkId { get; }
 
-        /// <summary>Who owns this, and therefore who will own the plot it goes into.</summary>
+        /// <summary>Who owns this, and therefore who will own the PlantSlot it goes into.</summary>
         string OwnerId { get; }
 
         /// <summary>Who is physically holding it. Only the holder may ask to plant.</summary>

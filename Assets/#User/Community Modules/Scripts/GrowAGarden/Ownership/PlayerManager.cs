@@ -8,7 +8,7 @@ namespace Vulps.GrowAGarden.Ownership
     /// who left is not coming back.
     ///
     /// Everything downstream answers one question — "what do I clear up for this id?" — rather than
-    /// each keeping its own clock. Before this, GardenLease owned both the timer and the cleanup,
+    /// each keeping its own clock. Before this, PlotCleanup owned both the timer and the cleanup,
     /// and anything else needing to tidy up after a departure would have had to own a second timer
     /// that agreed with the first.
     ///

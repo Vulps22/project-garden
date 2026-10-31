@@ -205,7 +205,7 @@ namespace Vulps.GrowAGarden.Ownership
         /// RootedPlant.OnFullyGrown. A rooted plant despawns the moment it is grown, and if the
         /// slot went free in that gap a player could sow into ground that visibly still holds a
         /// carrot.</summary>
-        public void SetOccupant(int slotIndex, IPlotOccupant occupant)
+        public void SetOccupant(int slotIndex, IPlantSlotOccupant occupant)
         {
             if (slotIndex < 0 || slotIndex >= _slots.Length) return;
             _slots[slotIndex].Occupant = occupant;
@@ -223,7 +223,7 @@ namespace Vulps.GrowAGarden.Ownership
         }
 
         /// <summary>Frees every occupied slot, uprooting what stands in each. Called by
-        /// GardenLease when this Plot's owner is gone for good.</summary>
+        /// PlotCleanup when this Plot's owner is gone for good.</summary>
         public void UprootAll()
         {
             for (int i = 0; i < _slots.Length; i++)

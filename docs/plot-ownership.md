@@ -117,9 +117,8 @@ request; the master's next broadcast is what actually changes anything.
   network the wrong one.
 - `PlantSlot` should **stop holding its own `OwnerId`** and ask its Plot. Two levels each holding an
   owner is two sources of truth for "may I plant here" — rule 1, one owner per shared property.
-- `GardenLease` becomes `PlotLease` and holds a **Plot claim** rather than a set of PlantSlots. Its
-  120-second hold was inherited; a claim is a much larger thing to lose than a slot, so that number
-  should be re-judged rather than carried over.
+- The departure grace (180 s, [[#Departures]]) was inherited from when it held PlantSlots; a claim is a much
+  larger thing to lose than a slot, so that number should be re-judged rather than carried over.
 
 ## Almost all of this is already built
 
@@ -148,7 +147,7 @@ Look at what a `PlantSlot` actually replicates today:
 ```csharp
 public bool          IsOccupied { get; private set; }
 public string        OwnerId    { get; private set; }
-public IPlotOccupant Occupant   { get; private set; }   // local reference, never synced
+public IPlantSlotOccupant Occupant   { get; private set; }   // local reference, never synced
 ```
 
 `Occupant` is not networked — a plant positions itself from the slot's NetworkId. So the *only*
@@ -193,14 +192,11 @@ own before anything starts spawning islands at runtime.
 Departures are owned by **`PlayerManager`**: one clock, `_graceSeconds = 180`, `OnPlayerRemoved` → grace →
 `PlayerDestroyed`. A dropout is indistinguishable from leaving, so a departed player's garden is held for the grace
 period before anything is freed; Fusion's `DestroyWhenStateAuthorityLeaves` cannot wait. On `PlayerDestroyed`,
-`PlayerLifecycle` has `GardenLease` free the player's plots and despawn what stands in them, then drops their
+`PlayerLifecycle` has `PlotCleanup` free the player's plots and despawn what stands in them, then drops their
 balance row ([[economy]]). Plots first, so cleanup never runs against a player the economy has already forgotten.
 
 Their `HolderId`, by contrast, is cleared **immediately**: that is a correction, not cleanup, and leaving it set makes
 `SingleHolderFilter` refuse the object to everyone for the rest of the session.
-
-> [!warning] Stale docstrings
-> Several docstrings still credit `GardenLease` with the clock and still say 120 s.
 
 ## Open questions
 

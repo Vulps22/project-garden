@@ -63,7 +63,7 @@ Somnium's networking update of 2026-10-20 broke every networked world. The migra
 with Somnium's tool (`Somnium Fusion 2.1 Migration Tool V1.0.unitypackage`, guide in
 `Fusion_2.1_Migration_Guide.md`, both in the project root):
 
-1. Backup commit `ebeaca2`, and a full copy at `~/Documents/project-garden-backup-2026-10-31-pre-fusion21`.
+1. Backup commit `555788b`, and a full copy at `~/Documents/project-garden-backup-2026-10-31-pre-fusion21`.
 2. `MigrationAutomation.RunUnattended -migrationTask Full` in batch mode: Fusion 2.1.3 and CM 4.0 in, every
    `NetworkRigidbody3D` replaced. Exit 3, every step done, compile errors only in our vendored CM copies.
 3. Our code moved into `Scripts/GrowAGarden/`; the vendored `SceneNetworking`, `NetworkGrabbable`, `BytesReader` and

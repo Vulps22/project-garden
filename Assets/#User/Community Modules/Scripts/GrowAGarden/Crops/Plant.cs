@@ -20,7 +20,7 @@ namespace Vulps.GrowAGarden.Crops
     /// Growth is derived, never sent: every client compares now against _plantedTimestamp and
     /// arrives at the same scale, so syncing one timestamp syncs the whole thing forever.
     /// </summary>
-    public abstract class Plant : MonoBehaviour, IAuthoritySource, ILifecycleNotifier, IPlotOccupant
+    public abstract class Plant : MonoBehaviour, IAuthoritySource, ILifecycleNotifier, IPlantSlotOccupant
     {
         [SerializeField] public SeedDefinition seedDefinition;
         [SerializeField] public NetworkMessenger networkBridge;
@@ -170,14 +170,14 @@ namespace Vulps.GrowAGarden.Crops
         }
 
         /// <summary>
-        /// Torn out before its time, because the garden lease on this plot expired. Everything the
+        /// Torn out before its time, because its owner's Plot was cleaned up. Everything the
         /// plant put into the world goes with it.
         /// </summary>
         public void Uproot()
         {
             if (!PlayerManager.IsMaster) return;
             OnUprooted();
-            _plot = null;           // the lease clears the plot itself; End() must not fight it
+            _plot = null;           // PlotCleanup clears the Plot itself; End() must not fight it
             _slotIndex = -1;
             End();
         }
@@ -186,7 +186,7 @@ namespace Vulps.GrowAGarden.Crops
         protected virtual void OnUprooted() { }
 
         /// <summary>
-        /// The plant's life is over: let the plot go and stop existing. Despawn destroys this on
+        /// The plant's life is over: let the PlantSlot go and stop existing. Despawn destroys this on
         /// every client, so it needs no announcement of its own.
         /// </summary>
         protected void End()

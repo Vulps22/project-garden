@@ -107,7 +107,6 @@ namespace Vulps.GrowAGarden
             // Deliberately not Awake. The first cycle spawns, and spawning before Fusion has
             // given this peer a player index makes it instantiate the prefab and *then* throw
             // out of Simulation.GetNextId(), leaving an orphan nothing will ever clean up.
-            // ShopSlot waits for the same signal for the same reason.
             if (WorldBridge.IsNetworkReady) BeginCycling();
             else WorldBridge.NetworkReady += BeginCycling;
         }

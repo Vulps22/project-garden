@@ -68,16 +68,12 @@ frame destroys frame time; anything "tested" in such a session has to be re-test
 
 ## Debug aids
 
-**Status (2026-09-13):** `ExceptionAlarm` is in the scene; `ReportPlacementOnce` is temporary.
+**Status (2026-10-31):** `ExceptionAlarm` is in the scene.
 
 - **`ExceptionAlarm`** turns off the sun on any exception with `GrowAGarden` in its stack trace. A pitch-black world
   reads as a crash but *is the alarm firing*: that is the signal, not a lighting bug.
 - **Master-client probe:** `BalanceDisplayManager.Set`'s `Logger.Log($"...IsMasterClient={...}")`, read from the
   client log. No side effects.
-- **`Produce.ReportPlacementOnce()`** is temporary instrumentation: one line per produce, a second after it is born,
-  saying where it actually is and what it is worth. It exists because the logs used to report the position we
-  *asked for* rather than the one the object got, and that cost two uploads. Delete it once the 2.1 build is
-  tested ([[todolist]]).
 - `Debug_EconomyBoost` and `Debug_MasterClientIndicator` were **deleted**. The indicator forced scene ambient light
   via `SomniumBridge.Environment` and was itself the cause of an unrelated "black sky" report. Removing the booster
   left a dangling `Debug_EconomyBoost.Instance` dereference in `PumpkinSeed.Update()` that threw every frame on

@@ -256,10 +256,10 @@ namespace Vulps.GrowAGarden
         /// <summary>
         /// Lets go of any shop slot's claim on this seed.
         ///
-        /// ReturnableEntity and AlignableEntity are armed by ShopSlot on the master alone, and only
+        /// ReturnableEntity and AlignableEntity are armed by BuyPoint on the master alone, and only
         /// the successful-purchase path used to clear them. Every other way a seed stops being
         /// stock left a live return target pointing at the shop, so the slot would drag the seed
-        /// back out of the plot it had just been planted in, and keep doing it. Runs on every
+        /// back out of the PlantSlot it had just been planted in, and keep doing it. Runs on every
         /// client because each undoes its own local components, and is idempotent.
         /// </summary>
         private void ClearShopClaim()
@@ -282,7 +282,7 @@ namespace Vulps.GrowAGarden
         // ── Planting ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Offers this seed to a plot as the holder carries it in.
+        /// Offers this seed to a PlantSlot as the holder carries it in.
         ///
         /// The holder asks and the master decides, for the same reason a purchase works that way:
         /// only this machine knows its own hand is on the seed. Every other client sees the same

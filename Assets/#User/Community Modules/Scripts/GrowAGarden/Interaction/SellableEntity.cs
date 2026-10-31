@@ -34,7 +34,7 @@ namespace Vulps.GrowAGarden.Interaction
 
         /// <summary>
         /// Raised on every client once the shop has accepted, before <see cref="OnSold"/> ends the
-        /// object. Anything that needs to react to the sale — a plot letting go, a plant counting
+        /// object. Anything that needs to react to the sale — a PlantSlot letting go, a plant counting
         /// its harvest — hangs off this rather than off SellPoint.
         /// </summary>
         public event System.Action Sold;

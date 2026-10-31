@@ -8,7 +8,7 @@ namespace Vulps.GrowAGarden.Crops
     /// its produce and stops existing — there is no plant left standing next to the carrot,
     /// because pulling the carrot is the harvest.
     ///
-    /// The produce it leaves behind inherits the plot (see RootedProduce): a carrot in the ground
+    /// The produce it leaves behind inherits the PlantSlot (see RootedProduce): a carrot in the ground
     /// occupies that ground until somebody pulls it.
     /// </summary>
     public class RootedPlant : Plant
@@ -23,10 +23,10 @@ namespace Vulps.GrowAGarden.Crops
             Produce produce = SpawnProduce(_producePrefab, transform.position, transform.rotation);
             if (produce == null)
             {
-                // Nothing to become. Leave the plant standing rather than freeing a plot that
+                // Nothing to become. Leave the plant standing rather than freeing a PlantSlot that
                 // still visibly holds a crop; the next Update will not retry, so this shows up as
                 // a grown plant that never yields, which is the honest symptom.
-                Logger.Error($"OnFullyGrown() '{gameObject.name}' — produce could not be spawned; plot left occupied");
+                Logger.Error($"OnFullyGrown() '{gameObject.name}' — produce could not be spawned; PlantSlot left occupied");
                 return;
             }
 

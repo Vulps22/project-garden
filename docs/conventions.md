@@ -23,8 +23,7 @@ How code, commits and these docs are written.
 - **Events:** an event we declare is named for **the fact** (`Sold`, `Harvested`, `PurchaseRequested`,
   `PlayerGone`) and a handler is `On` + that name, so it reads `Seed.PurchaseRequested += OnPurchaseRequested`. The
   `On`-prefixed *events* in the tree (`NetworkBridgeEvents.OnSpawned`, `SceneNetworking.OnOtherPlayerJoined`,
-  `OnBecomeWorldMaster`) are Community Modules' or the SDK's, not ours. `EconomyManager.OnPlayerBalanceChanged` is
-  the one event of ours out of step and should become `PlayerBalanceChanged`.
+  `OnBecomeWorldMaster`) are Community Modules' or the SDK's, not ours.
 - **Fields** are `_camelCase` private + `[SerializeField]`; wire references in the Inspector, and use
   `OnValidate()` to auto-populate same-GameObject components.
 - **Comments: one line per function signature.** Say what the function does. If it needs more than a line it has
