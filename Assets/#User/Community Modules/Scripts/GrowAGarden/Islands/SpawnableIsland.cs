@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Vulps.GrowAGarden.Islands
@@ -22,6 +23,8 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("How many metres the map sprite spans, edge to edge, centred on this object. Set by the baker.")]
         [SerializeField] private float _mapSpan;
 
+        private StallSocket[] _sockets;
+
         /// <summary>The grid cell the field placed this in. Set at runtime; a prefab or a hand-placed island has none.</summary>
         public Vector2Int Cell { get; private set; }
 
@@ -34,6 +37,36 @@ namespace Vulps.GrowAGarden.Islands
             Cell = cell;
             HasCell = true;
         }
+
+        /// <summary>This island's stall sockets, in hierarchy order: a stall's id is its socket's place in this list.</summary>
+        public StallSocket[] Sockets => _sockets ??= GetComponentsInChildren<StallSocket>(true);
+
+        /// <summary>Puts buy points on the sockets a hash picks, anywhere from none to all of them, each with a rarity from 1 to 100. Same hash, same stalls, on every client.</summary>
+        public void OpenStalls(ulong hash, BuyPoint prefab)
+        {
+            StallSocket[] sockets = Sockets;
+            if (sockets.Length == 0 || prefab == null) return;
+
+            int count = Mathf.Min(sockets.Length, (int)(IslandField.Unit(hash, 0) * (sockets.Length + 1)));
+
+            var order = new List<int>(sockets.Length);
+            for (int i = 0; i < sockets.Length; i++) order.Add(i);
+            for (int i = order.Count - 1; i > 0; i--)
+            {
+                int j = Mathf.Min(i, (int)(IslandField.Unit(hash, (uint)(i + 1)) * (i + 1)));
+                (order[i], order[j]) = (order[j], order[i]);
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                int socket = order[i];
+                int rarity = 1 + Mathf.Min(99, (int)(IslandField.Unit(hash, (uint)(1000 + socket)) * 100f));
+                sockets[socket].Open(prefab, rarity);
+            }
+        }
+
+        /// <summary>A socket's place among this island's sockets, or -1.</summary>
+        public int SocketIndex(StallSocket socket) => System.Array.IndexOf(Sockets, socket);
 
         /// <summary>This island's size category.</summary>
         public IslandCategory Category => _category;

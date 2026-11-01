@@ -16,7 +16,8 @@ Written 2026-09-09 on `feature/procgen` and parked on flight; resumed 2026-10-31
 
 ## Phase 1: islands from a seed
 
-**Status (2026-10-31):** built, compiles clean; untested in-world. Code: `GrowAGarden/Islands/`.
+**Status (2026-11-01):** played alone in-world: islands placed from the seed, flown between, landed on and climbed.
+Code: `GrowAGarden/Islands/`.
 
 - **`WorldSeed`** (on `SceneManager`, message id 1 on its messenger) holds the seed. The first master takes the UTC
   midnight of the moment it joins, as Unix seconds, and sends it to everyone; it sends it again whenever a player
@@ -95,7 +96,8 @@ points at the one scoreboard; with several Gardens it needs every board.
 
 ## Buy points everywhere
 
-**Status (2026-11-01):** first upload built, compiles clean; untested in-world. Decided by Vulps 2026-11-01.
+**Status (2026-11-01):** both uploads built and played alone in-world: Garden and island stalls stock and sell, and
+island stalls open by the seed with a seeded rarity. Multiplayer untested. Decided by Vulps 2026-11-01.
 
 Every buy point behaves the same, Garden or island: the master decides its stock by stall id without having it
 loaded, a player in its sector simulates it, and it sells once per cycle.
@@ -103,7 +105,15 @@ loaded, a player in its sector simulates it, and it sells once per cycle.
 1. **This upload:** sectors as the interest table, authority by sector, sector-plus-distance loading, and the stall
    split into `BuyPoint` and `ShopKeeper`. The Garden's three stalls go through it.
    [[networking#Authority by sector|networking → Authority by sector]], [[shop]].
-2. **Next:** buy-point sockets on `Island_A` and `Island_B`.
+2. **Island stalls:** an island marks where a stall *could* stand with `StallSocket`s; the world seed picks which
+   open. When `IslandField` places an island it hashes the seed and the cell, opens anywhere from none to all of
+   its sockets, and puts `IslandField._buyPoint` (the Garden's `BuyPoint` prefab,
+   no override, so it rolls) on each. Every client picks the same sockets with nothing sent. A stall's id is its
+   socket's place among the island's sockets in hierarchy order, so it does not depend on which others opened;
+   reordering sockets renames stalls, moving them does not.
+   Each opened stall also gets a rarity from 1 to 100 from the same hash, set as its `_rarityMultiplier`: it
+   gates nothing, but a high one makes rare crops far likelier ([[shop]]). `Island_A` has 2 sockets; `Island_B` has 3 (two on the
+   plateau, one on the lower shelf).
 
 ## The design
 

@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3078811965352211903}
-  - component: {fileID: 3043594797269353577}
+  - component: {fileID: 6328286832909618449}
   m_Layer: 0
   m_Name: RockFormation
   m_TagString: Untagged
@@ -58,7 +58,7 @@ Transform:
   - {fileID: 5953065665712080024}
   m_Father: {fileID: 732394832991633074}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3043594797269353577
+--- !u!114 &6328286832909618449
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -67,9 +67,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2968701053064254403}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1152478963, guid: 6af85501506cb7f4db5388060eadf518, type: 3}
+  m_Script: {fileID: 11500000, guid: 3450763dc262764eabc22bbcb52209b1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: SomniumSpace.Bridge.dll::SomniumSpace.Bridge.Components.SomniumClimbableSurface
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Climbing.Climbable
 --- !u!1 &3712009029925051582
 GameObject:
   m_ObjectHideFlags: 0

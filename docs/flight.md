@@ -242,15 +242,50 @@ y=-21 back to spawn — `PlayerController._respawnHeight` doing its job. That an
 [[procgen-islands]]'s open question about the trash-can floor and players:
 nothing needs building.
 
-**⚠ Unresolved: something still pulls Y down about 0.06 m every frame**, X and Z untouched, despite
-`SetGravity(0, 0)`. Steady rather than bursty, so it reads more like a character controller step than
-gravity. The instrumentation now reports drift as an average, a peak and a count per interval instead
-of per frame, which should say what it is on the next run.
+**Something still pulled Y down about 0.06 m every frame**, X and Z untouched, despite
+`SetGravity(0, 0)`. Resolved 2026-11-01: see *Falling with grace* below.
 
 **And the first instrumentation was itself a bug** — edge-triggered on a signal that alternated every
 frame, so it produced a WARN/INFO pair per frame: precisely the per-frame spam it was written to
 avoid. Worth remembering that "log only on change" is only cheap when the thing actually changes
 rarely.
+
+---
+
+## Falling with grace, 2026-11-01
+
+**Status (2026-11-01):** ⏸ pinned, not fixed. Flown 2026-11-01: height now follows the model, but flight turned
+jumpy, like rubber-banding under lag, which fits undoing Somnium's movement every frame while it keeps applying it.
+Vulps is raising the underlying pull with the Somnium team; nothing more is built until then.
+`_driftCancelLimit` set to 0 turns the cancelling off.
+
+Some flights sank whatever the wrists did: hands level, a climb commanded, and the body still going
+down with no way to build speed. The 04:40 session's log separates them cleanly. The model's `vert` was
++2 to +4 m/s while `y` fell, and the per-frame `drift` (how far `Root` moved between our writes) was
+**0 on the good flights and a steady 0.13–0.18 m on the bad ones**, about 5 m/s at the frame rate.
+It was constant for a whole flight, set at launch rather than growing, and the flights it hit were
+launched by walking off an edge.
+
+The reading, from the numbers rather than Somnium's code: their character controller keeps the fall
+speed a player had when flight took over, and `SetGravity(0, 0)` stops it growing but not being
+applied. A half-second fall before the arms count as out carries about 5 m/s of sink for the flight.
+
+**The fix:** while flying, `FlightController` puts `Root` back where the model last wrote it before
+each step, so nothing else moves a flying player. A jump bigger than `_driftCancelLimit` (1.5 m) is
+left alone, because that is a teleport, such as Somnium's fall respawn. Drift is still measured and
+reported first, so the log keeps showing what is pushing.
+
+### Arms down is a coast, not a stop
+
+**Status (2026-11-01):** tested in-world: coasts carry the momentum, and putting the arms out again flies on.
+
+Dropping the arms used to end flight on the spot: forward speed went to zero and Somnium's gravity
+took over, which in a headset is a lurch. Now it is a **coast**: the glide's velocity carries on,
+gravity pulls it down, `_coastDrag` (0.1, a fraction per second) takes a little of the forward speed,
+and nothing else moves the player, so an island can be reached by dropping onto it from short of it.
+Arms out again resumes flight at the coast's speed (`FlightModel.ResumeAt`). The coast is still
+airborne: only touching something lands, `Landed` fires then, and the flap is not re-armed by
+raising the arms again; a boost during a coast throws the coasting player upward.
 
 ---
 

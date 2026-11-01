@@ -157,6 +157,20 @@ namespace Vulps.GrowAGarden
         }
 
         /// <summary>
+        /// Switches the local player's body capsule on or off. Off lets them pass through ledges
+        /// while something of ours moves them; it must always be switched back on. Returns false
+        /// if there is no body to switch.
+        /// </summary>
+        public static bool SetLocalBodyCollision(bool enabled)
+        {
+            Transform root = LocalRig.Root;
+            if (root == null || !root.TryGetComponent(out CharacterController body)) return false;
+
+            body.enabled = enabled;
+            return true;
+        }
+
+        /// <summary>
         /// Moves the local player. Asynchronous — <paramref name="arrived"/> is the moment they are
         /// actually there, which is what anything following a teleport should wait for. Returns
         /// false, without calling back, if there is no motion to drive.

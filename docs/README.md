@@ -22,7 +22,7 @@ Every doc is tagged by the kinds of thing it defines; `Docs.base` lists them by 
 
 - **Rules:** [[principles]], [[layers]], [[conventions]].
 - **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]].
-- **Mechanics:** [[shop]], [[economy]], [[plot-ownership]], [[flight]].
+- **Mechanics:** [[shop]], [[economy]], [[plot-ownership]], [[flight]], [[climbing]].
 - **Interaction:** [[entity-components]], [[tutorial]].
 - **Game:** [[procgen-islands]].
 - **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[testing]], [[tooling]].

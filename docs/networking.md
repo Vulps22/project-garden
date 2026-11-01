@@ -41,7 +41,8 @@ never inferred from who happens to hold authority over an object.
 
 ## Authority by sector
 
-**Status (2026-11-01):** built, compiles clean; untested in-world.
+**Status (2026-11-01):** built; played alone in-world, where the local player is every sector's pick. The point of
+it, several players in different sectors, is untested.
 
 The master no longer simulates everything. Once the world spreads over kilometres it would be simulating seeds on
 islands it has not loaded, and they would fall through where the island should be. **The master decides; a player

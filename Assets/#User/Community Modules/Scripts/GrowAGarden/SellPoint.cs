@@ -8,7 +8,8 @@ using Vulps.GrowAGarden.Ownership;
 namespace Vulps.GrowAGarden
 {
     /// <summary>
-    /// The counter. A player puts something down on it and the shop handles the rest: it takes the
+    /// The sell point: a bundle of barrels with no collider, and a trigger around them. A player puts
+    /// something into the trigger and the shop handles the rest: it takes the
     /// thing out of their hands, pays them, takes ownership of it, and ends it.
     ///
     /// It deals in SellableEntity, not in crops. Whether a thing is sellable, what it is worth and
@@ -30,12 +31,14 @@ namespace Vulps.GrowAGarden
     {
         [SerializeField] private NetworkMessenger _networkBridge;
 
+        [Tooltip("On the ground in front of the sell point: where anything a sale gives back is put, such as a sold weed bloom's splif.")]
+        [SerializeField] private Transform _dropPoint;
 
-        // Master-only bookkeeping for the sale in progress. Captured up front because announcing
-        // the sale takes the plant out of the seller's hands, which clears the holder — read it
-        // afterwards and there is nobody left to pay.
-        private SellableEntity _pending;
-        private string _pendingSellerId;
+
+        // Master-only: the sales in progress. Each sale's seller and price live in its own coroutine,
+        // captured up front because announcing the sale clears the holder. One shared slot let a
+        // rejected second item wipe the first sale's seller, which then paid nobody.
+        private readonly System.Collections.Generic.HashSet<SellableEntity> _selling = new System.Collections.Generic.HashSet<SellableEntity>();
 
         /// <summary>
         /// A sale completed: who made it and what they earned. Raised on every client, because the
@@ -51,8 +54,6 @@ namespace Vulps.GrowAGarden
         /// PlayerManager.LocalPlayerId. Anything that wants "did anyone" ignores it.
         /// </summary>
         public static event System.Action<string, int> SaleCompleted;
-
-        private int _pendingValue;
 
         private void Start()
         {
@@ -76,7 +77,7 @@ namespace Vulps.GrowAGarden
         // ── Seller's side ─────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Something crossed the counter. Only the client actually holding it offers it up.
+        /// Something entered the sell trigger. Only the client actually holding it offers it up.
         ///
         /// isSelected is read here deliberately, and this is the one place it means something:
         /// it is true only on the machine whose hand is on the plant, which is exactly the
@@ -88,7 +89,7 @@ namespace Vulps.GrowAGarden
         /// </summary>
         private void OnTriggerEnter(Collider other)
         {
-            // InParent, because the collider that crosses the counter may be a child mesh rather
+            // InParent, because the collider that enters the trigger may be a child mesh rather
             // than the root that carries the trait.
             SellableEntity sellable = other.GetComponentInParent<SellableEntity>();
             if (sellable == null) return;
@@ -161,14 +162,9 @@ namespace Vulps.GrowAGarden
                 return;
             }
 
-            // One at a time, but never by silently dropping the request: the seller has already
-            // hidden it on their own screen, so refusing without saying so leaves them staring at
-            // a plant that no longer exists anywhere.
-            if (_pending != null)
-            {
-                Reject(sellable, "arrived while the counter was busy with another sale");
-                return;
-            }
+            // A repeat offer of something already being sold is ignored, not rejected: rejecting it
+            // would show it again mid-sale.
+            if (_selling.Contains(sellable)) return;
 
             if (!sellable.CanBeSold)
             {
@@ -185,14 +181,11 @@ namespace Vulps.GrowAGarden
                 return;
             }
 
-            _pending = sellable;
-            _pendingSellerId = sellerId;
-            _pendingValue = sellable.SellValue;
-
+            _selling.Add(sellable);
             Announce(SellMessageType.SalePending, sellable);
             sellable.SetPending(true);
 
-            StartCoroutine(TakeOwnershipAndComplete(sellable));
+            StartCoroutine(TakeOwnershipAndComplete(sellable, sellerId, sellable.SellValue));
         }
 
         /// <summary>
@@ -206,7 +199,7 @@ namespace Vulps.GrowAGarden
         /// Latency is free here — the plant is already out of the seller's hands and invisible, so
         /// nothing anybody is looking at is waiting on this.
         /// </summary>
-        private IEnumerator TakeOwnershipAndComplete(SellableEntity sellable)
+        private IEnumerator TakeOwnershipAndComplete(SellableEntity sellable, string sellerId, int value)
         {
             NetworkObject obj = ObjectOf(sellable);
             if (obj == null)
@@ -224,32 +217,25 @@ namespace Vulps.GrowAGarden
                 yield break;
             }
 
-            EconomyManager.Instance.AddBalance(_pendingSellerId, _pendingValue);
+            EconomyManager.Instance.AddBalance(sellerId, value);
 
             // Announced rather than simply despawned, because what a sale *does* to a thing is the
-            // thing's own business — a crop disappears, something else might go behind the counter.
+            // thing's own business — a crop disappears, something else might be kept.
             // Every client runs Sell(), which raises the object's Sold event locally before it ends
             // itself; only its owner, which is now the shop, can actually despawn it.
-            Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{sellable.name}' for {_pendingValue} to '{_pendingSellerId}'");
-            AnnounceSale(sellable, _pendingSellerId, _pendingValue);
+            Logger.Info($"TakeOwnershipAndComplete() '{gameObject.name}' — sold '{sellable.name}' for {value} to '{sellerId}'");
+            AnnounceSale(sellable, sellerId, value);
 
-            ClearPending();
+            _selling.Remove(sellable);
         }
 
-        /// <summary>Hands it back: the shop is not taking it, so it must reappear.</summary>
+        /// <summary>Hands it back: the shop is not taking it, so it must reappear. Touches only this item's sale.</summary>
         private void Reject(SellableEntity sellable, string why)
         {
             Logger.Warn($"Reject() '{gameObject.name}' — '{sellable.name}' {why}; sale abandoned");
             Announce(SellMessageType.SaleRejected, sellable);
             sellable.SetPending(false);
-            ClearPending();
-        }
-
-        private void ClearPending()
-        {
-            _pending = null;
-            _pendingSellerId = null;
-            _pendingValue = 0;
+            _selling.Remove(sellable);
         }
 
         private void Announce(SellMessageType type, SellableEntity sellable)
@@ -292,7 +278,7 @@ namespace Vulps.GrowAGarden
             int value = reader.NextInt();
 
             // Every client ends the object its own way; only its owner can actually despawn it.
-            FindSellable(itemId)?.Sell();
+            FindSellable(itemId)?.Sell(_dropPoint);
 
             // Raised after Sell(), so a listener sees a world where the sale has already happened
             // rather than one mid-transaction.

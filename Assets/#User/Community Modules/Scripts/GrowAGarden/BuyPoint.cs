@@ -35,6 +35,9 @@ namespace Vulps.GrowAGarden
         private StallId _id;
         private float _nextAsk;
 
+        /// <summary>Sets how much this stall favours rare stock; an island's stall gets this from the world seed.</summary>
+        public void SetRarityMultiplier(float multiplier) => _rarityMultiplier = Mathf.Max(1f, multiplier);
+
         /// <summary>This stall's id, once it can be worked out.</summary>
         public bool TryGetId(out StallId id)
         {
@@ -77,23 +80,27 @@ namespace Vulps.GrowAGarden
 
         /// <summary>
         /// Works out this stall's id from where it is: the island cell it stands on, else the
-        /// Garden in its sector; and its place among the stalls on that island or Garden.
+        /// Garden in its sector; and its socket's place on that island, or its place among the
+        /// Garden's stalls.
         /// </summary>
         private bool ResolveId()
         {
             if (!SectorManager.IsReady) return false;
 
             SpawnableIsland island = GetComponentInParent<SpawnableIsland>();
-            Transform root = island != null ? island.transform : transform.root;
-            BuyPoint[] siblings = root.GetComponentsInChildren<BuyPoint>(true);
-            int index = System.Array.IndexOf(siblings, this);
+            StallSocket socket = GetComponentInParent<StallSocket>();
+            int index;
+            if (island != null && socket != null)
+                index = island.SocketIndex(socket);
+            else
+                index = System.Array.IndexOf(transform.root.GetComponentsInChildren<BuyPoint>(true), this);
             if (index < 0 || index > byte.MaxValue) return false;
 
             _id = island != null && island.HasCell
                 ? StallId.Island(island.Cell, (byte)index)
                 : StallId.Garden(SectorManager.SectorOf(transform.position), (byte)index);
             _hasId = true;
-            Logger.Info($"ResolveId() '{gameObject.name}' — stall {_id}");
+            Logger.Info($"ResolveId() '{gameObject.name}' — stall {_id}, rarity x{_rarityMultiplier:0}");
             return true;
         }
 

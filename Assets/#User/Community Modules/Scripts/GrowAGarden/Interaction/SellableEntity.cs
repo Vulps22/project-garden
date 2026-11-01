@@ -39,6 +39,9 @@ namespace Vulps.GrowAGarden.Interaction
         /// </summary>
         public event System.Action Sold;
 
+        /// <summary>Where the sell point that bought this puts anything a sale gives back, or null. Set just before <see cref="Sold"/>.</summary>
+        public Transform GivenBackAt { get; private set; }
+
         /// <summary>
         /// What this fetches. Live from the source when there is one, so a produce that ripens into
         /// a better price does not need anything to push the new number here.
@@ -54,7 +57,7 @@ namespace Vulps.GrowAGarden.Interaction
         /// </summary>
         public bool CanBeSold => enabled;
 
-        /// <summary>True between being offered over the counter and the shop answering.</summary>
+        /// <summary>True between being offered at the sell point and the shop answering.</summary>
         public bool IsPending { get; private set; }
 
         /// <summary>True only on the machine holding it. See XRGrabInteractableRef.IsHeld.</summary>
@@ -93,16 +96,16 @@ namespace Vulps.GrowAGarden.Interaction
         /// so only the owner acts — which by this point is the shop, because SellPoint takes
         /// ownership before it completes.
         /// </summary>
-        public void Sell()
+        public void Sell(Transform givenBackAt = null)
         {
+            GivenBackAt = givenBackAt;
             Sold?.Invoke();
             OnSold();
         }
 
         /// <summary>
         /// What being sold does to this object. Despawning is right for a crop and is the default
-        /// rather than the rule — something that should go behind the counter instead of out of
-        /// existence overrides this.
+        /// rather than the rule — something that should be kept rather than end overrides this.
         /// </summary>
         protected virtual void OnSold()
         {

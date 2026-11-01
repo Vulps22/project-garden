@@ -30,6 +30,9 @@ namespace Vulps.GrowAGarden.Map
         /// <summary>Puts Somnium's map back as it was.</summary>
         public static void RestoreSomniumContents() => TabletMapBridge.RestoreSomniumContents();
 
+        /// <summary>Temporary: logs the tablet's structure and what changes in it, given the map's content panel.</summary>
+        public static void ProbeTablet(RectTransform content) => TabletProbe.Probe(content);
+
         /// <summary>What Somnium has in its other-players list, for the log.</summary>
         public static string DescribePlayersContainer(RectTransform content) => TabletMapBridge.DescribePlayersContainer(content);
     }

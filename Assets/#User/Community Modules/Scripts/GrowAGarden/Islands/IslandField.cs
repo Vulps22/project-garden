@@ -29,6 +29,9 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("No island's footprint reaches inside this radius of any Garden site.")]
         [SerializeField] private float _gardenClearRadius = 110f;
 
+        [Tooltip("The buy point the seed puts on an island's chosen stall sockets.")]
+        [SerializeField] private BuyPoint _buyPoint;
+
         [Tooltip("Cells within this distance of the player are loaded, on top of every island touching the player's sector.")]
         [SerializeField] private float _viewRadius = 1200f;
 
@@ -124,6 +127,7 @@ namespace Vulps.GrowAGarden.Islands
                 if (p.Prefab == null) { _placed[cell] = null; continue; }
                 SpawnableIsland island = Instantiate(p.Prefab, p.Position + origin, p.Rotation, transform);
                 island.PlacedIn(cell);
+                island.OpenStalls(Mix(Hash(WorldSeed.Seed, cell.x, cell.y) ^ 0xBu), _buyPoint);
                 _placed[cell] = island.gameObject;
             }
 
@@ -334,11 +338,11 @@ namespace Vulps.GrowAGarden.Islands
         }
 
         /// <summary>A value in [0, 1) drawn from a hash and a stream index.</summary>
-        private static float Unit(ulong h, uint stream) =>
+        internal static float Unit(ulong h, uint stream) =>
             (Mix(h ^ (stream * 0xD6E8FEB86659FD93UL)) >> 40) / 16777216f;
 
         /// <summary>SplitMix64's finaliser.</summary>
-        private static ulong Mix(ulong z)
+        internal static ulong Mix(ulong z)
         {
             unchecked
             {

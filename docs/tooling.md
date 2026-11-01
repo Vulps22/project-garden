@@ -90,6 +90,12 @@ and both were wrong. Cheap check from `Logs/network.log`: each upload's JSON dec
 further, so the zip comes out ~1.3 MB *smaller*. The sign of `bundle - zip` gives the compression without opening
 anything. `BundleCompressionFix` is the lever.
 
+**A clean upload can still fail to download** (2026-11-01). Every SDK request returned 200 and the upload history
+showed the usual status with no error, yet the launcher's `launcher_output_log.log` (in
+`drive_c/users/steamuser/AppData/Local/Temp/Somnium Space Ltd/logs/`) showed `Load bundle -> ERROR … 400 (Bad
+Request)` on every try, and the world never opened. Re-uploading the same build fixed it. That launcher log is the
+place to look when a world will not open at all, since `Player.log` never starts.
+
 **The uploader compiles our sources server-side** against
 `imprt.somnium.space/SDK/FilesStorage/ScriptingReferences.txt`. Anything off that list is skipped, so a `using` of
 it fails and the world silently never publishes while the HTTP upload still returns 200. Allowed assembly

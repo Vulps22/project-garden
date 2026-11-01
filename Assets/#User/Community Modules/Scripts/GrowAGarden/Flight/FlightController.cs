@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using Vulps.GrowAGarden.Climbing;
 using Vulps.GrowAGarden.Ownership;
 using Vulps.GrowAGarden.Settings;
 
@@ -112,6 +113,12 @@ namespace Vulps.GrowAGarden.Flight
                  "because disabling fly and glide does not touch ordinary locomotion.")]
         [SerializeField] private bool _takeLocomotion = true;
 
+        [Tooltip("While flying, anything that moves the player less than this between frames is undone: the model owns the position. A bigger jump is a teleport, such as Somnium's fall respawn, and is kept. Metres.")]
+        [SerializeField] private float _driftCancelLimit = 1.5f;
+
+        [Tooltip("Fraction of horizontal speed lost per second while coasting with the arms down. 0 keeps it all until landing.")]
+        [SerializeField] private float _coastDrag = 0.1f;
+
         [Tooltip("Seconds between instrumentation lines.")]
         [SerializeField] private float _logInterval = 2f;
 
@@ -121,6 +128,8 @@ namespace Vulps.GrowAGarden.Flight
         private Transform _root, _head, _leftHand, _rightHand;
 
         private bool _flying;
+        private bool _coasting;
+        private Vector3 _velocity;
 
         /// <summary>
         /// The local player left the ground. Static and parameterless, because flight is entirely
@@ -156,7 +165,30 @@ namespace Vulps.GrowAGarden.Flight
         private static readonly Collider[] _contacts = new Collider[8];
         private Collider[] _ownColliders = System.Array.Empty<Collider>();
 
+        private bool _climbing;
+
         private void Awake() => _model = new FlightModel(_settings);
+
+        private void OnEnable()
+        {
+            ClimbController.ClimbStarted += OnClimbStarted;
+            ClimbController.ClimbEnded += OnClimbEnded;
+        }
+
+        private void OnDisable()
+        {
+            ClimbController.ClimbStarted -= OnClimbStarted;
+            ClimbController.ClimbEnded -= OnClimbEnded;
+        }
+
+        /// <summary>A hand on a rock is a landing: climbing owns the player until it lets go.</summary>
+        private void OnClimbStarted()
+        {
+            _climbing = true;
+            if (_flying) SetFlying(false);
+        }
+
+        private void OnClimbEnded() => _climbing = false;
 
         private void OnValidate()
         {
@@ -166,7 +198,7 @@ namespace Vulps.GrowAGarden.Flight
 
         private void Update()
         {
-            if (!_enabled) return;
+            if (!_enabled || _climbing) return;
             MeasurePreviousWrite();
             if (!Resolve()) return;
 
@@ -199,8 +231,12 @@ namespace Vulps.GrowAGarden.Flight
                 // bends the wrists past the stall angle as a side effect, so it used to read as
                 // "park" — which is the opposite of what pulling your arms in should mean. Now it
                 // hands Somnium back its gravity and its walking, and the player falls.
+                // Arms down mid-air is a coast, not a stop: the momentum carries on under gravity
+                // until the player touches something or puts their arms out again.
                 bool grounded = touching && Time.time - _airborneSince > _launchGrace;
-                if (grounded || !ArmsOut(_armRetract)) SetFlying(false);
+                if (grounded) SetFlying(false);
+                else if (_coasting) { if (ArmsOut(_armExtension)) StopCoasting(); }
+                else if (!ArmsOut(_armRetract)) StartCoasting();
             }
             else if (!touching && ArmsOut(_armExtension))
             {
@@ -210,6 +246,12 @@ namespace Vulps.GrowAGarden.Flight
             if (!_flying)
             {
                 Report(0f, 0f, Vector3.zero, true);
+                return;
+            }
+
+            if (_coasting)
+            {
+                Coast();
                 return;
             }
 
@@ -224,6 +266,9 @@ namespace Vulps.GrowAGarden.Flight
             float pitch      = (leftPitch + rightPitch) * 0.5f;
             float difference = rightPitch - leftPitch;   // the offset cancels, but read it from the same place
 
+            // Deep in an eaten trip the controls flip for a moment: up is down and left is right.
+            if (Trip.TripManager.ControlsFlipped) { pitch = -pitch; difference = -difference; }
+
             // ── Move ──────────────────────────────────────────────────────────────
             Vector3 local = _model.Step(pitch, difference, Time.deltaTime, out float yawDelta);
 
@@ -236,14 +281,50 @@ namespace Vulps.GrowAGarden.Flight
             if (facing.sqrMagnitude < 0.0001f) facing = _root.forward;
             facing.Normalize();
 
-            Vector3 move = facing * local.z + Vector3.up * local.y;
-            Vector3 target = _root.position + move * Time.deltaTime;
+            _velocity = facing * local.z + Vector3.up * local.y;
+            Write(_root.position + _velocity * Time.deltaTime);
 
+            Report(pitch, difference, local, false);
+        }
+
+        private void Write(Vector3 target)
+        {
             _root.position = target;
             _lastWrite = target;
             _wroteLastFrame = true;
+        }
 
-            Report(pitch, difference, local, false);
+        // ── Coast ─────────────────────────────────────────────────────────────────
+
+        /// <summary>Arms down mid-air: keep the glide's velocity and hand it to gravity.</summary>
+        private void StartCoasting()
+        {
+            _coasting = true;
+            Logger.Info($"StartCoasting() '{gameObject.name}' — arms down at {_root.position}, carrying {_velocity}");
+        }
+
+        /// <summary>Arms out again: fly on at the speed the coast had reached.</summary>
+        private void StopCoasting()
+        {
+            _coasting = false;
+            Vector3 flat = new Vector3(_velocity.x, 0f, _velocity.z);
+            _model.ResumeAt(_velocity.magnitude);
+            Logger.Info($"StopCoasting() '{gameObject.name}' — arms out at {_root.position}, flying on at {_velocity.magnitude:F1} m/s ({flat.magnitude:F1} forward)");
+        }
+
+        /// <summary>Ballistic: gravity pulls, the air takes a little of the forward speed, nothing else.</summary>
+        private void Coast()
+        {
+            float dt = Mathf.Clamp(Time.deltaTime, 0f, 0.1f);
+            float terminal = _settings.TerminalSpeed > 0f ? _settings.TerminalSpeed : 55f;
+
+            _velocity.y = Mathf.Max(_velocity.y - 9.81f * dt, -terminal);
+            float keep = Mathf.Max(0f, 1f - _coastDrag * dt);
+            _velocity.x *= keep;
+            _velocity.z *= keep;
+
+            Write(_root.position + _velocity * dt);
+            Report(0f, 0f, new Vector3(0f, _velocity.y, new Vector2(_velocity.x, _velocity.z).magnitude), false);
         }
 
         // ── Contact ───────────────────────────────────────────────────────────────
@@ -318,6 +399,7 @@ namespace Vulps.GrowAGarden.Flight
         {
             bool was = _flying;
             _flying = flying;
+            _coasting = false;
 
             // Raised before the bridge work below, which returns early when there is no Motion
             // feature — the player is still airborne in that case, and a listener that never heard
@@ -430,6 +512,7 @@ namespace Vulps.GrowAGarden.Flight
             if (!_flying || _flapSpent || Time.time - _airborneSince < _flapArmDelay) return;
             _flapSpent = true;
             _model.Flap();
+            if (_coasting) _velocity.y = Mathf.Max(0f, _velocity.y) + Mathf.Sqrt(2f * 9.81f * Mathf.Max(0f, _settings.FlapHeight));
             Logger.Info($"Boost() '{gameObject.name}' — thrown at {_root.position.y:F1}m, speed={_model.Speed:F1}");
         }
 
@@ -469,12 +552,10 @@ namespace Vulps.GrowAGarden.Flight
         // ── Instrumentation ───────────────────────────────────────────────────────
 
         /// <summary>
-        /// Accumulates how far Root drifts from what we wrote, and reports it with everything else.
-        ///
-        /// The first version logged on every transition and produced an alternating WARN/INFO pair
-        /// per frame — the per-frame spam it existed to avoid. Drift turned out to be a steady
-        /// downward correction rather than an occasional event, so an average and a peak say more
-        /// than any number of individual lines.
+        /// Measures how far Root moved since our last write, reports it with everything else, and
+        /// puts the player back where the model left them. Somnium keeps applying the fall speed
+        /// a player had when flight took over, so without this a launch off an edge sank about
+        /// 5 m/s for the whole flight however the wrists were held.
         /// </summary>
         private void MeasurePreviousWrite()
         {
@@ -485,6 +566,8 @@ namespace Vulps.GrowAGarden.Flight
             _driftSum += drift;
             _driftCount++;
             if (drift > _driftMax) _driftMax = drift;
+
+            if (_flying && drift < _driftCancelLimit) _root.position = _lastWrite;
         }
 
         private void Report(float pitch, float difference, Vector3 local, bool grounded)
@@ -507,7 +590,7 @@ namespace Vulps.GrowAGarden.Flight
                 $"speed={_model.Speed:F1} path={_model.PathAngleDeg:F1} stall={_model.Stall:F2} auth={_model.Authority:F2} " +
                 $"vert={local.y:F2} fwd={local.z:F2} y={_root.position.y:F1} " +
                 $"trough={_model.TroughDescent:F1}m lastBonus={_model.LastTroughBonus:F1} " +
-                $"flapSpent={_flapSpent} trim={_handPitchOffset:F1} " +
+                $"flapSpent={_flapSpent} coast={_coasting} trim={_handPitchOffset:F1} " +
                 $"reach L={Reach(Origin(), _leftHand):F2} R={Reach(Origin(), _rightHand):F2} " +
                 $"drop L={(Origin().y - _leftHand.position.y):F2} R={(Origin().y - _rightHand.position.y):F2} | {drift} | " +
                 $"axes L fwd={Elevation(_leftHand, HandAxis.Forward):F0} up={Elevation(_leftHand, HandAxis.Up):F0} right={Elevation(_leftHand, HandAxis.Right):F0} " +

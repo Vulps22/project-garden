@@ -152,7 +152,7 @@ public class SellableEntity : MonoBehaviour
   specific and should never have lived on `PlantSeed`.
 - **`OnSold()` defaults to despawning**, which is right for produce and is your guess made the
   default rather than the rule. It is virtual because a sword you sell to a shop plausibly wants to
-  go *behind the counter*, not out of existence.
+  be *kept by the shop*, not end.
 
 **No NetworkBridge of its own.** `SellPoint` already names the thing being sold by its `NetworkId`
 and announces pending/rejected/accepted on its own bridge; the master takes state authority before

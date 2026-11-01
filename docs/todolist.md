@@ -25,14 +25,20 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 - [ ] Growth pivots: a `ScalePivot` per crop prefab. [[crops#Growth pivots|crops → Growth pivots]]
 - [ ] An ending for `MultiHarvestPlant` before a crop uses it (#43). [[crops]]
-- [ ] **Fun seeds, next after the island sockets:** weed ([[weed]]), seeds that use the ARS system, and a seed that spawns a video screen for playing videos. Design for the last two to come from Vulps.
+- [ ] **Fun seeds:** seeds that use the ARS system, and a seed that spawns a video screen for playing videos. Design to come from Vulps. Weed is done for this pass ([[weed]]).
 - [ ] Seed ideas: GitHub issues #44, #47. A `PlantableEntity` (planting a sword to grow an auto-harvester) is an idea, not a plan.
 
-## Procgen
+## Tablet
 
-- [ ] Buy-point sockets on the islands (upload 2). [[procgen-islands#Buy points everywhere|procgen-islands → Buy points everywhere]]
+- [ ] Document the whole tablet in a `tablet` doc from `TabletProbe`'s log (`Probe() 'TabletProbe'`): a full
+  snapshot when the tablet first exists, then what switches on and off as apps open. Then remove the probe.
+- [ ] A seed restock timer beside Somnium's sidebar buttons, once the tablet is documented.
+  [[procgen-islands#The tablet map|procgen-islands → The tablet map]]
 
 ## Parked
+
+- [ ] Flight sinks on some launches; cancelling the pull made it rubber-band. Waiting on the Somnium team.
+  [[flight#Falling with grace, 2026-11-01|flight → Falling with grace]]
 
 - [ ] Gardens at the island sites (phase 1b). [[procgen-islands#Phase 1b Gardens at the sites|procgen-islands → Phase 1b]]
 - [ ] Procgen islands phase 2: more island prefabs. [[procgen-islands]]

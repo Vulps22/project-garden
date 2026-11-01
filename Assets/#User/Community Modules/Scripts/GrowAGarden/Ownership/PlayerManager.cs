@@ -107,6 +107,17 @@ namespace Vulps.GrowAGarden.Ownership
         /// </summary>
         public static Transform LocalPlayerHead => PlayerBridge.LocalHead;
 
+        /// <summary>Roughly where the local player's mouth is: a little below and in front of the headset. Null before the head exists.</summary>
+        public static Vector3? LocalMouthPosition
+        {
+            get
+            {
+                Transform head = PlayerBridge.LocalHead;
+                if (head == null) return null;
+                return head.position - head.up * 0.09f + head.forward * 0.04f;
+            }
+        }
+
         /// <summary>
         /// The local player's avatar transforms. Check <see cref="PlayerRig.IsUsable"/>: the rig is
         /// assembled after the player joins, so this is empty for a while and then is not.
@@ -129,6 +140,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// <summary>Scales Somnium's walking speed for the local player: 1 normal, 0 to take it
         /// away. False if there is no motion to set.</summary>
         public static bool SetLocalMovementScale(float scale) => PlayerBridge.SetLocalMovementScale(scale);
+
+        /// <summary>Switches the local player's body capsule on or off. False if there is no body.</summary>
+        public static bool SetLocalBodyCollision(bool enabled) => PlayerBridge.SetLocalBodyCollision(enabled);
 
         /// <summary>
         /// Moves the local player. Asynchronous — <paramref name="arrived"/> is when they are

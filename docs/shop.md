@@ -19,7 +19,8 @@ single-component shape for free items, kept because a dispenser stands in the sc
 
 ## Stall ids
 
-**Status (2026-11-01):** built, compiles clean; untested in-world.
+**Status (2026-11-01):** played alone in-world: the Garden's and the islands' stall ids resolve, island ones with
+their seeded rarity. Multiplayer untested.
 
 A `StallId` names a stall the same way on every client with nothing sent: **where** (an island's grid cell, or for a
 Garden its sector) and **which** (its index among the buy points on that island or Garden, in hierarchy order). The
@@ -28,14 +29,16 @@ island when it places it.
 
 ## What a stall sells
 
-**Status (2026-11-01):** built, compiles clean; untested in-world.
+**Status (2026-11-01):** played alone in-world, including the pinned stalls restocking after a sale. Multiplayer
+untested.
 
 - **A stall asks for stock** whenever it is loaded, empty and not sold out: on load, when its stock goes, when the
   world cycles, and every 5 s while still empty in case a request was lost. It sends the socket's pose, its
   `_rarityMultiplier` and its pinned crop with the request, since the master may not have the stall.
 - **The master stocks it** unless it is stocked, sold out (never true of a pinned stall), or was stocked within the last second (several clients
   asking at once spawn once). A stall with an `_override` always gets that crop, looked up by `seedId` in
-  `WorldManager`'s buyables; otherwise it rolls, weighted by rarity and the multiplier. The seed is spawned at the
+  `WorldManager`'s buyables; otherwise it rolls, weighted by rarity and the multiplier (an island stall's is 1–100 from the world seed; a crop
+  with `spawnWeight` under 1 has its weight multiplied by it). The seed is spawned at the
   pose and told its stall id (`Seed.PlaceInShop`), which every client learns, and late joiners get it in the seed's
   state.
 - **Which seed is a stall's stock** is a table every client keeps from the seeds themselves (`ShopKeeper.StockAt`).
@@ -51,8 +54,8 @@ island when it places it.
 
 ## The purchase flow
 
-**Status (2026-11-01):** reworked for `ShopKeeper` and sector authority, compiles clean; untested in-world. The
-2026-10-31 version was tested in-world.
+**Status (2026-11-01):** reworked for `ShopKeeper` and sector authority; bought from alone in-world (carrots and
+weed), multiplayer untested. The 2026-10-31 version was tested in-world.
 
 Worth reading end to end before changing anything in the buy point. Nearly every step is there because the obvious
 version was wrong.

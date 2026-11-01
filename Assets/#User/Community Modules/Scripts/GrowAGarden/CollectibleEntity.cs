@@ -289,7 +289,7 @@ namespace Vulps.GrowAGarden
                     ApplyRestoreToDispenser();
                     break;
                 default:
-                    break;   // associateRequest/associated/acceptRequest belong to PlotApplication, on the same bridge
+                    break;   // associateRequest/associated/acceptRequest are PlotApplication's and puff is SmokeableEntity's, on the same bridge
             }
         }
 
@@ -368,6 +368,7 @@ namespace Vulps.GrowAGarden
         restoredToDispenser = 4,
         associateRequest = 5,
         associated = 6,
-        acceptRequest = 7
+        acceptRequest = 7,
+        puff = 8               // SmokeableEntity's, on the same bridge
     }
 }

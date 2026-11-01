@@ -206,6 +206,14 @@ namespace Vulps.GrowAGarden.Flight
         /// </summary>
         private float DragK => -G * Mathf.Sin(GlideAngleRad) / (_s.BestGlideSpeed * _s.BestGlideSpeed);
 
+        /// <summary>Picks flight back up mid-air at a given airspeed, as after a coast.</summary>
+        public void ResumeAt(float speed)
+        {
+            Speed = Mathf.Clamp(speed, 0f, _s.TerminalSpeed > 0f ? _s.TerminalSpeed : float.MaxValue);
+            FlapVelocity = 0f;
+            ClearTrough();
+        }
+
         public void Reset()
         {
             Speed = _s.BestGlideSpeed;

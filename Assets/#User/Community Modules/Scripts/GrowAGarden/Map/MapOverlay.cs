@@ -67,6 +67,7 @@ namespace Vulps.GrowAGarden.Map
         private Image _you;
         private float _nextLookup;
         private float _nextDraw;
+        private float _nextProbe;
         private float _nextReport;
         private bool _wasOpen;
         private bool _reportedMissing;
@@ -78,6 +79,12 @@ namespace Vulps.GrowAGarden.Map
             {
                 FindMap();
                 return;
+            }
+
+            if (Time.time >= _nextProbe)
+            {
+                _nextProbe = Time.time + 1f;
+                MapManager.ProbeTablet(_content);
             }
 
             if (!_content.gameObject.activeInHierarchy)
