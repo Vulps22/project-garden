@@ -27,8 +27,9 @@ Master-client authoritative, with **three** distinct notions of ownership. Do no
 - **`Object.HasStateAuthority`**: **per-NetworkObject** Fusion authority, who *simulates* this object and who may
   despawn it. `NetworkGrabbable` requests it on grab, so it follows a grab, but it is **not evidence of whose
   something is**: it never transfers back on release, so whoever last grabbed an object keeps simulating it until
-  someone else grabs it or `AuthorityController` hands it back to the master. In Fusion 2.1 it does not pass on
-  when that player leaves either: the object sits at `StateAuthority == PlayerRef.None` until someone requests it.
+  someone else grabs it or `AuthorityController` moves it to a player in its sector
+  ([[#Authority by sector]]). In Fusion 2.1 it does not pass on when that player leaves either: the object sits at
+  `StateAuthority == PlayerRef.None` until someone requests it.
   (It transferred on *hover* until 2026-09-09; `OnHover`'s `RequestControl()` was commented out rather than
   deleted, because restoring it is one line.)
 - **`OwnerId`** on a plot or seed: **whose it is**. A replicated fact decided by the master, in the same shape as
@@ -37,6 +38,40 @@ Master-client authoritative, with **three** distinct notions of ownership. Do no
 A plant is simulated only by its state authority; every other client is a passive proxy applying RPC state.
 Because authority outlives the grab that caused it, every decision that matters must be *announced* by the master,
 never inferred from who happens to hold authority over an object.
+
+## Authority by sector
+
+**Status (2026-11-01):** built, compiles clean; untested in-world.
+
+The master no longer simulates everything. Once the world spreads over kilometres it would be simulating seeds on
+islands it has not loaded, and they would fall through where the island should be. **The master decides; a player
+standing there simulates.**
+
+- **Sectors are public.** `SectorManager` (on `SceneManager`, message id 2) works out which 1 km sector the local
+  player is in and announces it with its Fusion peer id whenever it changes, and again when anyone joins. Every
+  client holds the same table of who is where; a peer is dropped from it when it leaves the room. Sector 0 is
+  centred on the Garden; the maths (`SectorOf`, `SectorCentre`) lives here and the map uses it.
+- **Each networked object declares a rule**, `IAuthoritySource.Authority`:
+  - **Master:** plants, and produce still on the plant. Neither has physics, and both are the master's decisions.
+  - **Holder:** anything in a hand stays with that hand.
+  - **Sector:** everything else (seeds, harvested produce, deeds), including shop stock.
+- **`AuthorityController`** does the moving. For a Sector object, the pick is the **lowest peer id in the sector the
+  object is in**. Every client computes the same pick from the table, and only the pick requests authority, and only
+  when the current authority is not in that sector already. It re-checks every second, on any sector change, and on
+  lifecycle changes, since objects cross sector lines without an event. At home with the master in the Garden, the
+  master is normally the pick, so the Garden behaves as before.
+- **Nobody there.** `KinematicController` holds a Sector object kinematic on the client simulating it when that
+  client does not have its ground loaded (`SectorManager.HasGroundAt`: its own sector, or within `_groundRadius`,
+  600 m, of the player). It stays put until a player enters its sector, takes authority and it is physical again.
+  This also covers the master inheriting a disconnected player's objects.
+- **Loading follows the sector.** `IslandField` loads every island that touches the local sector, plus every cell
+  within its view radius. "Touches", not "centred in", because a seed can sit on the part of an island that crosses
+  a sector line, and the pick for that sector must have that island.
+- **Decisions still travel as RPCs to everyone**, applied by everyone, so it does not matter who simulates. A
+  despawn goes to whoever simulates the object (`Seed.RequestDiscard`), so the master never has to fight a sector
+  player for authority to remove something.
+- **`Socket` arms recall on every client**, not just the master, because whoever simulates the stock drives its
+  return.
 
 ## Messaging
 
@@ -59,6 +94,8 @@ Modules now marks that class `LEGACY - DO NOT USE ANYMORE`.
   `ProduceMessageType`, `PlantSlotMessageType`, `SellMessageType`, `PlotMessageType`. Ids are scoped per messenger,
   so `0` in one is unrelated to `0` in another, and each starts at 0. **Append new values, never insert**: these are
   wire ids, and renumbering makes two builds disagree about what a message means.
+- **Several components share `SceneManager`'s messenger**, so they share its id space: `EconomyManager` 0,
+  `WorldSeed` 1, `SectorManager` 2, `ShopKeeper` 3–6. A new one takes the next free id.
 - `BytesWriter` is **pre-sized**: compute the exact byte count up front. Adding a field to a payload means updating
   the size calculation too, or it overflows. `GetExtraBroadcastStateSize()` shows how subclasses extend a parent's
   payload.

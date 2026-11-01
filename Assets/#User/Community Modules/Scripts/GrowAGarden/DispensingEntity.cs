@@ -10,13 +10,12 @@ namespace Vulps.GrowAGarden
     /// A free dispenser. Decides nothing about price or rarity because there is none — it always
     /// offers the one CollectibleEntity prefab set on it in the Editor, never rolls, and is not
     /// part of WorldManager's stock cycle. The Socket beneath it holds the stock and knows none of
-    /// that, same split as BuyPoint/Socket.
+    /// that.
     ///
-    /// This is BuyPoint with the money and the catalogue removed, not a new design — the
-    /// holder-requests/master-decides shape, the restock-retry loop and the "shoved out with
-    /// nobody holding it" guard all exist for reasons that have nothing to do with price, and
-    /// apply just as much to a free item. Only Roll(), WeightOf(), the recycle-cycle subscription
-    /// and the balance check are gone.
+    /// The master spawns and decides here directly, unlike a stall, because a dispenser stands in
+    /// the scene and every master has it loaded. The holder-requests/master-decides shape, the
+    /// restock-retry loop and the "shoved out with nobody holding it" guard are the stall's, minus
+    /// the money and the catalogue.
     /// </summary>
     public class DispensingEntity : MonoBehaviour
     {
@@ -30,8 +29,8 @@ namespace Vulps.GrowAGarden
 
         private CollectibleEntity _currentItem;
 
-        /// <summary>See BuyPoint.RESTOCK_RETRY_SECONDS — same reasoning, a rate-limited retry
-        /// rather than a per-frame spawn attempt.</summary>
+        /// <summary>A rate-limited retry rather than a per-frame spawn attempt: a failing spawn at
+        /// 90 Hz is hundreds of attempts, and hundreds of orphans when Fusion throws.</summary>
         private const float RESTOCK_RETRY_SECONDS = 0.5f;
         private bool _wantsStock;
         private float _lastStockAttempt = float.NegativeInfinity;
@@ -78,7 +77,7 @@ namespace Vulps.GrowAGarden
             _socket.Hold(item.gameObject);
         }
 
-        /// <summary>See BuyPoint.OnLeaving — same two-client split: the holder asks to take it,
+        /// <summary>Two clients care: the holder asks to take it,
         /// because only that machine knows its own hand is on it; the master handles everything
         /// else, off the replicated holder id rather than a local interactable.</summary>
         private void OnLeaving(GameObject leaving)
@@ -122,7 +121,7 @@ namespace Vulps.GrowAGarden
             }
         }
 
-        /// <summary>See BuyPoint.OnCurrentSeedLifecycleChanged — driven by lifecycle rather than
+        /// <summary>Driven by lifecycle rather than
         /// the take path, since releasing the socket is a local physics setting every client has
         /// to do for itself.</summary>
         private void OnCurrentItemLifecycleChanged()
@@ -133,9 +132,9 @@ namespace Vulps.GrowAGarden
             _socket.Release();
         }
 
-        /// <summary>See BuyPoint's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS — same
+        /// <summary>See ShopKeeper's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS — same
         /// reasoning, same values, kept as a second copy for the same reason DispensingEntity and
-        /// BuyPoint are two files rather than one.</summary>
+        /// ShopKeeper are two files rather than one.</summary>
         private const float TAKE_RETRY_SECONDS = 0.15f;
         private const float TAKE_RETRY_TIMEOUT_SECONDS = 1.5f;
         private bool _resolvingTake;
@@ -242,7 +241,7 @@ namespace Vulps.GrowAGarden
             return item;
         }
 
-        /// <summary>See BuyPoint.AnnounceStock — same late-registration problem, same crude fix.</summary>
+        /// <summary>See ShopKeeper.AnnounceStock — same late-registration problem, same crude fix.</summary>
         private IEnumerator AnnounceStock(CollectibleEntity item)
         {
             float[] gaps = { 0.25f, 0.75f, 1f };

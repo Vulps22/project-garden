@@ -140,6 +140,16 @@ namespace Vulps.GrowAGarden
             }
         }
 
+        /// <summary>This client's peer id in the room, or -1 before it has one.</summary>
+        public static int LocalPeerId
+        {
+            get
+            {
+                NetworkRunner runner = SceneNetworking.NetworkRunnerRef;
+                return runner != null && runner.IsRunning && runner.LocalPlayer.IsRealPlayer ? runner.LocalPlayer.PlayerId : -1;
+            }
+        }
+
         /// <summary>The spawned object with this network id, or null.</summary>
         public static NetworkObject Find(uint rawId)
         {

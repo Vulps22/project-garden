@@ -14,8 +14,8 @@ namespace Vulps.GrowAGarden.Crops
     /// or KinematicController — six components that exist only for things a hand can reach, and
     /// nothing can reach a plant. What players take is Produce.
     ///
-    /// It keeps AuthorityController, because a plant does belong to the world and a new master
-    /// client has to be able to claim one.
+    /// It keeps AuthorityController under the Master rule: a new master client has to be able to
+    /// claim one, and a plant needs no ground under it to be simulated from anywhere.
     ///
     /// Growth is derived, never sent: every client compares now against _plantedTimestamp and
     /// arrives at the same scale, so syncing one timestamp syncs the whole thing forever.
@@ -33,8 +33,8 @@ namespace Vulps.GrowAGarden.Crops
 
         public uint NetworkId => networkBridge?.Object == null ? 0u : networkBridge.Object.Id.Raw;
 
-        /// <summary>A plant belongs to the world. Nobody holds it, so the master always should.</summary>
-        public bool ShouldMasterOwn => true;
+        /// <summary>A plant has no physics and its decisions are the master's, so the master keeps it wherever it is.</summary>
+        public AuthorityRule Authority => AuthorityRule.Master;
 
         public event System.Action LifecycleChanged;
 

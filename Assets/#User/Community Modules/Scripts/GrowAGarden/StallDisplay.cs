@@ -11,7 +11,7 @@ namespace Vulps.GrowAGarden
     /// authored by hand is a second copy of the balance numbers, and second copies go stale.
     ///
     /// **Driven by the stock, not by the decision.** The obvious wiring is to update the sign when
-    /// the master rolls a new crop, and it would be wrong — Offer() runs on the master alone, so
+    /// the master rolls a new crop, and it would be wrong — the roll happens on the master alone, so
     /// every other client would keep the old sign over the new stock. The seed arriving in the
     /// socket is the announcement, on every client, so the sign follows the seed. That is the same
     /// rule the roll itself obeys, one level down.

@@ -113,9 +113,8 @@ namespace Vulps.GrowAGarden
         }
 
         /// <summary>
-        /// Authority first, then despawn. A dropped object is usually master-owned already —
-        /// AuthorityController hands unheld world objects back — but "usually" is not "always", and
-        /// Despawn without authority does nothing at all. Lifted from
+        /// Authority first, then despawn. A dropped object is usually simulated by a player in its
+        /// sector, not the master, and Despawn without authority does nothing at all. Lifted from
         /// PlotStateManager.TakeOwnershipAndDespawn, which learned this the same way.
         /// </summary>
         private IEnumerator Discard(GameObject go)

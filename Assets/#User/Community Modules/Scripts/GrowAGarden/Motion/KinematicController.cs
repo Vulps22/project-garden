@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using Vulps.GrowAGarden.Islands;
+using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden.Motion
 {
@@ -25,8 +27,13 @@ namespace Vulps.GrowAGarden.Motion
         [SerializeField] private NetworkMessenger _networkBridge;
         [SerializeField] private XRGrabInteractable _grabInteractable;
 
+        private const float STRANDED_CHECK_SECONDS = 0.5f;
+
         private IKinematicSource _source;
         private ILifecycleNotifier _notifier;
+        private IAuthoritySource _authority;
+        private float _nextStrandedCheck;
+        private bool _stranded;
 
         private void Awake()
         {
@@ -34,6 +41,7 @@ namespace Vulps.GrowAGarden.Motion
             // about seeds, and anything declaring a kinematic intent can use it.
             _source = GetComponent<IKinematicSource>();
             _notifier = GetComponent<ILifecycleNotifier>();
+            _authority = GetComponent<IAuthoritySource>();
 
             if (_source == null)
                 Logger.Error($"Awake() '{gameObject.name}' — no IKinematicSource on this object, kinematic state will not be driven");
@@ -54,6 +62,22 @@ namespace Vulps.GrowAGarden.Motion
         }
 
         private void OnReleased(UnityEngine.XR.Interaction.Toolkit.SelectExitEventArgs _) => Apply();
+
+        /// <summary>Re-checks for stranding while this client simulates the object, since moving creates no event.</summary>
+        private void Update()
+        {
+            if (Time.time < _nextStrandedCheck) return;
+            _nextStrandedCheck = Time.time + STRANDED_CHECK_SECONDS;
+            var obj = _networkBridge == null ? null : _networkBridge.Object;
+            if (obj != null && obj.HasStateAuthority && IsStranded() != _stranded) Apply();
+        }
+
+        /// <summary>
+        /// This client simulates a sector-ruled object whose ground it has not loaded, so it would
+        /// fall through where the island should be. It waits, kinematic, for a player in its sector.
+        /// </summary>
+        private bool IsStranded() =>
+            _authority != null && _authority.Authority == AuthorityRule.Sector && !SectorManager.HasGroundAt(transform.position);
 
         // Authority may arrive after the grab already ended, so apply on the transition too.
         private void OnAuthorityChanged(bool hasAuthority)
@@ -89,7 +113,14 @@ namespace Vulps.GrowAGarden.Motion
             var obj = _networkBridge == null ? null : _networkBridge.Object;
             if (obj == null || !obj.HasStateAuthority) return;
 
-            bool wantKinematic = _source.ShouldBeKinematic;
+            bool stranded = IsStranded();
+            if (stranded != _stranded)
+            {
+                _stranded = stranded;
+                Logger.Info($"Apply() '{gameObject.name}' — {(stranded ? "no ground loaded here; holding it still" : "ground loaded; physical again")} at {transform.position}");
+            }
+
+            bool wantKinematic = _source.ShouldBeKinematic || stranded;
             if (_rigidbody.isKinematic != wantKinematic) _rigidbody.isKinematic = wantKinematic;
 
             // A body that went to sleep while kinematic will not respond to the tether's

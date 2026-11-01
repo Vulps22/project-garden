@@ -31,6 +31,12 @@ namespace Vulps.GrowAGarden
         public bool InShop { get; private set; }
         public bool IsBought { get; private set; }
 
+        /// <summary>The stall that stocked this, replicated so every client can find a stall's stock by id.</summary>
+        public StallId Stall { get; private set; }
+
+        /// <summary>Whether this was stocked by a stall at all.</summary>
+        public bool HasStall { get; private set; }
+
         /// <summary>
         /// Who paid for this. Set by the master at the moment of purchase and replicated, because
         /// ownership is a fact and facts come from the master.
@@ -61,12 +67,14 @@ namespace Vulps.GrowAGarden
         public bool ShouldUseGravity => !InShop;
 
         /// <summary>
-        /// Stock belongs to the world, not to whoever last touched it. The holder check is what
-        /// stops the master claiming a seed out of a player's hand. Rarely needed now that the
-        /// master spawns stock already owning it — this is what recovers one that was carried and
-        /// put back.
+        /// Stays with a hand while held; otherwise a player in its sector simulates it, so the
+        /// ground under it is loaded. A planted seed is the master's to despawn.
         /// </summary>
-        public bool ShouldMasterOwn => InShop && string.IsNullOrEmpty(HolderId);
+        public AuthorityRule Authority =>
+            _planted ? AuthorityRule.Master :
+            !string.IsNullOrEmpty(HolderId) ? AuthorityRule.Holder : AuthorityRule.Sector;
+
+        private bool _planted;
 
         private HoveringEntity _hovering;
         private PlayerIdentity _grabber;
@@ -103,6 +111,7 @@ namespace Vulps.GrowAGarden
         {
             _hovering = GetComponent<HoveringEntity>();
             LifecycleChanged += UpdateHovering;
+            LifecycleChanged += TrackStock;
 
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
@@ -117,6 +126,8 @@ namespace Vulps.GrowAGarden
         private void OnDestroy()
         {
             LifecycleChanged -= UpdateHovering;
+            LifecycleChanged -= TrackStock;
+            ShopKeeper.Untrack(this);
             if (networkBridge != null)
             {
                 networkBridge.OnSpawned -= OnSpawned;
@@ -142,6 +153,8 @@ namespace Vulps.GrowAGarden
             _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
+
+        private void TrackStock() => ShopKeeper.Track(this);
 
         private void UpdateHovering()
         {
@@ -191,11 +204,48 @@ namespace Vulps.GrowAGarden
             networkBridge.SendToAll((byte)SeedMessageType.purchaseRequest, new byte[0]);
         }
 
-        public void PlaceInShop(Vector3 position, Quaternion rotation)
+        /// <summary>Stocks this at a stall. Master only, straight after spawning; tells every client which stall it belongs to.</summary>
+        public void PlaceInShop(Vector3 position, Quaternion rotation, StallId stall)
         {
             transform.position = position;
             transform.rotation = rotation;
-            RestoreToShop();
+
+            var writer = new BytesWriter(StallId.Size);
+            stall.Write(writer);
+            networkBridge.SendToAll((byte)SeedMessageType.stocked, writer.Data);
+        }
+
+        private void ApplyStocked(byte[] data)
+        {
+            Stall = StallId.Read(new BytesReader(data));
+            HasStall = true;
+            ApplyRestoreToShop();
+        }
+
+        /// <summary>Takes this out of the world. Master only; whichever client simulates it does the despawn, so nobody fights for authority.</summary>
+        public void RequestDiscard()
+        {
+            if (!PlayerManager.IsMaster || !CanSendRpc) return;
+            ForceRelease();
+            networkBridge.SendToAll((byte)SeedMessageType.discard, new byte[0]);
+        }
+
+        private void ApplyDiscard()
+        {
+            ForceRelease();
+            NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
+            if (WorldManager.DespawnIfStateAuthority(obj)) return;
+            if (PlayerManager.IsMaster && !HasKnownAuthority) StartCoroutine(TakeAuthorityAndDiscard());
+        }
+
+        /// <summary>Nobody simulates this, so nobody would despawn it: the master takes it and does.</summary>
+        private System.Collections.IEnumerator TakeAuthorityAndDiscard()
+        {
+            NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
+            bool granted = false;
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
+            if (granted) WorldManager.DespawnIfStateAuthority(obj);
+            else Logger.Warn($"TakeAuthorityAndDiscard() '{gameObject.name}' — no authority within {WorldManager.AuthorityTimeout}s; left standing");
         }
 
         /// <summary>
@@ -219,7 +269,7 @@ namespace Vulps.GrowAGarden
             _grabInteractable.enabled = false;
 
             var ret = GetComponent<ReturnableEntity>();
-            if (ret == null || !ret.IsReturning) _grabInteractable.enabled = true;
+            if (ret == null || !ret.KeepGrabUntilArrival()) _grabInteractable.enabled = true;
 
             Logger.Info($"ApplyRestoreToShop() '{gameObject.name}' — InShop={InShop} grab={_grabInteractable.enabled} authority={HasLocalAuthority}");
 
@@ -256,7 +306,7 @@ namespace Vulps.GrowAGarden
         /// <summary>
         /// Lets go of any shop slot's claim on this seed.
         ///
-        /// ReturnableEntity and AlignableEntity are armed by BuyPoint on the master alone, and only
+        /// ReturnableEntity and AlignableEntity are armed by the stall's Socket, and only
         /// the successful-purchase path used to clear them. Every other way a seed stops being
         /// stock left a live return target pointing at the shop, so the slot would drag the seed
         /// back out of the PlantSlot it had just been planted in, and keep doing it. Runs on every
@@ -301,6 +351,7 @@ namespace Vulps.GrowAGarden
         /// </summary>
         public void ApplyPlanted()
         {
+            _planted = true;
             ClearShopClaim();
             _grabInteractable.enabled = false;
 
@@ -345,11 +396,13 @@ namespace Vulps.GrowAGarden
             if (!networkBridge.Object.HasStateAuthority) return;
 
             string owner = OwnerId ?? string.Empty;
-            int size = BytesWriter.ByteSize * 2 + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
+            int size = BytesWriter.ByteSize * 3 + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner) + StallId.Size;
             BytesWriter writer = new BytesWriter(size);
             writer.AddByte(InShop ? (byte)1 : (byte)0);
             writer.AddByte(IsBought ? (byte)1 : (byte)0);
             writer.AddAutoString(owner);
+            writer.AddByte(HasStall ? (byte)1 : (byte)0);
+            Stall.Write(writer);
             networkBridge.SendToProxies((byte)SeedMessageType.stateSync, writer.Data);
         }
 
@@ -381,6 +434,12 @@ namespace Vulps.GrowAGarden
                 case SeedMessageType.restoredToShop:
                     ApplyRestoreToShop();
                     break;
+                case SeedMessageType.stocked:
+                    ApplyStocked(data);
+                    break;
+                case SeedMessageType.discard:
+                    ApplyDiscard();
+                    break;
                 default:
                     Logger.Warn($"OnMessageToAll() '{gameObject.name}' — unknown message id={id}");
                     break;
@@ -396,6 +455,8 @@ namespace Vulps.GrowAGarden
             IsBought = reader.NextByte() == 1;
             string owner = reader.NextAutoString();
             OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
+            HasStall = reader.NextByte() == 1;
+            Stall = StallId.Read(reader);
 
             _grabInteractable.enabled = true;
             LifecycleChanged?.Invoke();
@@ -502,6 +563,8 @@ namespace Vulps.GrowAGarden
         grabber = 1,
         purchaseRequest = 2,
         purchased = 3,
-        restoredToShop = 4
+        restoredToShop = 4,
+        stocked = 5,
+        discard = 6
     }
 }

@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Vulps.GrowAGarden.Motion;
-using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden.Interaction
 {
@@ -40,8 +39,8 @@ namespace Vulps.GrowAGarden.Interaction
             Held = held;
             IgnorePropCollisions(held, true);
 
-            if (!PlayerManager.IsMaster) return;
-
+            // Armed on every client: whoever simulates the object drives the return, and that is
+            // any player in its sector, not just the master.
             var ret = held.GetComponent<ReturnableEntity>();
             if (ret != null)
             {
@@ -52,7 +51,7 @@ namespace Vulps.GrowAGarden.Interaction
             var align = held.GetComponent<AlignableEntity>();
             if (align != null)
             {
-                align.CaptureAlignTarget();
+                align.SetAlignTarget(transform.rotation);   // the socket's, not the object's: a proxy may not have its pose yet
                 align.SetAutoRealign(true);
             }
         }
@@ -66,21 +65,18 @@ namespace Vulps.GrowAGarden.Interaction
             Held = null;
             IgnorePropCollisions(released, false);
 
-            if (PlayerManager.IsMaster)
+            var ret = released.GetComponent<ReturnableEntity>();
+            if (ret != null)
             {
-                var ret = released.GetComponent<ReturnableEntity>();
-                if (ret != null)
-                {
-                    ret.SetAutoRecall(false);
-                    ret.ClearReturnTarget();
-                }
+                ret.SetAutoRecall(false);
+                ret.ClearReturnTarget();
+            }
 
-                var align = released.GetComponent<AlignableEntity>();
-                if (align != null)
-                {
-                    align.SetAutoRealign(false);
-                    align.ClearAlignTarget();
-                }
+            var align = released.GetComponent<AlignableEntity>();
+            if (align != null)
+            {
+                align.SetAutoRealign(false);
+                align.ClearAlignTarget();
             }
 
             Left?.Invoke(released);
@@ -96,6 +92,21 @@ namespace Vulps.GrowAGarden.Interaction
 
             ret.SetReturnTarget(transform);
             StartCoroutine(TakeOwnershipAndRecall(Held, ret));
+        }
+
+        /// <summary>Brings the held object home on this client without asking for authority; whichever client simulates it moves it.</summary>
+        public void RecallHere()
+        {
+            if (Held == null) return;
+
+            var ret = Held.GetComponent<ReturnableEntity>();
+            if (ret == null) return;
+
+            ret.SetReturnTarget(transform);
+            ret.Recall(shouldIgnoreCollisions: true);
+
+            var align = Held.GetComponent<AlignableEntity>();
+            if (align != null) align.Realign();
         }
 
         private IEnumerator TakeOwnershipAndRecall(GameObject held, ReturnableEntity ret)

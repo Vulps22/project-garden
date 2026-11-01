@@ -50,7 +50,7 @@ namespace Vulps.GrowAGarden
             return image != null ? image.sprite : null;
         }
 
-        /// <summary>Hides Somnium's mainland picture, landmarks, parcels and the local player's dot, keeping the panel's scroll and zoom.</summary>
+        /// <summary>Hides Somnium's mainland picture, landmarks, parcels, the local player's dot and the parcel search, keeping the panel's scroll and zoom.</summary>
         public static void HideSomniumContents(RectTransform content)
         {
             if (content == null) return;
@@ -65,6 +65,9 @@ namespace Vulps.GrowAGarden
             Hide(content.Find("ViewLayers/Landmarks"));
             Hide(content.Find("ViewLayers/Parcels"));
             Hide(content.Find("MapPlayer_You"));
+
+            Transform map = content.parent != null && content.parent.parent != null ? content.parent.parent.parent : null;
+            if (map != null) Hide(map.Find("ParcelSearchView"));
         }
 
         /// <summary>The visible window the content panel scrolls behind.</summary>

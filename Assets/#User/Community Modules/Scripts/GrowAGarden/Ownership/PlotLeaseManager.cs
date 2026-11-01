@@ -123,7 +123,7 @@ namespace Vulps.GrowAGarden.Ownership
 
         // ── Claiming ──────────────────────────────────────────────────────────────
 
-        /// <summary>See BuyPoint's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS — same
+        /// <summary>See ShopKeeper's own TAKE_RETRY_SECONDS/TAKE_RETRY_TIMEOUT_SECONDS — same
         /// reasoning: the holder's grabber RPC and Fusion's own state-authority transfer for the
         /// deed are separate network events with no ordering guarantee against the take-request
         /// itself, and over real distance arriving after it is the common case. This one also
@@ -154,7 +154,7 @@ namespace Vulps.GrowAGarden.Ownership
 
         /// <summary>
         /// Retries quietly for a short window rather than giving up on the first miss — see
-        /// BuyPoint.ResolvePurchaseRequest for the full reasoning. Here a miss was previously
+        /// ShopKeeper.ResolvePurchaseRequest for the full reasoning. Here a miss was previously
         /// silent (no bounce-back exists for a deed the way ReturnToSocket exists for shop stock),
         /// which read as "carried it in and nothing happened" — this gives the holder RPC and the
         /// authority transfer a real chance to arrive before settling for that.
@@ -416,7 +416,7 @@ namespace Vulps.GrowAGarden.Ownership
             return deed;
         }
 
-        /// <summary>See BuyPoint.AnnounceStock — same late-registration problem, same crude fix.</summary>
+        /// <summary>See ShopKeeper.AnnounceStock — same late-registration problem, same crude fix.</summary>
         private IEnumerator AnnounceStock(CollectibleEntity deed)
         {
             float[] gaps = { 0.25f, 0.75f, 1f };

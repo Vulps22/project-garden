@@ -57,9 +57,8 @@ namespace Vulps.GrowAGarden
         /// fighting a constant downward pull. A taken one loose in the world has weight.</summary>
         public bool ShouldUseGravity => !InDispenser;
 
-        /// <summary>Stock belongs to the world, not to whoever last touched it — see
-        /// Seed.ShouldMasterOwn, same reasoning.</summary>
-        public bool ShouldMasterOwn => InDispenser && string.IsNullOrEmpty(HolderId);
+        /// <summary>Stays with a hand while held; otherwise a player in its sector simulates it.</summary>
+        public AuthorityRule Authority => string.IsNullOrEmpty(HolderId) ? AuthorityRule.Sector : AuthorityRule.Holder;
 
         private HoveringEntity _hovering;
         /// <summary>
@@ -183,7 +182,7 @@ namespace Vulps.GrowAGarden
             _grabInteractable.enabled = false;
 
             var ret = GetComponent<ReturnableEntity>();
-            if (ret == null || !ret.IsReturning) _grabInteractable.enabled = true;
+            if (ret == null || !ret.KeepGrabUntilArrival()) _grabInteractable.enabled = true;
 
             Logger.Info($"ApplyRestoreToDispenser() '{gameObject.name}' — InDispenser={InDispenser} grab={_grabInteractable.enabled} authority={HasLocalAuthority}");
 

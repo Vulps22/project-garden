@@ -22,6 +22,19 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("How many metres the map sprite spans, edge to edge, centred on this object. Set by the baker.")]
         [SerializeField] private float _mapSpan;
 
+        /// <summary>The grid cell the field placed this in. Set at runtime; a prefab or a hand-placed island has none.</summary>
+        public Vector2Int Cell { get; private set; }
+
+        /// <summary>Whether the field placed this, and so has a cell.</summary>
+        public bool HasCell { get; private set; }
+
+        /// <summary>Records which cell the field placed this in.</summary>
+        public void PlacedIn(Vector2Int cell)
+        {
+            Cell = cell;
+            HasCell = true;
+        }
+
         /// <summary>This island's size category.</summary>
         public IslandCategory Category => _category;
 

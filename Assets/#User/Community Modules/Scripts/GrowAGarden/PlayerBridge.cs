@@ -40,6 +40,9 @@ namespace Vulps.GrowAGarden
         /// <summary>A remote peer entered the room and can now receive RPCs. Push it state.</summary>
         public static event Action OtherPlayerJoined;
 
+        /// <summary>A remote peer left the room; carries its peer id. Every client.</summary>
+        public static event Action<int> PeerLeft;
+
         /// <summary>The local player is now the one who decides things for the world.</summary>
         public static event Action BecameWorldMaster
         {
@@ -187,6 +190,7 @@ namespace Vulps.GrowAGarden
         private void Awake()
         {
             SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
+            SceneNetworking.OnOtherPlayerLeft += OnOtherPlayerLeft;
 
             if (_players == null)
             {
@@ -203,6 +207,7 @@ namespace Vulps.GrowAGarden
         private void OnDestroy()
         {
             SceneNetworking.OnOtherPlayerJoined -= OnOtherPlayerJoined;
+            SceneNetworking.OnOtherPlayerLeft -= OnOtherPlayerLeft;
             _container = null;
 
             // Statics outlive a scene when domain reload is off, and a head from the last session
@@ -232,6 +237,9 @@ namespace Vulps.GrowAGarden
             Logger.Info($"OnOtherPlayerJoined() '{gameObject.name}' — peer={player.PlayerId} t={Time.realtimeSinceStartup:F3} frame={Time.frameCount}");
             OtherPlayerJoined?.Invoke();
         }
+
+        /// <summary>A remote peer left the Fusion room.</summary>
+        private void OnOtherPlayerLeft(PlayerRef player) => PeerLeft?.Invoke(player.PlayerId);
 
         private void OnSdkPlayerRemoved(ISomniumPlayer player)
         {

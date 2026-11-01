@@ -76,8 +76,10 @@ namespace Vulps.GrowAGarden.Crops
         public bool ShouldBeKinematic => !IsHarvested;
         public bool ShouldUseGravity => IsHarvested;
 
-        /// <summary>Unharvested produce belongs to the world, and the master should hold it.</summary>
-        public bool ShouldMasterOwn => !IsHarvested && string.IsNullOrEmpty(HolderId);
+        /// <summary>The master keeps unharvested produce with its plant; once picked it follows a hand, then its sector.</summary>
+        public AuthorityRule Authority =>
+            !string.IsNullOrEmpty(HolderId) ? AuthorityRule.Holder :
+            !IsHarvested ? AuthorityRule.Master : AuthorityRule.Sector;
 
         public string HolderId => _grabber.Id;
         public bool IsHeld => _grabInteractable != null && _grabInteractable.isSelected;

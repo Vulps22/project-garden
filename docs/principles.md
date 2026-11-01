@@ -48,8 +48,9 @@ master", which is exactly the flicker that produced the hover-transfer experimen
 - A buy is **decided** by the master ([[shop]]). A sell must be **accepted** by the master, not observed by it
   ([[economy#Selling|economy → Selling]]).
 - Planting, harvesting and despawning are facts the master decides, not events it learns about.
-- An object no player is holding should be owned by the master. This is `IAuthoritySource.ShouldMasterOwn`, which
-  encodes the rule correctly but does not always win.
+- An object no player is holding is simulated by a player in its sector, who has the ground under it loaded; the
+  master still decides everything about it. This is `IAuthoritySource.Authority`
+  ([[networking#Authority by sector|networking → Authority by sector]]).
 - A pull channel ("master, what is this?") is a **repair** path for a client that suspects it is desynced, not the
   primary one. If the master announces every fact, peers already have them.
 

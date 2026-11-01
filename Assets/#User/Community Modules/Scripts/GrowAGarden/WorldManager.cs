@@ -9,7 +9,7 @@ namespace Vulps.GrowAGarden
     /// <summary>
     /// The world's heartbeat, and the catalogue of what can be stocked.
     ///
-    /// Every N seconds it raises StockRecycled and every slot re-rolls, so an exploration area
+    /// Every N seconds it raises StockRecycled and ShopKeeper clears every stall, so an exploration area
     /// stops being one-and-done and the map is worth re-walking because it is a different map
     /// now. Roadmap step 4.
     ///
@@ -118,20 +118,19 @@ namespace Vulps.GrowAGarden
             if (Instance == this) Instance = null;
 
             // Static events outlive the scene that filled them. SceneNetworking clears its own
-            // for the same reason; a stale subscriber here would be a destroyed BuyPoint.
+            // for the same reason; a stale subscriber here would be a destroyed ShopKeeper.
             StockRecycled = null;
         }
 
         /// <summary>
         /// Stocks the world once, immediately, and starts the clock.
         ///
-        /// The first cycle is what fills every slot, so a slot needs no starting stock of its
-        /// own — its serialized definition is only the fallback for a world with no WorldManager.
+        /// Stalls ask for their own stock, so the first cycle has nothing to clear; it starts the clock.
         /// </summary>
         private void BeginCycling()
         {
-            // Deferred a frame rather than cycled here. StockRecycled is a static event and the
-            // BuyPoints subscribe in their own OnEnable, whose order against this one is undefined
+            // Deferred a frame rather than cycled here. StockRecycled is a static event and
+            // ShopKeeper subscribes in its own Start, whose order against this one is undefined
             // — and IsNetworkReady is a static that outlives the scene it describes, so on a world
             // transition this can be true before a single stall exists. Firing into no subscribers
             // leaves every stall empty until the next cycle, minutes later.

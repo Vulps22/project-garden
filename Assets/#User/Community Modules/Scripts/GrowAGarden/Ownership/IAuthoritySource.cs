@@ -1,16 +1,22 @@
 namespace Vulps.GrowAGarden.Ownership
 {
-    /// <summary>
-    /// Declares whether the master client should own this object right now.
-    ///
-    /// Fusion transfers state authority to whoever grabs an object and never transfers it back,
-    /// so unsold stock ends up owned by whichever player last touched it. That is why
-    /// the shop has to beg for authority before it can bring a seed home, and why a
-    /// rejected purchase leaves a shop seed owned by the player who could not afford it.
-    /// </summary>
+    /// <summary>Who should simulate an object right now.</summary>
+    public enum AuthorityRule
+    {
+        /// <summary>The master, wherever it is. For things with no physics, such as plants.</summary>
+        Master,
+
+        /// <summary>A player in the sector the object is in, who has the ground under it loaded.</summary>
+        Sector,
+
+        /// <summary>Whoever has it now. A held object stays with the hand holding it.</summary>
+        Holder,
+    }
+
+    /// <summary>Declares which client should hold state authority over this object right now.</summary>
     public interface IAuthoritySource
     {
-        /// <summary>True when this belongs to the world rather than to a player.</summary>
-        bool ShouldMasterOwn { get; }
+        /// <summary>The rule this object's authority follows in its current state.</summary>
+        AuthorityRule Authority { get; }
     }
 }

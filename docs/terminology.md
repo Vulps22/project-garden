@@ -17,6 +17,8 @@ not yet.
 | **Garden** | The constructed farming area on the home island — public ground, four Plots, a SellPoint, three BuyPoints, and in future a shed. Becomes a prefab, `GardenIsland`. |
 | **Plot** | The patch of Garden a player can claim. Four of them, 24 PlantSlots each. |
 | **PlantSlot** | Where a seed goes and a plant grows. |
+| **Sector** | A 1 km square of the world, Sector 0 centred on the Garden. The unit of loading and of who simulates what ([[networking#Authority by sector\|networking → Authority by sector]]). |
+| **Stall** | One BuyPoint, named by its `StallId`: the island cell or Garden sector it stands on, and which of that place's BuyPoints it is ([[shop]]). |
 
 **Garden is a purpose, not a container**, and that is the whole point of the split. The word had been
 doing two jobs — the scene *and* the farm — so an exploration island risked being called "a garden"

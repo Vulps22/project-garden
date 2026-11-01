@@ -14,7 +14,7 @@ namespace Vulps.GrowAGarden.Map
         [SerializeField] private IslandField _field;
 
         [Tooltip("Map units per world metre.")]
-        [SerializeField] private float _unitsPerMetre = 1f;
+        [SerializeField] private float _unitsPerMetre = 2f;
 
         [Tooltip("How far from the origin the map may be scrolled, in metres.")]
         [SerializeField] private float _scrollExtent = 50000f;
@@ -27,9 +27,6 @@ namespace Vulps.GrowAGarden.Map
 
         [Tooltip("Seconds between checks for whether the view has changed while the map is open.")]
         [SerializeField] private float _redrawInterval = 0.25f;
-
-        [Tooltip("Width of a sector, in metres. Sector 0 is centred on the field's origin.")]
-        [SerializeField] private float _sectorSize = 1000f;
 
         [Tooltip("When the view spans more than this many metres from its centre, sectors are drawn instead of islands.")]
         [SerializeField] private float _islandViewLimit = 900f;
@@ -49,8 +46,11 @@ namespace Vulps.GrowAGarden.Map
         [Tooltip("Metres the Garden sprite spans, edge to edge.")]
         [SerializeField] private float _gardenSpan = 60f;
 
-        [Tooltip("Size of the player's dot, in map units.")]
-        [SerializeField] private float _dotSize = 24f;
+        [Tooltip("Size of the player's arrow on screen, in map units at zoom 1. It does not change with zoom.")]
+        [SerializeField] private float _dotSize = 48f;
+
+        [Tooltip("Colour of the sector the player is in, when zoomed out.")]
+        [SerializeField] private Color _currentSectorColour = new Color(1f, 0.85f, 0.2f, 0.55f);
 
         private readonly List<IslandField.Placement> _found = new List<IslandField.Placement>();
         private readonly List<Image> _islandMarks = new List<Image>();
@@ -58,6 +58,8 @@ namespace Vulps.GrowAGarden.Map
         private readonly List<TextMeshProUGUI> _sectorLabels = new List<TextMeshProUGUI>();
         private TMP_FontAsset _font;
         private Vector4 _lastView;
+        private float _lastZoom;
+        private Vector3 _viewAnchor;
         private readonly Vector3[] _corners = new Vector3[4];
         private RectTransform _content;
         private RectTransform _layer;
@@ -86,11 +88,14 @@ namespace Vulps.GrowAGarden.Map
 
             MapManager.HideSomniumContents(_content);
             MapManager.SetContentSize(_content, Vector2.one * (2f * _scrollExtent * _unitsPerMetre));
+            HoldCentreThroughZoom();
+            KeepArrowSteady();
 
             if (!_wasOpen)
             {
                 _wasOpen = true;
                 _lastView = Vector4.positiveInfinity;
+                _lastZoom = 0f;
                 Draw();
                 CentreOnPlayer();
                 Logger.Info($"Update() '{gameObject.name}' — map opened; players list: {MapManager.DescribePlayersContainer(_content)}");
@@ -101,6 +106,33 @@ namespace Vulps.GrowAGarden.Map
             if (Time.time < _nextDraw) return;
             _nextDraw = Time.time + _redrawInterval;
             if (ViewChanged()) Draw();
+        }
+
+        /// <summary>When the zoom changes, puts the map point that was at the centre of the view back there, so zooming never pans.</summary>
+        private void HoldCentreThroughZoom()
+        {
+            RectTransform viewport = MapManager.ViewportOf(_content);
+            if (viewport == null) return;
+
+            viewport.GetWorldCorners(_corners);
+            Vector3 viewCentre = (_corners[0] + _corners[2]) * 0.5f;
+            float zoom = _content.localScale.x;
+
+            if (_lastZoom > 0f && !Mathf.Approximately(zoom, _lastZoom))
+                _content.position += viewCentre - _layer.TransformPoint(_viewAnchor);
+
+            _viewAnchor = _layer.InverseTransformPoint(viewCentre);
+            _lastZoom = zoom;
+        }
+
+        /// <summary>Keeps the player's arrow the same size on screen at any zoom, pointing where the player faces.</summary>
+        private void KeepArrowSteady()
+        {
+            float zoom = _content.localScale.x;
+            if (zoom > 0f) _you.rectTransform.localScale = Vector3.one / zoom;
+
+            Transform me = PlayerAnchor();
+            if (me != null) _you.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -me.eulerAngles.y);
         }
 
         /// <summary>Whether the view, the zoom or the player has moved enough since the last draw to be worth drawing again.</summary>
@@ -211,9 +243,11 @@ namespace Vulps.GrowAGarden.Map
             int used = 0;
             if (show)
             {
-                Vector3 local = viewCentre - origin;
-                int reach = Mathf.CeilToInt(viewRadius / _sectorSize) + 1;
-                int cx = Mathf.RoundToInt(local.x / _sectorSize), cz = Mathf.RoundToInt(local.z / _sectorSize);
+                float size = SectorManager.SectorSize;
+                Vector2Int mine = SectorManager.HasLocalSector ? SectorManager.LocalSector : new Vector2Int(int.MinValue, int.MinValue);
+                int reach = Mathf.CeilToInt(viewRadius / size) + 1;
+                Vector2Int view = SectorManager.SectorOf(viewCentre);
+                int cx = view.x, cz = view.y;
                 for (int dz = -reach; dz <= reach && used < _maxSectors; dz++)
                 for (int dx = -reach; dx <= reach && used < _maxSectors; dx++)
                 {
@@ -222,7 +256,8 @@ namespace Vulps.GrowAGarden.Map
                     Image tile = _sectorTiles[used];
                     TextMeshProUGUI label = _sectorLabels[used];
                     tile.gameObject.SetActive(true);
-                    Place(tile.rectTransform, new Vector3(x * _sectorSize, 0f, z * _sectorSize), Vector2.one * (_sectorSize * 0.97f), 0f);
+                    tile.color = x == mine.x && z == mine.y ? _currentSectorColour : _sectorColour;
+                    Place(tile.rectTransform, new Vector3(x * size, 0f, z * size), Vector2.one * (size * 0.97f), 0f);
                     label.text = x == 0 && z == 0 ? "Sector 0" : $"Sector {x},{z}";
                     used++;
                 }
@@ -242,7 +277,7 @@ namespace Vulps.GrowAGarden.Map
             var label = labelGo.GetComponent<TextMeshProUGUI>();
             if (_font != null) label.font = _font;
             label.alignment = TextAlignmentOptions.Center;
-            label.fontSize = _sectorSize * _unitsPerMetre * 0.12f;
+            label.fontSize = SectorManager.SectorSize * _unitsPerMetre * 0.12f;
             label.color = _sectorLabelColour;
             label.raycastTarget = false;
             var rect = label.rectTransform;
@@ -331,7 +366,6 @@ namespace Vulps.GrowAGarden.Map
             if (_field == null) _field = GetComponent<IslandField>();
             if (_unitsPerMetre <= 0f) _unitsPerMetre = 0.01f;
             if (_maxDrawn < 1) _maxDrawn = 1;
-            if (_sectorSize < 10f) _sectorSize = 10f;
             if (_maxSectors < 1) _maxSectors = 1;
         }
     }

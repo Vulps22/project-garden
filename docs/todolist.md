@@ -25,7 +25,12 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 - [ ] Growth pivots: a `ScalePivot` per crop prefab. [[crops#Growth pivots|crops → Growth pivots]]
 - [ ] An ending for `MultiHarvestPlant` before a crop uses it (#43). [[crops]]
+- [ ] **Fun seeds, next after the island sockets:** weed ([[weed]]), seeds that use the ARS system, and a seed that spawns a video screen for playing videos. Design for the last two to come from Vulps.
 - [ ] Seed ideas: GitHub issues #44, #47. A `PlantableEntity` (planting a sword to grow an auto-harvester) is an idea, not a plan.
+
+## Procgen
+
+- [ ] Buy-point sockets on the islands (upload 2). [[procgen-islands#Buy points everywhere|procgen-islands → Buy points everywhere]]
 
 ## Parked
 

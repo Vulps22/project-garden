@@ -132,6 +132,14 @@ namespace Vulps.GrowAGarden.Motion
             }
         }
 
+        /// <summary>Keeps the grab off until an enforced recall in progress arrives. False when no enforced recall is under way.</summary>
+        public bool KeepGrabUntilArrival()
+        {
+            if (!_returning || !_collisionsSuspended) return false;
+            _grabSuspended = true;
+            return true;
+        }
+
         private void StopReturning()
         {
             if (!_returning) return;

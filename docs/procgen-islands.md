@@ -24,8 +24,10 @@ Written 2026-09-09 on `feature/procgen` and parked on flight; resumed 2026-10-31
   one, so a player who joins after the next midnight still gets the instance's seed, not today's.
 - **`IslandField`** (root object `IslandField`, at the Garden) derives the layout and sends nothing. The sky is an
   unbounded grid of cells; a hash of `(seed, cell)` decides whether a cell holds an island, which prefab from
-  `_islands`, its offset inside the cell, its height within `_heightRange` (±25 m) and its yaw. Gardens sit at y=0. Each client instantiates islands
-  within `_viewRadius` of its own head and destroys them beyond it; they are plain scenery with no NetworkObject.
+  `_islands`, its offset inside the cell, its height within `_heightRange` (±25 m) and its yaw. Gardens sit at y=0. Each client loads every island
+  that touches its own sector, plus every cell within `_viewRadius` of its head, and destroys the rest; they are
+  plain scenery with no NetworkObject. Why the whole sector: [[networking#Authority by sector|networking → Authority
+  by sector]].
   **Reordering `_islands` moves every island**, so new islands are appended.
 - **Every island prefab carries `SpawnableIsland`**, and `_islands` accepts nothing else. Its `IslandCategory`
   (Outcrop, Island, Landmark) fixes how much room it takes: the field treats every island as its category's full
@@ -90,6 +92,18 @@ file that knows Somnium's map layout (`Tablet.XR(Clone)/…/Tablet.XR.MapTab/…
 What the move into one prefab has to rewire: `DeedHut`'s `PlotFireToggle` and `PlotTeammateRoster`, and the deed's
 `PlotClaimSignage`, point at the four Plots through scene references, and `EconomyManager._balanceDisplayManager`
 points at the one scoreboard; with several Gardens it needs every board.
+
+## Buy points everywhere
+
+**Status (2026-11-01):** first upload built, compiles clean; untested in-world. Decided by Vulps 2026-11-01.
+
+Every buy point behaves the same, Garden or island: the master decides its stock by stall id without having it
+loaded, a player in its sector simulates it, and it sells once per cycle.
+
+1. **This upload:** sectors as the interest table, authority by sector, sector-plus-distance loading, and the stall
+   split into `BuyPoint` and `ShopKeeper`. The Garden's three stalls go through it.
+   [[networking#Authority by sector|networking → Authority by sector]], [[shop]].
+2. **Next:** buy-point sockets on `Island_A` and `Island_B`.
 
 ## The design
 
@@ -160,6 +174,8 @@ below into a bound you deliberately stayed inside rather than a bug waiting to h
 
 ### ⚠ The rarity roll cannot be a master decision
 
+**Superseded (2026-11-01):** the master does decide, by stall id, without the island loaded. [[shop]].
+
 [[roadmap]] §3 says *"the roll is a master decision and the spawned object is its
 announcement"*. That holds only while the master has the slot loaded, and at 2 km out it does not.
 
@@ -175,6 +191,9 @@ island's stock to everyone is spam about places nobody will visit; for streamed 
 against that.
 
 ### What spawns, and when — the one real trade
+
+**Superseded (2026-11-01):** neither. The master spawns real stock for any stall a player has loaded, and a player in
+its sector simulates it. [[networking#Authority by sector|networking → Authority by sector]].
 
 If the roll is derived, every client would try to spawn the stock and you would get N copies. Two
 answers:
@@ -192,6 +211,8 @@ A ghost you cannot pick up until you have paid is a worse moment, and it is the 
 exploration loop is built around. Decide this deliberately.
 
 ### The dupe, and the only far-world state the master needs
+
+**Built (2026-11-01)** as the sold-out list, broadcast to everyone rather than held by the master. [[shop]].
 
 Determinism regenerates stock that has already been taken: buy the rare seed, fly home, let the
 island unload, fly back, and it is there again. So the master must hold one small fact — **which

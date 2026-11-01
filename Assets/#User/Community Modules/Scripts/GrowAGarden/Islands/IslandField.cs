@@ -4,7 +4,7 @@ using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden.Islands
 {
-    /// <summary>Places islands from the world seed on an unbounded grid around the local player; every client derives the same layout.</summary>
+    /// <summary>Places islands from the world seed on an unbounded grid around the local player's sector; every client derives the same layout.</summary>
     public class IslandField : MonoBehaviour
     {
         [Tooltip("The islands the field may place. Order is part of the layout: reordering moves every island.")]
@@ -29,7 +29,7 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("No island's footprint reaches inside this radius of any Garden site.")]
         [SerializeField] private float _gardenClearRadius = 110f;
 
-        [Tooltip("Islands within this distance of the player exist; beyond it they are removed.")]
+        [Tooltip("Cells within this distance of the player are loaded, on top of every island touching the player's sector.")]
         [SerializeField] private float _viewRadius = 1200f;
 
         [Tooltip("Seconds between checks for cells coming into or going out of range.")]
@@ -37,6 +37,7 @@ namespace Vulps.GrowAGarden.Islands
 
         private readonly Dictionary<Vector2Int, GameObject> _placed = new Dictionary<Vector2Int, GameObject>();
         private readonly List<Vector2Int> _leaving = new List<Vector2Int>();
+        private readonly HashSet<Vector2Int> _wanted = new HashSet<Vector2Int>();
         private readonly Dictionary<Vector2Int, Placement> _resolved = new Dictionary<Vector2Int, Placement>();
         private float _nextRefresh;
 
@@ -98,35 +99,67 @@ namespace Vulps.GrowAGarden.Islands
             return transform;
         }
 
-        /// <summary>Places islands for cells that came into range and removes those that left it.</summary>
+        /// <summary>Loads every island touching the local sector, plus every cell within view, and removes the rest.</summary>
         private void Refresh(Vector3 around)
         {
             Vector3 origin = transform.position;
             _resolved.Clear();
+            _wanted.Clear();
+
             int reach = Mathf.CeilToInt(_viewRadius / _cellSize);
             Vector2Int centre = CellOf(around - origin);
             float viewSqr = _viewRadius * _viewRadius;
-
             for (int dz = -reach; dz <= reach; dz++)
             for (int dx = -reach; dx <= reach; dx++)
             {
                 var cell = new Vector2Int(centre.x + dx, centre.y + dz);
-                if (_placed.ContainsKey(cell)) continue;
-                if (FlatDistanceSqr(CellCentre(cell) + origin, around) > viewSqr) continue;
+                if (FlatDistanceSqr(CellCentre(cell) + origin, around) <= viewSqr) _wanted.Add(cell);
+            }
+            AddLocalSectorCells(origin);
 
+            foreach (Vector2Int cell in _wanted)
+            {
+                if (_placed.ContainsKey(cell)) continue;
                 Placement p = Resolve(WorldSeed.Seed, cell);
-                _placed[cell] = p.Prefab == null ? null : Instantiate(p.Prefab, p.Position + origin, p.Rotation, transform).gameObject;
+                if (p.Prefab == null) { _placed[cell] = null; continue; }
+                SpawnableIsland island = Instantiate(p.Prefab, p.Position + origin, p.Rotation, transform);
+                island.PlacedIn(cell);
+                _placed[cell] = island.gameObject;
             }
 
             float leaveSqr = (_viewRadius + _cellSize) * (_viewRadius + _cellSize);
             _leaving.Clear();
             foreach (var pair in _placed)
-                if (FlatDistanceSqr(CellCentre(pair.Key) + origin, around) > leaveSqr) _leaving.Add(pair.Key);
+                if (!_wanted.Contains(pair.Key) && FlatDistanceSqr(CellCentre(pair.Key) + origin, around) > leaveSqr) _leaving.Add(pair.Key);
 
             foreach (Vector2Int cell in _leaving)
             {
                 if (_placed[cell] != null) Destroy(_placed[cell]);
                 _placed.Remove(cell);
+            }
+        }
+
+        /// <summary>Adds every cell whose island reaches into the local sector, so the whole sector is always loaded.</summary>
+        private void AddLocalSectorCells(Vector3 origin)
+        {
+            if (!SectorManager.HasLocalSector) return;
+
+            Vector3 centre = SectorManager.SectorCentre(SectorManager.LocalSector) - origin;
+            float half = SectorManager.SectorSize * 0.5f;
+            float pad = _cellSize + 2f * SpawnableIsland.FootprintRadius(IslandCategory.Landmark);
+            Vector2Int min = CellOf(centre - new Vector3(half + pad, 0f, half + pad));
+            Vector2Int max = CellOf(centre + new Vector3(half + pad, 0f, half + pad));
+
+            for (int z = min.y; z <= max.y; z++)
+            for (int x = min.x; x <= max.x; x++)
+            {
+                var cell = new Vector2Int(x, z);
+                if (_wanted.Contains(cell)) continue;
+                Placement p = Resolve(WorldSeed.Seed, cell);
+                if (p.Prefab == null) continue;
+                float dx = Mathf.Max(Mathf.Abs(p.Position.x - centre.x) - half, 0f);
+                float dz = Mathf.Max(Mathf.Abs(p.Position.z - centre.z) - half, 0f);
+                if (dx * dx + dz * dz < p.Radius * p.Radius) _wanted.Add(cell);
             }
         }
 
