@@ -21,11 +21,11 @@ Every doc is tagged by the kinds of thing it defines; `Docs.base` lists them by 
 [[roadmap]].
 
 - **Rules:** [[principles]], [[layers]], [[conventions]].
-- **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]].
+- **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]], [[fun-seeds]] (popcorn and the video screen, ARS), [[almanac]] (a crop guide on the tablet; an idea).
 - **Mechanics:** [[shop]], [[economy]], [[plot-ownership]], [[flight]], [[climbing]].
 - **Interaction:** [[entity-components]], [[tutorial]].
 - **Game:** [[procgen-islands]].
-- **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[testing]], [[tooling]].
+- **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[tablet]] (Somnium's tablet, as Unity sees it), [[dev-tools]] (the Developer Market), [[testing]], [[tooling]].
 - **Reference:** [[terminology]], [[packaging]], [[fractured-isles-tutorial-script]], [[tutorial-transcript-mapping]].
 
 ## Repo

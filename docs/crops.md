@@ -28,17 +28,19 @@ Read [[principles]], [[networking]] and [[runtime-spawn]] first. Method names, n
 **Only `Seed` and `Produce` are ever grabbable.** A plant is spawned into a plot, grows there, and is
 never touched by a player. That single decision is what makes the rest of this simple.
 
-Three structures, and they are expected to stay three:
+Three structures for crops, and a fourth for upgrades (2026-11-02):
 
 ```
 Seed → RootedPlant                     → Produce          carrot, turnip
 Seed → SingleHarvestPlant : BearingPlant → Produce         pumpkin, weed, corn
 Seed → MultiHarvestPlant  : BearingPlant → Produce         tomato, eggplant
+Seed → StandingPlant                                       popcorn (an upgrade; [[fun-seeds]])
 ```
 
 ```
 Plant (abstract)
 ├── RootedPlant                    the plant is replaced by its produce
+├── StandingPlant                  grows, then stands for the session; an upgrade, not a crop
 └── BearingPlant (abstract)        produce hangs off the plant; the plant stays
     ├── SingleHarvestPlant         withers once every produce slot has been harvested
     └── MultiHarvestPlant          refills a harvested slot, for a season, then withers
@@ -423,10 +425,11 @@ after it bears, so the produce would spend its life pointing at a component on a
 overloaded null then makes every `!= null` read false, which is how a carrot came to sell for nothing while its
 ripening still looked right by coincidence.
 
-**To add a crop:** a `SeedDefinition` subclass, three prefabs (copy an existing crop of the same shape and swap the
+**To add a crop:** a `SeedDefinition` subclass (with a `tagline` for the stall sign, [[shop]]), three prefabs (copy an existing crop of the same shape and swap the
 definition, models, colliders and the references between the three), all three registered on `SceneNetworking`, a
 `Buyable_<Crop>` object under SceneManager carrying the definition, listed in `WorldManager._buyables`, and trip
-twins of its materials on `TripManager` ([[weed]]). Nothing points a buy point at it: stalls roll from the buyables.
+twins of its materials on `TripManager` ([[weed]]). Nothing points a buy point at it: stalls roll from the buyables. **A crop still being worked on stays out of
+`_buyables`** and is taken from the Developer Market instead ([[dev-tools]]); listing it is adding it to the list.
 **The fruit's solid collider goes on the body child, not the root** (2026-11-02): growth scales only `_bodyToScale`,
 so a root collider stays at the mesh's full size while the fruit is drawn at `_maxScale`. Carrot, turnip, tomato and
 eggplant had colliders twice the size of the fruit, which pushed things away before a hand reached them.
@@ -449,6 +452,7 @@ values of bearing crops are per fruit.
 | Corn | 25 / 13 a cob, 3 cobs | grows 20 s, ripens 15 s, withers 20 s | 0.45 |
 | Eggplant | 45 / 14 a fruit, 3 sockets × 3 harvests | grows 40 s, ripens 25 s, regrows 30 s, withers 20 s | 0.3 |
 | Pumpkin | 60 / 110 | vine 60 s, fruit ripens 60 s, withers 30 s | 0.25 |
+| Popcorn | 120 / nothing to sell | grows 60 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.12 |
 | Weed | 80 / 30 a bloom, 9 blooms | grows 90 s, ripens 60 s, withers 30 s ([[weed]]) | 0.15 |
 
 **Corn is a single-harvest bearing crop** (2026-11-02): a 1.15 m stalk with three cobs, which withers once they are

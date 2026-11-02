@@ -14,7 +14,7 @@ not yet.
 |---|---|
 | **World** | The scene. Everything, including the void and whatever floats in it. |
 | **Island** | A floating chunk of map. One is home; the rest are out there to be found. |
-| **Garden** | The constructed farming area on the home island — public ground, four Plots, a SellPoint, three BuyPoints, and in future a shed. Becomes a prefab, `GardenIsland`. |
+| **Garden** | The constructed farming area on the home island — public ground, four Plots, a SellPoint, three BuyPoints, and in future a shed. The `GardenIsland` prefab. |
 | **Plot** | The patch of Garden a player can claim. Four of them, 24 PlantSlots each. |
 | **PlantSlot** | Where a seed goes and a plant grows. |
 | **Sector** | A 1 km square of the world, Sector 0 centred on the Garden. The unit of loading and of who simulates what ([[networking#Authority by sector\|networking → Authority by sector]]). |
@@ -31,7 +31,7 @@ place is for that.
 
 ```
 World (the scene)
-└── GardenIsland                        (to be made a prefab)
+└── GardenIsland                        (prefab, Prefabs_world/GardenIsland.prefab)
     └── BorderedPlotWithRoad  ×4        = BorderedPlot + grass/path
         └── BorderedPlot     ×1         = Plot + border
             └── Plot         ×1         ← the claimable unit
@@ -52,4 +52,4 @@ per `Dirt`, four `BorderedPlotWithRoad` instances in `GrowAGardenScene`.
   PlantSlot.
 - Comments that said "plot" for a single square of dirt now say PlantSlot. A variable named `plot` holds a
   `PlotStateManager` or `PlotLeaseManager`, which is a Plot.
-- Still open: turn the Garden into the `GardenIsland` prefab ([[todolist]]).
+- The Garden is the `GardenIsland` prefab (`Prefabs_world/`), made in the reparenting sweep.
