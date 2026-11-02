@@ -178,6 +178,10 @@ did not.
 `Transform[]` survives. The Editor reports the array as correct by every means available, so this is
 only visible in-world. Author plain arrays and build richer objects at `Awake`.
 
+**m. Sprite references arrive empty in-world; textures survive** (2026-11-02). Every `Sprite` field the Developer
+Market had (sixteen previews, an app icon) was null in the client, while a `Texture` field on the same upload
+arrived. Reference the `Texture2D` and make the sprite at runtime (`Sprite.Create`), or show it with a `RawImage`.
+
 **h. Proxies instantiate at the prefab's own transform.** The `position`/`rotation` arguments are
 local-only; the correct pose reaches proxies on the next `NetworkRigidbody3D` tick. Expect a
 one-frame pop at spawn. If it reads badly, the fix is spawning invisible and revealing on the first
