@@ -4,12 +4,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using Vulps.GrowAGarden.DevTools;
 
 namespace Vulps.GrowAGarden
 {
     /// <summary>
     /// Temporary: logs everything Unity can see of Somnium's tablet, so the whole structure can be
-    /// documented. A full snapshot when the tablet first exists, then, whenever something opens or
+    /// documented. Runs only for the developer, and only while they are the master client. A full snapshot when the tablet first exists, then, whenever something opens or
     /// closes, the parts that switched on in full and the parts that switched off by path.
     /// </summary>
     public static class TabletProbe
@@ -27,6 +28,7 @@ namespace Vulps.GrowAGarden
         public static void Probe(RectTransform content)
         {
             if (_dumps >= MAX_DUMPS || content == null) return;
+            if (!Developer.IsLocalMaster) return;   // only Vulps, only as master: nobody else's log fills with it
 
             // The topmost ancestor named Tablet.*: Tablet.XR(Clone), above Canvases. Stopping at the first
             // gap in the names missed everything beside the tabs, the sidebar included.

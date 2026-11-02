@@ -51,7 +51,7 @@ Code: `GrowAGarden/Islands/`.
 
 **Status (2026-10-31):** first version built; zoomed-in islands tested in-world, sectors untested.
 
-`MapOverlay` (on `IslandField`) draws the seed's world onto Somnium's own tablet map; `TabletMapBridge` is the one
+The tablet itself is [[tablet]]. `MapOverlay` (on `IslandField`) draws the seed's world onto Somnium's own tablet map; `TabletMapBridge` is the one
 file that knows Somnium's map layout (`Tablet.XR(Clone)/…/Tablet.XR.MapTab/…/MapView/Viewport/Content`).
 
 - **Somnium's map is UI over a static picture.** `Content` is an `Image` of the mainland (`MapCombinedRGB`); zoom
