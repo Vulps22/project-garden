@@ -24,7 +24,7 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 ## Crops
 
 - [ ] Growth pivots: a `ScalePivot` per crop prefab. [[crops#Growth pivots|crops → Growth pivots]]
-- [ ] An ending for `MultiHarvestPlant` before a crop uses it (#43). [[crops]]
+- [ ] Roll a plant's stats (`HarvestCount`, value, size), perhaps from the stall's rarity. [[crops]]
 - [ ] **Fun seeds:** seeds that use the ARS system, and a seed that spawns a video screen for playing videos. Design to come from Vulps. Weed is done for this pass ([[weed]]).
 - [ ] Seed ideas: GitHub issues #44, #47. A `PlantableEntity` (planting a sword to grow an auto-harvester) is an idea, not a plan.
 

@@ -44,6 +44,11 @@ player's own `Root`, and Somnium replicates the avatar.
   climbable surface): off the ground (nothing within `_groundCheck`, 0.3 m, under the feet), a held grip runs the same
   three tries every frame, so reaching out with grip held catches the first rock the hand crosses. On the ground
   only a fresh press grabs, so walking past a rock with grip held does not.
+- **A hand that is carrying something never takes hold** (Vulps, 2026-11-01; compiles clean, untested in-world).
+  A seed in hand used to catch the wall on a fall, and letting go to free the hand dropped the seed. A hand counts
+  as carrying when one of Somnium's XR interactors nearer that hand than the other has a selection; the interactors
+  are found once per rig, and `FindInteractors()` logs them with the hand each was matched to. A carrying hand gets
+  no reach buzz either. The other hand still climbs.
 - **Haptics:** a short, light buzz on a free hand as it comes within reach of a hold (any of the three tries
   would succeed), and a longer, stronger one when it takes hold. Strengths and lengths are
   `_reachAmplitude`/`_reachSeconds` and `_grabAmplitude`/`_grabSeconds`.

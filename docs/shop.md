@@ -37,13 +37,19 @@ untested.
   `_rarityMultiplier` and its pinned crop with the request, since the master may not have the stall.
 - **The master stocks it** unless it is stocked, sold out (never true of a pinned stall), or was stocked within the last second (several clients
   asking at once spawn once). A stall with an `_override` always gets that crop, looked up by `seedId` in
-  `WorldManager`'s buyables; otherwise it rolls, weighted by rarity and the multiplier (an island stall's is 1–100 from the world seed; a crop
-  with `spawnWeight` under 1 has its weight multiplied by it). The seed is spawned at the
+  `WorldManager`'s buyables; otherwise it rolls, weighted by rarity and the multiplier (an island stall's is 1–100 from the world seed). A crop
+  with `spawnWeight` w under 1 weighs w × multiplier^(1 − w), so the rarer the crop the more a rare stall favours it
+  (2026-11-01; a flat multiplier gave the barely-rare turnip the same boost as the rarest crop, and island stalls
+  sold almost nothing but turnips). At x20: carrot 14%, turnip 27%, pumpkin 33%, weed 26% before the new crops;
+  at x100 the rarest crops take most rolls. The seed is spawned at the
   pose and told its stall id (`Seed.PlaceInShop`), which every client learns, and late joiners get it in the seed's
   state.
 - **Which seed is a stall's stock** is a table every client keeps from the seeds themselves (`ShopKeeper.StockAt`).
   A stall shows whatever the table says, so no trigger has to catch a seed arriving. Two seeds claiming one stall
-  (two masters racing) keeps the first and discards the second.
+  (two masters racing) keeps the first and discards the second. **A discarded seed leaves the table as soon as the
+  discard message arrives**, not at its despawn (2026-11-02): a peer often received a cycle's new stock before the
+  old seed's despawn, kept the old one and turned the new one away, so the stall never offered it for sale. Session 1
+  of 2026-11-01 logged 514 such stalls on a peer.
 - **One sale per stall per cycle.** A sale marks the stall sold out on every client until the next cycle; the list
   is sent whole to late joiners, so a new master already has it.
 - **A pinned stall restocks after every sale.** A stall with an `_override` (the Garden's carrot, turnip and
@@ -75,10 +81,14 @@ version was wrong.
    overlapping with nothing having moved. `Socket.HasLeft()` checks the geometry before raising `Leaving`.
 4. **Asking.** In `BuyPoint.OnLeaving`, **the holder** calls `Seed.RequestPurchase()`, because the holder is the
    only client that knows its own hand is on the seed (`IsHeld` is local; see
-   [[principles#^local-state|principles → local state]]). Sent to all; `ShopKeeper` acts on the master only.
+   [[principles#^local-state|principles → local state]]). Sent to all; `ShopKeeper` acts on the master only. The
+   stall asks for any unsold seed with its stall id, not only the one it has adopted, since a peer's stall can lag a
+   restock.
 5. **Deciding.** `ShopKeeper.ResolvePurchaseRequest` on the master. The buyer's grabber message and Fusion's
    authority transfer arrive in no fixed order against the request, so it retries quietly for a short window rather
-   than bouncing the seed out of a hand on the first miss. Then: known buyer? known state authority? a definition
+   than bouncing the seed out of a hand on the first miss. A request for a seed the master does not list as that
+   stall's stock is refused and logged (2026-11-02); it used to be dropped silently, which left the seed in the
+   buyer's hand unbought and unplantable. Then: known buyer? known state authority? a definition
    to price from? a balance row? affordable? Any **no** restores shop state on every client without charging
    anyone, and each client's stall recalls the seed **from where it stands** (`Socket.RecallHere`; whoever
    simulates it moves it). Otherwise `Seed.Purchase()` → `EconomyManager.RemoveBalance()`, and the stall is sold

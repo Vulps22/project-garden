@@ -101,11 +101,10 @@ the target, only for the condition.
 - "Bigger plants sell for more" is nearly free — `ISellValueSource` was written to answer *what is
   this worth right now*. Note `SellPoint` captures the value at the moment of offer, deliberately,
   because announcing a sale clears the holder and there would be nobody left to pay.
-- **⚠ A plant that stands until harvested is #43.** `RootedPlant` despawns itself when it bears and
-  `SingleHarvestPlant` withers when its sockets are spent; neither stands. `MultiHarvestPlant` stands
-  and has no ending, which is its open problem — and for most upgrades harvesting *is* the ending,
-  since that is how you end the buff. The exception is any upgrade you never want to harvest, the
-  warehouse being the obvious one. Settle #43 before the first upgrade ships.
+- **A plant that stands until harvested.** `RootedPlant` despawns itself when it bears, and both bearing
+  plants wither once their sockets are spent; `MultiHarvestPlant` stands for a season (#43, resolved
+  2026-11-01, [[crops]]). For most upgrades harvesting *is* the ending, since that is how you end the buff.
+  The exception is any upgrade you never want to harvest, the warehouse being the obvious one.
 
 **Open:** whether "fully harvest-ready" means ripe-and-harvestable for every upgrade, or whether some
 work from the moment they mature. The fence probably wants the former; a buff you must *not* harvest
@@ -209,8 +208,7 @@ thing costs one number.
   which is global mutable state shared with everything else in the process. Hash the seed with the
   island's coordinate into a local `System.Random` instead.
 - **Purity is also what makes unloading safe.** Islands have to despawn behind the player or the
-  NetworkObject count grows without bound (§4c — Somnium may have a per-world limit nobody has hit
-  yet). Despawning a place a player might return to is only acceptable if it regenerates
+  NetworkObject count grows without bound (§4c). Despawning a place a player might return to is only acceptable if it regenerates
   *identically*, which is exactly what determinism buys. It is not a nicety here; it is the thing
   that lets the world be endless.
 - **The real ceiling is `SceneNetworking._networkPrefabs`.** Every explorable has to be registered
@@ -320,11 +318,10 @@ it.** It would also break the physical continuity that makes carrying anything m
 - **This is the grid's second customer.** The Plot Seed grows a garden *within* an island; this
   appends whole islands. Different axes, one foundation, and both need the garden authored as
   spawnable chunks. Build the grid once.
-- **⚠ Object count.** Each island is four Plots of 24 PlantSlots, and every PlantSlot carries a
+- **Object count.** Each island is four Plots of 24 PlantSlots, and every PlantSlot carries a
   NetworkObject and a NetworkBridge — 96 NetworkObjects per island before a single crop exists.
-  Three islands is 288, just for dirt. [[runtime-spawn]] §4c notes Somnium may have a per-world
-  limit nobody has found yet; appending islands is the thing most likely to find it. Worth measuring
-  before it is built.
+  Three islands is 288, just for dirt. Somnium's limit is in the thousands (Vulps, 2026-11-02), so this
+  is not a blocker.
 
 ### Prerequisite: the scene has to be tidied first
 
@@ -419,7 +416,7 @@ does.
   and the effect is gone — the warehouse is just the one where "gone" locks a door rather than
   dropping a fence. "Lit and in use", and open-versus-shut, are the same derivation every client can
   already make from what is planted where and how grown it is. Nothing extra on the wire.
-- **⚠ It is the upgrade you never want to harvest**, which is the corner of #43 step 2 flags. Every
+- **⚠ It is the upgrade you never want to harvest**, the corner step 2 flags. Every
   other buff ends when you harvest it, so the player has a reason to clear the slot; this one you
   leave standing all session, and there is still no gesture for taking it out when you are done.
 - **Access can fail, and the design has to mean it.** Between sessions the key is gone, so reaching

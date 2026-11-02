@@ -1,20 +1,17 @@
 namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
-    /// Yields once per socket and then dies: a pumpkin, a pea, a tomato.
+    /// Bears once, and withers when every socket has been harvested its plant's HarvestCount times:
+    /// a pumpkin, weed. It never bears again by itself; for regrowing fruit see MultiHarvestPlant.
     ///
-    /// Named for the rule rather than for botany. "Vining" is a growth habit and says nothing about
-    /// lifespan — it spans annuals and perennials alike — and no botanical term matches the question
-    /// the game actually asks, which is *after this plant yields, does it end or continue?*
-    ///
-    /// A pumpkin has one socket and so withers on its first harvest. A tomato with four withers on
-    /// the fourth, which is the same rule and needs no second class.
+    /// Named for the rule rather than for botany: the question the game asks is *after this plant
+    /// yields, does it end or continue?*
     /// </summary>
     public class SingleHarvestPlant : BearingPlant
     {
         protected override void OnProduceHarvested(ProduceSlot slot)
         {
-            if (AllSlotsHarvested()) BeginWithering();
+            if (AllSlotsSpent()) BeginWithering();
         }
     }
 }

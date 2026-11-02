@@ -36,10 +36,8 @@ Seed_Weed  ──_plantPrefab──▶  Plant_Weed  ──_producePrefab──�
 ```
 
 **`Plant_Weed` is a `SingleHarvestPlant`.** A stem hung with blooms is a bearing plant, and the
-sockets are where the blooms sit. `MultiHarvestPlant` is the tempting choice — a plant that keeps
-producing suits weed — but it **has no ending** (#43): with plants ungrabbable there is no uproot
-gesture, so a multi-harvest weed holds its PlantSlot until its owner's lease expires. Take the shape
-that withers. Revisit if #43 ever gets a real answer.
+sockets are where the blooms sit. It was chosen when `MultiHarvestPlant` had no ending (#43); since
+2026-11-01 a regrowing plant ends after a season ([[crops]]), so weed could regrow if wanted.
 
 **Author the sockets as a plain `Transform[]`.** `BearingPlant._produceSockets` already is one, and
 it is one because arrays of custom `[Serializable]` classes arrive empty from the bundle export —
@@ -73,7 +71,7 @@ where anything a sale gives back appears.
 **`Splif_Weed`** (`prefab_items/`) is a copy of the blank deed scroll's prefab: a `CollectibleEntity`
 (`collectibleId` `splif`) that is grabbable and hovers, with the scroll's `PlotApplication` taken off. The mesh
 is a 9 cm tapered roll of paper built in code (`Models/Weed/Splif.asset`), with a slightly larger grab box so it
-is not fiddly in VR. **It is not sellable**: there is no `SellableEntity` on it at all.
+is not fiddly in VR. **It is not sellable**: there is no `SellableEntity` on it at all. Like every grabbable, a far grab pulls it into the hand ([[crops]] → *To add a crop*).
 
 ## shifterhead's system
 
@@ -116,8 +114,7 @@ with the other definitions, and the three prefabs are on `SceneNetworking`.
 
 `WeedSeed.Init()`: buy 80, **30 per bloom** with nine to a plant (270 a plant), 90 s to grow, 60 s to ripen,
 30 s to wither, `spawnWeight` 0.15, a rarer find than pumpkin's 0.25. All nine sockets are kept: Somnium
-now handles the object count (Vulps, 2026-11-01), which answers the per-world limit worry below for
-blooms.
+now handles the object count (Vulps, 2026-11-01); its limit is in the thousands.
 
 ## Build order
 
@@ -136,9 +133,8 @@ All four are built and played in-world (2026-11-01).
 
 ## Open
 
-- Whether a splif should ever expire. [[runtime-spawn]] §4c notes an unfound per-world object limit,
-  and an item that is never sold and never despawns is the shape most likely to find it. Auto-recall
-  or a lifetime, decided when it exists.
+- Whether a splif should ever expire, for tidiness rather than object count. Auto-recall or a lifetime, decided
+  when it matters.
 - Whether harvesting a bloom should drop anything, or only selling one. As written, only selling.
 
 ## Eating, smoking and the trip

@@ -26,6 +26,23 @@ namespace Vulps.GrowAGarden.Crops
         /// <summary>Built at Awake from _produceSockets — see ProduceSlot for why.</summary>
         protected ProduceSlot[] _produceSlots = new ProduceSlot[0];
 
+        private int _harvestCount;
+
+        /// <summary>
+        /// How many times each socket bears before it is spent; the plant withers once all are. This
+        /// plant's own number, starting from its crop's default, so a plant can later be rolled
+        /// longer- or shorter-lived than its kind. Read late: the definition sets its numbers in
+        /// OnEnable, which can run after this plant's Awake.
+        /// </summary>
+        public int HarvestCount
+        {
+            get
+            {
+                if (_harvestCount <= 0) _harvestCount = Mathf.Max(1, seedDefinition != null ? seedDefinition.harvestCount : 1);
+                return _harvestCount;
+            }
+        }
+
         protected override void Awake()
         {
             base.Awake();
@@ -76,14 +93,13 @@ namespace Vulps.GrowAGarden.Crops
         {
             foreach (ProduceSlot slot in _produceSlots)
             {
-                if (!slot.IsEmpty || slot.socket == null) continue;
+                if (!slot.IsEmpty || slot.socket == null || slot.harvestedCount >= HarvestCount) continue;
 
                 Produce produce = SpawnProduce(_producePrefab, slot.socket.position, slot.socket.rotation);
                 if (produce == null) continue;
 
                 produce.Init(null, -1, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 slot.produceId = produce.NetworkId;
-                slot.harvested = false;
 
                 ProduceSlot captured = slot;
                 produce.Harvested += () => OnHarvested(captured);
@@ -108,7 +124,7 @@ namespace Vulps.GrowAGarden.Crops
             if (!PlayerManager.IsMaster) return;
 
             slot.produceId = 0;
-            slot.harvested = true;
+            slot.harvestedCount++;
             broadcastState();
 
             OnProduceHarvested(slot);
@@ -137,39 +153,41 @@ namespace Vulps.GrowAGarden.Crops
             return WorldManager.Find<Produce>(rawId);
         }
 
-        /// <summary>True once every socket has yielded at least once.</summary>
-        protected bool AllSlotsHarvested()
+        /// <summary>True once every socket has been harvested its plant's HarvestCount times.</summary>
+        protected bool AllSlotsSpent()
         {
             foreach (ProduceSlot slot in _produceSlots)
-                if (!slot.harvested) return false;
+                if (slot.harvestedCount < HarvestCount) return false;
             return true;
         }
 
         // Sockets ride along in the state payload so a proxy knows which are full, and a late
         // joiner does not have to be told twice.
         protected override int GetExtraBroadcastStateSize() =>
-            BytesWriter.ByteSize + _produceSlots.Length * (BytesWriter.IntSize + BytesWriter.ByteSize);
+            BytesWriter.ByteSize * 2 + _produceSlots.Length * (BytesWriter.IntSize + BytesWriter.ByteSize);
 
         protected override void OnWriteBroadcastState(BytesWriter writer)
         {
+            writer.AddByte((byte)Mathf.Min(HarvestCount, 255));
             writer.AddByte((byte)_produceSlots.Length);
             foreach (ProduceSlot slot in _produceSlots)
             {
                 writer.AddInt((int)slot.produceId);
-                writer.AddByte(slot.harvested ? (byte)1 : (byte)0);
+                writer.AddByte((byte)Mathf.Min(slot.harvestedCount, 255));
             }
         }
 
         protected override void OnReadBroadcastState(BytesReader reader)
         {
+            _harvestCount = Mathf.Max(1, reader.NextByte());
             int count = reader.NextByte();
             for (int i = 0; i < count; i++)
             {
                 uint id = (uint)reader.NextInt();
-                bool harvested = reader.NextByte() == 1;
+                int harvested = reader.NextByte();
                 if (i >= _produceSlots.Length) continue;
                 _produceSlots[i].produceId = id;
-                _produceSlots[i].harvested = harvested;
+                _produceSlots[i].harvestedCount = harvested;
             }
         }
     }

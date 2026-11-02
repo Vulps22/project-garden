@@ -32,8 +32,8 @@ Three structures, and they are expected to stay three:
 
 ```
 Seed → RootedPlant                     → Produce          carrot, turnip
-Seed → SingleHarvestPlant : BearingPlant → Produce         pumpkin, pea, tomato
-Seed → MultiHarvestPlant  : BearingPlant → Produce         apple, grape, blueberry   (#43)
+Seed → SingleHarvestPlant : BearingPlant → Produce         pumpkin, weed, corn
+Seed → MultiHarvestPlant  : BearingPlant → Produce         tomato, eggplant
 ```
 
 ```
@@ -41,7 +41,7 @@ Plant (abstract)
 ├── RootedPlant                    the plant is replaced by its produce
 └── BearingPlant (abstract)        produce hangs off the plant; the plant stays
     ├── SingleHarvestPlant         withers once every produce slot has been harvested
-    └── MultiHarvestPlant          refills a harvested slot and goes on
+    └── MultiHarvestPlant          refills a harvested slot, for a season, then withers
 
 Produce (abstract)
 └── RootedProduce                  takes the plant's place, and its plot
@@ -91,12 +91,33 @@ other cross-object message in this project uses. `Bear()` runs on the master, sp
 The array is what makes the three cases one mechanism: a pumpkin has one socket, a tomato has
 several, an apple tree has many.
 
+### Seasons: `HarvestCount` and `harvestedCount`
+
+**Status (2026-11-01):** built, compiles clean, untested in-world.
+
+**A season is per plant, not per crop** (Vulps, 2026-11-01). The plant has a `HarvestCount`: how many
+times each of its sockets fruits. Each socket (`ProduceSlot`) has a `harvestedCount`, raised by one on
+every harvest. A socket is **spent** at `harvestedCount >= HarvestCount`; `Bear()` skips spent sockets,
+and a plant whose sockets are all spent withers.
+
+`HarvestCount` starts from the crop's `SeedDefinition.harvestCount` (default 1) but belongs to the plant,
+because a plant's stats are meant to be rolled later (bigger plants worth more and harvested less often,
+buffed or golden ones, possibly from the stall's rarity), so a season cannot be fixed at 3 per crop.
+Rolling it is not built: today every plant takes its crop's value.
+
+**Networking:** the master owns both counts. They travel in the plant's state with the slot ids:
+`HarvestCount` (byte), the slot count (byte), then per slot the produce id (int) and `harvestedCount`
+(byte), so late joiners get the season where it stands.
+
 ### `SingleHarvestPlant`
-`OnProduceHarvested` — when **every** slot has been harvested, begin withering. A pumpkin has one
-socket so it withers on its first harvest; a tomato with four withers on the fourth.
+`OnProduceHarvested` — once every socket is spent, begin withering. With a `HarvestCount` of 1, which
+pumpkin and weed have, that is once every socket has been harvested once.
 
 ### `MultiHarvestPlant`
-`OnProduceHarvested` — refill that slot and carry on. Never withers on its own (see §7, open).
+`OnProduceHarvested` — if every socket is spent, wither; otherwise bear again after `_regrowDelay`
+(30 s), refilling the empty sockets that still have harvests left. Tomato (4 sockets) and eggplant (3)
+fruit 3 times a socket. **This is the ending #43 was missing:** a season, then the plant withers and frees
+its plot.
 
 ### `Produce` (abstract)
 Owns its own ripening, on its own timestamp, exactly as growth works today:
@@ -225,8 +246,8 @@ harvested  → grabbable, loose, hovering
 ## 6. Slot ownership
 
 The plant holds its slot for its whole life. Harvest takes only produce. The slot is freed when the
-plant ends — which is at once for a `RootedPlant`, after withering for a `SingleHarvestPlant`, and
-never for a `MultiHarvestPlant`.
+plant ends — which is at once for a `RootedPlant`, and after withering for either bearing plant, once its
+sockets are spent.
 
 `RootedProduce` is the exception worth thinking about, because the plant vanishes while the crop is
 still sitting in the plot. **Recommend the produce holds the plot until it is picked**, otherwise a
@@ -281,16 +302,12 @@ that exists today, unrelated to any of this, and is fixed by the same `PlayerRem
 
 ## 7. Open questions
 
-1. **Nothing ever ends a `MultiHarvestPlant`.** With plants ungrabbable there is no uproot gesture
-   available at all, so an apple tree holds its plot until its owner leaves and the lease (§6a)
-   expires. That is now an answer, but a thin one — a player who stays online can never reuse the
-   plot. Needs a real one before #43 ships: a tool, a hold-to-remove on the plot, or a lifespan.
+1. **Resolved (2026-11-01): seasons end a `MultiHarvestPlant`** (see *Seasons* in §2). An upgrade that
+   should stand for good (the warehouse, [[roadmap]]) would still want a way to take it out.
 2. **Un-harvested produce when a plant withers.** A `SingleHarvestPlant` only withers *because* it
    was harvested, so this is currently unreachable — but a tomato with three of four slots taken and
    a player who wanders off holds its plot until the lease expires.
-3. **Does `Bear()` refill instantly for a `MultiHarvestPlant`, or after a delay?** An apple tree that
-   replaces an apple the instant it is picked reads as a vending machine. A regrow delay is probably
-   wanted, and it belongs on the plant, not the produce.
+3. **Resolved (2026-11-01): after a delay**, `MultiHarvestPlant._regrowDelay`, 30 s, on the plant.
 4. **Several produce visible at once** is now the normal case, not a stretch goal — the socket array
    is in from the start.
 
@@ -371,8 +388,8 @@ once, and an intermediate state would be more code than either end.
 The cost is worth stating: this is the first upload on this branch whose in-world test cannot isolate
 a failure. If the shop stocks but nothing grows, the suspects are the plant prefab, the plant spawn,
 the slot handoff, the growth derivation and the message enums, all new in the same build. Budget for
-that rather than being surprised by it. `MultiHarvestPlant` is written but no crop uses it, so it is
-along for the ride, not under test.
+that rather than being surprised by it. `MultiHarvestPlant` was written but unused then; tomato and eggplant
+use it since 2026-11-01.
 
 The in-world test that matters: **buy → plant → grow → harvest → sell**, for carrot (rooted) and
 pumpkin (bearing), with the plot replantable afterwards. Then a second client, for the late-join
@@ -406,18 +423,66 @@ after it bears, so the produce would spend its life pointing at a component on a
 overloaded null then makes every `!= null` read false, which is how a carrot came to sell for nothing while its
 ripening still looked right by coincidence.
 
-**To add a crop:** a `SeedDefinition` subclass, three prefabs, all three registered on `SceneNetworking`, and a buy
-point pointed at the seed.
+**To add a crop:** a `SeedDefinition` subclass, three prefabs (copy an existing crop of the same shape and swap the
+definition, models, colliders and the references between the three), all three registered on `SceneNetworking`, a
+`Buyable_<Crop>` object under SceneManager carrying the definition, listed in `WorldManager._buyables`, and trip
+twins of its materials on `TripManager` ([[weed]]). Nothing points a buy point at it: stalls roll from the buyables.
+**The fruit's solid collider goes on the body child, not the root** (2026-11-02): growth scales only `_bodyToScale`,
+so a root collider stays at the mesh's full size while the fruit is drawn at `_maxScale`. Carrot, turnip, tomato and
+eggplant had colliders twice the size of the fruit, which pushed things away before a hand reached them.
+**Every grabbable pulls into the hand on a far grab** (Vulps, 2026-11-02): `XRGrabInteractable` Far Attach Mode is
+**Near** on all 17 grabbable prefabs (seeds, produce, the scrolls and the splif). The default defers to Somnium's
+interactor, which kept a far-grabbed object at the end of the laser, and players were reeling seeds in hand over hand.
+A new grabbable needs the same.
 
 ## Balance
 
-**Status (2026-09-13):** current values; tuned for testing, not designed.
+**Status (2026-11-01):** current values; tuned for testing, not designed. Tomato, corn and eggplant added
+2026-11-01 from the same asset pack as carrot, turnip and pumpkin (compiles clean, untested in-world). Sell
+values of bearing crops are per fruit.
 
-| Crop | Buy / sell (Thatch) | Timing |
-|---|---|---|
-| Carrot | 10 / 15 | grows 10 s |
-| Turnip | 18 / 25 | grows 15 s |
-| Pumpkin | 60 / 110 | vine 60 s, fruit ripens 60 s, withers 30 s |
+| Crop | Buy / sell (Thatch) | Timing | `spawnWeight` |
+|---|---|---|---|
+| Carrot | 10 / 15 | grows 10 s | 1.0 |
+| Tomato | 20 / 6 a fruit, 4 sockets × 3 harvests | grows 20 s, ripens 15 s, regrows 30 s, withers 20 s | 0.85 |
+| Turnip | 18 / 25 | grows 15 s | 0.6 |
+| Corn | 25 / 13 a cob, 3 cobs | grows 20 s, ripens 15 s, withers 20 s | 0.45 |
+| Eggplant | 45 / 14 a fruit, 3 sockets × 3 harvests | grows 40 s, ripens 25 s, regrows 30 s, withers 20 s | 0.3 |
+| Pumpkin | 60 / 110 | vine 60 s, fruit ripens 60 s, withers 30 s | 0.25 |
+| Weed | 80 / 30 a bloom, 9 blooms | grows 90 s, ripens 60 s, withers 30 s ([[weed]]) | 0.15 |
+
+**Corn is a single-harvest bearing crop** (2026-11-02): a 1.15 m stalk with three cobs, which withers once they are
+picked. It started as a carrot copy and came up as a cob half-buried in the dirt. The pack's stalk has its three cobs
+built into the mesh, so they were cut out in the Editor (`Models/Corn/Corn_Plant_Bare.asset`, 456 of 1557 triangles
+kept), and a `ProduceSocket` sits at each cob's centre along its axis. A cob is 13.5 cm, matching the modelled ones,
+with a box collider that size.
+**Tomato and eggplant regrow** (Vulps, 2026-11-01): `MultiHarvestPlant`s whose fruit hang from `ProduceSocket_N`
+children placed around the stem, a season of 3 harvests each. Their prefabs started as carrot copies and were
+converted. A plant's visible size is its `_maxScale` (growth overwrites the body's scale), so the new crops' sizes
+are set there: tomato, eggplant and corn plants 0.5, tomato fruit 0.5, eggplant fruit 0.6, corn cob 0.22.
+
+## The eggplant easter egg
+
+**Status (2026-11-01):** built (Vulps's idea), compiles clean; untested in-world.
+
+A harvested eggplant works with SPS avatars: brought near an avatar's SPS target, it bends to meet it. It uses
+Community Modules' SPS plugin (`Scripts/SPS Plugin/`), which every second finds objects tagged `Player` named
+`SPS_Mesh…` (penetrators) and `SPS_Target…` (receivers, which SPS avatars carry), and gives each penetrator a trigger
+that drives its material toward the nearest target. It is local rendering on every client, so nothing is sent.
+
+- **`SPSController`** sits on SceneManager, pointed at the plugin's own `[SPS_Mesh]` and `[SPS_Target]` prefabs.
+  CM's `SPS Controller` prefab was not used, because it carries a visible logo.
+- **`Produce_Eggplant`**: under `Eggplant_Fruit`, an `SPS_Mesh` (tagged `Player`) holding `SPS_Renderer` (the
+  eggplant mesh, material `Materials/Eggplant_SPS`), `SPS_Base` at the stem and `SPS_End` at the tip of the bulb
+  (0.41 m apart in the mesh's units). The fruit's own renderer is off, so only the SPS copy shows.
+- **The shader is ours.** The plugin only accepts materials whose shader is named `Community/SPS…`, and no such
+  shader was in the project (SPS avatars bring their own). `Community/SPS Lit (Vulps)` (`Shaders/SpsLit.shader` +
+  `SpsBend.hlsl`) is URP Lit with every vertex pass bending the mesh about `_Pivot`, from none at the base to a full
+  turn toward `_Target` at the tip, while `_Enable` is set. If the official shader turns up, swapping it in is a
+  material change.
+- **`OwnMaterials`** on the renderer gives each eggplant its own material copy at spawn: `SPSTrigger` writes to the
+  shared material, which would otherwise bend every eggplant in the world at once.
+- Tagging `Player` is safe here: nothing of ours reads that tag, and Somnium's own player tag is `PlayerCollider`.
 
 ## Growth pivots
 

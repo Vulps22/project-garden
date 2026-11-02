@@ -65,7 +65,7 @@ with Somnium's tool (`Somnium Fusion 2.1 Migration Tool V1.0.unitypackage`, guid
 
 1. Backup commit `555788b`, and a full copy at `~/Documents/project-garden-backup-2026-10-31-pre-fusion21`.
 2. `MigrationAutomation.RunUnattended -migrationTask Full` in batch mode: Fusion 2.1.3 and CM 4.0 in, every
-   `NetworkRigidbody3D` replaced. Exit 3, every step done, compile errors only in our vendored CM copies.
+   `NetworkRigidbody3D` replaced. Exit 3, every step done, compile errors only in our vendored CM copies. Its NetworkTransform-settings step silently failed (forecast left on; fixed 2026-11-02, [[networking#Fusion 2.1|networking → Fusion 2.1]]).
 3. Our code moved into `Scripts/GrowAGarden/`; the vendored `SceneNetworking`, `NetworkGrabbable`, `BytesReader` and
    `BytesWriter` deleted and the scene and prefabs re-pointed at CM 4.0's GUIDs. `BytesReader`/`BytesWriter` were
    identical to 4.0, so the wire format did not change. 4.0's `SceneNetworking` guards its own `PrefabUtility` call,

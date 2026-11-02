@@ -24,8 +24,8 @@ namespace Vulps.GrowAGarden.Crops
         /// <summary>Fusion id of the produce hanging here, or 0 when the socket is empty.</summary>
         public uint produceId;
 
-        /// <summary>True once something borne here has been taken.</summary>
-        public bool harvested;
+        /// <summary>How many times something borne here has been taken. The socket is spent once this reaches its plant's HarvestCount.</summary>
+        public int harvestedCount;
 
         public ProduceSlot(Transform socket) => this.socket = socket;
 

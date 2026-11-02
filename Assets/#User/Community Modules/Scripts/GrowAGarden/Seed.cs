@@ -31,6 +31,9 @@ namespace Vulps.GrowAGarden
         public bool InShop { get; private set; }
         public bool IsBought { get; private set; }
 
+        /// <summary>The master has told every client this is going: no stall counts it as stock from here on.</summary>
+        public bool IsDiscarded { get; private set; }
+
         /// <summary>The stall that stocked this, replicated so every client can find a stall's stock by id.</summary>
         public StallId Stall { get; private set; }
 
@@ -232,6 +235,9 @@ namespace Vulps.GrowAGarden
 
         private void ApplyDiscard()
         {
+            // Off the stock table now, not at the despawn: a cycle's new stock can reach a peer before the old seed's despawn does.
+            IsDiscarded = true;
+            ShopKeeper.Untrack(this);
             ForceRelease();
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (WorldManager.DespawnIfStateAuthority(obj)) return;

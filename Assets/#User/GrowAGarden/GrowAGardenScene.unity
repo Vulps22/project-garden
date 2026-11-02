@@ -221,9 +221,65 @@ MonoBehaviour:
   spawnWeight: 0.6
   buyPrice: 18
   sellValue: 25
+  harvestCount: 1
   growthDuration: 15
   ripenDuration: 1
   witherDuration: 0
+--- !u!1 &157794066
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 157794068}
+  - component: {fileID: 157794067}
+  m_Layer: 0
+  m_Name: Buyable_Corn
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &157794067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157794066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a477acf45d535471598bbcfc50ff122b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.CornSeed
+  seedId: corn
+  displayName: Corn
+  seedPrefab: {fileID: 4360997998222114339, guid: a86d10e2c8f4c55c8b34192c4a0aca82,
+    type: 3}
+  spawnWeight: 0.45
+  buyPrice: 25
+  sellValue: 13
+  harvestCount: 1
+  growthDuration: 20
+  ripenDuration: 15
+  witherDuration: 20
+--- !u!4 &157794068
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157794066}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &163550761
 GameObject:
   m_ObjectHideFlags: 0
@@ -252,6 +308,7 @@ GameObject:
   - component: {fileID: 163550781}
   - component: {fileID: 163550782}
   - component: {fileID: 163550783}
+  - component: {fileID: 163550784}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -289,22 +346,40 @@ MonoBehaviour:
   - {fileID: 8075810893608712117, guid: 98d13e9d284f935fd8cc39ead495f388, type: 3}
   - {fileID: 848182256679900965, guid: 6502e44bbe13bb63cbf1f114ad4bd329, type: 3}
   - {fileID: 4360997998222114339, guid: e2e771a4bddc89c7ba94508164ca71a0, type: 3}
+  - {fileID: 4360997998222114339, guid: 20e6e5ec57a63b703aaa19524962ab34, type: 3}
+  - {fileID: 8889210848319893590, guid: 6076d7f6979801ddaa8fa0f917ac9caf, type: 3}
+  - {fileID: 5724602667579792080, guid: f8a084f15df15709ca5ea9013dccd120, type: 3}
+  - {fileID: 4360997998222114339, guid: a86d10e2c8f4c55c8b34192c4a0aca82, type: 3}
+  - {fileID: 8889210848319893590, guid: a3d483604d99ae90ca73a2b4384c0d70, type: 3}
+  - {fileID: 5724602667579792080, guid: 44834049907a96543abaa03b1ccff537, type: 3}
+  - {fileID: 4360997998222114339, guid: 0f77a5bed1989f67aad91925e003cf70, type: 3}
+  - {fileID: 8889210848319893590, guid: 9a5a6ea300548da4bb8260a8d3e41051, type: 3}
+  - {fileID: 5724602667579792080, guid: 8f651bf8eb5cc0248babed4941bf2ae7, type: 3}
   _networkPrefabsGuid:
-  - 618047ba-6c53-4a10-8760-e52a49c93d2b
-  - 8881ae5c-f6f8-47b5-a988-8200f3a9f3d6
-  - 4515f830-2512-4072-a754-7e4365612556
-  - cfa2a5e5-4030-47f6-a751-d3bde2ed6da8
-  - 6aa9e6bf-36fe-4573-920d-a8709dd082db
-  - 19c6c041-0646-4461-9bff-b7e1c169907b
-  - 96698a75-5e5a-4e28-9b72-eb881d7cd80c
-  - 4084b3ac-d889-496a-a78b-ea4b63af428d
-  - 6b761820-3708-4697-90fe-193ba9b65856
-  - 212e0914-f832-44d1-b13f-301dc1cf0111
-  - f826d8f5-c586-44df-be37-5fb461b17089
-  - c9f6ab7c-792b-4998-b164-f73257d11932
-  - 8c2a9f0b-7508-48c7-812d-b4094b8e8542
-  - 17519ee8-9596-4c6a-ab1e-e697fc345010
-  - 8eb3d290-3b1f-4111-8adb-54e8cb7c96b0
+  - c3849e90-ebee-44b6-a559-656bb39d7702
+  - 251cc907-6d4b-49a5-83a6-d5d11bbdbee2
+  - 41c212ad-4029-4cdf-bb3e-402938b9eb74
+  - a50fce00-bf53-4c8d-8476-94c1bbca38de
+  - 1a0be23e-2d7e-43eb-9e50-47341e5f0a05
+  - 961e97ed-d5ca-4739-b535-770b92728ecf
+  - d77ea446-689e-4178-9d72-3010068b352b
+  - e880a030-4e90-4f3a-99b6-cd4d83d4451b
+  - 979a7d83-2497-4fd3-9037-293de5718558
+  - 136654f1-1b9c-4f5d-9582-49d7cbb0b16c
+  - fcf7e9a3-7f63-4e41-aa6e-d63b799a72f2
+  - f1730241-4b0b-49f2-9fc9-11e1baec37a6
+  - b5c78032-e631-42eb-af2f-47cc71eaba3d
+  - 3b51a049-c9f3-462e-b999-aefe3a17e4dd
+  - 27e43282-f74d-45ed-bcf3-9604fc5a34f9
+  - 7734152c-d8d7-488c-b228-3d35857b64af
+  - ee0dc252-30d2-41a9-b4ea-acafe0f7aa59
+  - 5341ceef-f32c-4f15-9413-953944d0a1fb
+  - 6fdab1f0-3771-48fc-8604-efa633c0fdf2
+  - 324030f2-0925-4e47-a34e-09feeaad537d
+  - 17aa444c-0416-4c1a-b41a-e4ef640c4643
+  - d3ed9ce0-0629-45e0-8baa-e22f39ae956f
+  - fb3cc0de-45b7-45d8-a049-13e03fc55f81
+  - c788ce65-1dc1-414a-8e64-73475ec28e33
 --- !u!4 &163550764
 Transform:
   m_ObjectHideFlags: 0
@@ -324,6 +399,9 @@ Transform:
   - {fileID: 509771446}
   - {fileID: 561873905}
   - {fileID: 555644594}
+  - {fileID: 1395363820}
+  - {fileID: 157794068}
+  - {fileID: 1401735100}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &163550766
@@ -437,6 +515,9 @@ MonoBehaviour:
   - {fileID: 108362857}
   - {fileID: 258327365}
   - {fileID: 509771445}
+  - {fileID: 1395363819}
+  - {fileID: 157794067}
+  - {fileID: 1401735099}
   _recycleSeconds: 300
 --- !u!114 &163550773
 MonoBehaviour:
@@ -658,6 +739,12 @@ MonoBehaviour:
   - {fileID: 2100000, guid: ee377534d2cf3e243ab8ce782be8b5ed, type: 2}
   - {fileID: 2100000, guid: c4f075d5d5bbef444a436ece281ed421, type: 2}
   - {fileID: 2100000, guid: f75b9676b86920144a639d08d72a5ec1, type: 2}
+  - {fileID: 2100000, guid: e292b51f6375349498f26d572faddc1c, type: 2}
+  - {fileID: 2100000, guid: 388986c9e8f85524db50964a7d9d5052, type: 2}
+  - {fileID: 2100000, guid: a46349869de82824ba02d48aa61e68f7, type: 2}
+  - {fileID: 2100000, guid: bd3ac3aaa239ebf4396eb261af13874d, type: 2}
+  - {fileID: 2100000, guid: 3ab8b27d5c162cf48b0c8ad6ed2e1496, type: 2}
+  - {fileID: 2100000, guid: 84069b5b67b23e24b85eac888c3f5bc2, type: 2}
   _tripMaterials:
   - {fileID: 2100000, guid: 36f533c0e2b36fee2922e5495c0a53e3, type: 2}
   - {fileID: 2100000, guid: c34e99ddbb0a3fc02807d41f8071822c, type: 2}
@@ -676,6 +763,12 @@ MonoBehaviour:
   - {fileID: 2100000, guid: bf095f0ee17fc04be88a9483a676dfb5, type: 2}
   - {fileID: 2100000, guid: d4d5e3a4f087d1ece8e5192bce879763, type: 2}
   - {fileID: 2100000, guid: 83edb7b59adfb14d6a0dfbfa004f30b3, type: 2}
+  - {fileID: 2100000, guid: 8cb709a7f6e6153fc875060323591946, type: 2}
+  - {fileID: 2100000, guid: affb3bea7b74296e4b0d552391ec48d6, type: 2}
+  - {fileID: 2100000, guid: 8cde399511ae5263ba7a98c78900a7a0, type: 2}
+  - {fileID: 2100000, guid: 4d48747eb07fb09459ba27db3f3801ab, type: 2}
+  - {fileID: 2100000, guid: 15f14e53210940428be8d2450d62ae45, type: 2}
+  - {fileID: 2100000, guid: c187e6f531613edfd961b055cd9f0969, type: 2}
   _swapInterval: 2
   _flipLevel: 0.8
   _flipSeconds: 0.5
@@ -701,6 +794,9 @@ MonoBehaviour:
   - {fileID: 8905577080757051135, guid: 72b2fba13948b7c0ea107a84a41d9ed8, type: 3}
   - {fileID: -7650123257291483136, guid: 72b2fba13948b7c0ea107a84a41d9ed8, type: 3}
   - {fileID: 4300000, guid: 09e394b7fb844d94e811fa0de316528a, type: 2}
+  - {fileID: 4300008, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
+  - {fileID: 4300014, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
+  - {fileID: 4300004, guid: b69b26c8b73b8bd49bf243bbe541a2e0, type: 3}
   _materials:
   - {fileID: 2100000, guid: 89de6558677c5e641bb66722cb40672a, type: 2}
   - {fileID: 2100000, guid: d41c833ca4c077c449fc8b214fa60dc0, type: 2}
@@ -708,6 +804,9 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 6af3c5da2de2f77f7b2b631d167ec4df, type: 2}
   - {fileID: 2100000, guid: 20926b72f1de1e2e99825bcb8c8401e3, type: 2}
   - {fileID: 2100000, guid: 8aac09cc5cc21f9a782243a7f9cfe09e, type: 2}
+  - {fileID: 2100000, guid: 388986c9e8f85524db50964a7d9d5052, type: 2}
+  - {fileID: 2100000, guid: bd3ac3aaa239ebf4396eb261af13874d, type: 2}
+  - {fileID: 2100000, guid: 84069b5b67b23e24b85eac888c3f5bc2, type: 2}
   _swirl: {fileID: 555644592}
   _minLevel: 0.5
   _interval: {x: 9, y: 3}
@@ -717,6 +816,22 @@ MonoBehaviour:
   _size: {x: 0.25, y: 0.6}
   _maxVisions: 6
   _lifetime: 20
+--- !u!114 &163550784
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ba391c7c7266df4b9bfe8a0a78a3c2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.SPSController
+  _SPSMeshTriggerPrefab: {fileID: 7121908839547962347, guid: eee3d58bdb6a5594598e08f5de09e250,
+    type: 3}
+  _SPSTargetPrefab: {fileID: 4585609272519500650, guid: fedbca5a1d589e24abcb33f865f8d8e5,
+    type: 3}
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -765,6 +880,7 @@ MonoBehaviour:
   spawnWeight: 0.25
   buyPrice: 60
   sellValue: 110
+  harvestCount: 1
   growthDuration: 60
   ripenDuration: 60
   witherDuration: 30
@@ -1105,7 +1221,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: c578d2cd28dafead0a5adb6811f61db1, type: 3}
-  LastBuildSizeBytes: 85377359
+  LastBuildSizeBytes: 87571081
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -1133,7 +1249,7 @@ MonoBehaviour:
     Free:
       Count: 4
       MaxCount: 10
-      AvailableSize: 213385921
+      AvailableSize: 211180257
     Paid:
       Entries: []
   OwnedTokens: []
@@ -1412,6 +1528,7 @@ MonoBehaviour:
   spawnWeight: 1
   buyPrice: 10
   sellValue: 15
+  harvestCount: 1
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -1451,6 +1568,7 @@ MonoBehaviour:
   spawnWeight: 0.15
   buyPrice: 80
   sellValue: 30
+  harvestCount: 1
   growthDuration: 90
   ripenDuration: 60
   witherDuration: 30
@@ -2676,7 +2794,7 @@ ParticleSystem:
           m_PostInfinity: 2
           m_RotationOrder: 4
       cycleCount: 1
-      repeatInterval: 0.0001
+      repeatInterval: 0.01
       probability: 1
   SizeModule:
     enabled: 1
@@ -7122,6 +7240,61 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66364816947644fcbe82da1e54f3f55b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.PlotLeaseManager
+--- !u!1 &1395363818
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1395363820}
+  - component: {fileID: 1395363819}
+  m_Layer: 0
+  m_Name: Buyable_Tomato
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1395363819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395363818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73faa1c7ca0693a2c9dc196253fe4b7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.TomatoSeed
+  seedId: tomato
+  displayName: Tomato
+  seedPrefab: {fileID: 4360997998222114339, guid: 20e6e5ec57a63b703aaa19524962ab34,
+    type: 3}
+  spawnWeight: 0.85
+  buyPrice: 20
+  sellValue: 6
+  harvestCount: 3
+  growthDuration: 20
+  ripenDuration: 15
+  witherDuration: 20
+--- !u!4 &1395363820
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395363818}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1400594671
 GameObject:
   m_ObjectHideFlags: 0
@@ -7252,6 +7425,61 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!1 &1401735098
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1401735100}
+  - component: {fileID: 1401735099}
+  m_Layer: 0
+  m_Name: Buyable_Eggplant
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1401735099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1401735098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2ebd4eadadd8909bb4d102092ad56fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.EggplantSeed
+  seedId: eggplant
+  displayName: Eggplant
+  seedPrefab: {fileID: 4360997998222114339, guid: 0f77a5bed1989f67aad91925e003cf70,
+    type: 3}
+  spawnWeight: 0.3
+  buyPrice: 45
+  sellValue: 14
+  harvestCount: 3
+  growthDuration: 40
+  ripenDuration: 25
+  witherDuration: 20
+--- !u!4 &1401735100
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1401735098}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1574073295 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3046392203152668745, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
@@ -8093,6 +8321,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8372437311917388104, guid: 9a7dbefbbe74b1501a5e2712da8bf1e4,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

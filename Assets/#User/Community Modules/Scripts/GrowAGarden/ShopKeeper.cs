@@ -72,15 +72,16 @@ namespace Vulps.GrowAGarden
         public static void Track(Seed seed)
         {
             if (seed == null) return;
-            if (!seed.HasStall || !seed.InShop) { Untrack(seed); return; }
+            if (!seed.HasStall || !seed.InShop || seed.IsDiscarded) { Untrack(seed); return; }
 
-            if (_stock.TryGetValue(seed.Stall, out Seed current) && current != null)
+            if (_stock.TryGetValue(seed.Stall, out Seed current) && current != null && !current.IsDiscarded)
             {
                 if (current == seed) return;
                 Logger.Warn($"Track() 'ShopKeeper' — '{seed.name}' claims {seed.Stall}, already stocked by '{current.name}'; discarding the newcomer");
                 seed.RequestDiscard();
                 return;
             }
+            if (current != null) Untrack(current);
 
             _stock[seed.Stall] = seed;
             seed.PurchaseRequested += OnPurchaseRequested;
@@ -215,7 +216,12 @@ namespace Vulps.GrowAGarden
             if (definition == null || definition.seedPrefab == null) return 0f;
             float weight = definition.spawnWeight;
             if (weight <= 0f) return 0f;
-            return weight < 1f ? weight * Mathf.Max(1f, rarityMultiplier) : weight;
+            if (weight >= 1f) return weight;
+
+            // The rarer the crop, the more a rare stall favours it: weight × multiplier^(1 − weight). A flat
+            // multiplier gave the barely-rare turnip the same boost as the rarest crop, so above x20 nearly
+            // every island stall sold turnips.
+            return weight * Mathf.Pow(Mathf.Max(1f, rarityMultiplier), 1f - weight);
         }
 
         /// <summary>Re-sends fresh stock's state: the spawn reaches other clients a few ticks after the first broadcast.</summary>
@@ -277,8 +283,14 @@ namespace Vulps.GrowAGarden
         private static void OnPurchaseRequested(Seed seed)
         {
             if (_instance == null || !PlayerManager.IsMaster) return;
-            if (seed == null || !seed.HasStall || StockAt(seed.Stall) != seed) return;
-            if (seed.IsBought || !seed.InShop) return;
+            if (seed == null || seed.IsBought || !seed.InShop) return;
+            if (!seed.HasStall || StockAt(seed.Stall) != seed)
+            {
+                // Said out loud: a dropped request leaves the seed in the buyer's hand, unbought and unplantable.
+                string stocked = !seed.HasStall ? "no stall" : StockAt(seed.Stall) == null ? "nothing" : $"'{StockAt(seed.Stall).name}'";
+                _instance.Refuse(seed, $"is not its stall's stock here (the stall holds {stocked})");
+                return;
+            }
             if (!_instance._resolving.Add(seed)) return;
 
             _instance.StartCoroutine(_instance.ResolvePurchaseRequest(seed));

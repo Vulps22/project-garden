@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
 using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden.Climbing
@@ -79,6 +80,8 @@ namespace Vulps.GrowAGarden.Climbing
         private static readonly RaycastHit[] _rayHits = new RaycastHit[16];
 
         private Transform _root;
+        private Transform _interactorsOf;
+        private XRBaseInteractor[] _interactors = Array.Empty<XRBaseInteractor>();
         private Transform _head;
         private Hand _active;
         private bool _climbing;
@@ -135,7 +138,38 @@ namespace Vulps.GrowAGarden.Climbing
             _head = rig.Head;
             _left.Anchor = rig.LeftHand;
             _right.Anchor = rig.RightHand;
+            if (_interactorsOf != rig.Root) FindInteractors(rig.Root);
             return true;
+        }
+
+        /// <summary>Somnium's XR interactors on this rig: the things that pick objects up. Read, never driven.</summary>
+        private void FindInteractors(Transform root)
+        {
+            _interactorsOf = root;
+            Transform search = root.parent != null ? root.parent : root;
+            _interactors = search.GetComponentsInChildren<XRBaseInteractor>(true);
+            var names = new System.Text.StringBuilder();
+            foreach (XRBaseInteractor i in _interactors)
+                names.Append($" '{i.name}'→{(Nearer(i.transform.position, _left) ? "left" : "right")}");
+            Logger.Info($"FindInteractors() '{gameObject.name}' — {_interactors.Length} interactor(s):{names}");
+        }
+
+        private bool Nearer(Vector3 p, Hand hand)
+        {
+            Hand other = hand == _left ? _right : _left;
+            return (p - hand.Anchor.position).sqrMagnitude <= (p - other.Anchor.position).sqrMagnitude;
+        }
+
+        /// <summary>
+        /// Whether this hand is already carrying something: one of the rig's interactors nearer this hand
+        /// has a selection. A full hand never takes hold of rock, or what it carries would be dropped
+        /// and lost.
+        /// </summary>
+        private bool Carrying(Hand hand)
+        {
+            foreach (XRBaseInteractor i in _interactors)
+                if (i != null && i.hasSelection && Nearer(i.transform.position, hand)) return true;
+            return false;
         }
 
         private void ScanDevices()
@@ -160,17 +194,18 @@ namespace Vulps.GrowAGarden.Climbing
             bool released = !down && hand.WasDown;
             hand.WasDown = down;
 
-            if (pressed) Grab(hand, false);
-            else if (down && airborne && !hand.Holding) Grab(hand, true);
+            bool carrying = !hand.Holding && Carrying(hand);
+            if (pressed && !carrying) Grab(hand, false);
+            else if (down && airborne && !hand.Holding && !carrying) Grab(hand, true);
             else if (released && hand.Holding) Release(hand);
 
-            Feel(hand);
+            Feel(hand, carrying);
         }
 
         /// <summary>A short buzz as a free hand comes within reach of a hold; nothing while holding or while it stays in reach.</summary>
-        private void Feel(Hand hand)
+        private void Feel(Hand hand, bool carrying)
         {
-            bool inReach = !hand.Holding && FindHold(hand, out _, out _, out _);
+            bool inReach = !hand.Holding && !carrying && FindHold(hand, out _, out _, out _);
             if (inReach && !hand.InReach) Buzz(hand, _reachAmplitude, _reachSeconds);
             hand.InReach = inReach;
         }

@@ -55,6 +55,10 @@ shed" *is* the claim, and there is nothing lying in the open for someone to walk
 
 ## Joining someone's Plot
 
+**Status (2026-11-02):** switched off. Joining does not work yet and players kept taking the blank application
+scroll, so the hut's dispenser (`DeedHut/ItemDispenser`) has its `DispensingEntity` disabled: no scroll is stocked, and
+the crate stays as scenery. Tick the component back on to bring it back.
+
 The token is an **application**, issued by the person who wants in — not a grant issued by the owner.
 A owns a Plot; B wants to team up:
 
@@ -213,9 +217,8 @@ and no way to leave one. Three options —
 
 The middle one is the recommendation, and it preserves the one-verb rule in both directions.
 
-**2. What happens to abandoned scrolls?** Passive rejection leaves a live `NetworkObject` lying
-around, and every ignored application is another one — [[runtime-spawn]] §4c notes Somnium may have
-a per-world object limit nobody has hit yet. Give them a lifetime, or `ReturnableEntity` auto-recall
+**2. What happens to abandoned scrolls?** Passive rejection leaves a scroll lying around, and every
+ignored application is another one. Give them a lifetime, or `ReturnableEntity` auto-recall
 back to the barrel, which reads nicely as *the application returns to sender*.
 
 **3. The scroll has to be readable.** A picks one up and must know whose it is before deciding, so it

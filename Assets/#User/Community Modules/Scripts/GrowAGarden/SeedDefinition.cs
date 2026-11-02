@@ -30,6 +30,10 @@ namespace Vulps.GrowAGarden
         public int buyPrice;
         public int sellValue;
 
+        [Tooltip("How many times each of a bearing plant's sockets fruits before it is spent; the plant withers once all " +
+                 "are. A crop's default: each plant starts from it and may later be rolled otherwise. 1 for rooted crops.")]
+        public int harvestCount = 1;
+
         [Header("Timing, in seconds")]
         [Tooltip("How long the plant body takes to grow before it bears.")]
         public float growthDuration = 10f;

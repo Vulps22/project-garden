@@ -135,7 +135,12 @@ Somnium moved to Fusion 2.1.3 on 2026-10-20; worlds built on 2.0 no longer sync.
 [[community-modules#Migration to 4.0 and Fusion 2.1|community-modules → Migration]]. What changed for us:
 
 - **The physics addon is gone.** `NetworkRigidbody3D` despawns its object in shared mode; the migration replaced it
-  with `NetworkTransform` on every prefab. `WorldBridge.Place` now teleports through `NetworkTransform.Teleport`
+  with `NetworkTransform` on every prefab. **Forecast physics stayed on until 2026-11-02:** the tool's
+  recommended-settings step logged "Forecast setting not found" for every prefab and changed nothing, while 2.1.3
+  keeps it at `PhysicsSettings.ForecastEnabled`. With it on, other players see a local physics guess instead of the
+  owner's path, which is the drifting, rubber-banding grab the guide warns of. It is now off on all 17 of our
+  networked prefabs (the Community Modules examples still have it on; the world does not use them). Every
+  `NetworkTransform` added from now on needs it off too. `WorldBridge.Place` now teleports through `NetworkTransform.Teleport`
   (state authority only) and zeroes the body's velocity.
 - **`RequestStateAuthority()` returns `bool`**: `false` means the request was not sent.
 - **`NetworkTransform` syncs parent-relative position.** XRI unparents an object while it is held, so grabbable

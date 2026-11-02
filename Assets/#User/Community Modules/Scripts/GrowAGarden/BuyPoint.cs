@@ -131,7 +131,8 @@ namespace Vulps.GrowAGarden
         private void OnLeaving(GameObject leaving)
         {
             if (leaving == null || !leaving.TryGetComponent(out Seed seed)) return;
-            if (seed != _currentSeed || seed.IsBought || !seed.InShop) return;
+            // By stall, not by _currentSeed: a peer's stall can lag a restock, and a seed it has not adopted yet must still sell.
+            if (!seed.HasStall || !_hasId || !seed.Stall.Equals(_id) || seed.IsBought || !seed.InShop) return;
             if (seed.IsHeld) seed.RequestPurchase();
         }
 

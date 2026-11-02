@@ -4,12 +4,9 @@ using Vulps.GrowAGarden.Ownership;
 namespace Vulps.GrowAGarden.Crops
 {
     /// <summary>
-    /// Yields again and again: an apple tree, a grape vine, a blueberry bush. (#43)
-    ///
-    /// Written but unused — no crop is configured for it yet, so it rides along untested. Before a
-    /// crop uses it, note the open problem: nothing ends a multi-harvest plant. With plants
-    /// ungrabbable there is no uproot gesture at all, so it holds its PlantSlot until its owner leaves
-    /// and the garden lease expires. That is an answer, but a thin one.
+    /// Bears again after each harvest, for a season: a tomato, an eggplant. Each socket fruits its
+    /// plant's HarvestCount times, then the plant withers and frees its slot, which is the ending
+    /// #43 was missing.
     /// </summary>
     public class MultiHarvestPlant : BearingPlant
     {
@@ -19,8 +16,15 @@ namespace Vulps.GrowAGarden.Crops
 
         private float _bearAgainAt = -1f;
 
+        /// <summary>A season, not forever: once every socket has borne its plant's HarvestCount times, it withers.</summary>
         protected override void OnProduceHarvested(ProduceSlot slot)
         {
+            if (AllSlotsSpent())
+            {
+                _bearAgainAt = -1f;
+                BeginWithering();
+                return;
+            }
             _bearAgainAt = Time.time + _regrowDelay;
         }
 

@@ -123,8 +123,9 @@ and nothing else.
 
 **c. Object count becomes unbounded.** 153 pre-placed instances was a hard ceiling that also acted as
 a budget. Spawning has none: a player can plant every plot, and produce accumulates. Decay and sale
-both despawn, so the steady state is bounded by plot count — but the *transient* is not, and Somnium
-may have a per-world NetworkObject limit nobody has hit yet.
+both despawn, so the steady state is bounded by plot count — but the *transient* is not. **Not a concern
+(Vulps, 2026-11-02):** Somnium's per-world NetworkObject limit is in the thousands; the world runs ~290
+stocked seeds at once without trouble.
 
 **d. Despawning something in a hand.** `Runner.Despawn` destroys the GameObject on every client. If
 XRI still has a select on it, the interactor is left holding a destroyed object. Every despawn path
