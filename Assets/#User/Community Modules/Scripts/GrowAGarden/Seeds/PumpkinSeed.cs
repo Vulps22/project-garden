@@ -17,6 +17,7 @@ namespace Vulps.GrowAGarden.Seeds
         {
             seedId = "pumpkin";
             displayName = "Pumpkin";
+            tagline = "big, slow and worth it";
             buyPrice = 60;
             sellValue = 110;
             growthDuration = 60f;

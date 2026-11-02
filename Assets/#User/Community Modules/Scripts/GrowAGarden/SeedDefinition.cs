@@ -17,6 +17,9 @@ namespace Vulps.GrowAGarden
         public string seedId;
         public string displayName;
 
+        [Tooltip("One line under the name on the stall sign: what makes this crop worth buying.")]
+        public string tagline;
+
         [Tooltip("The Seed_ prefab a shop slot spawns for this crop. Must also be listed on the " +
                  "SceneNetworking component, or Fusion has no id to spawn it by.")]
         public NetworkObject seedPrefab;

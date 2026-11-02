@@ -7,6 +7,7 @@ namespace Vulps.GrowAGarden.Seeds
         {
             seedId = "corn";
             displayName = "Corn";
+            tagline = "three cobs a stalk";
             buyPrice = 25;
             sellValue = 13;          // per cob; 3 cobs, about what the single cob paid
             growthDuration = 20f;

@@ -7,6 +7,7 @@ namespace Vulps.GrowAGarden.Seeds
         {
             seedId = "eggplant";
             displayName = "Eggplant";
+            tagline = "did someone say SPS? ;)";
             buyPrice = 45;
             sellValue = 14;          // per fruit; 3 sockets x 3 harvests = 9 fruit
             growthDuration = 40f;

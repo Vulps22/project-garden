@@ -50,6 +50,11 @@ untested.
   discard message arrives**, not at its despawn (2026-11-02): a peer often received a cycle's new stock before the
   old seed's despawn, kept the old one and turned the new one away, so the stall never offered it for sale. Session 1
   of 2026-11-01 logged 514 such stalls on a peer.
+- **The sign** (`StallDisplay`, on the `BuyPoint` prefab, so every Garden and island stall) shows what is on the
+  shelf: name, then since 2026-11-02 a **tagline** in small italics under it, the crop's `SeedDefinition.tagline`,
+  saying what makes it worth buying ("grows a cinema screen", "fruits three times"), then `B:` buy price and `S:` sell
+  value (`S: -` for something that is not sold, like popcorn). It follows the seed in the socket, not the roll, so
+  every client agrees; an unstocked stall shows the prefab's placeholder text (carrot's).
 - **One sale per stall per cycle.** A sale marks the stall sold out on every client until the next cycle; the list
   is sent whole to late joiners, so a new master already has it.
 - **A pinned stall restocks after every sale.** A stall with an `_override` (the Garden's carrot, turnip and

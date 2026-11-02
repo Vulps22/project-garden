@@ -7,6 +7,7 @@ namespace Vulps.GrowAGarden.Seeds
         {
             seedId = "tomato";
             displayName = "Tomato";
+            tagline = "fruits three times";
             buyPrice = 20;
             sellValue = 6;          // per fruit; 4 sockets x 3 harvests = 12 fruit
             growthDuration = 20f;

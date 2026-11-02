@@ -10,6 +10,7 @@ namespace Vulps.GrowAGarden.Seeds
         {
             seedId = "weed";
             displayName = "Weed";
+            tagline = "sell the bloom, or eat it raw";
             buyPrice = 80;
             sellValue = 30;          // per bloom; nine to a plant
             growthDuration = 90f;

@@ -24,6 +24,7 @@ namespace Vulps.GrowAGarden
         [SerializeField] private TMP_Text _name;
         [SerializeField] private TMP_Text _buyPrice;
         [SerializeField] private TMP_Text _sellValue;
+        [SerializeField] private TMP_Text _tagline;
 
         public void Show(SeedDefinition definition)
         {
@@ -31,7 +32,8 @@ namespace Vulps.GrowAGarden
 
             if (_name != null) _name.text = definition.displayName;
             if (_buyPrice != null) _buyPrice.text = $"B: {definition.buyPrice}";
-            if (_sellValue != null) _sellValue.text = $"S: {definition.sellValue}";
+            if (_sellValue != null) _sellValue.text = definition.sellValue > 0 ? $"S: {definition.sellValue}" : "S: -";
+            if (_tagline != null) _tagline.text = definition.tagline ?? string.Empty;
         }
 
         private void OnValidate()
@@ -43,6 +45,7 @@ namespace Vulps.GrowAGarden
                 if (_name == null && text.gameObject.name == "Name") _name = text;
                 if (_buyPrice == null && text.gameObject.name == "PriceBuy") _buyPrice = text;
                 if (_sellValue == null && text.gameObject.name == "PriceSell") _sellValue = text;
+                if (_tagline == null && text.gameObject.name == "Tagline") _tagline = text;
             }
         }
     }

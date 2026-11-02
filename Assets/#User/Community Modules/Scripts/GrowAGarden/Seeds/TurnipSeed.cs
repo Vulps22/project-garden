@@ -12,6 +12,7 @@ namespace Vulps.GrowAGarden.Seeds
         {
             seedId = "turnip";
             displayName = "Turnip";
+            tagline = "a little slower, a little richer";
             buyPrice = 18;
             sellValue = 25;
             growthDuration = 15f;
