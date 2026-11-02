@@ -105,13 +105,17 @@ being delivered. One session had the 20.6-second falling tip queued between the 
 the trough-shot line. Any new tip that only makes sense once the player can fly belongs in that set;
 an upgrade or a buff can be found at any point and reads fine on its own.
 
+**Reset from Settings** (2026-11-02): Settings → World → Voice Tutorial → *Reset* (`TutorialManager.ResetProgress`) forgets every line heard and starts again from the first ([[tablet#World Settings|tablet → World Settings]]).
+
 ### Other pass-2 debt
 
 - **`SettingsPanel` is out of the scene.** With the panel in the hut, Somnium's own tablet would not
   open. Not understood; the panel holds the flight trim capture and the two narration switches
-  (including `SkipTutorial`, the player's own off switch). Every consumer null-guards and fails
-  open, so its absence changes only that the player cannot turn the narrator off or trim their
-  flight. See the commit message on `bcdc62a` for the trim design.
+  (including `SkipTutorial`, the player's own off switch). The player cannot turn the narrator off or
+  trim their flight from it. See the commit message on `bcdc62a` for the trim design.
+- **`GameSettings` is back in the scene** (2026-11-02, on its own object) for World Settings
+  ([[tablet#World Settings|tablet → World Settings]]). It loads whatever a player stored before the panel
+  went, so a trim saved back then applies to flight again.
 - **The script is a first cut.** Nothing has been re-recorded since the walk, and §4–§9 have not
   been heard in context at all. Expect line-level edits once they have.
 

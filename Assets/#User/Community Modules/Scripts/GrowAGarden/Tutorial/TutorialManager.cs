@@ -395,6 +395,19 @@ namespace Vulps.GrowAGarden.Tutorial
         /// make sense, and there is a clip for it. Safe to call from anywhere, every frame — it is
         /// a no-op after the first time.
         /// </summary>
+        /// <summary>Forgets everything heard and starts the voice tutorial again from its first line (Settings → World).</summary>
+        public void ResetProgress()
+        {
+            _played.Clear();
+            _pending.Clear();
+            _followUpId = null;
+            if (_audioSource != null) _audioSource.Stop();
+            _playingId = null;
+            SaveProgress();
+            Logger.Info($"ResetProgress() '{gameObject.name}' — voice tutorial reset; starting again");
+            if (TutorialOrder.Length > 0) TriggerTooltip(TutorialOrder[0]);
+        }
+
         public void TriggerTooltip(string tooltipId)
         {
             if (string.IsNullOrEmpty(tooltipId)) return;

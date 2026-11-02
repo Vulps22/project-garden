@@ -46,12 +46,24 @@ namespace Vulps.GrowAGarden.Settings
         /// <summary>Silences the context tips, which are not part of the linear script.</summary>
         public bool DisableVoiceTips { get; private set; }
 
+        /// <summary>Whether eating or smoking weed may get this player stoned. On unless they turn it off (World Settings).</summary>
+        public bool AllowStonedEffects { get; private set; } = true;
+
+        /// <summary>Developer only: Somnium's own fly mode back on, over ours. Ignored for anyone but the developer.</summary>
+        public bool DevNativeFlight { get; private set; }
+
+        /// <summary>Whether others may feed this player. The feature does not exist yet; World Settings shows it disabled.</summary>
+        public bool AllowForceFeeding { get; private set; }
+
         [Serializable]
         private class Stored
         {
             public float trim;
             public bool skipTutorial;
             public bool disableVoiceTips;
+            public bool noStonedEffects;    // inverted so a save from before it existed reads as allowed
+            public bool allowForceFeeding;
+            public bool devNativeFlight;
         }
 
         private void Awake()
@@ -94,6 +106,27 @@ namespace Vulps.GrowAGarden.Settings
             Commit();
         }
 
+        public void SetAllowStonedEffects(bool allow)
+        {
+            AllowStonedEffects = allow;
+            Logger.Info($"SetAllowStonedEffects() '{gameObject.name}' — {(allow ? "stoned effects allowed" : "stoned effects off")}");
+            Commit();
+        }
+
+        public void SetAllowForceFeeding(bool allow)
+        {
+            AllowForceFeeding = allow;
+            Logger.Info($"SetAllowForceFeeding() '{gameObject.name}' — {(allow ? "allowed" : "off")}");
+            Commit();
+        }
+
+        public void SetDevNativeFlight(bool on)
+        {
+            DevNativeFlight = on;
+            Logger.Info($"SetDevNativeFlight() '{gameObject.name}' — Somnium's fly mode {(on ? "allowed" : "off")}");
+            Commit();
+        }
+
         private void Commit()
         {
             Save();
@@ -125,9 +158,12 @@ namespace Vulps.GrowAGarden.Settings
             TrimDegrees = Mathf.Clamp(s.trim, -45f, 45f);
             SkipTutorial = s.skipTutorial;
             DisableVoiceTips = s.disableVoiceTips;
+            AllowStonedEffects = !s.noStonedEffects;
+            AllowForceFeeding = s.allowForceFeeding;
+            DevNativeFlight = s.devNativeFlight;
 
             Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} skipTutorial={SkipTutorial} " +
-                        $"disableVoiceTips={DisableVoiceTips}");
+                        $"disableVoiceTips={DisableVoiceTips} allowStoned={AllowStonedEffects} allowForceFeeding={AllowForceFeeding}");
         }
 
         private void Save()
@@ -137,6 +173,9 @@ namespace Vulps.GrowAGarden.Settings
                 trim = TrimDegrees,
                 skipTutorial = SkipTutorial,
                 disableVoiceTips = DisableVoiceTips,
+                noStonedEffects = !AllowStonedEffects,
+                allowForceFeeding = AllowForceFeeding,
+                devNativeFlight = DevNativeFlight,
             }, gameObject.name);
         }
     }

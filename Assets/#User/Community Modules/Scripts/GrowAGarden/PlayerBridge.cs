@@ -130,6 +130,15 @@ namespace Vulps.GrowAGarden
             return true;
         }
 
+        /// <summary>Allows or forbids Somnium's own fly mode (its sidebar toggle) for the local player; glide is untouched. False if there is no motion.</summary>
+        public static bool SetNativeFlyMode(bool allowed)
+        {
+            var motion = LocalSdkPlayer()?.Features?.Motion;
+            if (motion == null) return false;
+            motion.SetFlyModeDisableState(!allowed);
+            return true;
+        }
+
         /// <summary>
         /// Scales the gravity Somnium applies to the local player: 1 for normal, 0 to hold them up.
         /// Returns false if there is no motion to set.

@@ -133,6 +133,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// </summary>
         public static bool SuppressSomniumLocomotion() => PlayerBridge.SuppressSomniumLocomotion();
 
+        /// <summary>Allows or forbids Somnium's own fly mode for the local player; glide is untouched. False if there is no motion.</summary>
+        public static bool SetNativeFlyMode(bool allowed) => PlayerBridge.SetNativeFlyMode(allowed);
+
         /// <summary>Scales gravity on the local player: 1 normal, 0 to hold them up. False if there
         /// is no motion to set.</summary>
         public static bool SetLocalGravityScale(float scale) => PlayerBridge.SetLocalGravityScale(scale);

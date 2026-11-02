@@ -443,6 +443,11 @@ namespace Vulps.GrowAGarden.Flight
             if (!PlayerManager.SuppressSomniumLocomotion())
                 Logger.Error($"Resolve() '{gameObject.name}' — no Motion feature; Somnium's flight stays on and will fight this");
 
+            // The developer's World Settings can give Somnium's fly mode back; glide stays off.
+            GameSettings nativeFlight = GameSettings.GetInstance();
+            if (DevTools.Developer.IsLocal && nativeFlight != null && nativeFlight.DevNativeFlight && PlayerManager.SetNativeFlyMode(true))
+                Logger.Info($"Resolve() '{gameObject.name}' — developer: Somnium's fly mode left on");
+
             _ownColliders = _root.GetComponentsInChildren<Collider>(true);
 
             Logger.Info($"Resolve() '{gameObject.name}' — took the player: root='{_root.name}' " +

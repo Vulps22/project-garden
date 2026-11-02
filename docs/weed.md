@@ -175,6 +175,8 @@ The visions and ending early by covering the eyes log nothing and are not confir
   for Vulps to say, since the log only shows the speed being set. The `Flip()` line says which was flipped. Flight and climbing own the speed while they run, so walking is only
   flipped on the ground and only handed back if neither has taken it since.
 
+**A player can turn it all off** (2026-11-02): Settings → World → *Allow Stoned Effects* ([[tablet#World Settings|tablet → World Settings]]). Off, no trip starts and one running ends; the bloom is still eaten and the splif still smoked.
+
 > [!info] Networking
 > Eating and the last puff are ended **by the holder**, not the master: holding something gives that client state
 > authority over it (the holder rule), and nobody else can hold it at the same time, so there is no decision to

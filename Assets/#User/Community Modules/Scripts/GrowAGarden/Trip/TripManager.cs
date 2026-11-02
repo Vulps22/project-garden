@@ -96,6 +96,7 @@ namespace Vulps.GrowAGarden.Trip
         public static void Begin(float strength, float seconds, string why, bool flipsControls = false)
         {
             if (_instance == null) return;
+            if (!_instance._allowed) { Logger.Info($"Begin() 'TripManager' — {why}, but this player has stoned effects off"); return; }
             if (flipsControls) _instance._canFlip = true;
             _instance._strength = Mathf.Max(_instance.Running ? _instance._strength : 0f, Mathf.Clamp01(strength));
             _instance._until = Mathf.Max(_instance._until, Time.time + seconds);
@@ -107,6 +108,7 @@ namespace Vulps.GrowAGarden.Trip
         public static void Extend(float strength, float seconds, string why)
         {
             if (_instance == null) return;
+            if (!_instance._allowed) return;
             if (!_instance.Running) { Begin(strength, seconds, why); return; }
             _instance._strength = Mathf.Max(_instance._strength, Mathf.Clamp01(strength));
             _instance._until += seconds;
@@ -129,6 +131,25 @@ namespace Vulps.GrowAGarden.Trip
             Shader.SetGlobalFloat(TripId, 0f);
             if (!_volume.profile.TryGet(out _colour))
                 Logger.Warn($"Awake() '{gameObject.name}' — trip profile has no ColorAdjustments; the colours will not cycle");
+        }
+
+        /// <summary>The player's World Settings choice; a trip is never started, and one running ends, while it is off.</summary>
+        private bool _allowed = true;
+
+        private void Start()
+        {
+            Settings.GameSettings.Changed += OnSettingsChanged;
+            OnSettingsChanged();
+        }
+
+        private void OnSettingsChanged()
+        {
+            Settings.GameSettings settings = Settings.GameSettings.GetInstance();
+            _allowed = settings == null || settings.AllowStonedEffects;
+            if (_allowed || !Running) return;
+            _until = Time.time;
+            _comeDown = _endEarlySeconds;
+            Logger.Info($"OnSettingsChanged() '{gameObject.name}' — stoned effects turned off; ending the trip");
         }
 
         private void OnEnable()
@@ -155,6 +176,7 @@ namespace Vulps.GrowAGarden.Trip
 
         private void OnDestroy()
         {
+            Settings.GameSettings.Changed -= OnSettingsChanged;
             Unmelt();
             Shader.SetGlobalFloat(TripId, 0f);
             if (_instance == this) _instance = null;
