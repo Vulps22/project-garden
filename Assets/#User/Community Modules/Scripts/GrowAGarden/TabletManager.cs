@@ -22,6 +22,8 @@ namespace Vulps.GrowAGarden
         public static bool SettingsSectionShowing(Transform tablet, Button section) => TabletBridge.SettingsSectionShowing(tablet, section);
         public static Sprite SettingsSectionSprite(Transform tablet) => TabletBridge.SettingsSectionSprite(tablet);
         public static Toggle AddSettingsToggle(Transform tablet, Transform parent, string name, string label) => TabletBridge.AddSettingsToggle(tablet, parent, name, label);
+        public static Button AddQuickAction(Transform tablet, string name, Sprite icon, string label) => TabletBridge.AddQuickAction(tablet, name, icon, label);
+        public static void SetQuickActionLabel(Button button, string label) => TabletBridge.SetQuickActionLabel(button, label);
         public static void ShowToggle(Toggle toggle, bool on, bool usable) => TabletBridge.ShowToggle(toggle, on, usable);
     }
 }

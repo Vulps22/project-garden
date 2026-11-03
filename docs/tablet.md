@@ -252,7 +252,9 @@ What the capture says is possible, for a tablet app, a Thatch bank or admin tool
     exists for nobody else.
 - **A sidebar quick action.** Clone a quick-action button into `QuickButtonsPanel` (the vertical layout places it),
   strip its `QuickAction…Button`, and add our listener. This touches no tab state, so it is the safer way to open a
-  panel of our own drawn over the tablet. The seed restock timer belongs here, beside World Spawn ([[todolist]]).
+  panel of our own drawn over the tablet. Built: `TabletManager.AddQuickAction` clones World Spawn, strips its
+  scripts, places the clone under it and grows `QuickButtonsPanel` by one button; the restock timer uses it
+  ([[shop]]).
 - **Reading, not writing:** the time, FPS, ping and online counts, the world and instance names and the user's name,
   level and Cubes are all plain `TextMeshProUGUI` texts, readable by path.
 - **Matching the look:** Somnium's font is Exo-Medium SDF 2 (`TabletMapBridge.MapFont` borrows it), button sprites

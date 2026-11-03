@@ -127,6 +127,73 @@ namespace Vulps.GrowAGarden
             return false;
         }
 
+        // ── The sidebar ───────────────────────────────────────────────────────────
+
+        private const string SIDEBAR = "Canvases/Tablet.XR.SideBar";
+        private const string QUICK_TEMPLATE = "Tablet.XR.TimerQuickActionBtn - Go To";
+
+        /// <summary>
+        /// Adds a quick-action button to the sidebar, cloned from World Spawn and placed under it, doing nothing of
+        /// Somnium's. Null if the sidebar has moved.
+        /// </summary>
+        public static Button AddQuickAction(Transform tablet, string name, Sprite icon, string label)
+        {
+            Transform sidebar = tablet == null ? null : tablet.Find(SIDEBAR);
+            Transform template = sidebar == null ? null : FindDeep(sidebar, QUICK_TEMPLATE);
+            if (template == null) return null;
+            Transform panel = template.parent;
+            Transform existing = panel.Find(name);
+            if (existing != null) Object.DestroyImmediate(existing.gameObject);
+
+            GameObject clone = CloneStripped(template.gameObject, name,
+                "QuickActionButtonWithTimer", "QuickActionButton", "LocalizeStringEvent", "TabletTooltipForUIObjects");
+            Button button = clone.GetComponent<Button>();
+            if (button == null) { Object.Destroy(clone); return null; }
+            button.onClick = new Button.ButtonClickedEvent();
+
+            Transform timer = clone.transform.Find("Timer");
+            if (timer != null) timer.gameObject.SetActive(false);
+            Image iconImage = clone.transform.Find("Icon")?.GetComponent<Image>();
+            if (iconImage != null && icon != null) iconImage.sprite = icon;
+            TMP_Text text = clone.transform.Find("Text")?.GetComponent<TMP_Text>();
+            if (text != null) text.text = label;
+
+            clone.transform.SetParent(panel, false);
+            clone.transform.SetSiblingIndex(template.GetSiblingIndex() + 1);
+
+            // The panel is a stated height, not fitted: grow it by one button so nothing below is pushed off.
+            var panelRect = (RectTransform)panel;
+            if (panel.GetComponent<ContentSizeFitter>() == null)
+            {
+                var layout = panel.GetComponent<VerticalLayoutGroup>();
+                float grow = ((RectTransform)template).rect.height + (layout == null ? 0f : layout.spacing);
+                panelRect.sizeDelta += new Vector2(0f, grow);
+                LayoutElement element = panel.GetComponent<LayoutElement>();
+                if (element != null && element.preferredHeight > 0f) element.preferredHeight += grow;
+            }
+            LayoutRebuilder.MarkLayoutForRebuild(panelRect);
+            if (panel.parent is RectTransform content) LayoutRebuilder.MarkLayoutForRebuild(content);
+            return button;
+        }
+
+        /// <summary>Sets a quick-action button's label.</summary>
+        public static void SetQuickActionLabel(Button button, string label)
+        {
+            TMP_Text text = button == null ? null : button.transform.Find("Text")?.GetComponent<TMP_Text>();
+            if (text != null && text.text != label) text.text = label;
+        }
+
+        private static Transform FindDeep(Transform root, string name)
+        {
+            foreach (Transform child in root)
+            {
+                if (child.name == name) return child;
+                Transform found = FindDeep(child, name);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
         // ── Settings (OptionsTab) ─────────────────────────────────────────────────
 
         private const string OPTIONS = TABS + "/Tablet.XR.OptionsTab/ContentView";

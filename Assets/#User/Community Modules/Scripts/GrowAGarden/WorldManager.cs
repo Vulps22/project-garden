@@ -13,12 +13,8 @@ namespace Vulps.GrowAGarden
     /// stops being one-and-done and the map is worth re-walking because it is a different map
     /// now. Roadmap step 4.
     ///
-    /// The tick is master-only and is not replicated. Nothing but the master does anything with
-    /// the schedule — it decides the roll and spawns the result, and the spawned object is the
-    /// announcement — so a client deriving the same deadline would have nothing to do with it.
-    /// That is the opposite call from PlayerManager's departure clock, where every client derives
-    /// the deadline precisely so a handover mid-countdown loses nothing. Here a handover simply
-    /// restarts the cycle, and an extra or a missed re-roll costs nothing.
+    /// The master decides the cycle. It sends the seconds to the next one on every cycle and to late joiners, so every
+    /// client keeps the same deadline: the restock timer shows it, and a new master carries it on.
     /// </summary>
     public class WorldManager : MonoBehaviour
     {
@@ -35,6 +31,17 @@ namespace Vulps.GrowAGarden
 
         [Tooltip("Seconds between world-wide stock cycles.")]
         [SerializeField] private float _recycleSeconds = 300f;
+
+        [Tooltip("SceneManager's messenger. Message id 11 on it, the restock clock.")]
+        [SerializeField] private NetworkMessenger _bridge;
+
+        private const byte CLOCK_ID = 11;
+
+        /// <summary>Seconds to the next restock, or a negative number until the master has said.</summary>
+        public static float SecondsToRestock =>
+            Instance == null || !Instance._clockKnown ? -1f : Mathf.Max(0f, Instance._nextRecycleAt - Time.time);
+
+        private bool _clockKnown;
 
 
         public System.Collections.Generic.IReadOnlyList<SeedDefinition> Buyables => _buyables;
@@ -113,9 +120,18 @@ namespace Vulps.GrowAGarden
 
         private void OnDisable() => WorldBridge.NetworkReady -= BeginCycling;
 
+        private void Start()
+        {
+            if (_bridge == null) { Logger.Warn($"Start() '{gameObject.name}' — no messenger; the restock clock stays on the master"); return; }
+            _bridge.MessageToAll += OnMessageToAll;
+            PlayerManager.OtherPlayerJoined += SendClock;
+        }
+
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+            if (_bridge != null) _bridge.MessageToAll -= OnMessageToAll;
+            PlayerManager.OtherPlayerJoined -= SendClock;
 
             // Static events outlive the scene that filled them. SceneNetworking clears its own
             // for the same reason; a stale subscriber here would be a destroyed ShopKeeper.
@@ -142,8 +158,8 @@ namespace Vulps.GrowAGarden
         private System.Collections.IEnumerator BeginNextFrame()
         {
             yield return null;
+            if (!_clockKnown) _nextRecycleAt = Time.time + _recycleSeconds;
             Recycle();
-            _nextRecycleAt = Time.time + _recycleSeconds;
         }
 
         private void Update()
@@ -157,8 +173,28 @@ namespace Vulps.GrowAGarden
         {
             if (!PlayerManager.IsMaster) return;
 
+            _clockKnown = true;
+            SendClock();
             Logger.Info($"Recycle() '{gameObject.name}' — cycling world stock, {(_buyables == null ? 0 : _buyables.Length)} buyables");
             StockRecycled?.Invoke();
+        }
+
+        // ── The clock ─────────────────────────────────────────────────────────────
+
+        /// <summary>The master tells everyone how long until the next cycle.</summary>
+        private void SendClock()
+        {
+            if (!PlayerManager.IsMaster || !_clockKnown || _bridge == null || !_bridge.CanSend) return;
+            var writer = new BytesWriter(BytesWriter.FloatSize);
+            writer.AddFloat(Mathf.Max(0f, _nextRecycleAt - Time.time));
+            _bridge.SendToAll(CLOCK_ID, writer.Data);
+        }
+
+        private void OnMessageToAll(byte id, byte[] data)
+        {
+            if (id != CLOCK_ID || PlayerManager.IsMaster) return;
+            _nextRecycleAt = Time.time + new BytesReader(data).NextFloat();
+            _clockKnown = true;
         }
 
         private void OnValidate()

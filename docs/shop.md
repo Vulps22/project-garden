@@ -23,14 +23,15 @@ single-component shape for free items, kept because a dispenser stands in the sc
 their seeded rarity. Multiplayer untested.
 
 A `StallId` names a stall the same way on every client with nothing sent: **where** (an island's grid cell, or for a
-Garden its sector) and **which** (its index among the buy points on that island or Garden, in hierarchy order). The
-Garden's three stalls are `Garden 0,0 #0–2`. Island stalls get theirs from the cell `IslandField` records on the
+Garden where it stands, in whole metres) and **which** (its index among the buy points on that island or Garden, in
+hierarchy order). Garden 0's three stalls are `Garden 2,7 #0–2`. Not by sector: several of the 14 Gardens share one
+([[towns]]). Island stalls get theirs from the cell `IslandField` records on the
 island when it places it.
 
 ## What a stall sells
 
-**Status (2026-11-01):** played alone in-world, including the pinned stalls restocking after a sale. Multiplayer
-untested.
+**Status (2026-11-03):** played alone in-world, including the pinned stalls restocking after a sale. Multiplayer
+untested. The shared clock and restock timer: compiles clean, untested in-world.
 
 - **A stall asks for stock** whenever it is loaded, empty and not sold out: on load, when its stock goes, when the
   world cycles, and every 5 s while still empty in case a request was lost. It sends the socket's pose, its
@@ -62,6 +63,12 @@ untested.
   spawns another of the same crop.
 - **The cycle** (`WorldManager`, every 300 s, master): every unsold seed is discarded by whoever simulates it, the
   sold-out list is cleared, and every stall asks again.
+- **Everyone knows when the next cycle is.** The master sends the seconds left (message id 11 on SceneManager's
+  messenger) at every cycle and to each late joiner, and every client sets its own deadline from it, so a new master
+  carries the cycle on where the old one left it.
+- **The restock timer** (`RestockTimer`, on SceneManager): a button on the tablet's sidebar under World Spawn,
+  "Restock 4:32", counting down to that deadline; "Restock --:--" until the master has said. Built through
+  `TabletManager.AddQuickAction` ([[tablet#The sidebar|tablet → The sidebar]]). Pressing it does nothing.
 
 ## The purchase flow
 
