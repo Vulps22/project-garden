@@ -53,6 +53,7 @@ namespace Vulps.GrowAGarden.Crops
         protected int _slotIndex = -1;
 
         private bool _hasBorne;
+        private bool _ripeAtOnce;   // the grow wand touched it: whatever it bears comes out ripe
 
         public bool HasLocalAuthority =>
             networkBridge != null && networkBridge.Object != null && networkBridge.Object.HasStateAuthority;
@@ -160,6 +161,32 @@ namespace Vulps.GrowAGarden.Crops
 
         /// <summary>The body has finished growing. Master only. Bear, or become the crop.</summary>
         protected abstract void OnFullyGrown();
+
+        /// <summary>
+        /// The Developer Market's grow wand touched it. Master only: moves the planted time back so it is grown now, and
+        /// what it bears comes out ripe; already grown, it ripens what hangs on it. The clock does the rest everywhere.
+        /// </summary>
+        public void GrowNow()
+        {
+            if (!PlayerManager.IsMaster || !HasLocalAuthority) return;
+            _ripeAtOnce = true;
+            if (_hasBorne) { OnGrownTouched(); return; }
+            long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            _plantedTimestamp = now - (long)Mathf.Ceil(Mathf.Max(0.01f, seedDefinition.growthDuration)) - 1;
+            ApplyBodyScale();
+            broadcastState();
+        }
+
+        /// <summary>The wand touched a plant that has already grown. Bearing plants ripen what they hold.</summary>
+        protected virtual void OnGrownTouched() { }
+
+        /// <summary>When the produce this plant gives starts ripening: now, or already done if the wand touched it.</summary>
+        protected long RipenStart()
+        {
+            long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (!_ripeAtOnce || seedDefinition == null) return now;
+            return now - (long)Mathf.Ceil(Mathf.Max(0.01f, seedDefinition.ripenDuration)) - 1;
+        }
 
         /// <summary>Starts the plant dying. Master only; the clock does the rest on every client.</summary>
         protected void BeginWithering()

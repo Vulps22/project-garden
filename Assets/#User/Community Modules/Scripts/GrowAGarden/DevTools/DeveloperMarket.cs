@@ -16,8 +16,9 @@ namespace Vulps.GrowAGarden.DevTools
     {
         private const byte REQUEST_ID = 7;
         private const byte DELIVERED_ID = 8;
+        private const byte GROW_ID = 15;
 
-        [Tooltip("SceneManager's messenger. Message ids 7-8 on it; ShopKeeper has 3-6.")]
+        [Tooltip("SceneManager's messenger. Message ids 7-8 and 15 on it; ShopKeeper has 3-6.")]
         [SerializeField] private NetworkMessenger _bridge;
 
         [Tooltip("What the market sells, in display order. Seeds, produce and collectibles.")]
@@ -55,6 +56,22 @@ namespace Vulps.GrowAGarden.DevTools
             Logger.Info($"Request() 'DeveloperMarket' — asked for '{NameOf(index)}' ({(rightHand ? "right" : "left")} hand)");
         }
 
+        /// <summary>
+        /// The grow wand touched something: a Plot's slot (whatever stands in it) or a plant or produce by network id.
+        /// Only someone with developer access asks; the master checks and grows it.
+        /// </summary>
+        public static void RequestGrow(uint plotId, int slotIndex, uint targetId)
+        {
+            if (_instance == null || !Developer.IsLocal || _instance._bridge == null || !_instance._bridge.CanSend) return;
+            string me = PlayerManager.LocalPlayerId ?? string.Empty;
+            var writer = new BytesWriter(sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(me) + BytesWriter.IntSize * 3);
+            writer.AddAutoString(me);
+            writer.AddInt((int)plotId);
+            writer.AddInt(slotIndex);
+            writer.AddInt((int)targetId);
+            _instance._bridge.SendToAll(GROW_ID, writer.Data);
+        }
+
         private void Awake() => _instance = this;
 
         private void Start()
@@ -73,6 +90,26 @@ namespace Vulps.GrowAGarden.DevTools
         {
             if (id == REQUEST_ID) OnRequested(data);
             else if (id == DELIVERED_ID) OnDelivered(data);
+            else if (id == GROW_ID) OnGrowRequested(data);
+        }
+
+        /// <summary>Master only: grows the plant the wand touched, or ripens the produce. Without developer access, refused.</summary>
+        private void OnGrowRequested(byte[] data)
+        {
+            if (!PlayerManager.IsMaster) return;
+            var reader = new BytesReader(data);
+            string requester = reader.NextAutoString();
+            uint plotId = (uint)reader.NextInt();
+            int slotIndex = reader.NextInt();
+            uint targetId = (uint)reader.NextInt();
+            if (!Developer.Has(requester)) { Logger.Warn($"OnGrowRequested() '{gameObject.name}' — '{requester}' has no developer access; refused"); return; }
+
+            object target = null;
+            if (plotId != 0) target = WorldManager.Find<PlotStateManager>(plotId)?.OccupantOf(slotIndex);
+            if (target == null && targetId != 0) target = (object)WorldManager.Find<Plant>(targetId) ?? WorldManager.Find<Produce>(targetId);
+
+            if (target is Plant plant) { plant.GrowNow(); Logger.Info($"OnGrowRequested() '{gameObject.name}' — grew '{plant.name}' for '{requester}'"); }
+            else if (target is Produce produce) { produce.RipenNow(); Logger.Info($"OnGrowRequested() '{gameObject.name}' — ripened '{produce.name}' for '{requester}'"); }
         }
 
         /// <summary>Master only. Anyone else's ask, or an ask for nothing, is refused out loud.</summary>

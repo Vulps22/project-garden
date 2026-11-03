@@ -16,6 +16,9 @@ of dirt inside it, and 24 PlantSlots make a Plot.
 
 - A Plot can be **claimed**, and the claimant's id is stored on it.
 - Only the claimant and their **teammates** may plant or harvest there.
+- **The planter is who counts, not the seed's buyer** (2026-11-03): the holder's client sends its own id with the plant
+  request, and the master checks that against the Plot. A seed handed to someone, or spawned from the Developer Market
+  and passed on, is theirs to plant in their own Plot.
 - An **unclaimed** Plot allows no planting at all.
 - The claimant can **add and remove** teammates.
 

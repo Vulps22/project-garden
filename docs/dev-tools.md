@@ -35,6 +35,18 @@ in Settings, the master accepting their market requests). The owner's own row ca
 - **The app comes and goes with it.** The Dev Market's home button and page hide the moment access is taken, and the
   Developer panel in Settings follows within a frame.
 
+
+## Notify everyone
+
+**Status (2026-11-03):** built, compiles clean, untested in-world. Asked for by Vulps 2026-11-03.
+
+Settings → World → the **Developer** section (right-hand column, developers only) → **Notify Everyone**: a text field, a keyboard of our own (Settings has none: digits,
+letters, `, . ! ? '`, Space, Del, Clear, Aa for capitals) and **Send**, up to 120 characters. Everyone in the world sees it
+as a [[notifier]] toast, the sender included; a player with Show Notifications off does not.
+
+- **`DevTools/DeveloperBroadcast`** (on SceneManager, message ids 12–13 on its messenger): the sender asks with their
+  id and the text (12, to all); the master checks `Developer.Has(sender)` and sends the text to all (13), and every
+  client, the sender's included, shows it with `Notifier.Push`.
 ## Native flight
 
 **Status (2026-11-02):** built, compiles clean, untested in-world.
@@ -97,14 +109,28 @@ developer's client                         master
 
 **The stock** is three matching arrays on `DeveloperMarket` (items, names, pictures), not an array of a custom class,
 because arrays of custom `[Serializable]` classes arrive empty from the bundle export ([[weed]]). Order: the eight
-seeds, the seven fruits, the splif, the SPS Receiver, then the Moonflower Seed and Spotlight Tulip Bulb. A new item is appended to all three, and its prefab appended to
-`SceneNetworking._networkPrefabs` together with a new GUID in `_networkPrefabsGuid` (both at once: if the lengths
-differ, `OnValidate` regenerates every GUID).
+seeds, the seven fruits, the splif, the SPS Receiver, the Moonflower Seed, the Spotlight Tulip Bulb, then the Grow Wand.
+A new item is appended to all three, and its prefab appended to `SceneNetworking._networkPrefabs` together with a new
+GUID in `_networkPrefabsGuid` in one change (if the lengths differ for even one `OnValidate`, it regenerates every
+GUID; appending through two `SerializedProperty` writes does exactly that).
 
 **The SPS Receiver** (2026-11-02, for debugging SPS, Vulps): `prefab_items/SpsReceiver`, a pink ring (`Models/SpsReceiver/Ring`,
 10 cm across) built from the splif with its smoke taken off, so it is a plain grabbable. At the ring's centre is a child
 `SPS_Target` tagged `Player`, which the SPS plugin finds and fits with its receiver (a small visible sphere and a
 trigger), so an eggplant brought to it bends toward it ([[crops#The eggplant easter egg|crops → The eggplant easter egg]]). Market only, never in the shops.
+
+**The Grow Wand** (2026-11-03, Vulps): `prefab_items/GrowWand`, a 36 cm wooden stick with a glowing green tip, built
+from the SPS Receiver's prefab (`GrowWand_Stick`, `GrowWand_Tip` materials; Unity's built-in cylinder and sphere).
+Status: built, compiles clean, untested in-world.
+
+- **Touch a planted slot, a plant or an unripe fruit with it** and it grows: a plant is fully grown at once and what it
+  bears comes out ripe; already grown, what hangs on it ripens; a fruit ripens. A rooted crop in the ground ripens.
+- **Event driven:** the tip's trigger (`OnTriggerEnter`, about 7 cm across) fires on the holder's client only, which
+  asks the master (`DeveloperMarket.RequestGrow`, message id 15 on SceneManager's messenger: the requester, the Plot's
+  network id and slot, or the plant's or produce's). A second touch of the same thing within a second is one ask.
+- **The master decides**: it checks `Developer.Has(requester)`, then `Plant.GrowNow()` moves the planted time back by
+  the growth duration and broadcasts the plant's state as usual, so every client and late joiner derives the rest;
+  `Produce.RipenNow()` does the same for ripening. A touched plant bears ripe (`Plant.RipenStart`).
 
 **Pictures** are textures, shown with `RawImage`, and the app icon is a texture made a sprite at runtime: the first
 upload's `Sprite` references all arrived empty ([[runtime-spawn]] §4m). They are `Textures/Market/*.png`, rendered in the Editor from each prefab in a preview scene (256 × 256,

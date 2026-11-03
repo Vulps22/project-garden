@@ -203,6 +203,16 @@ namespace Vulps.GrowAGarden.Crops
             ApplyRipeness();
         }
 
+        /// <summary>The grow wand touched it. Whoever simulates it moves the ripening start back so it is ripe now, and says so.</summary>
+        public void RipenNow()
+        {
+            if (!HasLocalAuthority || IsRipe) return;
+            float duration = Mathf.Max(0.01f, seedDefinition == null ? 1f : seedDefinition.ripenDuration);
+            _ripenTimestamp = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() - (long)Mathf.Ceil(duration) - 1;
+            ApplyRipeness();
+            broadcastState();
+        }
+
         /// <summary>
         /// Scales from the clock and opens the grab the moment it is ripe. Runs on every client and
         /// sends nothing — ripeness is a derivation, not an event, so a proxy needs no message to

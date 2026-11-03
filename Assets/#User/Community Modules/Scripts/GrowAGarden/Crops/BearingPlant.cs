@@ -98,7 +98,7 @@ namespace Vulps.GrowAGarden.Crops
                 Produce produce = SpawnProduce(_producePrefab, slot.socket.position, slot.socket.rotation);
                 if (produce == null) continue;
 
-                produce.Init(null, -1, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                produce.Init(null, -1, RipenStart());
                 slot.produceId = produce.NetworkId;
 
                 ProduceSlot captured = slot;
@@ -106,6 +106,16 @@ namespace Vulps.GrowAGarden.Crops
             }
 
             broadcastState();
+        }
+
+        protected override void OnGrownTouched()
+        {
+            foreach (ProduceSlot slot in _produceSlots)
+            {
+                if (slot.IsEmpty) continue;
+                Produce produce = WorldManager.Find<Produce>(slot.produceId);
+                if (produce != null) produce.RipenNow();
+            }
         }
 
         protected override void OnFullyGrown()

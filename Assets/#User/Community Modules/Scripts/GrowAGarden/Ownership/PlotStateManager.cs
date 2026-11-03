@@ -75,6 +75,14 @@ namespace Vulps.GrowAGarden.Ownership
             if (PlayerManager.IsMaster) BroadcastFullState();
         }
 
+        /// <summary>Which of this Plot's slots a PlantSlot is, or -1.</summary>
+        public int IndexOf(PlantSlot slot) =>
+            _slotIndices != null && slot != null && _slotIndices.TryGetValue(slot, out int index) ? index : -1;
+
+        /// <summary>What stands in a slot, as the master knows it: a plant, a rooted produce, or null.</summary>
+        public IPlantSlotOccupant OccupantOf(int slotIndex) =>
+            slotIndex >= 0 && slotIndex < _slots.Length ? _slots[slotIndex].Occupant : null;
+
         public Transform AnchorFor(int slotIndex) =>
             (slotIndex >= 0 && slotIndex < _slots.Length) ? _slots[slotIndex].Anchor : null;
 
@@ -88,12 +96,13 @@ namespace Vulps.GrowAGarden.Ownership
             if (plantable == null || plantable.NetworkId == 0) return;
             if (_slotIndices == null || !_slotIndices.TryGetValue(slot, out int slotIndex)) return;
 
-            string owner = plantable.OwnerId ?? string.Empty;
-            int size = BytesWriter.ByteSize + BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
+            // The plot asks whether the planter may use it, not the seed's buyer: a seed handed to someone is theirs to plant.
+            string planter = PlayerManager.LocalPlayerId ?? string.Empty;
+            int size = BytesWriter.ByteSize + BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(planter);
             var writer = new BytesWriter(size);
             writer.AddByte((byte)slotIndex);
             writer.AddInt((int)plantable.NetworkId);
-            writer.AddAutoString(owner);
+            writer.AddAutoString(planter);
             _networkBridge.SendToAll((byte)PlotMessageType.PlantRequest, writer.Data);
         }
 
@@ -118,7 +127,7 @@ namespace Vulps.GrowAGarden.Ownership
             if (!reader.IsValid) return;
             int slotIndex = reader.NextByte();
             uint plantableId = (uint)reader.NextInt();
-            string ownerId = reader.NextAutoString();
+            string planterId = reader.NextAutoString();
 
             if (slotIndex < 0 || slotIndex >= _slots.Length)
             {
@@ -145,9 +154,9 @@ namespace Vulps.GrowAGarden.Ownership
                 return;
             }
 
-            if (!CanBeUsedBy(ownerId))
+            if (!CanBeUsedBy(planterId))
             {
-                Logger.Warn($"OnPlantRequested() '{gameObject.name}' — claimed={_lease != null && _lease.IsClaimed} owner='{(_lease == null ? "<no lease>" : _lease.OwnerId)}' refuses '{ownerId}'");
+                Logger.Warn($"OnPlantRequested() '{gameObject.name}' — claimed={_lease != null && _lease.IsClaimed} owner='{(_lease == null ? "<no lease>" : _lease.OwnerId)}' refuses planter '{planterId}'");
                 return;
             }
 
@@ -166,7 +175,7 @@ namespace Vulps.GrowAGarden.Ownership
             writer.AddInt((int)plantableId);
             _networkBridge.SendToAll((byte)PlotMessageType.Planted, writer.Data);
 
-            Logger.Info($"OnPlantRequested() '{gameObject.name}' — planted '{plant.name}' at slot {slotIndex} for '{ownerId}'");
+            Logger.Info($"OnPlantRequested() '{gameObject.name}' — planted '{plant.name}' at slot {slotIndex} for planter '{planterId}'");
             StartCoroutine(TakeOwnershipAndDespawn(plantableId));
         }
 
