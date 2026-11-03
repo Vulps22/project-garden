@@ -11,6 +11,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "weed";
             displayName = "Weed";
             tagline = "sell the bloom, or eat it raw";
+            description = "Nine blooms to a plant. Sell one and the stall hands back a splif to smoke; eat one raw for the full trip.";
             buyPrice = 80;
             sellValue = 30;          // per bloom; nine to a plant
             growthDuration = 90f;

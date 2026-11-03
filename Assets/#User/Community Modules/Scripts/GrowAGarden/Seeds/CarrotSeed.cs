@@ -15,6 +15,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "carrot";
             displayName = "Carrot";
             tagline = "quick to grow, quick to sell";
+            description = "The staple. Ready in seconds and always wanted at the sell point: plant a row and keep the Thatch coming.";
             buyPrice = 10;
             sellValue = 15;
             growthDuration = 10f;

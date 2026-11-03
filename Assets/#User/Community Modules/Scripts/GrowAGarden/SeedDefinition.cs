@@ -20,6 +20,13 @@ namespace Vulps.GrowAGarden
         [Tooltip("One line under the name on the stall sign: what makes this crop worth buying.")]
         public string tagline;
 
+        [Tooltip("A sentence or two for the crop's Almanac page: what it is and what it does. Set in Init().")]
+        public string description;
+
+        [Tooltip("The crop's picture in the Almanac: its seed, as the Developer Market shows it. A texture, not a sprite: " +
+                 "sprite references arrive empty in-world.")]
+        public Texture2D picture;
+
         [Tooltip("The Seed_ prefab a shop slot spawns for this crop. Must also be listed on the " +
                  "SceneNetworking component, or Fusion has no id to spawn it by.")]
         public NetworkObject seedPrefab;

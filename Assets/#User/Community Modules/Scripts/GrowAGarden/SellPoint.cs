@@ -55,6 +55,9 @@ namespace Vulps.GrowAGarden
         /// </summary>
         public static event System.Action<string, int> SaleCompleted;
 
+        /// <summary>A sale, on every client, with the crop sold: seller, value, the crop's seedId (null if not a crop).</summary>
+        public static event System.Action<string, int, string> SaleOfCrop;
+
         private void Start()
         {
             if (_networkBridge == null)
@@ -72,6 +75,7 @@ namespace Vulps.GrowAGarden
             // Statics outlive a scene when domain reload is off, and a subscriber from the last
             // session is a destroyed object waiting to be called.
             SaleCompleted = null;
+            SaleOfCrop = null;
         }
 
         // ── Seller's side ─────────────────────────────────────────────────────────
@@ -278,12 +282,15 @@ namespace Vulps.GrowAGarden
             int value = reader.NextInt();
 
             // Every client ends the object its own way; only its owner can actually despawn it.
-            FindSellable(itemId)?.Sell(_dropPoint);
+            SellableEntity sold = FindSellable(itemId);
+            string crop = sold != null && sold.TryGetComponent(out Crops.Produce produce) && produce.seedDefinition != null ? produce.seedDefinition.seedId : null;
+            sold?.Sell(_dropPoint);
 
             // Raised after Sell(), so a listener sees a world where the sale has already happened
             // rather than one mid-transaction.
             Logger.Info($"ApplySaleAccepted() '{gameObject.name}' — item={itemId} seller='{sellerId}' value={value}");
             SaleCompleted?.Invoke(sellerId, value);
+            SaleOfCrop?.Invoke(sellerId, value, crop);
         }
 
         /// <summary>Applies a pending/rejected announcement on every client.</summary>

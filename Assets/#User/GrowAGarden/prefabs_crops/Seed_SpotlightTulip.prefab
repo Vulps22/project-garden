@@ -486,6 +486,9 @@ MonoBehaviour:
   seedId: spotlight_tulip
   displayName: Spotlight Tulip
   tagline: a stage light for the Garden
+  description: A stage light on a stem. It rises over the Garden and sweeps it in
+    time with the music.
+  picture: {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
   seedPrefab: {fileID: 0}
   spawnWeight: 0.2
   buyPrice: 60

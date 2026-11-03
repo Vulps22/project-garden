@@ -11,6 +11,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "popcorn";
             displayName = "Popcorn";
             tagline = "grows a cinema screen";
+            description = "Not for eating. Grown, it sends its popcorn flying to build the Garden's cinema screen.";
             buyPrice = 120;
             sellValue = 0;           // an upgrade, not a crop
             growthDuration = 60f;

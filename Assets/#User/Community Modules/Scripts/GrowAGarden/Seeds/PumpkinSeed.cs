@@ -18,6 +18,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "pumpkin";
             displayName = "Pumpkin";
             tagline = "big, slow and worth it";
+            description = "A long wait for one big fruit, and the best price a single crop fetches.";
             buyPrice = 60;
             sellValue = 110;
             growthDuration = 60f;

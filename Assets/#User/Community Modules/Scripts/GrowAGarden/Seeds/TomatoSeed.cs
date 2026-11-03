@@ -8,6 +8,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "tomato";
             displayName = "Tomato";
             tagline = "fruits three times";
+            description = "A cheap plant that fruits three times before it withers, so one seed keeps paying.";
             buyPrice = 20;
             sellValue = 6;          // per fruit; 4 sockets x 3 harvests = 12 fruit
             growthDuration = 20f;

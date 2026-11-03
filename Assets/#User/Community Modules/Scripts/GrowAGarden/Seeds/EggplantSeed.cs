@@ -8,6 +8,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "eggplant";
             displayName = "Eggplant";
             tagline = "did someone say SPS? ;)";
+            description = "Fruits three times on three branches: nine to sell from one seed. Some say it has other uses.";
             buyPrice = 45;
             sellValue = 14;          // per fruit; 3 sockets x 3 harvests = 9 fruit
             growthDuration = 40f;

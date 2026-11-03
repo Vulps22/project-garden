@@ -13,6 +13,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "turnip";
             displayName = "Turnip";
             tagline = "a little slower, a little richer";
+            description = "The carrot's patient cousin: a few seconds longer in the ground, a few more Thatch when you sell it.";
             buyPrice = 18;
             sellValue = 25;
             growthDuration = 15f;

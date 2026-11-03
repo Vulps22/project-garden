@@ -60,6 +60,12 @@ namespace Vulps.GrowAGarden
         /// <summary>Raised on every client when the holder asks to buy. Only the master acts.</summary>
         public event System.Action<Seed> PurchaseRequested;
 
+        /// <summary>Any seed was bought, on every client, once its new owner is set (OwnerId; HasStall: from a stall).</summary>
+        public static event System.Action<Seed> AnyPurchased;
+
+        /// <summary>Any seed was planted, on every client, as the master's yes arrives; OwnerId is still its buyer.</summary>
+        public static event System.Action<Seed> AnyPlanted;
+
         /// <summary>A seed is a physical object wherever it is; nothing about it is anchored.</summary>
         public bool ShouldBeKinematic => false;
 
@@ -306,6 +312,7 @@ namespace Vulps.GrowAGarden
             IsBought = true;
             ClearShopClaim();
             LifecycleChanged?.Invoke();
+            AnyPurchased?.Invoke(this);
             broadcastState();
         }
 
@@ -357,6 +364,7 @@ namespace Vulps.GrowAGarden
         /// </summary>
         public void ApplyPlanted()
         {
+            if (!_planted) AnyPlanted?.Invoke(this);
             _planted = true;
             ClearShopClaim();
             _grabInteractable.enabled = false;

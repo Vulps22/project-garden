@@ -1,7 +1,7 @@
 namespace Vulps.GrowAGarden.Seeds
 {
     /// <summary>
-    /// An ARS seed (docs/fun-seeds.md): grows, then stands for the session as part of the Garden's light show. Nothing
+    /// An ARS seed (docs/moonflower.md): grows, then stands for the session as part of the Garden's light show. Nothing
     /// to harvest or sell. Numbers are code, not Inspector values.
     /// </summary>
     public class MoonflowerSeed : SeedDefinition
@@ -11,6 +11,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "moonflower";
             displayName = "Moonflower";
             tagline = "brings the night";
+            description = "Grown, it beams into the sky and closes a black dome over the Garden, a light show to the screen's music. Grow two and the beams meet overhead.";
             buyPrice = 150;
             sellValue = 0;           // an upgrade, not a crop
             growthDuration = 60f;

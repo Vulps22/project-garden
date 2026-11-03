@@ -486,6 +486,9 @@ MonoBehaviour:
   seedId: moonflower
   displayName: Moonflower
   tagline: brings the night
+  description: Grown, it beams into the sky and closes a black dome over the Garden,
+    a light show to the screen's music. Grow two and the beams meet overhead.
+  picture: {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
   seedPrefab: {fileID: 0}
   spawnWeight: 0.1
   buyPrice: 150

@@ -51,6 +51,19 @@ namespace Vulps.GrowAGarden
         /// <summary>Whether a stall has sold this cycle and will not restock until the next. Pinned stalls are never taken.</summary>
         public static bool IsTaken(StallId stall) => _taken.Contains(stall);
 
+        /// <summary>Stalls this client knows of stocking a crop right now, unsold.</summary>
+        public static int Stocked(string seedId)
+        {
+            int count = 0;
+            foreach (KeyValuePair<StallId, Seed> pair in _stock)
+            {
+                Seed seed = pair.Value;
+                if (seed != null && !seed.IsDiscarded && seed.InShop && !_taken.Contains(pair.Key)
+                    && seed.seedDefinition != null && seed.seedDefinition.seedId == seedId) count++;
+            }
+            return count;
+        }
+
         /// <summary>Asks the master to stock a stall. Any client; the master ignores a stall that is stocked, sold out, or was just stocked.</summary>
         public static void RequestStock(StallId stall, Vector3 position, Quaternion rotation, float rarityMultiplier, string overrideSeedId)
         {

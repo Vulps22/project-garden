@@ -1,7 +1,7 @@
 namespace Vulps.GrowAGarden.Seeds
 {
     /// <summary>
-    /// An ARS seed (docs/fun-seeds.md): grows, then stands for the session as part of the Garden's light show. Nothing
+    /// An ARS seed (docs/spotlight-tulip.md): grows, then stands for the session as part of the Garden's light show. Nothing
     /// to harvest or sell. Numbers are code, not Inspector values.
     /// </summary>
     public class SpotlightTulipSeed : SeedDefinition
@@ -11,6 +11,7 @@ namespace Vulps.GrowAGarden.Seeds
             seedId = "spotlight_tulip";
             displayName = "Spotlight Tulip";
             tagline = "a stage light for the Garden";
+            description = "A stage light on a stem. It rises over the Garden and sweeps it in time with the music.";
             buyPrice = 60;
             sellValue = 0;           // an upgrade, not a crop
             growthDuration = 40f;
