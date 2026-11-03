@@ -163,7 +163,9 @@ The visions and ending early by covering the eyes log nothing and are not confir
   is identical to Lit. `Materials/Trip/` holds a twin of each of the 17 world materials (ground, rocks, crops,
   fences, weed); `TripManager` swaps renderers to their twins only while tripping, every 2 s to catch new spawns,
   and swaps them all back when it ends. Prefabs are untouched, and nobody pays for the shader at rest. Amounts are in
-  object space, so a carrot wobbles a little and a great rock a lot.
+  object space, so a carrot wobbles a little and a great rock a lot. The hut (`ShowLit`, which melts the same way) is
+  modelled tiny and scaled ×109, so it does not wobble but **twists and smears like an apparition**: a bug Vulps
+  kept as a feature (2026-11-03). Do not "fix" it.
 - **Visions** (`TripVisions` on SceneManager): from strength 0.5, local only. A carrot, pumpkin, turnip, bloom, sprout
   or splif appears 40–60° off where the head points, 2.5–4 m away, every 9 s at the threshold down to 3 s at full
   strength, at most 6 at once. It fades in, spins and drifts; looked at (within 15° of where the head points: there

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Vulps.GrowAGarden.Ownership;
+using Vulps.GrowAGarden.Show;
 
 namespace Vulps.GrowAGarden
 {
@@ -103,10 +104,20 @@ namespace Vulps.GrowAGarden
                  "wind and timing can be tuned by watching the Scene view.")]
         [SerializeField] private bool _previewInEditor = true;
 
+        [Tooltip("Clouds lit from inside on each kick of the Garden's music, while the player is in earshot (docs/fun-seeds.md).")]
+        [SerializeField] private int _cloudsPerKick = 2;
+
+        [Tooltip("Seconds for a lit cloud to fade.")]
+        [SerializeField] private float _flashSeconds = 0.6f;
+
+        [Tooltip("How bright a lit cloud glows, as an emission multiplier.")]
+        [SerializeField] private float _flashGlow = 2.5f;
+
         private class CloudSlot
         {
             public Transform Root;
             public Transform[] Blobs;
+            public MeshRenderer[] Renderers;
         }
 
         private class ActiveCloud
@@ -118,6 +129,8 @@ namespace Vulps.GrowAGarden
             public float SpawnedAtClock;
             public float Lifetime;
             public float BaseScale;
+            public float Flash;
+            public Color FlashColour;
         }
 
         private Mesh _blobMesh;
@@ -125,6 +138,8 @@ namespace Vulps.GrowAGarden
         private readonly List<ActiveCloud> _active = new List<ActiveCloud>();
         private float _clock;
         private float _nextSpawnAt;
+        private MaterialPropertyBlock _glow;
+        private static readonly int EMISSION = Shader.PropertyToID("_EmissionColor");
 
         /// <summary>Set by OnValidate whenever a field changes while previewing; consumed by the
         /// next Tick() rather than acted on immediately, so dragging a slider rebuilds the pool
@@ -138,11 +153,33 @@ namespace Vulps.GrowAGarden
         private void OnEnable()
         {
             RebuildPoolAndClock();
+            if (Application.isPlaying) ShowManager.Kick += OnKick;
         }
 
         private void OnDisable()
         {
+            ShowManager.Kick -= OnKick;
             DestroyPool();
+        }
+
+        /// <summary>A kick of the Garden's music lights a couple of clouds from inside, in a colour, if the player can hear it.</summary>
+        private void OnKick()
+        {
+            if (_active.Count == 0 || !ShowManager.InEarshot(Anchor())) return;
+            for (int k = 0; k < _cloudsPerKick; k++)
+            {
+                ActiveCloud cloud = _active[Random.Range(0, _active.Count)];
+                cloud.Flash = 1f;
+                cloud.FlashColour = Color.HSVToRGB(Random.value, 0.65f, 1f);
+            }
+        }
+
+        private void SetGlow(CloudSlot slot, Color colour)
+        {
+            if (slot.Renderers == null) return;
+            if (_glow == null) _glow = new MaterialPropertyBlock();
+            _glow.SetColor(EMISSION, colour);
+            foreach (MeshRenderer r in slot.Renderers) if (r != null) r.SetPropertyBlock(_glow);
         }
 
         private void RebuildPoolAndClock()
@@ -214,6 +251,12 @@ namespace Vulps.GrowAGarden
                 }
 
                 cloud.Slot.Root.position += WindVelocity() * dt;
+
+                if (cloud.Flash > 0f)
+                {
+                    cloud.Flash = Mathf.Max(0f, cloud.Flash - dt / Mathf.Max(0.01f, _flashSeconds));
+                    SetGlow(cloud.Slot, cloud.FlashColour * (cloud.Flash * cloud.Flash * _flashGlow));
+                }
 
                 float spawnT = Smoothstep01(Mathf.Clamp01(age / _fadeInSeconds));
                 float breakStart = Mathf.Max(cloud.Lifetime - _breakUpSeconds, _fadeInSeconds);
@@ -305,6 +348,7 @@ namespace Vulps.GrowAGarden
 
         private void Despawn(ActiveCloud cloud)
         {
+            if (cloud.Flash > 0f) SetGlow(cloud.Slot, Color.black);
             cloud.Slot.Root.gameObject.SetActive(false);
             _pooled.Enqueue(cloud.Slot);
             _active.Remove(cloud);
@@ -337,6 +381,7 @@ namespace Vulps.GrowAGarden
                 root.SetActive(false);
 
                 var blobs = new Transform[_maxBlobsPerCloud];
+                var renderers = new MeshRenderer[_maxBlobsPerCloud];
                 for (int b = 0; b < _maxBlobsPerCloud; b++)
                 {
                     var blob = new GameObject($"Blob_{b}");
@@ -351,9 +396,10 @@ namespace Vulps.GrowAGarden
                     renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
                     blob.SetActive(false);
                     blobs[b] = blob.transform;
+                    renderers[b] = renderer;
                 }
 
-                _pooled.Enqueue(new CloudSlot { Root = root.transform, Blobs = blobs });
+                _pooled.Enqueue(new CloudSlot { Root = root.transform, Blobs = blobs, Renderers = renderers });
             }
         }
 

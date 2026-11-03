@@ -1,0 +1,129 @@
+// Cuts the hut's meshes into cube-sized pieces for ShowLit's _SHOW_PIECES (docs/fun-seeds.md → The Garden dances).
+// Run with the scene open: unity command eval "$(cat 'Assets/#User/GrowAGarden/Models/Show/HutPieces.eval.txt')"
+// Each triangle is clipped against a grid of CELL metres, so at rest the mesh looks exactly as before. uv3 carries the
+// piece's centre (object space) and its height on the hut (0 bottom, 1 top); uv4 its way out and a random.
+const float CELL = 0.55f;
+const string OUT = "Assets/#User/GrowAGarden/Models/Show/";
+var house = GameObject.Find("DeedHut").transform.Find("Log house");
+var parts = new[] { house, house.Find("Door"), house.Find("Windows") };
+var houseMesh = house.GetComponent<MeshFilter>().sharedMesh;
+if (houseMesh.name.StartsWith("Pieces_")) return "already cut: put the original meshes (Log house.fbx) back first";
+
+// The hut's extent in the world, for heights and the way out (the model's own up is not the world's).
+Bounds hutBounds = house.GetComponent<MeshRenderer>().bounds;
+var report = new System.Text.StringBuilder();
+
+foreach (var part in parts)
+{
+    var filter = part.GetComponent<MeshFilter>();
+    var src = filter.sharedMesh;
+    float cell = CELL / part.lossyScale.x;
+
+    var sv = src.vertices; var sn = src.normals; var st = src.tangents; var su = src.uv; var tris = src.triangles;
+    bool hasTangents = st != null && st.Length == sv.Length;
+
+    // A vertex being clipped: position, normal, tangent, uv.
+    var polys = new System.Collections.Generic.List<System.Collections.Generic.List<(Vector3 p, Vector3 n, Vector4 t, Vector2 u)>>();
+    System.Func<(Vector3 p, Vector3 n, Vector4 t, Vector2 u), (Vector3 p, Vector3 n, Vector4 t, Vector2 u), int, float, (Vector3 p, Vector3 n, Vector4 t, Vector2 u)> cut = (a, b, axis, plane) =>
+    {
+        // The same edge always cuts at the same point, whichever way round it comes: no cracks between neighbours.
+        if (a.p[axis] > b.p[axis] || (a.p[axis] == b.p[axis] && a.p.sqrMagnitude > b.p.sqrMagnitude)) { var tmp = a; a = b; b = tmp; }
+        float k = (plane - a.p[axis]) / (b.p[axis] - a.p[axis]);
+        var p = Vector3.Lerp(a.p, b.p, k); p[axis] = plane;
+        return (p, Vector3.Lerp(a.n, b.n, k).normalized, Vector4.Lerp(a.t, b.t, k), Vector2.Lerp(a.u, b.u, k));
+    };
+
+    for (int i = 0; i < tris.Length; i += 3)
+    {
+        var work = new System.Collections.Generic.List<System.Collections.Generic.List<(Vector3 p, Vector3 n, Vector4 t, Vector2 u)>>();
+        var tri = new System.Collections.Generic.List<(Vector3 p, Vector3 n, Vector4 t, Vector2 u)>();
+        for (int j = 0; j < 3; j++) { int v = tris[i + j]; tri.Add((sv[v], sn[v], hasTangents ? st[v] : new Vector4(1, 0, 0, 1), su != null && su.Length == sv.Length ? su[v] : Vector2.zero)); }
+        work.Add(tri);
+        for (int axis = 0; axis < 3; axis++)
+        {
+            var next = new System.Collections.Generic.List<System.Collections.Generic.List<(Vector3 p, Vector3 n, Vector4 t, Vector2 u)>>();
+            foreach (var poly in work)
+            {
+                float lo = float.MaxValue, hi = float.MinValue;
+                foreach (var q in poly) { lo = Mathf.Min(lo, q.p[axis]); hi = Mathf.Max(hi, q.p[axis]); }
+                var rest = poly;
+                for (int k = Mathf.FloorToInt(lo / cell) + 1; k * cell < hi; k++)
+                {
+                    float plane = k * cell;
+                    var below = new System.Collections.Generic.List<(Vector3 p, Vector3 n, Vector4 t, Vector2 u)>();
+                    var above = new System.Collections.Generic.List<(Vector3 p, Vector3 n, Vector4 t, Vector2 u)>();
+                    for (int e = 0; e < rest.Count; e++)
+                    {
+                        var a = rest[e]; var b = rest[(e + 1) % rest.Count];
+                        bool aBelow = a.p[axis] <= plane, bBelow = b.p[axis] <= plane;
+                        if (aBelow) below.Add(a); else above.Add(a);
+                        if (aBelow != bBelow) { var c = cut(a, b, axis, plane); below.Add(c); above.Add(c); }
+                    }
+                    if (below.Count >= 3) next.Add(below);
+                    rest = above;
+                    if (rest.Count < 3) break;
+                }
+                if (rest.Count >= 3) next.Add(rest);
+            }
+            work = next;
+        }
+        polys.AddRange(work);
+    }
+
+    // Group into pieces by cell; a piece's centre is the middle of its area.
+    var key = new System.Collections.Generic.List<Vector3Int>();
+    var sum = new System.Collections.Generic.Dictionary<Vector3Int, Vector4>();
+    foreach (var poly in polys)
+    {
+        Vector3 mid = Vector3.zero; foreach (var q in poly) mid += q.p; mid /= poly.Count;
+        var c = new Vector3Int(Mathf.FloorToInt(mid.x / cell), Mathf.FloorToInt(mid.y / cell), Mathf.FloorToInt(mid.z / cell));
+        key.Add(c);
+        float area = 0f; for (int j = 1; j + 1 < poly.Count; j++) area += Vector3.Cross(poly[j].p - poly[0].p, poly[j + 1].p - poly[0].p).magnitude;
+        area = Mathf.Max(area, 1e-12f);
+        sum.TryGetValue(c, out var s); sum[c] = s + new Vector4(mid.x * area, mid.y * area, mid.z * area, area);
+    }
+
+    var vs = new System.Collections.Generic.List<Vector3>(); var ns = new System.Collections.Generic.List<Vector3>();
+    var ts = new System.Collections.Generic.List<Vector4>(); var us = new System.Collections.Generic.List<Vector2>();
+    var piece = new System.Collections.Generic.List<Vector4>(); var way = new System.Collections.Generic.List<Vector4>();
+    var idx = new System.Collections.Generic.List<int>();
+    Vector3 hutMid = hutBounds.center;
+    var weld = new System.Collections.Generic.Dictionary<(Vector3Int, Vector3, Vector3, Vector2), int>();
+    for (int pi = 0; pi < polys.Count; pi++)
+    {
+        var poly = polys[pi]; var c = key[pi]; var s = sum[c];
+        Vector3 centre = new Vector3(s.x, s.y, s.z) / s.w;
+        Vector3 inWorld = part.localToWorldMatrix.MultiplyPoint3x4(centre);
+        float h = Mathf.InverseLerp(hutBounds.min.y, hutBounds.max.y, inWorld.y);
+        Vector3 outward = inWorld - hutMid; outward.y = 0f;
+        outward = outward.sqrMagnitude < 1e-6f ? Vector3.up : outward.normalized + Vector3.up * 0.35f;
+        Vector3 wayOS = part.worldToLocalMatrix.MultiplyVector(outward).normalized;
+        float rnd = Mathf.Abs(Mathf.Sin(c.x * 12.9898f + c.y * 78.233f + c.z * 37.719f) * 43758.5453f) % 1f;
+        var at = new int[poly.Count];
+        for (int j = 0; j < poly.Count; j++)
+        {
+            // Within a piece, a corner shared by two polygons is one vertex.
+            var q = poly[j];
+            var weldKey = (c, q.p, q.n, q.u);
+            if (!weld.TryGetValue(weldKey, out at[j]))
+            {
+                at[j] = vs.Count; weld[weldKey] = at[j];
+                vs.Add(q.p); ns.Add(q.n); ts.Add(q.t); us.Add(q.u); piece.Add(new Vector4(centre.x, centre.y, centre.z, h)); way.Add(new Vector4(wayOS.x, wayOS.y, wayOS.z, rnd));
+            }
+        }
+        for (int j = 1; j + 1 < poly.Count; j++) { idx.Add(at[0]); idx.Add(at[j]); idx.Add(at[j + 1]); }
+    }
+
+    var mesh = new Mesh { name = "Pieces_" + src.name, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+    mesh.SetVertices(vs); mesh.SetNormals(ns); mesh.SetTangents(ts); mesh.SetUVs(0, us);
+    mesh.SetUVs(3, piece); mesh.SetUVs(4, way);
+    mesh.SetTriangles(idx, 0);
+    mesh.RecalculateBounds();
+    var b2 = mesh.bounds; b2.Expand(3f / part.lossyScale.x); mesh.bounds = b2;   // room for the pieces flying out
+    string path = OUT + "Pieces_" + src.name + ".asset";
+    UnityEditor.AssetDatabase.DeleteAsset(path);
+    UnityEditor.AssetDatabase.CreateAsset(mesh, path);
+    report.Append(src.name + ": " + sv.Length + " → " + vs.Count + " vertices, " + sum.Count + " pieces → " + path + "\n");
+}
+UnityEditor.AssetDatabase.SaveAssets();
+return report.ToString();

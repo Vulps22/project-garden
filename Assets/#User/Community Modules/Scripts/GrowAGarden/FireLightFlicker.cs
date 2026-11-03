@@ -21,6 +21,9 @@ namespace Vulps.GrowAGarden
         [SerializeField] private Color _emberColor = new Color(0.85f, 0.35f, 0.08f);
         [SerializeField] private Color _flameColor = new Color(1f, 0.78f, 0.4f);
 
+        /// <summary>Multiplies the flicker's intensity: the hut's groove flares the fire on the bass. 1 leaves it alone.</summary>
+        public float Boost { get; set; } = 1f;
+
         private float _baseIntensity;
         private float _baseRange;
         private float _seed;
@@ -45,7 +48,7 @@ namespace Vulps.GrowAGarden
             float noise = fast * 0.65f + slow * 0.35f;
 
             float multiplier = Mathf.Lerp(_minIntensityMultiplier, _maxIntensityMultiplier, noise);
-            _light.intensity = _baseIntensity * multiplier;
+            _light.intensity = _baseIntensity * multiplier * Boost;
             _light.range = _baseRange * (1f + (noise - 0.5f) * _rangeJitter);
 
             if (_colorShift) _light.color = Color.Lerp(_emberColor, _flameColor, noise);
