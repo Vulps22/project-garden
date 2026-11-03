@@ -89,16 +89,19 @@ namespace Vulps.GrowAGarden
 
             SpawnableIsland island = GetComponentInParent<SpawnableIsland>();
             StallSocket socket = GetComponentInParent<StallSocket>();
+            Garden garden = island == null ? GetComponentInParent<Garden>() : null;
             int index;
             if (island != null && socket != null)
                 index = island.SocketIndex(socket);
             else
-                index = System.Array.IndexOf(transform.root.GetComponentsInChildren<BuyPoint>(true), this);
+                index = System.Array.IndexOf((garden != null ? garden.transform : transform.root).GetComponentsInChildren<BuyPoint>(true), this);
             if (index < 0 || index > byte.MaxValue) return false;
 
+            // A Garden's stalls are named by where the Garden stands, to the metre: several Gardens share a sector.
+            Vector3 at = garden != null ? garden.transform.position : transform.root.position;
             _id = island != null && island.HasCell
                 ? StallId.Island(island.Cell, (byte)index)
-                : StallId.Garden(SectorManager.SectorOf(transform.position), (byte)index);
+                : StallId.Garden(new Vector2Int(Mathf.RoundToInt(at.x), Mathf.RoundToInt(at.z)), (byte)index);
             _hasId = true;
             Logger.Info($"ResolveId() '{gameObject.name}' — stall {_id}, rarity x{_rarityMultiplier:0}");
             return true;

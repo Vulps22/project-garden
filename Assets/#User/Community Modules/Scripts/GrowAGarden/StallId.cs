@@ -9,7 +9,7 @@ namespace Vulps.GrowAGarden
         /// <summary>Bytes a StallId takes on the wire.</summary>
         public const int Size = BytesWriter.ByteSize * 2 + BytesWriter.IntSize * 2;
 
-        /// <summary>What X and Z count: a garden's sector, or an island's grid cell.</summary>
+        /// <summary>What X and Z count: where a Garden stands (whole metres), or an island's grid cell.</summary>
         public enum Place : byte { Garden = 0, Island = 1 }
 
         public readonly Place Kind;
@@ -25,8 +25,8 @@ namespace Vulps.GrowAGarden
             Index = index;
         }
 
-        /// <summary>A stall on the Garden in a sector.</summary>
-        public static StallId Garden(Vector2Int sector, byte index) => new StallId(Place.Garden, sector.x, sector.y, index);
+        /// <summary>A stall on the Garden standing at a place, in whole metres.</summary>
+        public static StallId Garden(Vector2Int place, byte index) => new StallId(Place.Garden, place.x, place.y, index);
 
         /// <summary>A stall on the island in a grid cell.</summary>
         public static StallId Island(Vector2Int cell, byte index) => new StallId(Place.Island, cell.x, cell.y, index);

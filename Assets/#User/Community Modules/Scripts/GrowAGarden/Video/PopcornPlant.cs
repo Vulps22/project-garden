@@ -38,6 +38,7 @@ namespace Vulps.GrowAGarden.Video
         private bool _seenGrowing;
         private bool _registered;
         private float _streamUntil;
+        private ScreenManager _screen;
         private ParticleSystem.Particle[] _particles;
 
         public long PlantedAt => _plant == null ? 0 : _plant.PlantedAt;
@@ -46,19 +47,28 @@ namespace Vulps.GrowAGarden.Video
         {
             _plant = GetComponent<StandingPlant>();
             _body = _plant.Body != null ? _plant.Body : _plant.transform;
-            ScreenManager.Assembling += OnAssembling;
         }
 
         private void OnDestroy()
         {
-            ScreenManager.Assembling -= OnAssembling;
-            ScreenManager.Unregister(this);
+            if (_screen == null) return;
+            _screen.Assembling -= OnAssembling;
+            _screen.Unregister(this);
+        }
+
+        // The screen of the town this plant stands in, found once it stands somewhere.
+        private ScreenManager Screen()
+        {
+            if (_screen != null || _plant.PlantedAt == 0) return _screen;
+            _screen = ScreenManager.For(transform.position);
+            if (_screen != null) _screen.Assembling += OnAssembling;
+            return _screen;
         }
 
         private void OnAssembling(PopcornPlant from)
         {
             if (from != this) return;
-            _streamUntil = Time.time + Mathf.Max(0.5f, ScreenManager.BuildSeconds - 1.5f);   // the last pieces still have to fly
+            _streamUntil = Time.time + Mathf.Max(0.5f, _screen.BuildSeconds - 1.5f);   // the last pieces still have to fly
         }
 
         private void Update()
@@ -66,7 +76,8 @@ namespace Vulps.GrowAGarden.Video
             if (_plant.PlantedAt == 0) return;
             float growth = _plant.GetGrowthCompletion();
             Vector3 top = _body.position + _body.up * (_topOfBody * _body.lossyScale.y);
-            bool holding = ScreenManager.Holder == this;
+            ScreenManager screen = Screen();
+            bool holding = screen != null && screen.Holder == this;
 
             if (_spray != null)
             {
@@ -85,9 +96,9 @@ namespace Vulps.GrowAGarden.Video
             }
 
             if (growth < 1f) { _seenGrowing = true; return; }
-            if (_registered) return;
+            if (_registered || screen == null) return;
             _registered = true;
-            ScreenManager.Register(this, _seenGrowing);
+            screen.Register(this, _seenGrowing);
         }
 
         /// <summary>Steers each piece of the stream to its own place along the screen's building edge; it vanishes on arrival.</summary>
@@ -97,7 +108,8 @@ namespace Vulps.GrowAGarden.Video
             if (_particles == null || _particles.Length < _stream.main.maxParticles) _particles = new ParticleSystem.Particle[_stream.main.maxParticles];
             int count = _stream.GetParticles(_particles);
 
-            bool building = ScreenManager.TryGetBuildEdge(out Vector3 left, out Vector3 right);
+            Vector3 left = Vector3.zero, right = Vector3.zero;
+            bool building = _screen != null && _screen.TryGetBuildEdge(out left, out right);
             for (int i = 0; i < count; i++)
             {
                 ParticleSystem.Particle p = _particles[i];

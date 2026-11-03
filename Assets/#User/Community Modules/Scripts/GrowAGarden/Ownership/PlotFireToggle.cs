@@ -20,12 +20,13 @@ namespace Vulps.GrowAGarden.Ownership
     public class PlotFireToggle : MonoBehaviour
     {
         [SerializeField] private GameObject _fireplace;
+        [Tooltip("Leave empty: the Plots of the Garden this hut stands in.")]
         [SerializeField] private PlotLeaseManager[] _plots;
 
         private void Awake()
         {
             if (_plots == null || _plots.Length == 0)
-                _plots = UnityEngine.Object.FindObjectsByType<PlotLeaseManager>(FindObjectsSortMode.None);
+                _plots = Islands.Garden.PlotsFor(this);
         }
 
         private void OnEnable()

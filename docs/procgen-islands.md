@@ -40,8 +40,8 @@ Code: `GrowAGarden/Islands/`.
   box sweeps at any yaw) meet, the lower-ranked island moves directly away, just far enough to clear; rank is a hash.
   If the move puts it into a third island, or into a Garden's clear zone, it is not placed. Islands may spill into
   neighbouring cells, which is what lets a Landmark exist on a 150 m grid.
-- **Garden sites** lie on a square lattice `_gardenSpacing` apart (1000 m), site 0 at the Garden, then outward in a
-  square spiral. No island is placed within `_gardenClearRadius` of any site, whether or not a Garden stands there.
+- **Gardens are placed in the scene** ([[towns]]). No island is placed within `_gardenClearRadius` of any of them; the
+  lattice of Garden sites that islands once cleared around, Garden or not, is gone (2026-11-03).
 - **Defaults:** cell 150 m, density 0.9, cell margin 0 (an island may sit anywhere in its cell), garden clear 110 m.
 - The hand-placed `Island_A` ring is gone; the field owns the sky.
 
@@ -76,23 +76,9 @@ file that knows Somnium's map layout (`Tablet.XR(Clone)/…/Tablet.XR.MapTab/…
 
 ## Phase 1b: Gardens at the sites
 
-**Status (2026-10-31):** decided by Vulps, not built. One upload after phase 1.
-
-- **Gardens appear as players explore**, not by player count. A player who reaches an empty Garden site finds a
-  Garden there, so nobody has to start at the first one. Gardens stay until the instance ends.
-- **Each Garden carries its own deed hut and scoreboard.** `DeedHut` moves into the Garden prefab; the scoreboard is
-  already in it. The scoreboard is later reworked to switch between "this garden" and "global top 10".
-- **Everyone arrives at Garden 0.** Spawning players on empty Gardens may follow, from feedback.
-
-> [!info] Networking
-> A Garden holds network objects (4 Plots, the SellPoint, the scoreboard), so it is a master fact, not a derivation
-> like an island. The client that comes within range of an empty site **asks**; the master spawns the Garden prefab
-> and announces its site index, and every client places it with `IslandField.GardenSite(index)` (Fusion's spawn pose
-> is not networked; [[runtime-spawn]]). The set of spawned sites is re-announced to late joiners.
-
-What the move into one prefab has to rewire: `DeedHut`'s `PlotFireToggle` and `PlotTeammateRoster`, and the deed's
-`PlotClaimSignage`, point at the four Plots through scene references, and `EconomyManager._balanceDisplayManager`
-points at the one scoreboard; with several Gardens it needs every board.
+**Status (2026-11-03):** superseded by [[towns]], never built. The plan was Gardens spawned at lattice sites as
+players reached them; instead identical Gardens, each with its own hut and screen, are placed in the scene in towns, and
+islands keep clear of the real Gardens rather than a site lattice.
 
 ## Buy points everywhere
 

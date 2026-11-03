@@ -25,20 +25,24 @@ namespace Vulps.GrowAGarden.Show
         private int _nextBeam;
         private float _dropAt = -1f;
 
+        private ShowStage _stage;
+
         private void Awake()
         {
-            ShowManager.BeamClimbing += OnBeamClimbing;
-            ShowManager.Raising += OnRaising;
-            ShowManager.VisibilityChanged += OnVisibilityChanged;
-            ShowManager.Converging += OnConverging;
+            _stage = GetComponent<ShowStage>();
+            _stage.BeamClimbing += OnBeamClimbing;
+            _stage.Raising += OnRaising;
+            _stage.VisibilityChanged += OnVisibilityChanged;
+            _stage.Converging += OnConverging;
         }
 
         private void OnDestroy()
         {
-            ShowManager.BeamClimbing -= OnBeamClimbing;
-            ShowManager.Raising -= OnRaising;
-            ShowManager.VisibilityChanged -= OnVisibilityChanged;
-            ShowManager.Converging -= OnConverging;
+            if (_stage == null) return;
+            _stage.BeamClimbing -= OnBeamClimbing;
+            _stage.Raising -= OnRaising;
+            _stage.VisibilityChanged -= OnVisibilityChanged;
+            _stage.Converging -= OnConverging;
         }
 
         private void OnBeamClimbing(Vector3 from)
@@ -56,17 +60,17 @@ namespace Vulps.GrowAGarden.Show
         private void OnVisibilityChanged(bool visible)
         {
             _dropAt = -1f;
-            if (!visible) Play(_lift, ShowManager.Star);
+            if (!visible) Play(_lift, _stage.Star);
         }
 
-        private void OnConverging() => Play(_converge, ShowManager.HasDome ? ShowManager.ApexAbove(ShowManager.DomeCentre) : ShowManager.Star);
+        private void OnConverging() => Play(_converge, _stage.ApexAbove(_stage.Centre));
 
         private void Update()
         {
             if (_dropAt >= 0f && Time.time >= _dropAt)
             {
                 _dropAt = -1f;
-                if (ShowManager.IsVisible) Play(_drop, ShowManager.Star);
+                if (_stage.IsVisible) Play(_drop, _stage.Star);
             }
         }
 

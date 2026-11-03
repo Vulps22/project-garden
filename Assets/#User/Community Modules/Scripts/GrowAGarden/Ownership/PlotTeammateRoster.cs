@@ -14,13 +14,14 @@ namespace Vulps.GrowAGarden.Ownership
     /// </summary>
     public class PlotTeammateRoster : MonoBehaviour
     {
+        [Tooltip("Leave empty: the Plots of the Garden this hut stands in.")]
         [SerializeField] private PlotLeaseManager[] _plots;
         [SerializeField] private TeammateSlotDisplay[] _slots;
 
         private void Awake()
         {
             if (_plots == null || _plots.Length == 0)
-                _plots = UnityEngine.Object.FindObjectsByType<PlotLeaseManager>(FindObjectsSortMode.None);
+                _plots = Islands.Garden.PlotsFor(this);
         }
 
         private void OnEnable()
@@ -74,12 +75,6 @@ namespace Vulps.GrowAGarden.Ownership
             {
                 if (_slots[slotIndex] != null) _slots[slotIndex].Hide();
             }
-        }
-
-        private void OnValidate()
-        {
-            if (_plots == null || _plots.Length == 0)
-                _plots = UnityEngine.Object.FindObjectsByType<PlotLeaseManager>(FindObjectsSortMode.None);
         }
     }
 }

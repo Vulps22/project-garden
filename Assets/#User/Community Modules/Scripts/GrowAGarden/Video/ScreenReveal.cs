@@ -6,10 +6,11 @@ namespace Vulps.GrowAGarden.Video
     /// Builds the Garden's video player from its bottom edge up as popcorn arrives, and lowers it when no plant holds it.
     /// The player's own transform is never touched: Somnium sizes its controls from it, and squashing it once left the
     /// controls a sliver for the session. Instead the picture and its backing (`FrameParent`, `BackQuad`, unit quads at
-    /// the player's origin, docs/fun-seeds.md) are squashed, pinned at the bottom edge, and the controls are switched off
+    /// the player's origin, docs/popcorn.md) are squashed, pinned at the bottom edge, and the controls are switched off
     /// until the screen is whole. While building it reports its top edge to the ScreenManager, which is where the popcorn
     /// flies. The player stays active throughout, as Somnium requires.
     /// </summary>
+    [RequireComponent(typeof(ScreenManager))]
     public class ScreenReveal : MonoBehaviour
     {
         [Tooltip("Seconds for the screen to sink when no plant holds it.")]
@@ -27,23 +28,25 @@ namespace Vulps.GrowAGarden.Video
         private float _shown;
         private float _target;
         private bool _building;
+        private ScreenManager _screen;
 
         private void Awake()
         {
-            ScreenManager.VisibilityChanged += OnVisibilityChanged;
-            ScreenManager.Assembling += OnAssembling;
+            _screen = GetComponent<ScreenManager>();
+            _screen.VisibilityChanged += OnVisibilityChanged;
+            _screen.Assembling += OnAssembling;
         }
 
         private void Start()
         {
-            _target = _shown = ScreenManager.IsVisible ? 1f : 0f;
+            _target = _shown = _screen.IsVisible ? 1f : 0f;
             Apply();
         }
 
         private void OnDestroy()
         {
-            ScreenManager.VisibilityChanged -= OnVisibilityChanged;
-            ScreenManager.Assembling -= OnAssembling;
+            _screen.VisibilityChanged -= OnVisibilityChanged;
+            _screen.Assembling -= OnAssembling;
         }
 
         /// <summary>Already up (a late joiner) shows at once; gone sinks.</summary>
@@ -68,10 +71,10 @@ namespace Vulps.GrowAGarden.Video
             if (_parts == null) Apply();
             if (Mathf.Approximately(_shown, _target))
             {
-                if (_building) { _building = false; ScreenManager.ReportBuildEdge(false, Vector3.zero, Vector3.zero); }
+                if (_building) { _building = false; _screen.ReportBuildEdge(false, Vector3.zero, Vector3.zero); }
                 return;
             }
-            float seconds = _building ? ScreenManager.BuildSeconds : _sinkSeconds;
+            float seconds = _building ? _screen.BuildSeconds : _sinkSeconds;
             _shown = Mathf.MoveTowards(_shown, _target, Time.deltaTime / Mathf.Max(0.01f, seconds));
             Apply();
         }
@@ -119,7 +122,7 @@ namespace Vulps.GrowAGarden.Video
             foreach (Canvas c in _controls) if (c != null && c.enabled != whole) c.enabled = whole;
 
             if (_building)
-                ScreenManager.ReportBuildEdge(true, transform.TransformPoint(-0.5f, h - 0.5f, 0f), transform.TransformPoint(0.5f, h - 0.5f, 0f));
+                _screen.ReportBuildEdge(true, transform.TransformPoint(-0.5f, h - 0.5f, 0f), transform.TransformPoint(0.5f, h - 0.5f, 0f));
         }
     }
 }

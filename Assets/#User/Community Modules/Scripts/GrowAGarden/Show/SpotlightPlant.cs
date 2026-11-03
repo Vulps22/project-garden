@@ -74,6 +74,7 @@ namespace Vulps.GrowAGarden.Show
         private MaterialPropertyBlock _block;
         private bool _seenGrowing;
         private float _grownAt = -1f;
+        private ShowStage _stage;   // the dome of this plant's Garden
         private bool _picked;
         private Color _colour;
         private int _band;
@@ -134,13 +135,14 @@ namespace Vulps.GrowAGarden.Show
 
             // Half the height of a Moonflower's beam from here: the dome's height above this plant, halved.
             Vector3 from = _cup != null ? _cup.position : transform.position;
-            float height = (ShowManager.ApexAbove(transform.position).y - transform.position.y) * 0.5f;
+            ShowStage stage = _stage != null ? _stage : _stage = ShowStage.For(transform.position);
+            float height = ((stage != null ? stage.ApexAbove(transform.position).y : transform.position.y + 30f) - transform.position.y) * 0.5f;
             Vector3 top = transform.position + Vector3.up * height;
             Vector3 at = Vector3.Lerp(from, top, rise);
 
             // Panning: a circle about the dome's centre, at this plant's ground height.
-            Vector3 centre = ShowManager.HasDome ? ShowManager.DomeCentre : transform.position;
-            float reach = (ShowManager.HasDome ? ShowManager.DomeRadius : 20f) * _panReach;
+            Vector3 centre = stage != null ? stage.Centre : transform.position;
+            float reach = (stage != null ? stage.Radius : 20f) * _panReach;
             // With a beat, a turn every _beats beats, so a faster song pans faster; with none, the slow drift.
             float tempo = ShowManager.Tempo;
             float speed = tempo > 0f ? Mathf.Max(_idleSpeed, Mathf.PI * 2f * tempo / Mathf.Max(1, _beats)) : _idleSpeed;

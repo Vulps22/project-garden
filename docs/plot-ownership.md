@@ -32,7 +32,8 @@ and one decision point for the master.
 
 ## The shed
 
-**One shed in the Garden**, physically. What is *inside* it depends on who is looking:
+**One shed per Garden**, physically: its deed hut, answering for its own four Plots ([[towns]], 14 Gardens since
+2026-11-03). What is *inside* it depends on who is looking:
 
 | Viewer | Sees |
 |---|---|

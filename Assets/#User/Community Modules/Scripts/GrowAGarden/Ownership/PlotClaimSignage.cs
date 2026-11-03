@@ -17,13 +17,14 @@ namespace Vulps.GrowAGarden.Ownership
     public class PlotClaimSignage : MonoBehaviour
     {
         [SerializeField] private TextMeshPro _nameText;
+        [Tooltip("Leave empty: the Plots of the Garden this hut stands in.")]
         [SerializeField] private PlotLeaseManager[] _plots;
         [SerializeField] private string _unclaimedText = "";
 
         private void Awake()
         {
             if (_plots == null || _plots.Length == 0)
-                _plots = UnityEngine.Object.FindObjectsByType<PlotLeaseManager>(FindObjectsSortMode.None);
+                _plots = Islands.Garden.PlotsFor(this);
         }
 
         private void OnEnable()

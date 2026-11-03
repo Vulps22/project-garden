@@ -199,7 +199,13 @@ namespace Vulps.GrowAGarden
 
         private void Rescue(float fellTo)
         {
-            if (_returnTo == null)
+            // Back to the Garden nearest where they fell, by its hut; with none, the scene's return point.
+            Transform back = _returnTo;
+            Camera head = Camera.main;
+            Islands.Garden garden = head != null ? Islands.Garden.Nearest(head.transform.position) : null;
+            if (garden != null && garden.ReturnPoint != null) back = garden.ReturnPoint;
+
+            if (back == null)
             {
                 Logger.Error($"Rescue() '{gameObject.name}' — no return point set; the player is below " +
                              $"the floor at y={fellTo:F1} and Somnium's respawn is now the only thing " +
@@ -213,8 +219,8 @@ namespace Vulps.GrowAGarden
                 return;
             }
 
-            Vector3 target = _returnTo.position;
-            Vector3 direction = _returnTo.eulerAngles;
+            Vector3 target = back.position;
+            Vector3 direction = back.eulerAngles;
 
             Logger.Info($"Rescue() '{gameObject.name}' — player fell to y={fellTo:F1}, returning to {target}");
 

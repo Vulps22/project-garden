@@ -23,10 +23,7 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("Islands sit between -this and +this metres of the field's height. Gardens always sit at the field's height.")]
         [SerializeField] private float _heightRange = 25f;
 
-        [Tooltip("Distance between Garden sites, in metres. Site 0 is this object's position; the rest lie on a square lattice this far apart.")]
-        [SerializeField] private float _gardenSpacing = 1000f;
-
-        [Tooltip("No island's footprint reaches inside this radius of any Garden site.")]
+        [Tooltip("No island's footprint reaches inside this radius of any Garden in the scene.")]
         [SerializeField] private float _gardenClearRadius = 110f;
 
         [Tooltip("The buy point the seed puts on an island's chosen stall sockets.")]
@@ -277,40 +274,14 @@ namespace Vulps.GrowAGarden.Islands
             }
         }
 
-        /// <summary>Where Garden site <paramref name="index"/> is, in world space.</summary>
-        public Vector3 GardenSiteWorld(int index) => transform.position + GardenSite(index);
-
-        /// <summary>Where Garden site <paramref name="index"/> is, relative to this field's origin: 0 at the origin, then outward in a square spiral.</summary>
-        public Vector3 GardenSite(int index)
-        {
-            Vector2Int p = SpiralPoint(index);
-            return new Vector3(p.x * _gardenSpacing, 0f, p.y * _gardenSpacing);
-        }
-
-        /// <summary>The <paramref name="index"/>th point of a square spiral around (0, 0).</summary>
-        private static Vector2Int SpiralPoint(int index)
-        {
-            if (index <= 0) return Vector2Int.zero;
-            int ring = Mathf.CeilToInt((Mathf.Sqrt(index + 1) - 1) / 2);
-            int side = ring * 2;
-            int last = (side + 1) * (side + 1) - 1;
-            int offset = last - index;
-            if (offset < side) return new Vector2Int(ring - offset, -ring);
-            offset -= side;
-            if (offset < side) return new Vector2Int(-ring, -ring + offset);
-            offset -= side;
-            if (offset < side) return new Vector2Int(-ring + offset, ring);
-            offset -= side;
-            return new Vector2Int(ring, ring - offset);
-        }
-
+        // Gardens are placed in the scene (docs/towns.md), so islands clear around the real ones, nowhere else.
         private bool TouchesGardenSite(Vector3 local, float radius)
         {
-            float x = Mathf.Round(local.x / _gardenSpacing) * _gardenSpacing;
-            float z = Mathf.Round(local.z / _gardenSpacing) * _gardenSpacing;
-            float dx = local.x - x, dz = local.z - z;
+            Vector3 world = local + transform.position;
             float reach = _gardenClearRadius + radius;
-            return dx * dx + dz * dz < reach * reach;
+            foreach (Garden garden in Garden.All)
+                if (garden != null && Garden.FlatSqr(garden.transform.position, world) < reach * reach) return true;
+            return false;
         }
 
         private Vector2Int CellOf(Vector3 local) =>
@@ -367,7 +338,6 @@ namespace Vulps.GrowAGarden.Islands
             if (_cellMargin < 0f) _cellMargin = 0f;
             if (_viewRadius < _cellSize) _viewRadius = _cellSize;
             if (_refreshInterval < 0.1f) _refreshInterval = 0.1f;
-            if (_gardenSpacing < _cellSize) _gardenSpacing = _cellSize;
             if (_heightRange < 0f) _heightRange = 0f;
         }
     }

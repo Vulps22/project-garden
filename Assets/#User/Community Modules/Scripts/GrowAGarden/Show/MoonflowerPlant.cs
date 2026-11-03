@@ -4,7 +4,7 @@ using Vulps.GrowAGarden.Crops;
 namespace Vulps.GrowAGarden.Show
 {
     /// <summary>
-    /// The Moonflower's show. A closed bud while it grows; grown, it blooms and offers itself to the ShowManager. While
+    /// The Moonflower's show. A closed bud while it grows; grown, it blooms and offers itself to its Garden's dome (ShowStage). While
     /// the dome is up every grown Moonflower beams: alone, a straight beam up to a star on the dome; two or more, the
     /// star glides to the top of the dome and every beam arcs in to meet it (a convergence). The beams swell on the bass,
     /// carry a pulse up to the star on each bass hit, and writhe with the mids. The holder carries the star. Local on
@@ -55,6 +55,7 @@ namespace Vulps.GrowAGarden.Show
         private Vector3[] _normals;
         private bool _seenGrowing;
         private bool _registered;
+        private ShowStage _stage;   // the dome of this flower's Garden
         private float _grownAt = -1f;
         private float _beamFrom = -1f;   // when the beam started climbing; < 0 not beaming
         private Vector4 _pulses = new Vector4(99f, 99f, 99f, 99f);
@@ -84,17 +85,18 @@ namespace Vulps.GrowAGarden.Show
             }
             if (_beam != null) BuildBeamMesh();
             if (_star != null) { _starRenderer = _star.GetComponentInChildren<Renderer>(true); _star.gameObject.SetActive(false); }
-            ShowManager.Raising += OnRaising;
-            ShowManager.VisibilityChanged += OnVisibilityChanged;
             ShowManager.Kick += OnKick;
         }
 
         private void OnDestroy()
         {
-            ShowManager.Raising -= OnRaising;
-            ShowManager.VisibilityChanged -= OnVisibilityChanged;
             ShowManager.Kick -= OnKick;
-            ShowManager.Unregister(this);
+            if (_stage != null)
+            {
+                _stage.Raising -= OnRaising;
+                _stage.VisibilityChanged -= OnVisibilityChanged;
+                _stage.Unregister(this);
+            }
             if (_mesh != null) Destroy(_mesh);
         }
 
@@ -103,7 +105,7 @@ namespace Vulps.GrowAGarden.Show
         {
             if (!_registered) return;
             _beamFrom = Time.time;
-            ShowManager.ReportClimb(this);
+            _stage.ReportClimb(this);
         }
 
         /// <summary>Already up (a late joiner): the beams are simply there. Gone: no beams.</summary>
@@ -129,16 +131,21 @@ namespace Vulps.GrowAGarden.Show
 
             if (!_registered)
             {
+                // The dome of the Garden this flower stands in.
+                _stage = ShowStage.For(transform.position);
+                if (_stage == null) return;
                 _registered = true;
-                ShowManager.Register(this, _seenGrowing);
+                _stage.Raising += OnRaising;
+                _stage.VisibilityChanged += OnVisibilityChanged;
+                _stage.Register(this, _seenGrowing);
             }
 
             // Joining a dome that is already up: climb if this client watched it grow, else simply be there.
-            if (!ShowManager.IsVisible) _beamFrom = -1f;
+            if (!_stage.IsVisible) _beamFrom = -1f;
             else if (_beamFrom < 0f)
             {
                 _beamFrom = _seenGrowing ? Time.time : Time.time - ShowManager.BeamSeconds;
-                if (_seenGrowing) ShowManager.ReportClimb(this);
+                if (_seenGrowing) _stage.ReportClimb(this);
             }
 
             for (int k = 0; k < 4; k++) _pulses[k] += Time.deltaTime;
@@ -165,12 +172,12 @@ namespace Vulps.GrowAGarden.Show
             float mid = Mathf.Max(ShowManager.Level(1), ShowManager.Level(2));
             float width = Mathf.Lerp(_beamWidth.x, _beamWidth.y, bass);
 
-            Vector3 p0 = HeadPosition, p3 = ShowManager.Star;
+            Vector3 p0 = HeadPosition, p3 = _stage.Star;
             // Straight: the controls on the line. Converged: rise out of the flower, then curve in to the star.
             Vector3 s1 = Vector3.Lerp(p0, p3, 1f / 3f), s2 = Vector3.Lerp(p0, p3, 2f / 3f);
             Vector3 a1 = p0 + Vector3.up * (p3.y - p0.y) * 0.75f;
             Vector3 a2 = new Vector3(Mathf.Lerp(p3.x, p0.x, 0.55f), p3.y, Mathf.Lerp(p3.z, p0.z, 0.55f));
-            float c = Mathf.SmoothStep(0f, 1f, ShowManager.Converged);
+            float c = Mathf.SmoothStep(0f, 1f, _stage.Converged);
             Vector3 p1 = Vector3.Lerp(s1, a1, c), p2 = Vector3.Lerp(s2, a2, c);
 
             _beam.SetPositionAndRotation(p0, Quaternion.identity);
@@ -209,12 +216,12 @@ namespace Vulps.GrowAGarden.Show
         private void ShowStar()
         {
             if (_star == null) return;
-            bool lit = ShowManager.Holder == this && _beamFrom >= 0f && Time.time - _beamFrom >= ShowManager.BeamSeconds;
+            bool lit = _stage != null && _stage.Holder == this && _beamFrom >= 0f && Time.time - _beamFrom >= ShowManager.BeamSeconds;
             if (_star.gameObject.activeSelf != lit) _star.gameObject.SetActive(lit);
             if (!lit) return;
 
-            float size = Mathf.Lerp(_starSize.x, _starSize.y, ShowManager.Level(3)) * (1f + (ShowManager.BeamCount - 1) / 3f);
-            _star.SetPositionAndRotation(ShowManager.Star, Quaternion.identity);
+            float size = Mathf.Lerp(_starSize.x, _starSize.y, ShowManager.Level(3)) * (1f + (_stage.BeamCount - 1) / 3f);
+            _star.SetPositionAndRotation(_stage.Star, Quaternion.identity);
             Vector3 parent = _star.parent == null ? Vector3.one : _star.parent.lossyScale;
             _star.localScale = new Vector3(size / Mathf.Max(1e-4f, parent.x), size / Mathf.Max(1e-4f, parent.y), size / Mathf.Max(1e-4f, parent.z));
             if (_starRenderer == null) return;

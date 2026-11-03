@@ -14,11 +14,12 @@ not yet.
 |---|---|
 | **World** | The scene. Everything, including the void and whatever floats in it. |
 | **Island** | A floating chunk of map. One is home; the rest are out there to be found. |
-| **Garden** | The constructed farming area on the home island — public ground, four Plots, a SellPoint, three BuyPoints, and in future a shed. The `GardenIsland` prefab. |
+| **Garden** | A constructed farming island: public ground, four Plots, a SellPoint, three BuyPoints, a scoreboard, a deed hut, a screen and a dome. The `GardenIsland` prefab; 14 identical ones in the scene, in towns. |
+| **Town** | A cluster of Gardens, placed together for a neighbourhood feel; only a layout ([[towns]]). |
 | **Plot** | The patch of Garden a player can claim. Four of them, 24 PlantSlots each. |
 | **PlantSlot** | Where a seed goes and a plant grows. |
 | **Sector** | A 1 km square of the world, Sector 0 centred on the Garden. The unit of loading and of who simulates what ([[networking#Authority by sector\|networking → Authority by sector]]). |
-| **Stall** | One BuyPoint, named by its `StallId`: the island cell or Garden sector it stands on, and which of that place's BuyPoints it is (on an island, which `StallSocket`) ([[shop]]). |
+| **Stall** | One BuyPoint, named by its `StallId`: the island cell it stands on, or where its Garden stands, and which of that place's BuyPoints it is (on an island, which `StallSocket`) ([[shop]]). |
 | **Catching** | Grabbing to climb while falling, as the hand crosses into a climbable surface ([[climbing]]). |
 | **Stall socket** | A place on an island where a stall could stand; the world seed decides which open ([[procgen-islands#Buy points everywhere\|procgen-islands → Buy points everywhere]]). |
 

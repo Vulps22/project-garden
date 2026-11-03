@@ -63,7 +63,7 @@ namespace Vulps.GrowAGarden.Map
         private readonly Vector3[] _corners = new Vector3[4];
         private RectTransform _content;
         private RectTransform _layer;
-        private Image _garden;
+        private readonly List<Image> _gardens = new List<Image>();
         private Image _you;
         private float _nextLookup;
         private float _nextDraw;
@@ -194,8 +194,6 @@ namespace Vulps.GrowAGarden.Map
             _layer.SetAsFirstSibling();
 
             _font = MapManager.MapFont(_content);
-            _garden = NewMark("GAG_Garden");
-            _garden.sprite = _gardenSprite;
             _you = NewMark("GAG_You");
             _you.sprite = MapManager.PlayerDotSprite(_content);
             _you.rectTransform.sizeDelta = new Vector2(_dotSize, _dotSize);
@@ -235,9 +233,19 @@ namespace Vulps.GrowAGarden.Map
                 Place(mark.rectTransform, p.Position - origin, metres, p.Rotation.eulerAngles.y);
             }
 
-            Place(_garden.rectTransform, _field.GardenSiteWorld(0) - origin, Vector2.one * _gardenSpan, 0f);
-            _garden.color = _gardenSprite != null ? Color.white : new Color(0.95f, 0.85f, 0.35f);
-            _garden.transform.SetAsLastSibling();
+            // Every Garden in the scene, every town's.
+            IReadOnlyList<Garden> gardens = Garden.All;
+            while (_gardens.Count < gardens.Count) { Image g = NewMark("GAG_Garden"); g.sprite = _gardenSprite; _gardens.Add(g); }
+            for (int i = 0; i < _gardens.Count; i++)
+            {
+                Image mark = _gardens[i];
+                bool used = i < gardens.Count && gardens[i] != null;
+                mark.gameObject.SetActive(used);
+                if (!used) continue;
+                Place(mark.rectTransform, gardens[i].transform.position - origin, Vector2.one * _gardenSpan, 0f);
+                mark.color = _gardenSprite != null ? Color.white : new Color(0.95f, 0.85f, 0.35f);
+                mark.transform.SetAsLastSibling();
+            }
 
             Transform me = PlayerAnchor();
             if (me != null) _you.rectTransform.anchoredPosition = ToMap(me.position - origin);

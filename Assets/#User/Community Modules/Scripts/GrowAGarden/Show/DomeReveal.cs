@@ -9,11 +9,14 @@ namespace Vulps.GrowAGarden.Show
     /// With no holder it draws back into the tip. While this client's head is inside it, the sun fades to moonlight (no
     /// daylight shadows under a black sky), the ambient to a moonlit night that pulses with the bass, and the nature
     /// ambience hushes (through the ShowManager); all of it comes back on leaving or when it goes. Local on every client; nothing is sent, and players outside keep their
-    /// daylight. docs/fun-seeds.md.
+    /// daylight. docs/moonflower.md.
     /// </summary>
     [RequireComponent(typeof(Renderer))]
     public class DomeReveal : MonoBehaviour
     {
+        /// <summary>The sphere's radius in metres.</summary>
+        public float Radius => _radius;
+
         [Tooltip("The sphere's radius in metres; the mesh is a unit sphere, scaled to this.")]
         [SerializeField] private float _radius = 45f;
 
@@ -43,6 +46,7 @@ namespace Vulps.GrowAGarden.Show
         private static readonly int RINGS = Shader.PropertyToID("_Rings");
 
         private Renderer _renderer;
+        private ShowStage _stage;
         private MaterialPropertyBlock _block;
         private float _shown;          // 0 hidden, 1 the whole sphere
         private float _spreadFrom = -1f;
@@ -66,17 +70,15 @@ namespace Vulps.GrowAGarden.Show
             _block = new MaterialPropertyBlock();
             transform.localScale = Vector3.one * _radius / Mathf.Max(1e-4f, transform.parent == null ? 1f : transform.parent.lossyScale.x);
             _renderer.enabled = false;
-            ShowManager.Raising += OnRaising;
-            ShowManager.VisibilityChanged += OnVisibilityChanged;
+            _stage = GetComponent<ShowStage>();
+            _stage.Raising += OnRaising;
+            _stage.VisibilityChanged += OnVisibilityChanged;
             ShowManager.Kick += OnKick;
         }
 
-        private void Start() => ShowManager.RegisterDome(transform.position, _radius);
-
         private void OnDestroy()
         {
-            ShowManager.Raising -= OnRaising;
-            ShowManager.VisibilityChanged -= OnVisibilityChanged;
+            if (_stage != null) { _stage.Raising -= OnRaising; _stage.VisibilityChanged -= OnVisibilityChanged; }
             ShowManager.Kick -= OnKick;
             SetNight(0f);
         }
@@ -101,8 +103,8 @@ namespace Vulps.GrowAGarden.Show
 
         private void Update()
         {
-            MoonflowerPlant holder = ShowManager.Holder;
-            if (holder != null) _apex = ShowManager.Star;
+            MoonflowerPlant holder = _stage.Holder;
+            if (holder != null) _apex = _stage.Star;
 
             if (holder == null) _shown = Mathf.MoveTowards(_shown, 0f, Time.deltaTime / Mathf.Max(0.01f, _retreatSeconds));
             else if (_spreadFrom >= 0f) _shown = Mathf.Clamp01((Time.time - _spreadFrom) / Mathf.Max(0.01f, ShowManager.SpreadSeconds));

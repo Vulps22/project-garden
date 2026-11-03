@@ -285,6 +285,9 @@ the flow plants it first.
 
 ## Future — the world grows a plot at a time
 
+**Status (2026-11-03):** superseded by [[towns]]: 56 Plots in three towns of Gardens placed in the scene, which covers
+the foreseeable player count without appending islands at runtime.
+
 Four plots, ten-plus players in every test. Teaming up absorbs some of that; the rest needs more
 ground.
 

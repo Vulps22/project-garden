@@ -4,9 +4,16 @@ using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden.Economy
 {
+    /// <summary>
+    /// A scoreboard. The economy sends the top ten on one board's bridge (the capital's), and every board in every town
+    /// shows what arrives (docs/towns.md).
+    /// </summary>
     public class BalanceDisplayManager : MonoBehaviour
     {
         private const byte MESSAGE_ID = 0;
+
+        // One message, every board: each town's scoreboard shows the same top ten.
+        private static event System.Action<string[], int[]> Shown;
 
         [SerializeField] private NetworkMessenger _bridge;
         [SerializeField] private GameObject[] _displays;
@@ -18,6 +25,7 @@ namespace Vulps.GrowAGarden.Economy
         {
             Logger.Log($"[BalanceDisplayManager] Start - bridge={(_bridge == null ? "NULL" : "OK")}, displays={_displays?.Length ?? 0}");
             _bridge.MessageToAll += OnMessageToAll;
+            Shown += _Set;
 
             _nameTexts = new TMP_Text[_displays.Length];
             _balanceTexts = new TMP_Text[_displays.Length];
@@ -32,6 +40,7 @@ namespace Vulps.GrowAGarden.Economy
         private void OnDestroy()
         {
             _bridge.MessageToAll -= OnMessageToAll;
+            Shown -= _Set;
         }
 
         /// <summary>
@@ -88,7 +97,7 @@ namespace Vulps.GrowAGarden.Economy
                 Logger.Log($"[BalanceDisplayManager] OnMessageToAll - entry [{i}]: name={names[i]}, balance={balances[i]}");
             }
 
-            _Set(names, balances);
+            Shown?.Invoke(names, balances);
         }
 
         private void _Set(string[] names, int[] balances)
