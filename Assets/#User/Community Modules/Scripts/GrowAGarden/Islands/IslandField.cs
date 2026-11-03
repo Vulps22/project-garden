@@ -32,14 +32,25 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("Cells within this distance of the player are loaded, on top of every island touching the player's sector.")]
         [SerializeField] private float _viewRadius = 1200f;
 
-        [Tooltip("Seconds between checks for cells coming into or going out of range.")]
-        [SerializeField] private float _refreshInterval = 1f;
 
         private readonly Dictionary<Vector2Int, GameObject> _placed = new Dictionary<Vector2Int, GameObject>();
         private readonly List<Vector2Int> _leaving = new List<Vector2Int>();
         private readonly HashSet<Vector2Int> _wanted = new HashSet<Vector2Int>();
         private readonly Dictionary<Vector2Int, Placement> _resolved = new Dictionary<Vector2Int, Placement>();
-        private float _nextRefresh;
+        private static IslandField _instance;
+
+        /// <summary>Raised after islands are placed or removed: whatever stood on missing ground can look again.</summary>
+        public static event System.Action GroundChanged;
+
+        /// <summary>Whether this client has the ground at a world point: its island cell is loaded, or it is on a Garden.</summary>
+        public static bool HasGroundAt(Vector3 world)
+        {
+            foreach (Garden garden in Garden.All)
+                if (garden != null && Garden.FlatSqr(garden.transform.position, world) <= GARDEN_GROUND * GARDEN_GROUND) return true;
+            return _instance != null && _instance._placed.ContainsKey(_instance.CellOf(world - _instance.transform.position));
+        }
+
+        private const float GARDEN_GROUND = 60f;   // a Garden's island reaches about this far from its centre
 
         /// <summary>Which island a cell holds, where it sits and how much room it takes; null prefab for an empty cell.</summary>
         public readonly struct Placement
@@ -62,41 +73,59 @@ namespace Vulps.GrowAGarden.Islands
             public Placement MovedTo(Vector3 position) => new Placement(Prefab, position, Rotation, Radius, Rank);
         }
 
-        private void OnEnable() => WorldSeed.SeedKnown += OnSeedKnown;
+        // Refreshed only when something it depends on changes: the player's cell or sector, the seed, the draw distance.
+        private void OnEnable()
+        {
+            _instance = this;
+            WorldSeed.SeedKnown += OnSeedKnown;
+            SectorManager.LocalSectorChanged += OnLocalSectorChanged;
+            Settings.GameSettings.Changed += OnSettingsChanged;
+            PlayerTracker.Watch(p => CellOf(p - transform.position), OnPlayerMoved);
+        }
 
         private void OnDisable()
         {
             WorldSeed.SeedKnown -= OnSeedKnown;
+            SectorManager.LocalSectorChanged -= OnLocalSectorChanged;
+            Settings.GameSettings.Changed -= OnSettingsChanged;
+            PlayerTracker.Unwatch(OnPlayerMoved);
             Clear();
+            if (_instance == this) _instance = null;
         }
 
         private void OnSeedKnown(long seed)
         {
             Clear();
-            _nextRefresh = 0f;
+            RefreshAroundPlayer();
         }
 
-        private void Update()
+        private void OnPlayerMoved(Vector3 at) => RefreshAroundPlayer();
+        private void OnLocalSectorChanged() => RefreshAroundPlayer();
+
+        private float _refreshedFor = -1f;
+
+        private void OnSettingsChanged()
         {
-            if (!WorldSeed.HasSeed) return;
+            if (Mathf.Approximately(ViewRadius, _refreshedFor)) return;
+            RefreshAroundPlayer();
+        }
+
+        private void RefreshAroundPlayer()
+        {
+            if (!WorldSeed.HasSeed || !PlayerTracker.HasPosition) return;
             if (_islands == null || _islands.Length == 0) return;
-            if (Time.time < _nextRefresh) return;
-            _nextRefresh = Time.time + _refreshInterval;
-
-            Transform anchor = Anchor();
-            if (anchor == null) return;
-            Refresh(anchor.position);
+            _refreshedFor = ViewRadius;
+            Refresh(PlayerTracker.Position);
         }
 
-        /// <summary>The point the field is built around: the local player's head, else a camera, else the field's own origin.</summary>
-        private Transform Anchor()
+        /// <summary>The player's draw distance from World Settings, or the scene's radius without settings (docs/detail.md).</summary>
+        private float ViewRadius
         {
-            Transform head = PlayerManager.LocalPlayerHead;
-            if (head != null) return head;
-            if (Camera.main != null) return Camera.main.transform;
-            foreach (Camera cam in Camera.allCameras)
-                if (cam != null && cam.isActiveAndEnabled && cam.targetTexture == null) return cam.transform;
-            return transform;
+            get
+            {
+                Settings.GameSettings settings = Settings.GameSettings.GetInstance();
+                return settings != null ? settings.DrawDistance : _viewRadius;
+            }
         }
 
         /// <summary>Loads every island touching the local sector, plus every cell within view, and removes the rest.</summary>
@@ -106,9 +135,10 @@ namespace Vulps.GrowAGarden.Islands
             _resolved.Clear();
             _wanted.Clear();
 
-            int reach = Mathf.CeilToInt(_viewRadius / _cellSize);
+            float view = ViewRadius;
+            int reach = Mathf.CeilToInt(view / _cellSize);
             Vector2Int centre = CellOf(around - origin);
-            float viewSqr = _viewRadius * _viewRadius;
+            float viewSqr = view * view;
             for (int dz = -reach; dz <= reach; dz++)
             for (int dx = -reach; dx <= reach; dx++)
             {
@@ -117,9 +147,11 @@ namespace Vulps.GrowAGarden.Islands
             }
             AddLocalSectorCells(origin);
 
+            int added = 0;
             foreach (Vector2Int cell in _wanted)
             {
                 if (_placed.ContainsKey(cell)) continue;
+                added++;
                 Placement p = Resolve(WorldSeed.Seed, cell);
                 if (p.Prefab == null) { _placed[cell] = null; continue; }
                 SpawnableIsland island = Instantiate(p.Prefab, p.Position + origin, p.Rotation, transform);
@@ -128,7 +160,7 @@ namespace Vulps.GrowAGarden.Islands
                 _placed[cell] = island.gameObject;
             }
 
-            float leaveSqr = (_viewRadius + _cellSize) * (_viewRadius + _cellSize);
+            float leaveSqr = (view + _cellSize) * (view + _cellSize);
             _leaving.Clear();
             foreach (var pair in _placed)
                 if (!_wanted.Contains(pair.Key) && FlatDistanceSqr(CellCentre(pair.Key) + origin, around) > leaveSqr) _leaving.Add(pair.Key);
@@ -138,6 +170,7 @@ namespace Vulps.GrowAGarden.Islands
                 if (_placed[cell] != null) Destroy(_placed[cell]);
                 _placed.Remove(cell);
             }
+            if (added > 0 || _leaving.Count > 0) GroundChanged?.Invoke();
         }
 
         /// <summary>Adds every cell whose island reaches into the local sector, so the whole sector is always loaded.</summary>
@@ -330,6 +363,7 @@ namespace Vulps.GrowAGarden.Islands
                 if (island != null) Destroy(island);
             _placed.Clear();
             _resolved.Clear();
+            GroundChanged?.Invoke();
         }
 
         private void OnValidate()
@@ -337,7 +371,6 @@ namespace Vulps.GrowAGarden.Islands
             if (_cellSize < 1f) _cellSize = 1f;
             if (_cellMargin < 0f) _cellMargin = 0f;
             if (_viewRadius < _cellSize) _viewRadius = _cellSize;
-            if (_refreshInterval < 0.1f) _refreshInterval = 0.1f;
             if (_heightRange < 0f) _heightRange = 0f;
         }
     }

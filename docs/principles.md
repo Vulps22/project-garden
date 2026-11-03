@@ -82,6 +82,20 @@ like unrelated bugs. The replicated equivalent is **`IHeldObject.HolderId`**, sy
 - **Prefer an explicit request over inference** whenever the initiating client knows something no one else does.
   The purchase flow in [[shop]] is the worked example.
 
+## Games are event driven
+
+**Status (2026-11-03):** the rule (Vulps). Older code polls; it is being moved over in the order in [[todolist]].
+
+- **A state change raises an event where it happens.** Nothing checks on a timer whether something has changed: no
+  `if (Time.time < _next) return;`, no `WaitForSeconds` loop asking again, no retry "in case a message was lost"
+  (Fusion's messages are reliable).
+- **Find the platform's event first.** Physics callbacks, XR select events, Fusion callbacks, Unity's
+  `InputDevices.deviceConnected`, the SDK's UnityEvents. Only when the platform has none does our bridge make one, once,
+  and everything else listens to the bridge.
+- **The player's position is sampled in one place**, which raises events: entered or left a Garden, changed sector or
+  cell, the nearest screen changed. Nothing measures its own distance to the player.
+- **Timers are for things scheduled in time:** the restock cycle, a plant's regrow, a fade, the trip's next vision.
+
 ## Every function states its own rules
 
 If a behaviour is master-only, that function guards, regardless of whether its caller already did. Not

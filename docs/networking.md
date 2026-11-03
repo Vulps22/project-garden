@@ -48,8 +48,11 @@ The master no longer simulates everything. Once the world spreads over kilometre
 islands it has not loaded, and they would fall through where the island should be. **The master decides; a player
 standing there simulates.**
 
-- **Sectors are public.** `SectorManager` (on `SceneManager`, message id 2) works out which 1 km sector the local
-  player is in and announces it with its Fusion peer id whenever it changes, and again when anyone joins. Every
+- **Sectors are public.** `SectorManager` (on `SceneManager`, message id 2) hears from `PlayerTracker` when the local
+  player crosses into another 1 km sector and announces it with its Fusion peer id, again when anyone joins, and once
+  Fusion gives this client its peer id (`WorldBridge.NetworkReady`). A late joiner's scene messenger can still be
+  attaching at that moment, and an RPC then throws inside Fusion, so `NetworkMessenger.CanSend` also needs
+  `NetworkObject.IsValid` and an announcement that cannot be sent yet goes out on the messenger's `OnSpawned`. Every
   client holds the same table of who is where; a peer is dropped from it when it leaves the room. Sector 0 is
   centred on the Garden; the maths (`SectorOf`, `SectorCentre`) lives here and the map uses it.
 - **Each networked object declares a rule**, `IAuthoritySource.Authority`:
@@ -58,15 +61,25 @@ standing there simulates.**
   - **Sector:** everything else (seeds, harvested produce, deeds), including shop stock.
 - **`AuthorityController`** does the moving. For a Sector object, the pick is the **lowest peer id in the sector the
   object is in**. Every client computes the same pick from the table, and only the pick requests authority, and only
-  when the current authority is not in that sector already. It re-checks every second, on any sector change, and on
-  lifecycle changes, since objects cross sector lines without an event. At home with the master in the Garden, the
-  master is normally the pick, so the Garden behaves as before.
+  when the current authority is not in that sector already. **Event driven:** it decides when the sector table
+  changes, the master changes, the object spawns, changes hands or changes lifecycle, and when the object comes to
+  rest somewhere new. Only the client simulating an object sees it move, so that client reports it: when the object is
+  released (`lastSelectExited`), lands (`OnCollisionEnter`) or finishes a recall (`ReturnableEntity.Arrived`), and its
+  sector differs from the last one known, it sends the object's network id and new sector (message id 14 on
+  SceneManager's messenger, `SectorManager.ReportObjectSector`) and every client decides from that sector rather than
+  the transform, which lags on proxies. **It never takes an object from a player the sector table does not know
+  yet** (`SectorManager.IsKnownPeer`): that player may be holding it, and taking it back snaps it out of their hand
+  to where they picked it up. The starting sector needs no message: every client sees the spawn pose. At
+  home with the master in the Garden, the master is normally the pick, so the Garden behaves as before.
 - **Nobody there.** `KinematicController` holds a Sector object kinematic on the client simulating it when that
-  client does not have its ground loaded (`SectorManager.HasGroundAt`: its own sector, or within `_groundRadius`,
-  600 m, of the player). It stays put until a player enters its sector, takes authority and it is physical again.
+  client does not have its ground loaded (`SectorManager.HasGroundAt`: an island cell `IslandField` has loaded, or
+  within 60 m of a Garden). It looks again when islands are placed or removed (`IslandField.GroundChanged`), when the
+  object is released or recalled, and when authority changes. It stays put until a player enters its sector, takes
+  authority and it is physical again.
   This also covers the master inheriting a disconnected player's objects.
 - **Loading follows the sector.** `IslandField` loads every island that touches the local sector, plus every cell
-  within its view radius. "Touches", not "centred in", because a seed can sit on the part of an island that crosses
+  within the draw distance, refreshed when the player moves into another 150 m cell or sector or the draw distance
+  changes. "Touches", not "centred in", because a seed can sit on the part of an island that crosses
   a sector line, and the pick for that sector must have that island.
 - **Decisions still travel as RPCs to everyone**, applied by everyone, so it does not matter who simulates. A
   despawn goes to whoever simulates the object (`Seed.RequestDiscard`), so the master never has to fight a sector

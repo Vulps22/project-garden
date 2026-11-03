@@ -34,7 +34,6 @@ namespace Vulps.GrowAGarden.Show
         private Color _colour;
         private int _band;
         private bool _near;
-        private float _checkAt;
         private MaterialPropertyBlock _block;
 
         private void Start()
@@ -48,17 +47,23 @@ namespace Vulps.GrowAGarden.Show
             _colour = Color.HSVToRGB((hash % 360) / 360f, 0.75f, 1f);
             _band = hash % 3;   // bass, low-mid or mid: the highs are too twitchy for a barrel
             if (_glow != null) _glow.enabled = false;
+            ArsBridge.ScreenChanged += OnScreenChanged;
+            OnScreenChanged();
+        }
+
+        private void OnDestroy() => ArsBridge.ScreenChanged -= OnScreenChanged;
+
+        /// <summary>Earshot changes only when the screen listened to does: out of it, the stall rests and does not update at all.</summary>
+        private void OnScreenChanged()
+        {
+            _near = ShowManager.InEarshot(transform.position);
+            if (!_near) Rest();
+            if (_glow != null) _glow.enabled = _near;
+            enabled = _near;
         }
 
         private void Update()
         {
-            if (Time.time >= _checkAt)
-            {
-                _checkAt = Time.time + 2f + Random.value;
-                bool near = ShowManager.InEarshot(transform.position);
-                if (near != _near) { _near = near; if (!near) Rest(); if (_glow != null) _glow.enabled = near; }
-            }
-            if (!_near) return;
 
             float level = ShowManager.Level(_band), kick = ShowManager.KickGlow;
             if (_body != null) _body.localScale = Vector3.Scale(_rest, Vector3.one + _kickSquash * kick + Vector3.up * _pump * level);

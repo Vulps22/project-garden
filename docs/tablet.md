@@ -180,15 +180,30 @@ world's per-player switches on every player's tablet, and beneath it a **Develop
     covering the eyes does); eating and smoking still happen, they just do nothing to this player ([[weed]]).
   - **Allow Force Feeding (soon)**: shown off and greyed, since the feature does not exist yet.
   - **Show Notifications**, on by default. Off, the Notifier shows nothing ([[notifier]]).
+  - **Draw Distance**, a slider row cloned from Audio's Main volume, 300 m to 2 km ([[detail]]).
   - **Voice Tutorial → Reset**: a row with a button rather than a switch. `TutorialManager.ResetProgress` forgets
     every line heard, saves that, stops the line playing and starts again from the first line ([[tutorial]]).
-- **The Developer panel** (developer only): **Enable Native Flight** turns Somnium's own fly mode back on
+- **The Developer section** (on the World page, in the right-hand column as Somnium's own pages have one, at x 890; shown only to anyone with developer access): **Notify Everyone** ([[dev-tools#Notify everyone|dev-tools → Notify everyone]]) and **Enable Native Flight** turns Somnium's own fly mode back on
   (`Motion.SetFlyModeDisableState(false)`), so the sidebar's Fly Mode button returns. Glide stays off. Our flight
   switches both off when it takes hold of the player at spawn (`FlightController.Resolve` →
   `SuppressSomniumLocomotion`, [[flight]]); `Resolve` then gives fly mode back if the developer has this on.
 - **Stored by `GameSettings`** (per player, local storage, key `player_settings`) beside the flight trim and the
   narration switches, so they survive between visits (`devNativeFlight` too, which only the developer's client acts on). `noStonedEffects` is stored inverted so saves from before it
   read as allowed.
+
+## Keeping our additions on the tablet
+
+**Status (2026-11-03):** built, compiles clean, untested in-world.
+
+Changing instance from inside the world left none of our apps on the tablet (Vulps, 2026-11-03); no log of it yet.
+Everything we add (the Developer Market, the Almanac, the restock timer, World Settings) therefore:
+
+- **looks for the tablet again every 2 s** and builds itself again on a new one (`TabletReplaced()`, logged), not only
+  when the old one is destroyed;
+- **keeps trying when a lookup fails** (every 5 s, logged) instead of switching itself off, since a tablet being
+  rebuilt can be found before its home screen or Settings are.
+
+The next instance change's log will say which of the two it was.
 
 ## The sidebar
 

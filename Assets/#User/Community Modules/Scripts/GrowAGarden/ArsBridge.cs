@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using SomniumSpace.Bridge.Components;
 using UnityEngine;
 
@@ -6,21 +8,28 @@ namespace Vulps.GrowAGarden
     /// <summary>
     /// The only code that names Community Modules' ARS (audio-reactive system). Feeds one screen's sound to the one
     /// ARSController, which publishes the spectrum to shaders (ARS_Texture1) and splits it into four bands: bass,
-    /// low-mid, mid, high. Every Garden has a screen (docs/towns.md); this client listens to the one nearest its head, so the show dances to the music it hears. Somnium attaches each player's AudioSource some time after load,
-    /// so ARSVideoPlayer polls for it and this hands it over. Local on every client; nothing is sent. docs/light-show.md.
+    /// low-mid, mid, high. Every Garden has a screen (docs/towns.md); this client listens to the one nearest its head,
+    /// picked again whenever the player moves a few metres. Somnium attaches each player's AudioSource some time after
+    /// load; ARSVideoPlayer raises it and this hands it over. Local on every client; nothing is sent. docs/light-show.md.
     /// </summary>
     public class ArsBridge : MonoBehaviour
     {
-        [Tooltip("Seconds between checks for which screen is nearest.")]
-        [SerializeField] private float _checkSeconds = 1f;
+        [Tooltip("How far the player moves, in metres, before the nearest screen is picked again.")]
+        [SerializeField] private float _step = 10f;
+
+        private const float DEAF_SECONDS = 60f;
 
         private static ArsBridge _instance;
         private ARSVideoPlayer[] _screens = new ARSVideoPlayer[0];
         private ARSVideoPlayer _screen;
         private AudioSource _fed;
-        private float _nextCheck;
-        private float _playingSince = -1f;   // when the screen listened to was first seen playing with no sound for ARS
+        private SomniumVideoPlayer _player;   // the listened screen's player, for its playback events
+        private Coroutine _deafCheck;
+        private float _playingSince = -1f;
         private bool _warnedDeaf;
+
+        /// <summary>This client now listens to another screen (or none).</summary>
+        public static event Action ScreenChanged;
 
         /// <summary>Whether ARS is hearing a screen yet.</summary>
         public static bool IsListening => _instance != null && _instance._fed != null && ARSController.Instance != null;
@@ -50,63 +59,84 @@ namespace Vulps.GrowAGarden
             if (_screens.Length == 0) { Logger.Warn($"Start() '{gameObject.name}' — no ARSVideoPlayer, so ARS hears nothing"); return; }
             foreach (ARSVideoPlayer screen in _screens) screen.OnAudioSourceChanged += OnSourceChanged;
             ARSController.ForceInit();
+            PlayerTracker.Watch(PlayerTracker.Grid(_step), OnPlayerMoved);
         }
 
         private void OnDestroy()
         {
             foreach (ARSVideoPlayer screen in _screens) if (screen != null) screen.OnAudioSourceChanged -= OnSourceChanged;
+            PlayerTracker.Unwatch(OnPlayerMoved);
+            Listen(null);
             if (_instance == this) _instance = null;
+            ScreenChanged = null;
         }
 
-        private void Update()
+        private void OnPlayerMoved(Vector3 at)
         {
-            if (Time.time >= _nextCheck)
-            {
-                _nextCheck = Time.time + _checkSeconds;
-                ARSVideoPlayer nearest = Nearest();
-                if (nearest != _screen)
-                {
-                    _screen = nearest;
-                    _playingSince = -1f;
-                    _warnedDeaf = false;
-                    Logger.Info($"Update() '{gameObject.name}' — listening to the screen '{(_screen == null ? "none" : _screen.transform.parent != null ? _screen.transform.parent.name + "/" + _screen.name : _screen.name)}'");
-                }
-            }
-            // Also catches a source found before Start subscribed.
-            if (_screen != null && _screen.AudioSource != null && _screen.AudioSource != _fed) Feed(_screen.AudioSource);
-            WarnIfDeaf();
+            ARSVideoPlayer nearest = Nearest(at);
+            if (nearest != _screen) Listen(nearest);
+        }
+
+        /// <summary>Switches to a screen: its sound if it has some already, and its playback events for the deaf warning.</summary>
+        private void Listen(ARSVideoPlayer screen)
+        {
+            if (_player != null) _player.OnEventReceived.RemoveListener(OnVideoEvent);
+            StopDeafCheck();
+            _screen = screen;
+            _player = screen == null ? null : screen.GetComponentInChildren<SomniumVideoPlayer>();
+            if (_player != null) _player.OnEventReceived.AddListener(OnVideoEvent);
+            if (screen == null) return;
+            Logger.Info($"Listen() '{gameObject.name}' — listening to the screen '{(screen.transform.parent != null ? screen.transform.parent.name + "/" + screen.name : screen.name)}'");
+            if (screen.AudioSource != null) Feed(screen.AudioSource);
+            if (_player != null && _player.IsPlaying()) StartDeafCheck();
+            ScreenChanged?.Invoke();
         }
 
         // Says once, out loud, when the screen being listened to has been playing for a minute and has still given ARS no
-        // sound: every light show then idles, and nothing else in the log says why (2026-11-03: a lost reference left all 14
-        // screens deaf). Not before it plays, since a screen nobody has started has nothing to give. If the sound turns
-        // up after all, says that it was a false alarm.
-        private void WarnIfDeaf()
+        // sound: every light show then idles, and nothing else in the log says why. Timed from the player's own Started
+        // event; if the sound turns up after all, says that it was a false alarm.
+        private void OnVideoEvent(SomniumVideoEvent e)
         {
-            if (_screen == null) return;
-            if (_fed != null)
+            switch (e)
             {
-                if (_warnedDeaf) Logger.Warn($"WarnIfDeaf() '{gameObject.name}' — false alarm: the screen '{_screen.name}' gave ARS its AudioSource after all, {Time.time - _playingSince:0} s after it started playing");
-                _warnedDeaf = false;
-                _playingSince = -1f;
-                return;
+                case SomniumVideoEvent.Started:
+                case SomniumVideoEvent.Unpaused:
+                    StartDeafCheck();
+                    break;
+                case SomniumVideoEvent.Paused:
+                case SomniumVideoEvent.FinishedPlaying:
+                case SomniumVideoEvent.Closing:
+                    StopDeafCheck();
+                    break;
             }
-            if (_playingSince < 0f)
-            {
-                SomniumVideoPlayer player = _screen.GetComponent<SomniumVideoPlayer>();
-                if (player != null && player.IsPlaying()) _playingSince = Time.time;
-                return;
-            }
-            if (_warnedDeaf || Time.time - _playingSince < 60f) return;
-            _warnedDeaf = true;
-            Logger.Warn($"WarnIfDeaf() '{gameObject.name}' — the screen '{_screen.name}' has been playing for 60 s and has given ARS no AudioSource; the show will idle. Is its ARSVideoPlayer._videoPlayer set?");
         }
 
-        private ARSVideoPlayer Nearest()
+        private void StartDeafCheck()
         {
-            Camera head = Camera.main;
-            if (head == null) return _screen != null ? _screen : _screens.Length > 0 ? _screens[0] : null;
-            Vector3 at = head.transform.position;
+            if (_deafCheck != null || IsFedBy(_screen)) return;
+            _playingSince = Time.time;
+            _deafCheck = StartCoroutine(WarnIfDeaf());
+        }
+
+        private void StopDeafCheck()
+        {
+            if (_deafCheck != null) StopCoroutine(_deafCheck);
+            _deafCheck = null;
+        }
+
+        private IEnumerator WarnIfDeaf()
+        {
+            yield return new WaitForSeconds(DEAF_SECONDS);
+            _deafCheck = null;
+            if (IsFedBy(_screen)) yield break;
+            _warnedDeaf = true;
+            Logger.Warn($"WarnIfDeaf() '{gameObject.name}' — the screen '{_screen.name}' has been playing for {DEAF_SECONDS:0} s and has given ARS no AudioSource; the show will idle. Is its ARSVideoPlayer._videoPlayer set?");
+        }
+
+        private bool IsFedBy(ARSVideoPlayer screen) => screen != null && _fed != null && screen.AudioSource == _fed;
+
+        private ARSVideoPlayer Nearest(Vector3 at)
+        {
             ARSVideoPlayer best = null;
             float bestSqr = float.MaxValue;
             foreach (ARSVideoPlayer screen in _screens)
@@ -131,6 +161,9 @@ namespace Vulps.GrowAGarden
             ARSController.SetAudioSource(source);
             _fed = source;
             Logger.Info($"Feed() '{gameObject.name}' — ARS now hears '{source.name}'");
+            StopDeafCheck();
+            if (_warnedDeaf) Logger.Warn($"Feed() '{gameObject.name}' — false alarm: the screen gave ARS its AudioSource after all, {Time.time - _playingSince:0} s after it started playing");
+            _warnedDeaf = false;
         }
     }
 }

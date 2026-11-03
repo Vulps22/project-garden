@@ -27,12 +27,11 @@ namespace Vulps.GrowAGarden.Motion
         [SerializeField] private NetworkMessenger _networkBridge;
         [SerializeField] private XRGrabInteractable _grabInteractable;
 
-        private const float STRANDED_CHECK_SECONDS = 0.5f;
 
         private IKinematicSource _source;
         private ILifecycleNotifier _notifier;
         private IAuthoritySource _authority;
-        private float _nextStrandedCheck;
+        private ReturnableEntity _returnable;
         private bool _stranded;
 
         private void Awake()
@@ -42,6 +41,7 @@ namespace Vulps.GrowAGarden.Motion
             _source = GetComponent<IKinematicSource>();
             _notifier = GetComponent<ILifecycleNotifier>();
             _authority = GetComponent<IAuthoritySource>();
+            _returnable = GetComponent<ReturnableEntity>();
 
             if (_source == null)
                 Logger.Error($"Awake() '{gameObject.name}' — no IKinematicSource on this object, kinematic state will not be driven");
@@ -52,6 +52,8 @@ namespace Vulps.GrowAGarden.Motion
             if (_notifier != null) _notifier.LifecycleChanged += Apply;
             if (_grabInteractable != null) _grabInteractable.lastSelectExited.AddListener(OnReleased);
             if (_networkBridge != null) _networkBridge.OnStateAuthorityChanged += OnAuthorityChanged;
+            if (_returnable != null) _returnable.Arrived += Apply;
+            IslandField.GroundChanged += OnGroundChanged;
         }
 
         private void OnDisable()
@@ -59,15 +61,15 @@ namespace Vulps.GrowAGarden.Motion
             if (_notifier != null) _notifier.LifecycleChanged -= Apply;
             if (_grabInteractable != null) _grabInteractable.lastSelectExited.RemoveListener(OnReleased);
             if (_networkBridge != null) _networkBridge.OnStateAuthorityChanged -= OnAuthorityChanged;
+            if (_returnable != null) _returnable.Arrived -= Apply;
+            IslandField.GroundChanged -= OnGroundChanged;
         }
 
         private void OnReleased(UnityEngine.XR.Interaction.Toolkit.SelectExitEventArgs _) => Apply();
 
-        /// <summary>Re-checks for stranding while this client simulates the object, since moving creates no event.</summary>
-        private void Update()
+        /// <summary>Islands were placed or removed: an object this client simulates may have lost or found its ground.</summary>
+        private void OnGroundChanged()
         {
-            if (Time.time < _nextStrandedCheck) return;
-            _nextStrandedCheck = Time.time + STRANDED_CHECK_SECONDS;
             var obj = _networkBridge == null ? null : _networkBridge.Object;
             if (obj != null && obj.HasStateAuthority && IsStranded() != _stranded) Apply();
         }

@@ -15,6 +15,9 @@ namespace Vulps.GrowAGarden.Trip
     /// </summary>
     public class TripManager : MonoBehaviour
     {
+        /// <summary>Renderers were swapped to their melting twins or back: anything that sets materials itself can redo them.</summary>
+        public static event System.Action MaterialsSwapped;
+
         [Tooltip("A global Volume, weight 0 at rest, whose profile is the full-strength trip.")]
         [SerializeField] private Volume _volume;
 
@@ -178,6 +181,7 @@ namespace Vulps.GrowAGarden.Trip
         {
             Settings.GameSettings.Changed -= OnSettingsChanged;
             Unmelt();
+            MaterialsSwapped = null;
             Shader.SetGlobalFloat(TripId, 0f);
             if (_instance == this) _instance = null;
         }
@@ -276,7 +280,9 @@ namespace Vulps.GrowAGarden.Trip
                 r.sharedMaterials = melted;
                 added++;
             }
-            if (added > 0) Logger.Info($"Melt() '{gameObject.name}' — {added} more renderer(s) melting, {_swapped.Count} in all");
+            if (added == 0) return;
+            Logger.Info($"Melt() '{gameObject.name}' — {added} more renderer(s) melting, {_swapped.Count} in all");
+            MaterialsSwapped?.Invoke();
         }
 
         /// <summary>Puts every melted renderer back as it was.</summary>
@@ -284,8 +290,10 @@ namespace Vulps.GrowAGarden.Trip
         {
             foreach (KeyValuePair<Renderer, Material[]> entry in _swapped)
                 if (entry.Key != null) entry.Key.sharedMaterials = entry.Value;
-            if (_swapped.Count > 0) Logger.Info($"Unmelt() '{gameObject.name}' — {_swapped.Count} renderer(s) back to normal");
+            if (_swapped.Count == 0) return;
+            Logger.Info($"Unmelt() '{gameObject.name}' — {_swapped.Count} renderer(s) back to normal");
             _swapped.Clear();
+            MaterialsSwapped?.Invoke();
         }
 
         private void OnValidate()

@@ -47,6 +47,10 @@ namespace Vulps.GrowAGarden.Show
 
         private Renderer _renderer;
         private ShowStage _stage;
+        private Detail.GardenDetail _garden;
+        private bool _inside;   // this client's head is in the sphere: its Garden's bubble says so
+
+        private void OnBubbleChanged(bool inside) => _inside = inside;
         private MaterialPropertyBlock _block;
         private float _shown;          // 0 hidden, 1 the whole sphere
         private float _spreadFrom = -1f;
@@ -71,6 +75,8 @@ namespace Vulps.GrowAGarden.Show
             transform.localScale = Vector3.one * _radius / Mathf.Max(1e-4f, transform.parent == null ? 1f : transform.parent.lossyScale.x);
             _renderer.enabled = false;
             _stage = GetComponent<ShowStage>();
+            _garden = GetComponentInParent<Detail.GardenDetail>();
+            if (_garden != null) _garden.BubbleChanged += OnBubbleChanged;
             _stage.Raising += OnRaising;
             _stage.VisibilityChanged += OnVisibilityChanged;
             ShowManager.Kick += OnKick;
@@ -79,6 +85,7 @@ namespace Vulps.GrowAGarden.Show
         private void OnDestroy()
         {
             if (_stage != null) { _stage.Raising -= OnRaising; _stage.VisibilityChanged -= OnVisibilityChanged; }
+            if (_garden != null) _garden.BubbleChanged -= OnBubbleChanged;
             ShowManager.Kick -= OnKick;
             SetNight(0f);
         }
@@ -132,9 +139,7 @@ namespace Vulps.GrowAGarden.Show
         /// <summary>Night follows the dome's spread, but only while this client's head is inside the sphere.</summary>
         private void UpdateNight()
         {
-            Camera head = Camera.main;
-            bool inside = head != null && (head.transform.position - transform.position).sqrMagnitude < _radius * _radius;
-            float target = inside ? Mathf.SmoothStep(0f, 1f, _shown) : 0f;
+            float target = _inside ? Mathf.SmoothStep(0f, 1f, _shown) : 0f;
             SetNight(Mathf.MoveTowards(_night, target, Time.deltaTime / Mathf.Max(0.01f, _nightSeconds)));
         }
 

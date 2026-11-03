@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.XR.Interaction.Toolkit;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using Vulps.GrowAGarden.Islands;
 using Vulps.GrowAGarden.Motion;
 
@@ -9,25 +11,29 @@ namespace Vulps.GrowAGarden.Ownership
     /// <see cref="IAuthoritySource"/> declares: the master, a player in the object's sector, or
     /// whoever holds it.
     ///
-    /// Every client works out the same pick from the sector table, and only the pick asks, so no
-    /// message is needed. A held object is never claimed out of a hand.
+    /// Every client works out the same pick from the sector table, and only the pick asks. A held object is never claimed
+    /// out of a hand. Event driven: the sector table changing, the master changing, the object spawning or changing hands,
+    /// and the object itself coming to rest somewhere new, which the client simulating it reports (released, landed,
+    /// recalled) through <see cref="SectorManager.ReportObjectSector"/>.
     /// </summary>
     public class AuthorityController : MonoBehaviour
     {
-        private const float CHECK_SECONDS = 1f;
-        private const float REQUEST_GAP_SECONDS = 0.5f;
-
         [SerializeField] private NetworkMessenger _networkBridge;
 
         private IAuthoritySource _source;
         private ILifecycleNotifier _notifier;
-        private float _nextCheck;
-        private float _lastRequest = float.NegativeInfinity;
+        private XRGrabInteractable _grab;
+        private ReturnableEntity _returnable;
+        private uint _registeredId;
+        private Vector2Int _sector;       // where the simulating client last said it is; used everywhere over the lagging transform
+        private bool _hasSector;
 
         private void Awake()
         {
             _source = GetComponent<IAuthoritySource>();
             _notifier = GetComponent<ILifecycleNotifier>();
+            _grab = GetComponent<XRGrabInteractable>();
+            _returnable = GetComponent<ReturnableEntity>();
 
             if (_source == null)
                 Logger.Error($"Awake() '{gameObject.name}' — no IAuthoritySource on this object, authority will never be moved");
@@ -38,7 +44,14 @@ namespace Vulps.GrowAGarden.Ownership
             if (_notifier != null) _notifier.LifecycleChanged += Apply;
             PlayerManager.BecameWorldMaster += Apply;
             SectorManager.SectorsChanged += Apply;
-            _nextCheck = Time.time + Random.value * CHECK_SECONDS;   // spread the checks across frames
+            if (_networkBridge != null)
+            {
+                _networkBridge.OnSpawned += OnSpawned;
+                _networkBridge.OnStateAuthorityChanged += OnAuthorityChanged;
+            }
+            if (_grab != null) _grab.lastSelectExited.AddListener(OnReleased);
+            if (_returnable != null) _returnable.Arrived += ReportSector;
+            OnSpawned();
         }
 
         private void OnDisable()
@@ -46,13 +59,61 @@ namespace Vulps.GrowAGarden.Ownership
             if (_notifier != null) _notifier.LifecycleChanged -= Apply;
             PlayerManager.BecameWorldMaster -= Apply;
             SectorManager.SectorsChanged -= Apply;
+            if (_networkBridge != null)
+            {
+                _networkBridge.OnSpawned -= OnSpawned;
+                _networkBridge.OnStateAuthorityChanged -= OnAuthorityChanged;
+            }
+            if (_grab != null) _grab.lastSelectExited.RemoveListener(OnReleased);
+            if (_returnable != null) _returnable.Arrived -= ReportSector;
+            if (_registeredId != 0) SectorManager.UnregisterObject(_registeredId);
+            _registeredId = 0;
         }
 
-        /// <summary>Objects move between sectors without any event, so the check also runs on a timer.</summary>
-        private void Update()
+        /// <summary>Spawned (or already spawned when enabled): listen for its sector reports and decide once.</summary>
+        private void OnSpawned()
         {
-            if (Time.time < _nextCheck) return;
-            _nextCheck = Time.time + CHECK_SECONDS;
+            var obj = _networkBridge == null ? null : _networkBridge.Object;
+            if (obj == null || obj.Id.Raw == 0) return;
+            if (_registeredId != obj.Id.Raw)
+            {
+                if (_registeredId != 0) SectorManager.UnregisterObject(_registeredId);
+                _registeredId = obj.Id.Raw;
+                SectorManager.RegisterObject(_registeredId, OnSectorReported);
+            }
+            // Every client sees the same spawn pose, so the starting sector needs no message.
+            if (!_hasSector) { _sector = SectorManager.SectorOf(transform.position); _hasSector = true; }
+            Apply();
+        }
+
+        private void OnAuthorityChanged(bool hasAuthority)
+        {
+            if (hasAuthority) ReportSector();
+            else Apply();
+        }
+
+        private void OnReleased(SelectExitEventArgs _) => ReportSector();
+
+        // Landing is a physics event, and physics runs only where the object is simulated.
+        private void OnCollisionEnter(Collision _) => ReportSector();
+
+        /// <summary>The client simulating it says where it is now, if that is a new sector.</summary>
+        private void ReportSector()
+        {
+            if (_source == null || _source.Authority != AuthorityRule.Sector) return;
+            var obj = _networkBridge == null ? null : _networkBridge.Object;
+            if (obj == null || !obj.HasStateAuthority || obj.Id.Raw == 0) return;
+            Vector2Int sector = SectorManager.SectorOf(transform.position);
+            if (_hasSector && sector == _sector) return;
+            _sector = sector;
+            _hasSector = true;
+            SectorManager.ReportObjectSector(obj.Id.Raw, sector);
+        }
+
+        private void OnSectorReported(Vector2Int sector)
+        {
+            _sector = sector;
+            _hasSector = true;
             Apply();
         }
 
@@ -60,7 +121,6 @@ namespace Vulps.GrowAGarden.Ownership
         public void Apply()
         {
             if (_source == null) return;
-
             var obj = _networkBridge == null ? null : _networkBridge.Object;
             if (obj == null || obj.HasStateAuthority) return;
 
@@ -71,18 +131,18 @@ namespace Vulps.GrowAGarden.Ownership
                     break;
 
                 case AuthorityRule.Sector:
-                    Vector2Int sector = SectorManager.SectorOf(transform.position);
+                    Vector2Int sector = _hasSector ? _sector : SectorManager.SectorOf(transform.position);
                     int me = SectorManager.LocalPeerId;
                     if (me < 0 || SectorManager.PickFor(sector) != me) return;
                     if (!obj.StateAuthority.IsNone && SectorManager.IsPeerIn(obj.StateAuthority.PlayerId, sector)) return;
+                    // Never take it from a player who has not said where they are yet: they may be holding it.
+                    if (!obj.StateAuthority.IsNone && !SectorManager.IsKnownPeer(obj.StateAuthority.PlayerId)) return;
                     break;
 
                 default:
                     return;
             }
 
-            if (Time.time - _lastRequest < REQUEST_GAP_SECONDS) return;
-            _lastRequest = Time.time;
             obj.RequestStateAuthority();
         }
 

@@ -25,7 +25,7 @@ Every doc is tagged by the kinds of thing it defines; `Docs.base` lists them by 
 - **Mechanics:** [[shop]], [[economy]], [[plot-ownership]], [[flight]], [[climbing]].
 - **Interaction:** [[entity-components]], [[tutorial]], [[notifier]] (toasts in the player's view).
 - **Game:** [[procgen-islands]], [[towns]] (the Gardens, in three towns).
-- **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[tablet]] (Somnium's tablet, as Unity sees it), [[dev-tools]] (the Developer Market), [[testing]], [[tooling]].
+- **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[tablet]] (Somnium's tablet, as Unity sees it), [[dev-tools]] (the Developer Market), [[detail]] (level of detail and draw distance), [[testing]], [[tooling]].
 - **Reference:** [[terminology]], [[packaging]], [[fractured-isles-tutorial-script]], [[tutorial-transcript-mapping]].
 
 ## Repo

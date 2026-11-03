@@ -39,8 +39,8 @@ Four Plots in a game for ten or more players at once left most of them nothing t
 
 - **120 m between Gardens in a town**: a dome's radius is 45 m, so two domes never touch (that needs 90 m), and a
   neighbour is a short hop.
-- **Towns are 700–800 m apart**, inside the islands' 1.2 km view radius, so every town is in sight of the next and
-  islands fill the sky between them.
+- **Towns are 700–800 m apart**, inside the default 1.2 km draw distance, so every town is in sight of the next and
+  islands fill the sky between them ([[detail]]).
 - **A town is a plain group** (`Town_*` in the scene) with no component: nothing in the game asks which town it is in.
 
 ## How it is built
@@ -75,7 +75,9 @@ Town_Capital
   ([[light-show]]).
 - **The dome**: a Moonflower raises its own Garden's dome, and a Spotlight Tulip pans about it ([[moonflower]],
   [[spotlight-tulip]]).
-- **Falling out of the world** puts you back at the return point of the Garden nearest where you fell (`WorldFloor`).
+- **Falling out of the world** puts you back at the return point of the Garden nearest where you fell (`WorldFloor`,
+  told by `PlayerTracker` when your head crosses the floor). Grabbables that fall are caught by a trigger volume under
+  the floor (100 km wide, 1 km deep, on the Ignore Raycast layer) and the master destroys them.
 - **Stall ids** name a Garden's stalls by where the Garden stands ([[shop#Stall ids|shop → Stall ids]]).
 
 ### What stays one
@@ -102,6 +104,4 @@ Town_Capital
   or sunk screens locally is the plan, but Pause and Stop are synced and not to be touched: Vulps is asking Dene how
   Base Reality does it (2026-11-03).
 
-- **Hiding distant Gardens.** Every town lies inside the islands' 1.2 km view radius, so a distance cut would never
-  fire, and Unity already culls what is out of view. Worth revisiting only if towns move further apart.
 - **Spawning at another Garden.** Everyone arrives at Garden 0; choosing where to arrive may follow.

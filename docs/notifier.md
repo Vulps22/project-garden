@@ -28,6 +28,7 @@ code can raise one with `Notifier.Push("…")`.
   - **A player joins:** "<name> has joined the world" ("A new player has joined the world" without a name). Not the
     player themselves, and not for anyone already there in their first 10 s, so a late joiner is not told about
     everyone in the room.
+  - **A developer's notification** to everyone ([[dev-tools#Notify everyone|dev-tools → Notify everyone]]).
 
 > [!info] Networking
 > None. A toast is this player's own; whatever pushes one decides who sees it.

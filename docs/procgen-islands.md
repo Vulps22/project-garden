@@ -26,7 +26,7 @@ Code: `GrowAGarden/Islands/`.
 - **`IslandField`** (root object `IslandField`, at the Garden) derives the layout and sends nothing. The sky is an
   unbounded grid of cells; a hash of `(seed, cell)` decides whether a cell holds an island, which prefab from
   `_islands`, its offset inside the cell, its height within `_heightRange` (±25 m) and its yaw. Gardens sit at y=0. Each client loads every island
-  that touches its own sector, plus every cell within `_viewRadius` of its head, and destroys the rest; they are
+  that touches its own sector, plus every cell within the player's draw distance of its head ([[detail]]; `_viewRadius` without settings), and destroys the rest; they are
   plain scenery with no NetworkObject. Why the whole sector: [[networking#Authority by sector|networking → Authority
   by sector]].
   **Reordering `_islands` moves every island**, so new islands are appended.

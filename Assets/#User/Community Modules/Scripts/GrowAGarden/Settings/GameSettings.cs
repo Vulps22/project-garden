@@ -52,6 +52,15 @@ namespace Vulps.GrowAGarden.Settings
         /// <summary>Whether the Notifier shows toasts to this player. On unless they turn it off (World Settings).</summary>
         public bool ShowNotifications { get; private set; } = true;
 
+        /// <summary>How far this player sees Gardens and islands, in metres (World Settings). See docs/detail.md.</summary>
+        public float DrawDistance { get; private set; } = DEFAULT_DRAW_DISTANCE;
+
+        public const float DEFAULT_DRAW_DISTANCE = 1200f;
+        public const float MIN_DRAW_DISTANCE = 300f;
+        public const float MAX_DRAW_DISTANCE = 2000f;
+
+        private float _saveAt = float.PositiveInfinity;   // a slider drag saves once it stops, not on every step
+
         /// <summary>Developer only: Somnium's own fly mode back on, over ours. Ignored for anyone but the developer.</summary>
         public bool DevNativeFlight { get; private set; }
 
@@ -68,6 +77,7 @@ namespace Vulps.GrowAGarden.Settings
             public bool allowForceFeeding;
             public bool devNativeFlight;
             public bool noNotifications;    // inverted so a save from before it existed reads as on
+            public float drawDistance;      // 0 in a save from before it existed: the default
         }
 
         private void Awake()
@@ -124,6 +134,22 @@ namespace Vulps.GrowAGarden.Settings
             Commit();
         }
 
+        /// <summary>Takes effect at once; saved a second after the last change, so dragging the slider writes once.</summary>
+        public void SetDrawDistance(float metres)
+        {
+            DrawDistance = Mathf.Clamp(Mathf.Round(metres / 100f) * 100f, MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
+            _saveAt = Time.unscaledTime + 1f;
+            Changed?.Invoke();
+        }
+
+        private void Update()
+        {
+            if (Time.unscaledTime < _saveAt) return;
+            _saveAt = float.PositiveInfinity;
+            Logger.Info($"Update() '{gameObject.name}' — draw distance now {DrawDistance:F0} m");
+            Save();
+        }
+
         public void SetAllowForceFeeding(bool allow)
         {
             AllowForceFeeding = allow;
@@ -173,9 +199,10 @@ namespace Vulps.GrowAGarden.Settings
             AllowForceFeeding = s.allowForceFeeding;
             DevNativeFlight = s.devNativeFlight;
             ShowNotifications = !s.noNotifications;
+            DrawDistance = s.drawDistance <= 0f ? DEFAULT_DRAW_DISTANCE : Mathf.Clamp(s.drawDistance, MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
             Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} skipTutorial={SkipTutorial} " +
-                        $"disableVoiceTips={DisableVoiceTips} allowStoned={AllowStonedEffects} allowForceFeeding={AllowForceFeeding} notifications={ShowNotifications}");
+                        $"disableVoiceTips={DisableVoiceTips} allowStoned={AllowStonedEffects} allowForceFeeding={AllowForceFeeding} notifications={ShowNotifications} drawDistance={DrawDistance:F0}");
         }
 
         private void Save()
@@ -189,6 +216,7 @@ namespace Vulps.GrowAGarden.Settings
                 allowForceFeeding = AllowForceFeeding,
                 devNativeFlight = DevNativeFlight,
                 noNotifications = !ShowNotifications,
+                drawDistance = DrawDistance,
             }, gameObject.name);
         }
     }

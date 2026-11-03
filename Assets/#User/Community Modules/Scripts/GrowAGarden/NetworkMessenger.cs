@@ -34,8 +34,11 @@ namespace Vulps.GrowAGarden
         /// <summary>A message reached this client alone.</summary>
         public event Action<byte, byte[]> MessageToPlayer;
 
-        /// <summary>True while there is a live NetworkObject to send on.</summary>
-        public bool CanSend => Object != null;
+        /// <summary>
+        /// True while the NetworkObject is spawned and attached to the runner, so RPCs can be sent. Not just "it exists":
+        /// a late joiner's scene objects exist before they are attached, and an RPC then throws inside Fusion.
+        /// </summary>
+        public bool CanSend => Object != null && Object.IsValid;
 
         /// <summary>Tells everyone, sender included.</summary>
         public void SendToAll(byte id, byte[] data) => Transport.RPC_SendMessageToAll(Pack(id, data));

@@ -20,12 +20,14 @@ Community Modules' audio-reactive system (`Scripts/ARS Plugin/`, manual `Documen
   second it splits the spectrum into four bands (bass 0 to 150 Hz, low-mid to 500, mid to 4 kHz, high to 16 kHz) and
   publishes it to shaders as the global `ARS_Texture1`: a 64 × 64 `CustomRenderTexture`, **x frequency (low to high),
   y history (row 0 now, older rows above), r raw, g smoothed**.
-- **`ARSVideoPlayer`**, on each Garden's screen, polls for the `AudioSource` Somnium attaches to the player and raises
-  `OnAudioSourceChanged`.
-- **`ArsBridge`** (on SceneManager) is the only code of ours that names ARS. Once a second it picks the screen nearest
-  this client's head and hands that screen's source to the controller; it reads the four bands. If the screen it
-  listens to has been playing for 60 s without giving a source, it warns (`WarnIfDeaf()`), and says so again if the
-  source turns up after all.
+- **`ARSVideoPlayer`**, on each Garden's screen, looks for the `AudioSource` Somnium attaches to the player when the
+  player says it is ready or playing (`SomniumVideoPlayer.OnEventReceived`: Initialized, ReadyToPlay, FirstFrameReady,
+  Started) and raises `OnAudioSourceChanged`.
+- **`ArsBridge`** (on SceneManager) is the only code of ours that names ARS. Whenever the player moves 10 m
+  (`PlayerTracker`) it picks the screen nearest this client's head, hands that screen's source to the controller and
+  raises `ScreenChanged`; it reads the four bands. When the screen it listens to starts playing (its `Started` or
+  `Unpaused` event) without having given a source, it waits 60 s and warns (`WarnIfDeaf()`), and says it was a false
+  alarm if the source turns up after all.
 - **`ShowManager`** (`Show/`, on SceneManager) turns the raw bands into 0..1 levels against the loudest of the last few
   seconds (quick up, slower down, with a silence floor so hiss is not a show) and raises `Kick` on a bass hit. From the
   gaps between the last nine kicks it keeps a `Tempo`, folded into 75 to 200 bpm so a missed or doubled kick reads the
@@ -33,7 +35,8 @@ Community Modules' audio-reactive system (`Scripts/ARS Plugin/`, manual `Documen
   `QuietFor` is how long every band has been silent. It also keeps the **night**: how far this client is inside a
   closed dome.
 - **`ShowManager.InEarshot(point)`**: within 75 m of the screen this client listens to. Beyond it, the grooves stay
-  still: there are hundreds of stalls across the islands.
+  still: there are hundreds of stalls across the islands. Earshot changes only when the screen does, so a stall works
+  it out on `ArsBridge.ScreenChanged` and switches its own `Update` off while out of it.
 - **Shader globals**, set every frame so a shader can dance with no script: `Show_Levels` (the four levels),
   `Show_Beat` (a beat count stepping with the tempo, creeping with none), `Show_Kick` (a flash fading over 0.25 s) and
   `Show_Night`.
@@ -45,7 +48,8 @@ Community Modules' audio-reactive system (`Scripts/ARS Plugin/`, manual `Documen
 The props carry the show on their own surfaces, so a dark Garden under the dome stays lit enough to garden in.
 
 - **Under the dome only**: the fences, hut, scoreboard and the sell point's tarp follow `Show_Night`; by day,
-  Moonflower or not, they are as they were. The stalls and the clouds dance whenever the screen plays within earshot.
+  Moonflower or not, they are as they were, and the hut's and scoreboard's scripts do not update at all: they wake on
+  `ShowManager.NightChanged`. The stalls and the clouds dance whenever the screen plays within earshot.
 - **Fences: the equaliser** (`Fence_Eq`, `ShowFenceEq`, an additive second material on all 28 fence panels): each panel
   is a whole equaliser in its own object space, bass at its left end, highs at its right; its pickets light up in ten
   rows of LED cells from the bottom to the spectrum's level, green through yellow to magenta, with peak caps held from
