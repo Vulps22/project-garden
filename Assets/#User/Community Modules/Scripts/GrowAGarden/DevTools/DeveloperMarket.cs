@@ -9,7 +9,7 @@ namespace Vulps.GrowAGarden.DevTools
 {
     /// <summary>
     /// The Developer Market's stock and its master half: the developer asks for an item, the master checks the ask
-    /// came from the developer, spawns it free (a seed already theirs, a fruit already ripe) and says where it is so
+    /// came from someone with developer access, spawns it free (a seed already theirs, a fruit already ripe) and says where it is so
     /// the developer's hand can take it. See docs/dev-tools.md.
     /// </summary>
     public class DeveloperMarket : MonoBehaviour
@@ -87,7 +87,7 @@ namespace Vulps.GrowAGarden.DevTools
             Quaternion rotation = reader.NextQuaternion();
             bool rightHand = reader.NextByte() == 1;
 
-            if (requester != Developer.ID) { Logger.Warn($"OnRequested() '{gameObject.name}' — '{requester}' is not the developer; refused"); return; }
+            if (!Developer.Has(requester)) { Logger.Warn($"OnRequested() '{gameObject.name}' — '{requester}' has no developer access; refused"); return; }
             if (index < 0 || index >= _items.Length || _items[index] == null) { Logger.Warn($"OnRequested() '{gameObject.name}' — no item {index}"); return; }
             if (!WorldManager.CanSpawn) { Logger.Warn($"OnRequested() '{gameObject.name}' — cannot spawn yet"); return; }
 

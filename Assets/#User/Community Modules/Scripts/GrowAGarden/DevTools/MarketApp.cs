@@ -11,8 +11,8 @@ using Vulps.GrowAGarden.Ownership;
 namespace Vulps.GrowAGarden.DevTools
 {
     /// <summary>
-    /// The Developer Market, an app on the developer's tablet and nobody else's: a searchable grid of every seed,
-    /// fruit and the splif. Point a hand at one and pull the trigger to bring it out of the tablet into that hand, free.
+    /// The Developer Market, an app on the tablet of anyone with developer access and nobody else's: a searchable grid of
+    /// every seed, fruit and the splif. The owner also gets an Access panel, to give or take developer access this session. Point a hand at one and pull the trigger to bring it out of the tablet into that hand, free.
     /// Built entirely in code onto Somnium's tablet through <see cref="TabletManager"/>. See docs/dev-tools.md.
     /// </summary>
     public class MarketApp : MonoBehaviour
@@ -36,9 +36,14 @@ namespace Vulps.GrowAGarden.DevTools
 
         private Transform _tablet;
         private RectTransform _page;
+        private RectTransform _market;          // the market itself, hidden while the Access panel is up
         private TMP_FontAsset _font;
         private Sprite _sprite;
         private TMP_Text _query;
+        private Button _open;
+        private RectTransform _access;          // the owner's Access panel, over the market
+        private RectTransform _accessList;
+        private bool _accessDirty;
         private readonly List<MarketCell> _cells = new List<MarketCell>();
         private string _search = string.Empty;
         private float _nextLookup;
@@ -49,11 +54,16 @@ namespace Vulps.GrowAGarden.DevTools
         private readonly XRBaseInteractor[] _holding = new XRBaseInteractor[2];   // a hand holding a delivered item by script
         private readonly List<InputDevice> _devices = new List<InputDevice>();
 
-        private void Awake() => DeveloperMarket.Delivered += OnDelivered;
+        private void Awake()
+        {
+            DeveloperMarket.Delivered += OnDelivered;
+            DeveloperAccess.Changed += OnAccessChanged;
+        }
 
         private void OnDestroy()
         {
             DeveloperMarket.Delivered -= OnDelivered;
+            DeveloperAccess.Changed -= OnAccessChanged;
             if (_page != null) Destroy(_page.gameObject);
         }
 
@@ -63,7 +73,13 @@ namespace Vulps.GrowAGarden.DevTools
             LetGo(true);
             if (!_built) { TryBuild(); return; }
             if (_tablet == null || _page == null) { _built = false; return; }
+
+            // Access can be given and taken mid-session: the app comes and goes with it.
+            bool allowed = Developer.IsLocal;
+            if (_open != null && _open.gameObject.activeSelf != allowed) _open.gameObject.SetActive(allowed);
+            if (!allowed && _page.gameObject.activeSelf) Close();
             if (!_page.gameObject.activeSelf) return;
+            if (_accessDirty && _access != null && _access.gameObject.activeSelf) FillAccess();
 
             // Somnium opened something of its own (the frame's buttons, a notification): step aside.
             if (TabletManager.SomniumPageOpen(_tablet, _page)) { _page.gameObject.SetActive(false); return; }
@@ -85,6 +101,7 @@ namespace Vulps.GrowAGarden.DevTools
 
             Sprite icon = _icon == null ? null : Sprite.Create(_icon, new Rect(0, 0, _icon.width, _icon.height), new Vector2(0.5f, 0.5f));
             Button open = TabletManager.AddHomeButton(_tablet, BUTTON_NAME, icon, "Dev Market");
+            _open = open;
             _page = TabletManager.AddPage(_tablet, PAGE_NAME);
             if (open == null || _page == null)
             {
@@ -105,15 +122,24 @@ namespace Vulps.GrowAGarden.DevTools
         {
             Image bg = Panel("Background", _page, PANEL);
             Stretch(bg.rectTransform, 0, 0, 0, 0);
+            _market = bg.rectTransform;
 
-            Button back = MakeButton("Back", _page, "‹ Back", 28, KEY);
+            Button back = MakeButton("Back", _market, "‹ Back", 28, KEY);
             Place(back.transform, 20, -14, 130, 60);
             back.onClick.AddListener(Close);
 
-            TMP_Text title = Text("Title", _page, "Developer Market", 40, ACCENT, TextAlignmentOptions.Center);
+            TMP_Text title = Text("Title", _market, "Developer Market", 40, ACCENT, TextAlignmentOptions.Center);
             Place(title.transform, 160, -14, 640, 60);
 
-            Image field = Panel("Search", _page, FIELD);
+            // Only the owner gives and takes access; the button never exists for anyone else.
+            if (Developer.IsLocalOwner)
+            {
+                Button access = MakeButton("Access", _market, "Access", 26, KEY);
+                Place(access.transform, 810, -14, 130, 60);
+                access.onClick.AddListener(OpenAccess);
+            }
+
+            Image field = Panel("Search", _market, FIELD);
             Place(field.transform, 30, -92, 900, 64);
             _query = Text("Query", field.transform, string.Empty, 30, Color.white, TextAlignmentOptions.MidlineLeft);
             Stretch(_query.rectTransform, 20, 0, 20, 0);
@@ -127,16 +153,16 @@ namespace Vulps.GrowAGarden.DevTools
                 for (int k = 0; k < row.Length; k++)
                 {
                     string letter = row[k].ToString();
-                    Button key = MakeButton(letter, _page, letter, 30, KEY);
+                    Button key = MakeButton(letter, _market, letter, 30, KEY);
                     Place(key.transform, x + k * 86f, -170 - r * 68, 80, 60);
                     key.onClick.AddListener(() => Type(letter));
                 }
                 if (r == 2)
                 {
-                    Button del = MakeButton("Delete", _page, "Del", 26, KEY);
+                    Button del = MakeButton("Delete", _market, "Del", 26, KEY);
                     Place(del.transform, x + row.Length * 86f, -170 - r * 68, 120, 60);
                     del.onClick.AddListener(() => Type(null));
-                    Button clear = MakeButton("Clear", _page, "Clear", 26, KEY);
+                    Button clear = MakeButton("Clear", _market, "Clear", 26, KEY);
                     Place(clear.transform, x + row.Length * 86f + 126f, -170 - r * 68, 120, 60);
                     clear.onClick.AddListener(() => { _search = string.Empty; Filter(); });
                 }
@@ -145,7 +171,7 @@ namespace Vulps.GrowAGarden.DevTools
             // The grid: a scrolling viewport of item cells.
             var scrollGo = new GameObject("Items", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
             var scrollRect = (RectTransform)scrollGo.transform;
-            scrollRect.SetParent(_page, false);
+            scrollRect.SetParent(_market, false);
             Stretch(scrollRect, 20, 380, 20, 20);
             scrollGo.GetComponent<Image>().color = new Color(0, 0, 0, 0.01f);   // something for the ray to drag
 
@@ -179,6 +205,73 @@ namespace Vulps.GrowAGarden.DevTools
 
             for (int i = 0; i < DeveloperMarket.Count; i++) _cells.Add(MakeCell(i, contentRect));
             Filter();
+            if (Developer.IsLocalOwner) BuildAccess();
+        }
+
+        // ── The owner's Access panel ──────────────────────────────────────────────
+
+        private void BuildAccess()
+        {
+            Image bg = Panel("AccessPanel", _page, PANEL);
+            _access = bg.rectTransform;
+            Stretch(_access, 0, 0, 0, 0);
+
+            Button done = MakeButton("Done", _access, "‹ Done", 28, KEY);
+            Place(done.transform, 20, -14, 130, 60);
+            done.onClick.AddListener(() => ShowAccess(false));
+
+            TMP_Text title = Text("Title", _access, "Developer Access", 40, ACCENT, TextAlignmentOptions.Center);
+            Place(title.transform, 160, -14, 640, 60);
+            TMP_Text hint = Text("Hint", _access, "Tap a name to give or take the Dev Market and developer tools. Lasts this session.", 22, new Color(0.7f, 0.78f, 0.86f), TextAlignmentOptions.Center);
+            Place(hint.transform, 20, -84, 920, 40);
+
+            var list = new GameObject("Players", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            _accessList = (RectTransform)list.transform;
+            _accessList.SetParent(_access, false);
+            Stretch(_accessList, 60, 140, 60, 20);
+            var layout = list.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 10;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.UpperCenter;
+
+            _access.gameObject.SetActive(false);
+        }
+
+        private void OpenAccess() => ShowAccess(true);
+
+        /// <summary>The Access panel in place of the market, or the market back.</summary>
+        private void ShowAccess(bool show)
+        {
+            if (_access == null) return;
+            _market.gameObject.SetActive(!show);
+            _access.gameObject.SetActive(show);
+            if (show) FillAccess();
+        }
+
+        private void OnAccessChanged() => _accessDirty = true;
+
+        /// <summary>One row per player in the world: lit while they have access. The owner's own row cannot be pressed.</summary>
+        private void FillAccess()
+        {
+            _accessDirty = false;
+            if (_accessList == null) return;
+            for (int i = _accessList.childCount - 1; i >= 0; i--) Destroy(_accessList.GetChild(i).gameObject);
+
+            var players = new List<KeyValuePair<string, string>>(DeveloperAccess.Present);
+            players.Sort((a, b) => string.Compare(a.Value, b.Value, System.StringComparison.OrdinalIgnoreCase));
+            foreach (KeyValuePair<string, string> player in players)
+            {
+                string id = player.Key;
+                bool owner = id == Developer.ID;
+                bool granted = owner || DeveloperAccess.IsGranted(id);
+                string label = owner ? $"{player.Value}  (owner)" : granted ? $"{player.Value}  · developer" : player.Value;
+                Button row = MakeButton(player.Value, _accessList, label, 30, granted ? CELL_LIT : CELL);
+                ((RectTransform)row.transform).sizeDelta = new Vector2(0, 70);
+                if (owner) { row.interactable = false; continue; }
+                row.onClick.AddListener(() => DeveloperAccess.Ask(id, !DeveloperAccess.IsGranted(id)));
+            }
         }
 
         private MarketCell MakeCell(int index, Transform parent)
@@ -210,6 +303,7 @@ namespace Vulps.GrowAGarden.DevTools
             if (_page == null) return;
             TabletManager.ShowHome(_tablet, false);
             _page.gameObject.SetActive(true);
+            ShowAccess(false);
         }
 
         private void Close()

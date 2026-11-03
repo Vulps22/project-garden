@@ -6,8 +6,8 @@ tags:
 ---
 # Developer tools
 
-Tools that exist for Vulps alone, for testing in-world without paying for it. Nobody else's client builds them, and
-the master refuses them to anyone else.
+Tools for testing in-world without paying for it: Vulps's, and anyone Vulps grants developer access to for the session
+(see *Developer access*). Nobody else's client builds them, and the master refuses them to anyone else.
 
 ## Who the developer is
 
@@ -15,8 +15,25 @@ the master refuses them to anyone else.
 
 `DevTools/Developer.cs`: Vulps22's Somnium user id, `effa171e-b6a2-43c2-8b71-ee1a312e706d`, as Somnium's player
 container reports it (the same id in every world and session; it is also the link in the tablet's user name).
-`Developer.IsLocal` is true on Vulps's client; `Developer.IsLocalMaster` also needs Vulps to be the master client.
+`Developer.Has(id)` is the owner or anyone granted access; `Developer.IsLocal` is that for the local player;
+`Developer.IsLocalOwner` is Vulps alone, and `Developer.IsLocalMaster` also needs Vulps to be the master client.
 `TabletProbe` runs only for `IsLocalMaster`.
+
+## Developer access
+
+**Status (2026-11-03):** built, compiles clean, untested in-world. Asked for by Vulps 2026-11-03.
+
+The Developer Market's **Access** button (Vulps's tablet only) opens a list of everyone in the world in place of the market; *Done* brings the market back. Tapping a name
+gives or takes **developer access** for this session: the Dev Market and every developer-only tool (the Developer panel
+in Settings, the master accepting their market requests). The owner's own row cannot be pressed. Lit rows have access.
+
+- **The master keeps the list** (`DevTools/DeveloperAccess`, on SceneManager): a grant is a fact. The owner's client
+  asks (message 9 on SceneManager's messenger: the asker, the player, give or take); the master refuses an ask from
+  anyone but the owner, updates the list and announces all of it (message 10) to everyone, and again to each late
+  joiner. Every client holds the list, so a new master already has it.
+- **For the session.** A grant outlives a dropout (someone who rejoins keeps it) and ends with the instance.
+- **The app comes and goes with it.** The Dev Market's home button and page hide the moment access is taken, and the
+  Developer panel in Settings follows within a frame.
 
 ## Native flight
 
