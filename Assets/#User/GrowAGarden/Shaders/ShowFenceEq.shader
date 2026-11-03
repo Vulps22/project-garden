@@ -2,7 +2,7 @@
 // renderer). Each panel is a whole equaliser in its own object space: frequency runs along it (bass at its left end),
 // and its pickets light up in rows of LED cells, from the bottom to the spectrum's level (ARS_Texture1), green through
 // yellow to magenta, with a peak cap held from the spectrum's recent history. Under the dome only (Show_Night), where
-// the fences help light the Garden; nothing by day, or when the music is silent. See docs/fun-seeds.md.
+// the fences help light the Garden; nothing by day, or when the music is silent. See docs/light-show.md.
 Shader "GrowAGarden/ShowFenceEq"
 {
     Properties

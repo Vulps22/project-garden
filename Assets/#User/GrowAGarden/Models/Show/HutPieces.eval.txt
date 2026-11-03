@@ -1,4 +1,4 @@
-// Cuts the hut's meshes into cube-sized pieces for ShowLit's _SHOW_PIECES (docs/fun-seeds.md → The Garden dances).
+// Cuts the hut's meshes into cube-sized pieces for ShowLit's _SHOW_PIECES (docs/light-show.md → The Garden dances).
 // Run with the scene open: unity command eval "$(cat 'Assets/#User/GrowAGarden/Models/Show/HutPieces.eval.txt')"
 // Each triangle is clipped against a grid of CELL metres, so at rest the mesh looks exactly as before. uv3 carries the
 // piece's centre (object space) and its height on the hut (0 bottom, 1 top); uv4 its way out and a random.

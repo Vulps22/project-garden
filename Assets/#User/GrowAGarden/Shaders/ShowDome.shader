@@ -1,7 +1,7 @@
 // The Moonflower's dome: a black sphere around the Garden with a light show on it, driven by the ARS spectrum
 // (ARS_Texture1: x frequency, y history with row 0 now, r raw, g smoothed). Night spreads from _Apex, where the beam
 // meets the dome, out to _Reveal metres. Aurora ribbons climb from the horizon, shaped by the spectrum and scrolling
-// its history up the sky; stars twinkle on the highs; rings run out from the apex on bass kicks. See docs/fun-seeds.md.
+// its history up the sky; stars twinkle on the highs; rings run out from the apex on bass kicks. See docs/moonflower.md.
 Shader "GrowAGarden/ShowDome"
 {
     Properties

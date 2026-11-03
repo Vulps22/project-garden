@@ -104,7 +104,7 @@ namespace Vulps.GrowAGarden
                  "wind and timing can be tuned by watching the Scene view.")]
         [SerializeField] private bool _previewInEditor = true;
 
-        [Tooltip("Clouds lit from inside on each kick of the Garden's music, while the player is in earshot (docs/fun-seeds.md).")]
+        [Tooltip("Clouds lit from inside on each kick of the Garden's music, while the player is in earshot (docs/light-show.md).")]
         [SerializeField] private int _cloudsPerKick = 2;
 
         [Tooltip("Seconds for a lit cloud to fade.")]

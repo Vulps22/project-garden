@@ -452,9 +452,9 @@ values of bearing crops are per fruit.
 | Corn | 25 / 13 a cob, 3 cobs | grows 20 s, ripens 15 s, withers 20 s | 0.45 |
 | Eggplant | 45 / 14 a fruit, 3 sockets × 3 harvests | grows 40 s, ripens 25 s, regrows 30 s, withers 20 s | 0.3 |
 | Pumpkin | 60 / 110 | vine 60 s, fruit ripens 60 s, withers 30 s | 0.25 |
-| Popcorn | 120 / nothing to sell | grows 60 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.12 |
-| Moonflower | 150 / nothing to sell | grows 60 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.1 |
-| Spotlight Tulip | 60 / nothing to sell | grows 40 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.2 |
+| Popcorn | 120 / nothing to sell | grows 60 s, then stands for the session ([[popcorn]]); not in the shops yet | 0.12 |
+| Moonflower | 150 / nothing to sell | grows 60 s, then stands for the session ([[moonflower]]); not in the shops yet | 0.1 |
+| Spotlight Tulip | 60 / nothing to sell | grows 40 s, then stands for the session ([[spotlight-tulip]]); not in the shops yet | 0.2 |
 | Weed | 80 / 30 a bloom, 9 blooms | grows 90 s, ripens 60 s, withers 30 s ([[weed]]) | 0.15 |
 
 **Corn is a single-harvest bearing crop** (2026-11-02): a 1.15 m stalk with three cobs, which withers once they are

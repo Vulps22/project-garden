@@ -1,4 +1,4 @@
-"""Synthesises the light show's sounds (docs/fun-seeds.md) as mono 44.1 kHz WAVs beside this script.
+"""Synthesises the light show's sounds (docs/moonflower.md) as mono 44.1 kHz WAVs beside this script.
 
 - beam_rise.wav     2.3 s  a Moonflower's beam climbing: a bright tone gliding up two octaves with a shimmer over it,
                            easing out as it reaches the dome (the beam takes 2 s). The bell it once ended on was

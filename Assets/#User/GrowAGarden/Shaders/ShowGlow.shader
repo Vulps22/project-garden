@@ -1,5 +1,5 @@
 // A soft pool of coloured light on a quad: additive, brightest at the centre, gone at the rim. The stalls' glow on the
-// ground, coloured and driven per stall by StallGroove; bigger by night (Show_Night). See docs/fun-seeds.md.
+// ground, coloured and driven per stall by StallGroove; bigger by night (Show_Night). See docs/light-show.md.
 Shader "GrowAGarden/ShowGlow"
 {
     Properties

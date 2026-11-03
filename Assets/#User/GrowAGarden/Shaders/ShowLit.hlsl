@@ -1,7 +1,7 @@
 #ifndef GAG_SHOW_LIT_INCLUDED
 #define GAG_SHOW_LIT_INCLUDED
 
-// Props that join the light show under the dome (docs/fun-seeds.md → The Garden dances), lit like URP Lit.
+// Props that join the light show under the dome (docs/light-show.md → The Garden dances), lit like URP Lit.
 // Keywords: _SHOW_PLANKS (a board's planks), _SHOW_TARP (bright vertex-coloured cloth), _SHOW_PIECES (a cut-up mesh).
 // Every vertex also melts with the trip (TripWobble.hlsl), so these need no trip twins.
 
