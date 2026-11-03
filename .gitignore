@@ -19,6 +19,13 @@ Assets/#User/Community Modules/Scripts/*
 !Assets/#User/Community Modules/Scripts/GrowAGarden.meta
 !Assets/#User/Community Modules/Scripts/Vulps.GrowAGarden.asmdef
 !Assets/#User/Community Modules/Scripts/Vulps.GrowAGarden.asmdef.meta
+# One CM file we have edited in place: ARSVideoPlayer finds its AudioSource from video events (docs/light-show.md)
+!Assets/#User/Community Modules/Scripts/ARS Plugin/
+Assets/#User/Community Modules/Scripts/ARS Plugin/*
+!Assets/#User/Community Modules/Scripts/ARS Plugin/VideoPlayer/
+Assets/#User/Community Modules/Scripts/ARS Plugin/VideoPlayer/*
+!Assets/#User/Community Modules/Scripts/ARS Plugin/VideoPlayer/ARSVideoPlayer.cs
+!Assets/#User/Community Modules/Scripts/ARS Plugin/VideoPlayer/ARSVideoPlayer.cs.meta
 
 # Track git and documentation files
 !/.gitignore

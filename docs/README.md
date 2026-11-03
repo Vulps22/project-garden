@@ -38,6 +38,7 @@ is an allowlist: it ignores everything (`/*`) and un-ignores only what is ours.
 Assets/#User/GrowAGarden/                             scene, prefabs, materials, sounds, islands
 Assets/#User/Community Modules/Scripts/GrowAGarden/   all our code (see community-modules)
 Assets/#User/Community Modules/Scripts/Vulps.GrowAGarden.asmdef
+Assets/#User/Community Modules/Scripts/ARS Plugin/VideoPlayer/ARSVideoPlayer.cs   CM's, edited in place (light-show)
 docs/  Audacity/  CLAUDE.md  README.md
 ```
 
