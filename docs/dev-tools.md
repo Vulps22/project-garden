@@ -80,7 +80,14 @@ developer's client                         master
 
 **The stock** is three matching arrays on `DeveloperMarket` (items, names, pictures), not an array of a custom class,
 because arrays of custom `[Serializable]` classes arrive empty from the bundle export ([[weed]]). Order: the eight
-seeds, the seven fruits, the splif.
+seeds, the seven fruits, the splif, the SPS Receiver, then the Moonflower Seed and Spotlight Tulip Bulb. A new item is appended to all three, and its prefab appended to
+`SceneNetworking._networkPrefabs` together with a new GUID in `_networkPrefabsGuid` (both at once: if the lengths
+differ, `OnValidate` regenerates every GUID).
+
+**The SPS Receiver** (2026-11-02, for debugging SPS, Vulps): `prefab_items/SpsReceiver`, a pink ring (`Models/SpsReceiver/Ring`,
+10 cm across) built from the splif with its smoke taken off, so it is a plain grabbable. At the ring's centre is a child
+`SPS_Target` tagged `Player`, which the SPS plugin finds and fits with its receiver (a small visible sphere and a
+trigger), so an eggplant brought to it bends toward it ([[crops#The eggplant easter egg|crops → The eggplant easter egg]]). Market only, never in the shops.
 
 **Pictures** are textures, shown with `RawImage`, and the app icon is a texture made a sprite at runtime: the first
 upload's `Sprite` references all arrived empty ([[runtime-spawn]] §4m). They are `Textures/Market/*.png`, rendered in the Editor from each prefab in a preview scene (256 × 256,

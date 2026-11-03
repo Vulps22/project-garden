@@ -34,7 +34,7 @@ Three structures for crops, and a fourth for upgrades (2026-11-02):
 Seed → RootedPlant                     → Produce          carrot, turnip
 Seed → SingleHarvestPlant : BearingPlant → Produce         pumpkin, weed, corn
 Seed → MultiHarvestPlant  : BearingPlant → Produce         tomato, eggplant
-Seed → StandingPlant                                       popcorn (an upgrade; [[fun-seeds]])
+Seed → StandingPlant                                       popcorn, moonflower, spotlight tulip (upgrades; [[fun-seeds]])
 ```
 
 ```
@@ -453,6 +453,8 @@ values of bearing crops are per fruit.
 | Eggplant | 45 / 14 a fruit, 3 sockets × 3 harvests | grows 40 s, ripens 25 s, regrows 30 s, withers 20 s | 0.3 |
 | Pumpkin | 60 / 110 | vine 60 s, fruit ripens 60 s, withers 30 s | 0.25 |
 | Popcorn | 120 / nothing to sell | grows 60 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.12 |
+| Moonflower | 150 / nothing to sell | grows 60 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.1 |
+| Spotlight Tulip | 60 / nothing to sell | grows 40 s, then stands for the session ([[fun-seeds]]); not in the shops yet | 0.2 |
 | Weed | 80 / 30 a bloom, 9 blooms | grows 90 s, ripens 60 s, withers 30 s ([[weed]]) | 0.15 |
 
 **Corn is a single-harvest bearing crop** (2026-11-02): a 1.15 m stalk with three cobs, which withers once they are
@@ -487,6 +489,8 @@ that drives its material toward the nearest target. It is local rendering on eve
 - **`OwnMaterials`** on the renderer gives each eggplant its own material copy at spawn: `SPSTrigger` writes to the
   shared material, which would otherwise bend every eggplant in the world at once.
 - Tagging `Player` is safe here: nothing of ours reads that tag, and Somnium's own player tag is `PlayerCollider`.
+- **To test it without an SPS avatar**, take the SPS Receiver from the Developer Market ([[dev-tools]]): a ring carrying
+  an `SPS_Target`.
 
 ## Growth pivots
 
