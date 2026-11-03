@@ -11,7 +11,7 @@ time with the music ([[light-show]]).
 
 ## The design
 
-**Status (2026-11-03):** built; played in-world. In the Developer Market only, not the stalls.
+**Status (2026-11-03):** built; played in-world. In the stalls since 2026-11-03 (`Buyable_SpotlightTulip`, weight 0.2, Rare); untested there.
 
 - **Vulps's brief**: a light at about half the height of a Moonflower's beam ([[moonflower]]), pointing at the island
   and panning around it.

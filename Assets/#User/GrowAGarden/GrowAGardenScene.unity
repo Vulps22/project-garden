@@ -324,6 +324,11 @@ GameObject:
   - component: {fileID: 163550792}
   - component: {fileID: 163550791}
   - component: {fileID: 163550794}
+  - component: {fileID: 163550795}
+  - component: {fileID: 163550796}
+  - component: {fileID: 163550797}
+  - component: {fileID: 163550798}
+  - component: {fileID: 163550799}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -377,6 +382,7 @@ MonoBehaviour:
   - {fileID: 8889210848319893590, guid: 7ac933df7ffed3a14856dd6d563bddb7, type: 3}
   - {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
   - {fileID: 8889210848319893590, guid: d0e99dffa9d3c57cc92d16db0f9bc3d3, type: 3}
+  - {fileID: 4360997998222114339, guid: 1caf9dca9d1f22efc82f1d8685036499, type: 3}
   _networkPrefabsGuid:
   - af7676cb-2b49-4631-8c42-e30d07cc671d
   - ec31026d-adfa-4ef0-bacc-67b6300fc846
@@ -409,6 +415,7 @@ MonoBehaviour:
   - fe8392e5-f97c-4f8b-a50a-386f0b78b500
   - 1d9c6c6b-eac8-4a0c-bf6f-9bac33be0065
   - 63aa7d63-b96e-4bd5-a2e1-d223e838c5a1
+  - e4657d78-6230-4446-a30c-949733dfa557
 --- !u!4 &163550764
 Transform:
   m_ObjectHideFlags: 0
@@ -433,6 +440,8 @@ Transform:
   - {fileID: 1401735100}
   - {fileID: 1927546515}
   - {fileID: 295937777}
+  - {fileID: 260359766}
+  - {fileID: 924002265}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &163550766
@@ -482,7 +491,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.EconomyManager
   _bridge: {fileID: 163550767}
   _balanceDisplayManager: {fileID: 181789820}
-  _startingBalance: 100
+  _startingBalance: 10
 --- !u!114 &163550769
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -549,6 +558,8 @@ MonoBehaviour:
   - {fileID: 1395363819}
   - {fileID: 157794067}
   - {fileID: 1401735099}
+  - {fileID: 260359765}
+  - {fileID: 924002264}
   _recycleSeconds: 300
   _bridge: {fileID: 163550767}
 --- !u!114 &163550773
@@ -711,8 +722,6 @@ MonoBehaviour:
   _bridge: {fileID: 163550767}
   _origin: {fileID: 1067852682}
   _sectorSize: 1000
-  _groundRadius: 600
-  _checkInterval: 0.25
 --- !u!114 &163550781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -936,6 +945,7 @@ MonoBehaviour:
   - {fileID: 4360997998222114339, guid: 07b80d914650af4d3acf2b81e9fb0491, type: 3}
   - {fileID: 4360997998222114339, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9, type: 3}
   - {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
+  - {fileID: 4360997998222114339, guid: 1caf9dca9d1f22efc82f1d8685036499, type: 3}
   _names:
   - Carrot Seed
   - Turnip Seed
@@ -956,6 +966,7 @@ MonoBehaviour:
   - SPS Receiver
   - Moonflower Seed
   - Spotlight Tulip Bulb
+  - Grow Wand
   _previews:
   - {fileID: 2800000, guid: 2f81a9c7857c961ee91f9d2ac2d8f09a, type: 3}
   - {fileID: 2800000, guid: aa803682eee570a759288467a4561796, type: 3}
@@ -976,6 +987,7 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 0b76a8654ac413a20bc13074e97c0338, type: 3}
   - {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
   - {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
+  - {fileID: 2800000, guid: a929d18e18deadc2dbb304a3246f0505, type: 3}
 --- !u!114 &163550789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1010,7 +1022,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e56fa5df6712c1b194b6d087402af56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.ArsBridge
-  _checkSeconds: 1
+  _step: 10
 --- !u!114 &163550791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1039,8 +1051,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Almanac.AlmanacBook
   _comingSoon:
   - {fileID: 1927546514}
-  - {fileID: 526411421684782548, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9, type: 3}
-  - {fileID: 123417048594079647, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
 --- !u!114 &163550793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1067,6 +1077,77 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.RestockTimer
   _icon: {fileID: 2800000, guid: 5ba402de9fefe0ce695e8b3bbe034f9e, type: 3}
+--- !u!114 &163550795
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56bcc695c8cb95314abeb49698a27522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.DevTools.DeveloperBroadcast
+  _bridge: {fileID: 163550767}
+--- !u!114 &163550796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afc5e70163ed3e7269c95c523242fdef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Detail.DetailManager
+  _hysteresis: 10
+  _step: 5
+--- !u!114 &163550797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8336e4fe8df5caae3b16e67e603fc953, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Video.ScreenStandIn
+  _spawnGarden: {fileID: 1316739912}
+  _font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  _text: 'Multi-screen support coming soon
+
+    in the mean time join the party at
+    world spawn
+
+    (you will need another popcorn seed)'
+--- !u!114 &163550798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ecea475fa237e55eb2d963fcf16ada0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.PlayerTracker
+--- !u!114 &163550799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21b363d48ddd1ba6d82ee04f9b490f27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.DevTools.FrameTimeLog
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -1400,6 +1481,65 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 258327364}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &260359764
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 260359766}
+  - component: {fileID: 260359765}
+  m_Layer: 0
+  m_Name: Buyable_Moonflower
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &260359765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 260359764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 241f4dbc83efc0a649fb94f5224550be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.MoonflowerSeed
+  seedId: moonflower
+  displayName: Moonflower
+  tagline: brings the night
+  description: Grown, it beams into the sky and closes a black dome over the Garden,
+    a light show to the screen's music. Grow two and the beams meet overhead.
+  picture: {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
+  seedPrefab: {fileID: 4360997998222114339, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9,
+    type: 3}
+  spawnWeight: 0.1
+  buyPrice: 150
+  sellValue: 0
+  harvestCount: 1
+  growthDuration: 60
+  ripenDuration: 0
+  witherDuration: 0
+--- !u!4 &260359766
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 260359764}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1747,7 +1887,7 @@ MonoBehaviour:
   _floorY: -75
   _returnTo: {fileID: 4844959713083103934}
   _rearmMargin: 5
-  _sweepInterval: 0.5
+  _catchWidth: 100000
 --- !u!114 &311160986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1815,7 +1955,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: c578d2cd28dafead0a5adb6811f61db1, type: 3}
-  LastBuildSizeBytes: 87482520
+  LastBuildSizeBytes: 87618394
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -1843,7 +1983,7 @@ MonoBehaviour:
     Free:
       Count: 4
       MaxCount: 10
-      AvailableSize: 211280760
+      AvailableSize: 211144886
     Paid:
       Entries: []
   OwnedTokens: []
@@ -2995,7 +3135,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -3048,7 +3188,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -8306,6 +8446,65 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &924002263
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 924002265}
+  - component: {fileID: 924002264}
+  m_Layer: 0
+  m_Name: Buyable_SpotlightTulip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &924002264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 924002263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6f737810527ca829e906898bd65095, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.SpotlightTulipSeed
+  seedId: spotlight_tulip
+  displayName: Spotlight Tulip
+  tagline: a stage light for the Garden
+  description: A stage light on a stem. It rises over the Garden and sweeps it in
+    time with the music.
+  picture: {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
+  seedPrefab: {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0,
+    type: 3}
+  spawnWeight: 0.2
+  buyPrice: 60
+  sellValue: 0
+  harvestCount: 1
+  growthDuration: 40
+  ripenDuration: 0
+  witherDuration: 0
+--- !u!4 &924002265
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 924002263}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1054586915
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8583,7 +8782,6 @@ MonoBehaviour:
   _buyPoint: {fileID: 4084342172881817567, guid: c568183c125f81381a21a0f9f290c819,
     type: 3}
   _viewRadius: 1200
-  _refreshInterval: 1
 --- !u!4 &1067852682
 Transform:
   m_ObjectHideFlags: 0

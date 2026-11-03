@@ -11,7 +11,7 @@ the stage for the light show ([[light-show]]). Two or more and their beams arc i
 
 ## The design
 
-**Status (2026-11-03):** built; played in-world. In the Developer Market only, not the stalls.
+**Status (2026-11-03):** built; played in-world. In the stalls since 2026-11-03 (`Buyable_Moonflower`, weight 0.1, Very Rare); untested there.
 
 - **Vulps's brief**: a ripe plant "creates a beam of light up to a point in the sky, and creates a black sphere around
   the island", with light show effects on it tied to ARS. The rest was filled in by Claude and accepted.

@@ -26,6 +26,16 @@ Vulps's design:
   the Garden holds the screen. When that one goes, the next takes over and rebuilds the screen from nothing.
 - **Who sets the link is Somnium's rule**: the native controls let anyone take or release control.
 
+
+## Every screen but world spawn's, hidden for now
+
+**Status (2026-11-03):** temporary, for one session (Vulps); compiles clean, untested in-world.
+
+`Video/ScreenStandIn` (on SceneManager) hides what every Garden's screen draws except world spawn's (`Town_Capital`'s
+first Garden) and puts a notice in its place, readable from both sides: "Multi-screen support coming soon / in the mean
+time join the party at world spawn / (you will need another popcorn seed)". The players keep running and syncing, so
+popcorn planted at another Garden still builds its screen, hidden behind the notice. Remove it once screens play only
+near their players ([[towns]]).
 ## The screen
 
 **Status (2026-11-03):** built; played in-world.

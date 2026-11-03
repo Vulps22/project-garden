@@ -19,8 +19,7 @@ Pokédex (Vulps): a numbered entry per crop, and a silhouette for the ones you h
 - **Every page is open from the start**, so a player can read what a crop does before buying it. **Its picture stays a
   silhouette until the player has bought that seed from a stall**: the silhouette is the sign it is not collected yet.
   A seed from the Developer Market does not count (Vulps).
-- **Every crop has a page.** Crops not in the stalls yet say **coming soon** (popcorn, the Moonflower and the Spotlight
-  Tulip, for now). Developer-only items, the SPS Receiver among them, are not crops and have no page.
+- **Every crop has a page.** Crops not in the stalls yet say **coming soon** (popcorn, for now). Developer-only items, the SPS Receiver among them, are not crops and have no page.
 - **A page shows:** the picture, number and name; the kind (crop, root crop, regrowing crop and how many times it
   fruits, or upgrade); the stall sign's tagline and a description; **rarity as a tier with its share**, e.g.
   "Rare · 4.2% of stall rolls"; the seed's price and what the produce sells for; grow and ripen times; **how many stalls
@@ -36,14 +35,16 @@ A crop's share is its `spawnWeight` over the total of every crop in the stall po
 
 | No. | Crop | Share | Tier |
 |---|---|---|---|
-| 01 | Carrot | 27.8% | Common |
-| 02 | Turnip | 16.7% | Common |
-| 03 | Pumpkin | 6.9% | Rare |
-| 04 | Weed | 4.2% | Rare |
-| 05 | Tomato | 23.6% | Common |
-| 06 | Corn | 12.5% | Uncommon |
-| 07 | Eggplant | 8.3% | Uncommon |
-| 08–10 | Popcorn, Moonflower, Spotlight Tulip | — | coming soon |
+| 01 | Carrot | 25.6% | Common |
+| 02 | Turnip | 15.4% | Common |
+| 03 | Pumpkin | 6.4% | Rare |
+| 04 | Weed | 3.8% | Rare |
+| 05 | Tomato | 21.8% | Common |
+| 06 | Corn | 11.5% | Uncommon |
+| 07 | Eggplant | 7.7% | Uncommon |
+| 08 | Moonflower | 2.6% | Very Rare |
+| 09 | Spotlight Tulip | 5.1% | Rare |
+| 10 | Popcorn | — | coming soon |
 
 The share is the base roll. Island stalls also weigh rare crops up by their own rarity ([[shop]]), so far stalls find
 the Rare ones more often than the table says.

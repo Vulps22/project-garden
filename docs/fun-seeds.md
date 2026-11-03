@@ -12,8 +12,8 @@ Seeds whose plant is an upgrade to the Garden rather than a crop to sell. Each h
 | Seed | What it does | Doc | In the stalls |
 |---|---|---|---|
 | Popcorn | builds the Garden's screen | [[popcorn]] | no: Developer Market only |
-| Moonflower | beams up and closes a dome over the Garden, the light show's stage | [[moonflower]] | no: Developer Market only |
-| Spotlight Tulip | a stage light that sweeps the Garden to the music | [[spotlight-tulip]] | no: Developer Market only |
+| Moonflower | beams up and closes a dome over the Garden, the light show's stage | [[moonflower]] | yes |
+| Spotlight Tulip | a stage light that sweeps the Garden to the music | [[spotlight-tulip]] | yes |
 
 The Moonflower and the Spotlight Tulip are the **ARS seeds**: with the Garden's own props they make the
 [[light-show]], which dances to the screen's sound. Weed is a crop with a twist rather than an upgrade ([[weed]]).
