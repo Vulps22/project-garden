@@ -25,7 +25,9 @@ namespace Vulps.GrowAGarden.Settings
         private readonly List<RectTransform> _pages = new List<RectTransform>();
         private Toggle _stoned;
         private Toggle _forceFeeding;
+        private Toggle _notifications;
         private Toggle _nativeFlight;
+        private GameObject _developerPanel;   // shown while this player has developer access, which can change mid-session
         private float _nextLookup;
         private bool _built;
 
@@ -40,7 +42,12 @@ namespace Vulps.GrowAGarden.Settings
 
         private void Update()
         {
-            if (_built) { if (_tablet == null || _pages.Count == 0 || _pages[0] == null) _built = false; return; }
+            if (_built)
+            {
+                if (_tablet == null || _pages.Count == 0 || _pages[0] == null) { _built = false; return; }
+                if (_developerPanel != null && _developerPanel.activeSelf != Developer.IsLocal) _developerPanel.SetActive(Developer.IsLocal);
+                return;
+            }
             if (Time.time < _nextLookup) return;
             _nextLookup = Time.time + 2f;
 
@@ -60,17 +67,18 @@ namespace Vulps.GrowAGarden.Settings
             }
             _stoned = TabletManager.AddSettingsToggle(_tablet, world, "Option_AllowStonedEffects", "Allow Stoned Effects");
             _forceFeeding = TabletManager.AddSettingsToggle(_tablet, world, "Option_AllowForceFeeding", "Allow Force Feeding (soon)");
+            _notifications = TabletManager.AddSettingsToggle(_tablet, world, "Option_ShowNotifications", "Show Notifications");
             ActionRow(world, "Option_ResetVoiceTutorial", "Voice Tutorial", "Reset", ResetTutorial);
             if (_stoned != null) _stoned.onValueChanged.AddListener(on => GameSettings.GetInstance()?.SetAllowStonedEffects(on));
+            if (_notifications != null) _notifications.onValueChanged.AddListener(on => GameSettings.GetInstance()?.SetShowNotifications(on));
             FitRows(world);
 
-            if (Developer.IsLocal)
-            {
-                Transform dev = AddPanel(column, "Developer", "Developer");
-                _nativeFlight = TabletManager.AddSettingsToggle(_tablet, dev, "Option_NativeFlight", "Enable Native Flight");
-                if (_nativeFlight != null) _nativeFlight.onValueChanged.AddListener(SetNativeFlight);
-                FitRows(dev);
-            }
+            Transform dev = AddPanel(column, "Developer", "Developer");
+            _nativeFlight = TabletManager.AddSettingsToggle(_tablet, dev, "Option_NativeFlight", "Enable Native Flight");
+            if (_nativeFlight != null) _nativeFlight.onValueChanged.AddListener(SetNativeFlight);
+            FitRows(dev);
+            _developerPanel = dev.parent.gameObject;
+            _developerPanel.SetActive(Developer.IsLocal);
 
             // Somnium's own sections hide ours; listeners added once, after ours exist so they are skipped.
             foreach (Button theirs in TabletManager.SettingsSections(_tablet))
@@ -213,6 +221,7 @@ namespace Vulps.GrowAGarden.Settings
             GameSettings settings = GameSettings.GetInstance();
             Show(_stoned, settings == null || settings.AllowStonedEffects, settings != null);
             Show(_forceFeeding, false, false);
+            Show(_notifications, settings == null || settings.ShowNotifications, settings != null);
             Show(_nativeFlight, settings != null && settings.DevNativeFlight, settings != null);
         }
 

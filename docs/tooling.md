@@ -44,6 +44,8 @@ Gotchas, each of which has cost real time:
   (`CS2001: Source file '.../economy/...' could not be found`), and neither refresh, reimport nor a round-trip move
   clears it. Restarting the Editor does. To check the code meanwhile, run Unity's Roslyn on the assembly's response file
   (`Library/Bee/artifacts/*.dag/Vulps.GrowAGarden.rsp`) with the ghost lines removed.
+- **Run `unity` from the project folder.** It finds the Editor by the working directory; from anywhere else it says
+  "No Unity Editor instances found" even while `unity status` shows it ready.
 - Command args are **positional**, not `k=v` (`unity command eval 'return 2+2;'`), and `data.result` is sometimes a
   nested object and sometimes a **JSON-encoded string** needing a second parse.
 - `unity test` and `unity build` spawn their *own* batch-mode Editor, which contends with the open one for the

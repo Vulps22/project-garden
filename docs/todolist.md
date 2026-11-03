@@ -11,6 +11,9 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 ## Before any non-test upload
 
+- [ ] **Tutorial rework, soon:** correct it for 14 Gardens (it assumes the one at Garden 0); learn from SpaceScape's tutorial. [[tutorial]] [[towns]]
+- [ ] **Screens near you only:** ask Dene how Base Reality keeps far video players from playing locally, then close far and sunk screens' media. [[towns]]
+- [ ] **Towns:** fly the three towns and claim, plant and sell in an outer Garden; 14 video players; popcorn screen and Moonflower dome there; music switching between screens. [[towns]]
 - [ ] `EconomyManager._startingBalance` is 10. [[economy]]
 - [ ] `TutorialManager._rememberProgress` is on (it logs a WARN at startup when off). [[tutorial]]
 
@@ -24,18 +27,19 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 - [ ] Growth pivots: a `ScalePivot` per crop prefab. [[crops#Growth pivots|crops → Growth pivots]]
 - [ ] Roll a plant's stats (`HarvestCount`, value, size), perhaps from the stall's rarity. [[crops]]
-- [ ] **Fun seeds:** popcorn (the video screen) built 2026-11-02 and working in-world; not in the shops until it is finished. The ARS seeds, Moonflower (the dome) and Spotlight Tulip, built 2026-11-02, untested in-world. [[fun-seeds]]
+- [ ] **Fun seeds:** popcorn, the Moonflower and the Spotlight Tulip work in-world; put each in the stalls when it is ready. [[fun-seeds]]
 - [ ] Seed ideas: GitHub issues #44, #47. A `PlantableEntity` (planting a sword to grow an auto-harvester) is an idea, not a plan.
 
 ## Tablet
 
-- [ ] The Almanac: design the first version, then build it. [[almanac]]
-- [x] Video controls were a sliver because the player was squashed from load; fixed by squashing only the picture (2026-11-02), confirmed in-world. [[fun-seeds]]
+- [ ] The Almanac: try it in-world (silhouettes, collecting from a stall, the record, the stall count). [[almanac]]
+- [ ] Developer access: grant and take it from someone in-world. [[dev-tools]]
+- [x] Video controls were a sliver because the player was squashed from load; fixed by squashing only the picture (2026-11-02), confirmed in-world. [[popcorn]]
 - [x] Developer Market tried in-world and working (2026-11-02). [[dev-tools]]
 - [x] AudioProbe read and removed 2026-11-02: world sounds go to Ambience in MainMixer; copying the group onto a runtime source works ([[tablet#Settings|tablet → Settings]]).
 - [ ] Remove `TabletProbe` when Vulps says (it now runs only for the developer as master). The tablet is documented in [[tablet]].
-- [ ] A seed restock timer beside Somnium's sidebar buttons, as a quick action under World Spawn ([[tablet#The sidebar|tablet → The sidebar]]).
-  [[procgen-islands#The tablet map|procgen-islands → The tablet map]]
+- [ ] Restock timer: check it sits under World Spawn without pushing the sidebar out of shape, and agrees between two players and after the master leaves. [[shop]]
+- [ ] Notifier: a toast and chime when someone joins; silent within 5 s; Show Notifications off silences it. [[notifier]]
 
 ## Parked
 

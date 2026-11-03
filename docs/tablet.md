@@ -179,6 +179,7 @@ world's per-player switches on every player's tablet, and beneath it a **Develop
   - **Allow Stoned Effects**, on by default. Off, `TripManager` starts no trip and ends one running (over 4 s, as
     covering the eyes does); eating and smoking still happen, they just do nothing to this player ([[weed]]).
   - **Allow Force Feeding (soon)**: shown off and greyed, since the feature does not exist yet.
+  - **Show Notifications**, on by default. Off, the Notifier shows nothing ([[notifier]]).
   - **Voice Tutorial → Reset**: a row with a button rather than a switch. `TutorialManager.ResetProgress` forgets
     every line heard, saves that, stops the line playing and starts again from the first line ([[tutorial]]).
 - **The Developer panel** (developer only): **Enable Native Flight** turns Somnium's own fly mode back on

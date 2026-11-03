@@ -49,6 +49,9 @@ namespace Vulps.GrowAGarden.Settings
         /// <summary>Whether eating or smoking weed may get this player stoned. On unless they turn it off (World Settings).</summary>
         public bool AllowStonedEffects { get; private set; } = true;
 
+        /// <summary>Whether the Notifier shows toasts to this player. On unless they turn it off (World Settings).</summary>
+        public bool ShowNotifications { get; private set; } = true;
+
         /// <summary>Developer only: Somnium's own fly mode back on, over ours. Ignored for anyone but the developer.</summary>
         public bool DevNativeFlight { get; private set; }
 
@@ -64,6 +67,7 @@ namespace Vulps.GrowAGarden.Settings
             public bool noStonedEffects;    // inverted so a save from before it existed reads as allowed
             public bool allowForceFeeding;
             public bool devNativeFlight;
+            public bool noNotifications;    // inverted so a save from before it existed reads as on
         }
 
         private void Awake()
@@ -110,6 +114,13 @@ namespace Vulps.GrowAGarden.Settings
         {
             AllowStonedEffects = allow;
             Logger.Info($"SetAllowStonedEffects() '{gameObject.name}' — {(allow ? "stoned effects allowed" : "stoned effects off")}");
+            Commit();
+        }
+
+        public void SetShowNotifications(bool show)
+        {
+            ShowNotifications = show;
+            Logger.Info($"SetShowNotifications() '{gameObject.name}' — notifications {(show ? "on" : "off")}");
             Commit();
         }
 
@@ -161,9 +172,10 @@ namespace Vulps.GrowAGarden.Settings
             AllowStonedEffects = !s.noStonedEffects;
             AllowForceFeeding = s.allowForceFeeding;
             DevNativeFlight = s.devNativeFlight;
+            ShowNotifications = !s.noNotifications;
 
             Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} skipTutorial={SkipTutorial} " +
-                        $"disableVoiceTips={DisableVoiceTips} allowStoned={AllowStonedEffects} allowForceFeeding={AllowForceFeeding}");
+                        $"disableVoiceTips={DisableVoiceTips} allowStoned={AllowStonedEffects} allowForceFeeding={AllowForceFeeding} notifications={ShowNotifications}");
         }
 
         private void Save()
@@ -176,6 +188,7 @@ namespace Vulps.GrowAGarden.Settings
                 noStonedEffects = !AllowStonedEffects,
                 allowForceFeeding = AllowForceFeeding,
                 devNativeFlight = DevNativeFlight,
+                noNotifications = !ShowNotifications,
             }, gameObject.name);
         }
     }
