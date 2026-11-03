@@ -24,7 +24,7 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 - [ ] Growth pivots: a `ScalePivot` per crop prefab. [[crops#Growth pivots|crops → Growth pivots]]
 - [ ] Roll a plant's stats (`HarvestCount`, value, size), perhaps from the stall's rarity. [[crops]]
-- [ ] **Fun seeds:** popcorn (the video screen) built 2026-11-02 and working in-world; not in the shops until it is finished. Then the ARS seeds. [[fun-seeds]]
+- [ ] **Fun seeds:** popcorn (the video screen) built 2026-11-02 and working in-world; not in the shops until it is finished. The ARS seeds, Moonflower (the dome) and Spotlight Tulip, built 2026-11-02, untested in-world. [[fun-seeds]]
 - [ ] Seed ideas: GitHub issues #44, #47. A `PlantableEntity` (planting a sword to grow an auto-harvester) is an idea, not a plan.
 
 ## Tablet
