@@ -15,11 +15,12 @@ namespace Vulps.GrowAGarden
         private Transform _tablet;
         private Button _button;
         private float _nextLookup;
+        private float _nextTabletCheck;
         private int _shown = int.MinValue;
 
         private void Update()
         {
-            if (_button == null) { TryBuild(); return; }
+            if (_button == null || TabletReplaced()) { _button = null; TryBuild(); return; }
 
             float seconds = WorldManager.SecondsToRestock;
             int whole = seconds < 0f ? -1 : Mathf.CeilToInt(seconds);
@@ -41,12 +42,23 @@ namespace Vulps.GrowAGarden
             _button = TabletManager.AddQuickAction(_tablet, BUTTON_NAME, icon, "Restock --:--");
             if (_button == null)
             {
-                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's sidebar is not where docs/tablet.md says; no restock timer");
-                enabled = false;
+                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's sidebar is not where docs/tablet.md says (or not built yet); trying again");
+                _nextLookup = Time.time + 5f;
                 return;
             }
             _shown = int.MinValue;
             Logger.Info($"TryBuild() '{gameObject.name}' — restock timer on the tablet's sidebar");
+        }
+
+        /// <summary>Somnium made a new tablet (an instance change can): the old one's build is no longer what the player holds.</summary>
+        private bool TabletReplaced()
+        {
+            if (Time.time < _nextTabletCheck) return false;
+            _nextTabletCheck = Time.time + 2f;
+            Transform now = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
+            if (now == null || now == _tablet) return false;
+            Logger.Info($"TabletReplaced() '{gameObject.name}' — a new tablet; building again");
+            return true;
         }
     }
 }

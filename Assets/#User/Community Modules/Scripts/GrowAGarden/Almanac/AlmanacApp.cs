@@ -42,6 +42,7 @@ namespace Vulps.GrowAGarden.Almanac
         private RawImage _detailPicture;
         private TMP_Text _detailTitle, _detailKind, _detailText, _detailRecord;
         private float _nextLookup;
+        private float _nextTabletCheck;
         private float _nextRefresh;
         private bool _built;
         private bool _dirty;
@@ -59,7 +60,7 @@ namespace Vulps.GrowAGarden.Almanac
         private void Update()
         {
             if (!_built) { TryBuild(); return; }
-            if (_tablet == null || _page == null) { _built = false; return; }
+            if (_tablet == null || _page == null || TabletReplaced()) { _built = false; return; }
             if (!_page.gameObject.activeSelf) return;
 
             // Somnium opened something of its own (the frame's buttons, a notification): step aside.
@@ -83,8 +84,8 @@ namespace Vulps.GrowAGarden.Almanac
             _page = TabletManager.AddPage(_tablet, PAGE_NAME);
             if (open == null || _page == null)
             {
-                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's home screen is not where docs/tablet.md says; no Almanac");
-                enabled = false;
+                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's home screen is not where docs/tablet.md says (or not built yet); trying again");
+                _nextLookup = Time.time + 5f;
                 return;
             }
 
@@ -341,6 +342,17 @@ namespace Vulps.GrowAGarden.Almanac
             r.anchorMax = Vector2.one;
             r.offsetMin = new Vector2(left, bottom);
             r.offsetMax = new Vector2(-right, -top);
+        }
+
+        /// <summary>Somnium made a new tablet (an instance change can): the old one's build is no longer what the player holds.</summary>
+        private bool TabletReplaced()
+        {
+            if (Time.time < _nextTabletCheck) return false;
+            _nextTabletCheck = Time.time + 2f;
+            Transform now = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
+            if (now == null || now == _tablet) return false;
+            Logger.Info($"TabletReplaced() '{gameObject.name}' — a new tablet; building again");
+            return true;
         }
     }
 }
