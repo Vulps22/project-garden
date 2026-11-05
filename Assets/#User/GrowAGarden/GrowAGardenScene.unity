@@ -226,6 +226,8 @@ MonoBehaviour:
   buyPrice: 18
   sellValue: 26
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 15
   ripenDuration: 1
   witherDuration: 0
@@ -269,6 +271,8 @@ MonoBehaviour:
   buyPrice: 30
   sellValue: 55
   harvestCount: 1
+  fruitPerPlant: 3
+  upgradeBonus: 0
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -1470,6 +1474,8 @@ MonoBehaviour:
   buyPrice: 60
   sellValue: 75
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 60
   ripenDuration: 60
   witherDuration: 30
@@ -1529,6 +1535,8 @@ MonoBehaviour:
   buyPrice: 600
   sellValue: 0
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0.3
   growthDuration: 60
   ripenDuration: 0
   witherDuration: 0
@@ -2512,6 +2520,8 @@ MonoBehaviour:
   buyPrice: 10
   sellValue: 15
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -2792,6 +2802,8 @@ MonoBehaviour:
   buyPrice: 200
   sellValue: 140
   harvestCount: 1
+  fruitPerPlant: 9
+  upgradeBonus: 0
   growthDuration: 90
   ripenDuration: 60
   witherDuration: 30
@@ -8486,6 +8498,8 @@ MonoBehaviour:
   buyPrice: 250
   sellValue: 0
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0.07
   growthDuration: 40
   ripenDuration: 0
   witherDuration: 0
@@ -9341,6 +9355,8 @@ MonoBehaviour:
   buyPrice: 20
   sellValue: 22
   harvestCount: 3
+  fruitPerPlant: 12
+  upgradeBonus: 0
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -9766,6 +9782,8 @@ MonoBehaviour:
   buyPrice: 90
   sellValue: 50
   harvestCount: 3
+  fruitPerPlant: 9
+  upgradeBonus: 0
   growthDuration: 40
   ripenDuration: 25
   witherDuration: 20
@@ -10896,6 +10914,8 @@ MonoBehaviour:
   buyPrice: 400
   sellValue: 0
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0.05
   growthDuration: 60
   ripenDuration: 0
   witherDuration: 0

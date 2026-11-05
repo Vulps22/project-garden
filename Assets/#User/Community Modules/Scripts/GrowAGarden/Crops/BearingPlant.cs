@@ -98,7 +98,7 @@ namespace Vulps.GrowAGarden.Crops
                 Produce produce = SpawnProduce(_producePrefab, slot.socket.position, slot.socket.rotation);
                 if (produce == null) continue;
 
-                produce.Init(null, -1, RipenStart());
+                produce.Init(null, -1, RipenStart(), _plot);
                 slot.produceId = produce.NetworkId;
 
                 ProduceSlot captured = slot;

@@ -32,6 +32,29 @@ namespace Vulps.GrowAGarden.Ownership
 
         public uint NetworkId => _networkBridge?.Object == null ? 0u : _networkBridge.Object.Id.Raw;
 
+        // Upgrades standing here, on every client: each registers itself once it knows its Plot.
+        private readonly HashSet<IPlotUpgrade> _upgrades = new HashSet<IPlotUpgrade>();
+
+        public void AddUpgrade(IPlotUpgrade upgrade) => _upgrades.Add(upgrade);
+        public void RemoveUpgrade(IPlotUpgrade upgrade) => _upgrades.Remove(upgrade);
+
+        /// <summary>The share of profit this Plot's grown upgrades add, each kind counted once.</summary>
+        public float UpgradeBonus
+        {
+            get
+            {
+                var best = new Dictionary<string, float>();
+                foreach (IPlotUpgrade u in _upgrades)
+                {
+                    float b = u.ActiveBonus;
+                    if (b > 0f && (!best.TryGetValue(u.Kind, out float had) || b > had)) best[u.Kind] = b;
+                }
+                float total = 0f;
+                foreach (float b in best.Values) total += b;
+                return total;
+            }
+        }
+
         private void Awake()
         {
             PlantSlot[] slots = GetComponentsInChildren<PlantSlot>(true);

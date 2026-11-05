@@ -15,6 +15,7 @@ namespace Vulps.GrowAGarden.Seeds
             ripenDuration = 15f;
             witherDuration = 20f;
             harvestCount = 3;
+            fruitPerPlant = 12;
             spawnWeight = 0.5f;      // the common island find
         }
     }

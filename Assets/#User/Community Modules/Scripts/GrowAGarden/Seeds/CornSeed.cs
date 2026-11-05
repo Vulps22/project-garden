@@ -11,6 +11,7 @@ namespace Vulps.GrowAGarden.Seeds
             description = "A tall stalk bearing three cobs at once. Each cob sells on its own.";
             buyPrice = 30;
             sellValue = 55;          // per cob; 3 cobs
+            fruitPerPlant = 3;
             growthDuration = 20f;
             ripenDuration = 15f;
             witherDuration = 20f;

@@ -14,6 +14,7 @@ namespace Vulps.GrowAGarden.Seeds
             description = "Grown, it beams into the sky and closes a black dome over the Garden, a light show to the screen's music. Grow two and the beams meet overhead.";
             buyPrice = 600;
             sellValue = 0;           // an upgrade, not a crop
+            upgradeBonus = 0.30f;    // +30% profit on its Plot: rarest, and its night falls on the whole Garden
             growthDuration = 60f;
             ripenDuration = 0f;
             witherDuration = 0f;

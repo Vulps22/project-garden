@@ -14,6 +14,7 @@ namespace Vulps.GrowAGarden.Seeds
             description = "A stage light on a stem. It rises over the Garden and sweeps it in time with the music.";
             buyPrice = 250;
             sellValue = 0;           // an upgrade, not a crop
+            upgradeBonus = 0.07f;    // +7% profit on its Plot
             growthDuration = 40f;
             ripenDuration = 0f;
             witherDuration = 0f;

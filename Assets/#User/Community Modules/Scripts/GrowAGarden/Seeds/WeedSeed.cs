@@ -14,6 +14,7 @@ namespace Vulps.GrowAGarden.Seeds
             description = "Nine blooms to a plant. Sell one and the stall hands back a splif to smoke; eat one raw for the full trip.";
             buyPrice = 200;
             sellValue = 140;         // per bloom; nine to a plant
+            fruitPerPlant = 9;
             growthDuration = 90f;
             ripenDuration = 60f;
             witherDuration = 30f;

@@ -44,6 +44,16 @@ namespace Vulps.GrowAGarden
                  "are. A crop's default: each plant starts from it and may later be rolled otherwise. 1 for rooted crops.")]
         public int harvestCount = 1;
 
+        [Tooltip("How many fruit one plant gives in all, so a fruit's share of the seed's price is known. Set in Init().")]
+        public int fruitPerPlant = 1;
+
+        [Header("Upgrade")]
+        [Tooltip("For an upgrade seed: the share of profit it adds to what its Plot grows once grown (0.05 is 5%). Set in Init().")]
+        public float upgradeBonus;
+
+        /// <summary>One fruit's profit: what it sells for less its share of the seed's price, never below 0.</summary>
+        public float ProfitPerFruit => Mathf.Max(0f, sellValue - (float)buyPrice / Mathf.Max(1, fruitPerPlant));
+
         [Header("Timing, in seconds")]
         [Tooltip("How long the plant body takes to grow before it bears.")]
         public float growthDuration = 10f;

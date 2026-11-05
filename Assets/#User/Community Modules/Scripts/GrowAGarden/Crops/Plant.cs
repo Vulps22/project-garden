@@ -124,6 +124,7 @@ namespace Vulps.GrowAGarden.Crops
             _plot = plot;
             _slotIndex = slotIndex;
             _plantedTimestamp = plantedTimestamp;
+            if (_plot != null) OnPlotKnown(_plot);
             ApplyBodyScale();
             broadcastState();
         }
@@ -277,6 +278,7 @@ namespace Vulps.GrowAGarden.Crops
 
             _plot = WorldManager.Find<PlotStateManager>(plotRawId);
             if (_plot == null) return;
+            OnPlotKnown(_plot);
 
             _slotIndex = slotIndex;
             Transform anchor = _plot.AnchorFor(slotIndex);
@@ -285,6 +287,9 @@ namespace Vulps.GrowAGarden.Crops
             transform.position = anchor.position;
             transform.rotation = anchor.rotation;
         }
+
+        /// <summary>This client has learned which Plot the plant stands in: from Init on the master, from the state elsewhere.</summary>
+        protected virtual void OnPlotKnown(PlotStateManager plot) { }
 
         protected virtual int GetExtraBroadcastStateSize() => 0;
         protected virtual void OnWriteBroadcastState(BytesWriter writer) { }

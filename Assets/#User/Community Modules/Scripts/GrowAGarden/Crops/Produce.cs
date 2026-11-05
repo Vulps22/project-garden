@@ -36,7 +36,31 @@ namespace Vulps.GrowAGarden.Crops
         /// <summary>True once a player has taken this. Loose in the world from here on.</summary>
         public bool IsHarvested { get; private set; }
 
-        public int SellValue => seedDefinition != null ? seedDefinition.sellValue : 0;
+        /// <summary>Its price, plus the share of its profit that its Plot's upgrades add at the moment of sale.</summary>
+        public int SellValue
+        {
+            get
+            {
+                if (seedDefinition == null) return 0;
+                PlotStateManager grownIn = GrownIn;
+                float bonus = grownIn == null ? 0f : grownIn.UpgradeBonus;
+                // To the hundredth, then up: 7.01 → 8, 7.001 → 7.
+                int hundredths = Mathf.RoundToInt(bonus * seedDefinition.ProfitPerFruit * 100f);
+                return seedDefinition.sellValue + (hundredths + 99) / 100;
+            }
+        }
+
+        /// <summary>The Plot it grew in, on every client and after it is picked; null for one that grew in none.</summary>
+        private PlotStateManager GrownIn
+        {
+            get
+            {
+                if (_grownIn == null && _grownInId != 0) _grownIn = WorldManager.Find<PlotStateManager>(_grownInId);
+                return _grownIn;
+            }
+        }
+        private uint _grownInId;
+        private PlotStateManager _grownIn;
 
         /// <summary>
         /// Raised on the master when this is taken. A bearing plant listens so it can empty the
@@ -201,8 +225,10 @@ namespace Vulps.GrowAGarden.Crops
         /// overloaded null then makes every `seedDefinition != null` read false, which is how a
         /// carrot came to sell for nothing while its ripening still looked correct by coincidence.
         /// </summary>
-        public void Init(PlotStateManager plot, int slotIndex, long ripenTimestamp)
+        public void Init(PlotStateManager plot, int slotIndex, long ripenTimestamp, PlotStateManager grownIn = null)
         {
+            _grownIn = grownIn;
+            _grownInId = grownIn == null ? 0u : grownIn.NetworkId;
             if (seedDefinition == null)
                 Logger.Error($"Init() '{gameObject.name}' — no SeedDefinition on this prefab; it will be worthless and ripen instantly");
 
@@ -344,10 +370,11 @@ namespace Vulps.GrowAGarden.Crops
             if (networkBridge == null || networkBridge.Object == null) return;
             if (!networkBridge.Object.HasStateAuthority) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 2 + BytesWriter.ByteSize);
+            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 3 + BytesWriter.ByteSize);
             writer.AddInt((int)(_ripenTimestamp >> 32));
             writer.AddInt((int)(_ripenTimestamp & 0xFFFFFFFFL));
             writer.AddByte(IsHarvested ? (byte)1 : (byte)0);
+            writer.AddInt((int)_grownInId);
             networkBridge.SendToProxies((byte)ProduceMessageType.stateSync, writer.Data);
         }
 
@@ -386,6 +413,8 @@ namespace Vulps.GrowAGarden.Crops
             _ripenTimestamp = (high << 32) | low;
 
             bool harvested = reader.NextByte() == 1;
+            uint grownInId = (uint)reader.NextInt();
+            if (grownInId != _grownInId) { _grownInId = grownInId; _grownIn = null; }
             if (harvested && !IsHarvested) ApplyHarvested();
 
             ApplyRipeness();

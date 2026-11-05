@@ -15,6 +15,7 @@ namespace Vulps.GrowAGarden.Seeds
             ripenDuration = 25f;
             witherDuration = 20f;
             harvestCount = 3;
+            fruitPerPlant = 9;
             spawnWeight = 0.08f;     // rare: about one island stall in 13
         }
     }
