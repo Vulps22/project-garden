@@ -127,6 +127,7 @@ namespace Vulps.GrowAGarden.Crops
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.MessageToAll += OnMessageToAll;
             networkBridge.MessageToProxies += OnMessageToProxies;
+            networkBridge.MessageToController += OnMessageToController;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
@@ -144,6 +145,7 @@ namespace Vulps.GrowAGarden.Crops
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
                 networkBridge.MessageToAll -= OnMessageToAll;
                 networkBridge.MessageToProxies -= OnMessageToProxies;
+                networkBridge.MessageToController -= OnMessageToController;
             }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
@@ -162,10 +164,19 @@ namespace Vulps.GrowAGarden.Crops
             RaiseLifecycleChanged();
         }
 
+        /// <summary>The owner's state sent at the moment of spawning can reach a proxy before the object does: a proxy asks for it.</summary>
         private void OnSpawned()
         {
             ApplyRipeness();
             RaiseLifecycleChanged();
+            NetworkObject obj = networkBridge.Object;
+            if (obj != null && obj.IsValid && !obj.HasStateAuthority)
+                networkBridge.SendToController((byte)ProduceMessageType.stateRequest, new byte[0]);
+        }
+
+        private void OnMessageToController(byte id, byte[] data)
+        {
+            if ((ProduceMessageType)id == ProduceMessageType.stateRequest) broadcastState();
         }
 
         private void OnOtherPlayerJoined() => broadcastState();
@@ -428,6 +439,7 @@ namespace Vulps.GrowAGarden.Crops
         stateSync = 0,
         grabber = 1,
         harvestRequest = 2,
-        harvested = 3
+        harvested = 3,
+        stateRequest = 4    // a proxy that has just spawned asks the owner for its state
     }
 }

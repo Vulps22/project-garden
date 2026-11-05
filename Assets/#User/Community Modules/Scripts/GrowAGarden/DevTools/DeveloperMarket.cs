@@ -138,7 +138,6 @@ namespace Vulps.GrowAGarden.DevTools
                 float ripen = produce.seedDefinition == null ? 0f : produce.seedDefinition.ripenDuration;
                 produce.Init(null, -1, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - (long)Mathf.Ceil(ripen) - 1);
             }
-            StartCoroutine(Announce(spawned));
 
             var writer = new BytesWriter(sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(requester) + BytesWriter.IntSize + BytesWriter.ByteSize);
             writer.AddAutoString(requester);
@@ -146,18 +145,6 @@ namespace Vulps.GrowAGarden.DevTools
             writer.AddByte(rightHand ? (byte)1 : (byte)0);
             _bridge.SendToAll(DELIVERED_ID, writer.Data);
             Logger.Info($"OnRequested() '{gameObject.name}' — spawned '{_names[index]}' for the developer at {position}");
-        }
-
-        /// <summary>Re-sends the new item's state: the spawn reaches other clients a few ticks after the first broadcast.</summary>
-        private IEnumerator Announce(NetworkObject spawned)
-        {
-            foreach (float gap in new[] { 0.25f, 0.75f, 1f })
-            {
-                yield return new WaitForSeconds(gap);
-                if (spawned == null) yield break;
-                if (spawned.TryGetComponent(out Seed seed)) seed.broadcastState();
-                if (spawned.TryGetComponent(out Produce produce)) produce.broadcastState();
-            }
         }
 
         private void OnDelivered(byte[] data)

@@ -21,8 +21,6 @@ namespace Vulps.GrowAGarden.Almanac
         [Tooltip("Home-screen icon for the app. A texture, made a sprite at runtime: sprite references arrive empty in-world.")]
         [SerializeField] private Texture2D _icon;
 
-        [Tooltip("Seconds between refreshes of an open page's stall count.")]
-        [SerializeField] private float _refreshSeconds = 2f;
 
         private static readonly Color PANEL = new Color(0.1f, 0.09f, 0.07f, 0.97f);
         private static readonly Color CELL = new Color(0.17f, 0.15f, 0.11f, 1f);
@@ -43,15 +41,20 @@ namespace Vulps.GrowAGarden.Almanac
         private TMP_Text _detailTitle, _detailKind, _detailText, _detailRecord;
         private float _nextLookup;
         private float _nextTabletCheck;
-        private float _nextRefresh;
         private bool _built;
         private bool _dirty;
 
-        private void Awake() => AlmanacBook.Changed += OnChanged;
+        // Redrawn when the record or any stall's stock changes, not on a timer.
+        private void Awake()
+        {
+            AlmanacBook.Changed += OnChanged;
+            ShopKeeper.StockChanged += OnChanged;
+        }
 
         private void OnDestroy()
         {
             AlmanacBook.Changed -= OnChanged;
+            ShopKeeper.StockChanged -= OnChanged;
             if (_page != null) Destroy(_page.gameObject);
         }
 
@@ -65,7 +68,7 @@ namespace Vulps.GrowAGarden.Almanac
 
             // Somnium opened something of its own (the frame's buttons, a notification): step aside.
             if (TabletManager.SomniumPageOpen(_tablet, _page)) { _page.gameObject.SetActive(false); return; }
-            if (_dirty || Time.time >= _nextRefresh) Refresh();
+            if (_dirty) Refresh();
         }
 
         // ── Building ──────────────────────────────────────────────────────────────
@@ -242,7 +245,6 @@ namespace Vulps.GrowAGarden.Almanac
         private void Refresh()
         {
             _dirty = false;
-            _nextRefresh = Time.time + _refreshSeconds;
             foreach ((AlmanacBook.Entry entry, RawImage picture, TMP_Text _) in _cells)
                 picture.color = AlmanacBook.Collected(entry.Crop.seedId) ? Color.white : Color.black;
             if (_showing != null) FillDetail(_showing);

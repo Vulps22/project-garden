@@ -12,12 +12,11 @@ namespace Vulps.GrowAGarden
     ///
     /// Every stall behaves the same, garden or island: one sale per cycle, restocked when the
     /// world cycles. A pinned stall (Override set) restocks after every sale.
+    ///
+    /// Event driven: it listens to its own stall in ShopKeeper's table and acts only when that changes.
     /// </summary>
     public class BuyPoint : MonoBehaviour
     {
-        /// <summary>Seconds between asks while the stall stands empty, covering a lost request or a failed spawn.</summary>
-        private const float ASK_SECONDS = 5f;
-
         [Tooltip("The socket this stall stocks. It holds the goods; the ShopKeeper decides what they are and what they cost.")]
         [SerializeField] private Socket _socket;
 
@@ -33,7 +32,6 @@ namespace Vulps.GrowAGarden
         private Seed _currentSeed;
         private bool _hasId;
         private StallId _id;
-        private float _nextAsk;
 
         /// <summary>Sets how much this stall favours rare stock; an island's stall gets this from the world seed.</summary>
         public void SetRarityMultiplier(float multiplier) => _rarityMultiplier = Mathf.Max(1f, multiplier);
@@ -47,33 +45,39 @@ namespace Vulps.GrowAGarden
 
         private void OnEnable()
         {
-            ShopKeeper.Recycled += AskSoon;
             if (_socket != null) _socket.Leaving += OnLeaving;
-            _nextAsk = 0f;
         }
 
         private void OnDisable()
         {
-            ShopKeeper.Recycled -= AskSoon;
             if (_socket != null) _socket.Leaving -= OnLeaving;
         }
 
-        private void OnDestroy() => SetCurrentSeed(null);
-
-        private void AskSoon() => _nextAsk = 0f;
-
-        private void Update()
+        // Start, not Awake: an island stall is given its cell by the island after it is instantiated.
+        private void Start()
         {
             if (_socket == null) return;
-            if (!_hasId && !ResolveId()) return;
+            if (!ResolveId()) { Logger.Warn($"Start() '{gameObject.name}' — could not work out this stall's id; it will not stock"); return; }
+            ShopKeeper.Watch(_id, OnStallChanged);
+            OnStallChanged();
+        }
 
+        private void OnDestroy()
+        {
+            if (_hasId) ShopKeeper.Unwatch(_id, OnStallChanged);
+            SetCurrentSeed(null);
+        }
+
+        /// <summary>This stall's stock or sold-out mark changed: take what the table says, and ask if the master has nothing here.</summary>
+        private void OnStallChanged()
+        {
             Seed stock = ShopKeeper.StockAt(_id);
             if (stock != _currentSeed) Adopt(stock);
 
-            if (_currentSeed != null || (_override == null && ShopKeeper.IsTaken(_id))) return;
-            if (Time.time < _nextAsk) return;
-            _nextAsk = Time.time + ASK_SECONDS;
-
+            // Not before this client has the master's table (it arrives as an event), and not if the master has stocked it
+            // but the seed has not reached this client yet: that arrives as its own event.
+            if (!ShopKeeper.HasTable || ShopKeeper.HasStock(_id)) return;
+            if (_override == null && ShopKeeper.IsTaken(_id)) return;
             ShopKeeper.RequestStock(_id, _socket.transform.position, _socket.transform.rotation, _rarityMultiplier,
                                     _override == null ? null : _override.seedId);
         }
@@ -116,11 +120,7 @@ namespace Vulps.GrowAGarden
                 _socket.Release();
             }
 
-            if (stock == null)
-            {
-                AskSoon();
-                return;
-            }
+            if (stock == null) return;
 
             SetCurrentSeed(stock);
             _socket.Hold(stock.gameObject);

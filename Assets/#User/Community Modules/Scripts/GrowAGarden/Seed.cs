@@ -51,14 +51,12 @@ namespace Vulps.GrowAGarden
         /// </summary>
         public string OwnerId { get; private set; }
 
-        public uint NetworkId => networkBridge?.Object == null ? 0u : networkBridge.Object.Id.Raw;
+        public uint NetworkId => networkBridge?.Object == null ? _spawnedId : networkBridge.Object.Id.Raw;
+        private uint _spawnedId;   // kept from the spawn, so the id is still known while the object is being destroyed
         public NetworkObject PlantPrefab => _plantPrefab;
         public bool CanBePlanted => IsBought && !InShop;
 
         public event System.Action LifecycleChanged;
-
-        /// <summary>Raised on every client when the holder asks to buy. Only the master acts.</summary>
-        public event System.Action<Seed> PurchaseRequested;
 
         /// <summary>Any seed was bought, on every client, once its new owner is set (OwnerId; HasStall: from a stall).</summary>
         public static event System.Action<Seed> AnyPurchased;
@@ -120,12 +118,12 @@ namespace Vulps.GrowAGarden
         {
             _hovering = GetComponent<HoveringEntity>();
             LifecycleChanged += UpdateHovering;
-            LifecycleChanged += TrackStock;
 
             networkBridge.OnSpawned += OnSpawned;
             networkBridge.OnStateAuthorityChanged += OnStateAuthorityChanged;
             networkBridge.MessageToAll += OnMessageToAll;
             networkBridge.MessageToProxies += OnMessageToProxies;
+            networkBridge.MessageToController += OnMessageToController;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.PlayerLeft += OnPlayerLeft;
             _grabInteractable.selectEntered.AddListener(OnGrabSelected);
@@ -135,14 +133,14 @@ namespace Vulps.GrowAGarden
         private void OnDestroy()
         {
             LifecycleChanged -= UpdateHovering;
-            LifecycleChanged -= TrackStock;
-            ShopKeeper.Untrack(this);
+            ShopKeeper.OnSeedGone(this);
             if (networkBridge != null)
             {
                 networkBridge.OnSpawned -= OnSpawned;
                 networkBridge.OnStateAuthorityChanged -= OnStateAuthorityChanged;
                 networkBridge.MessageToAll -= OnMessageToAll;
                 networkBridge.MessageToProxies -= OnMessageToProxies;
+                networkBridge.MessageToController -= OnMessageToController;
             }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.PlayerLeft -= OnPlayerLeft;
@@ -162,8 +160,6 @@ namespace Vulps.GrowAGarden
             _grabber = PlayerIdentity.None;
             LifecycleChanged?.Invoke();
         }
-
-        private void TrackStock() => ShopKeeper.Track(this);
 
         private void UpdateHovering()
         {
@@ -191,9 +187,21 @@ namespace Vulps.GrowAGarden
             if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
+        /// <summary>
+        /// Spawned on this client. The owner's state sent at the moment of spawning can reach a proxy before the object
+        /// does, so a proxy asks the owner for it now; and if the stock table already names this seed, it takes its stall.
+        /// </summary>
         private void OnSpawned()
         {
+            _spawnedId = networkBridge.Object.Id.Raw;
             if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
+            else if (CanSendRpc) networkBridge.SendToController((byte)SeedMessageType.stateRequest, new byte[0]);
+            ShopKeeper.OnSeedSpawned(this);
+        }
+
+        private void OnMessageToController(byte id, byte[] data)
+        {
+            if ((SeedMessageType)id == SeedMessageType.stateRequest) broadcastState();
         }
 
         private void OnOtherPlayerJoined() => broadcastState();
@@ -213,22 +221,20 @@ namespace Vulps.GrowAGarden
             networkBridge.SendToAll((byte)SeedMessageType.purchaseRequest, new byte[0]);
         }
 
-        /// <summary>Stocks this at a stall. Master only, straight after spawning; tells every client which stall it belongs to.</summary>
-        public void PlaceInShop(Vector3 position, Quaternion rotation, StallId stall)
+        /// <summary>Puts this at a stall's socket. Master only, straight after spawning; ShopKeeper tells every client which stall.</summary>
+        public void PlaceInShop(Vector3 position, Quaternion rotation)
         {
             transform.position = position;
             transform.rotation = rotation;
-
-            var writer = new BytesWriter(StallId.Size);
-            stall.Write(writer);
-            networkBridge.SendToAll((byte)SeedMessageType.stocked, writer.Data);
         }
 
-        private void ApplyStocked(byte[] data)
+        /// <summary>The stock table names this seed as a stall's stock (ShopKeeper, every client). Unbought, it is shop stock.</summary>
+        public void ApplyStall(StallId stall)
         {
-            Stall = StallId.Read(new BytesReader(data));
+            Stall = stall;
             HasStall = true;
-            ApplyRestoreToShop();
+            if (!IsBought) ApplyRestoreToShop();
+            else LifecycleChanged?.Invoke();
         }
 
         /// <summary>Takes this out of the world. Master only; whichever client simulates it does the despawn, so nobody fights for authority.</summary>
@@ -241,9 +247,7 @@ namespace Vulps.GrowAGarden
 
         private void ApplyDiscard()
         {
-            // Off the stock table now, not at the despawn: a cycle's new stock can reach a peer before the old seed's despawn does.
             IsDiscarded = true;
-            ShopKeeper.Untrack(this);
             ForceRelease();
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
             if (WorldManager.DespawnIfStateAuthority(obj)) return;
@@ -440,16 +444,13 @@ namespace Vulps.GrowAGarden
                     LifecycleChanged?.Invoke();
                     break;
                 case SeedMessageType.purchaseRequest:
-                    PurchaseRequested?.Invoke(this);
+                    ShopKeeper.OnPurchaseRequested(this);
                     break;
                 case SeedMessageType.purchased:
                     ApplyPurchase(data);
                     break;
                 case SeedMessageType.restoredToShop:
                     ApplyRestoreToShop();
-                    break;
-                case SeedMessageType.stocked:
-                    ApplyStocked(data);
                     break;
                 case SeedMessageType.discard:
                     ApplyDiscard();
@@ -471,6 +472,8 @@ namespace Vulps.GrowAGarden
             OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
             HasStall = reader.NextByte() == 1;
             Stall = StallId.Read(reader);
+            // The table is the fact: an owner that has not matched this seed to its stall yet must not unmatch it here.
+            if (!HasStall && ShopKeeper.TryGetStall(NetworkId, out StallId stall)) { Stall = stall; HasStall = true; }
 
             _grabInteractable.enabled = true;
             LifecycleChanged?.Invoke();
@@ -518,47 +521,6 @@ namespace Vulps.GrowAGarden
             networkBridge.SendToAll((byte)SeedMessageType.grabber, writer.Data);
         }
 
-        // ── Temporary instrumentation ─────────────────────────────────────────────
-
-        /// <summary>Exists only to drive ReportLooseState. Remove with it.</summary>
-        private void Update() => ReportLooseState();
-
-        /// <summary>
-        /// Reports the physical state of a seed lying loose in the world, but only when that state
-        /// changes. Delete this once the unpushable-seed report is understood.
-        ///
-        /// It exists because a seed dropped by a player who then left could not be pushed, and two
-        /// separate explanations fit equally well from the outside: nobody holds state authority so
-        /// nothing simulates it, or collisions are still suspended from a recall that never gave
-        /// them back. Those are one line apart in the log and were three wrong guesses apart
-        /// without it. Sampled rather than per-frame, and change-gated on top of that, because a
-        /// per-frame log line once took the client log to 204 MB.
-        /// </summary>
-        private void ReportLooseState()
-        {
-            if (!IsLooseInWorld) return;
-            if (Time.time < _nextLooseReportAt) return;
-            _nextLooseReportAt = Time.time + 2f;
-
-            var body = GetComponent<Rigidbody>();
-            var ret = GetComponent<ReturnableEntity>();
-            var hover = GetComponent<HoveringEntity>();
-
-            string state = $"authority={HasLocalAuthority} known={HasKnownAuthority} " +
-                           $"kinematic={(body == null ? "?" : body.isKinematic.ToString())} " +
-                           $"collides={(body == null ? "?" : body.detectCollisions.ToString())} " +
-                           $"returning={(ret == null ? "?" : ret.IsReturning.ToString())} " +
-                           $"collisionsSuspended={(ret == null ? "?" : ret.CollisionsSuspended.ToString())} " +
-                           $"inContact={(hover == null ? "?" : hover.IsInContact.ToString())}";
-
-            if (state == _lastLooseState) return;
-            _lastLooseState = state;
-            Logger.Info($"ReportLooseState() '{gameObject.name}' — {state}");
-        }
-
-        private float _nextLooseReportAt;
-        private string _lastLooseState;
-
         private void OnValidate()
         {
             if (networkBridge == null) networkBridge = GetComponent<NetworkMessenger>();
@@ -578,7 +540,8 @@ namespace Vulps.GrowAGarden
         purchaseRequest = 2,
         purchased = 3,
         restoredToShop = 4,
-        stocked = 5,
-        discard = 6
+        stocked = 5,        // unused: the stock table (ShopKeeper) says which stall a seed stocks
+        discard = 6,
+        stateRequest = 7    // a proxy that has just spawned asks the owner for its state
     }
 }
