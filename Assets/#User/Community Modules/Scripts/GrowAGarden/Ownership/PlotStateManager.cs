@@ -119,6 +119,9 @@ namespace Vulps.GrowAGarden.Ownership
 
         /// <summary>Master client only — moved verbatim from PlantSlot.OnPlantRequested, now
         /// addressed by slot index instead of being the slot itself.</summary>
+        // Seeds this master has planted and not yet despawned: a seed brushing two slots asks twice before it hears "planted".
+        private static readonly HashSet<uint> _sown = new HashSet<uint>();
+
         private void OnPlantRequested(byte[] data)
         {
             if (!PlayerManager.IsMaster) return;
@@ -142,7 +145,7 @@ namespace Vulps.GrowAGarden.Ownership
                 return;
             }
 
-            if (!plantable.CanBePlanted)
+            if (!plantable.CanBePlanted || _sown.Contains(plantableId))
             {
                 Logger.Warn($"OnPlantRequested() '{gameObject.name}' — '{plantableId}' is not in a plantable state; refused");
                 return;
@@ -163,6 +166,7 @@ namespace Vulps.GrowAGarden.Ownership
             Plant plant = SpawnPlant(plantable.PlantPrefab, _slots[slotIndex].Anchor);
             if (plant == null) return;
 
+            _sown.Add(plantableId);
             _slots[slotIndex].IsOccupied = true;
             _slots[slotIndex].Occupant = plant;
             plant.Init(this, slotIndex, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
@@ -182,6 +186,12 @@ namespace Vulps.GrowAGarden.Ownership
         /// <summary>Moved verbatim from PlantSlot — see there for why the plot has to ask for the
         /// seed rather than assume it already owns it.</summary>
         private IEnumerator TakeOwnershipAndDespawn(uint plantableId)
+        {
+            try { yield return Despawn(plantableId); }
+            finally { _sown.Remove(plantableId); }
+        }
+
+        private IEnumerator Despawn(uint plantableId)
         {
             NetworkObject obj = FindObject(plantableId);
             if (obj == null) yield break;
