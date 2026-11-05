@@ -16,7 +16,7 @@ to read.
 tutorial on its own schedule, which is why none of the networking rules in [[principles]] apply to any
 of it. Two players in the same world can be at different points in the script and neither is wrong.
 
-Three files, all under `scripts/scripts/Tutorial/`:
+Three files, all under `Assets/#User/Community Modules/Scripts/GrowAGarden/Tutorial/`:
 
 | File | Owns |
 |---|---|
@@ -62,11 +62,12 @@ Four decisions in there that were each arrived at the hard way, and should not b
   same instant as the line before them, so timing them from that clip *finishing* is the only way
   they do not talk over each other.
 
-**Suppressed entirely when the world has no plot for this player.** There are four plots; every
-line assumes the player is getting one, and flight is gated behind §6. A fifth player would be
-talked at about a garden they cannot have and then locked out of flying for the session. Silent by
-design — there is no "sorry, the world is full" line, and inventing one out of a suppression rule
-would be worse than saying nothing.
+**Suppressed entirely when the world has no plot for this player.** Every line assumes the player is
+getting a Plot, and flight is gated behind §6, so a player with none would be talked at about a garden
+they cannot have and then locked out of flying for the session. Silent by design — there is no "sorry,
+the world is full" line. It checks every Plot in the scene (`FindObjectsByType<PlotLeaseManager>`), all 56 of
+[[towns]]. **The script itself still assumes Garden 0** and is wrong for 14 Gardens; reworking it is on
+[[todolist#Before any non-test upload|the pre-upload list]].
 
 ### Status
 
@@ -105,17 +106,12 @@ being delivered. One session had the 20.6-second falling tip queued between the 
 the trough-shot line. Any new tip that only makes sense once the player can fly belongs in that set;
 an upgrade or a buff can be found at any point and reads fine on its own.
 
-**Reset from Settings** (2026-11-02): Settings → World → Voice Tutorial → *Reset* (`TutorialManager.ResetProgress`) forgets every line heard and starts again from the first ([[tablet#World Settings|tablet → World Settings]]).
+**Reset from Settings** (2026-11-02): Settings → World → Voice Tutorial → *Reset* (`TutorialManager.ResetProgress`) forgets every line heard and starts again from the first ([[world-settings#The switches|world-settings → The switches]]).
 
 ### Other pass-2 debt
 
-- **`SettingsPanel` is out of the scene.** With the panel in the hut, Somnium's own tablet would not
-  open. Not understood; the panel holds the flight trim capture and the two narration switches
-  (including `SkipTutorial`, the player's own off switch). The player cannot turn the narrator off or
-  trim their flight from it. See the commit message on `bcdc62a` for the trim design.
-- **`GameSettings` is back in the scene** (2026-11-02, on its own object) for World Settings
-  ([[tablet#World Settings|tablet → World Settings]]). It loads whatever a player stored before the panel
-  went, so a trim saved back then applies to flight again.
+- **The player cannot switch the narrator off**: its two switches (`SkipTutorial`, `DisableVoiceTips`) are on the
+  hut's settings panel, which is out of the scene ([[world-settings#The hut panel|world-settings → The hut panel]]).
 - **The script is a first cut.** Nothing has been re-recorded since the walk, and §4–§9 have not
   been heard in context at all. Expect line-level edits once they have.
 

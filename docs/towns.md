@@ -7,9 +7,9 @@ tags:
 ---
 # Towns
 
-Four Plots in a game for ten or more players at once left most of them nothing to do. The world now holds
-**14 Gardens, 56 Plots**, in three towns. Decided by Vulps 2026-11-03, replacing [[procgen-islands#Phase 1b: Gardens at the sites|Phase 1b]]
-(Gardens appearing as players explore).
+Four Plots in a game for ten or more players at once left most of them nothing to do. The world holds
+**14 Gardens, 56 Plots**, in three towns, placed in the scene rather than appearing as players explore. Decided by
+Vulps 2026-11-03.
 
 ## The design
 
@@ -22,7 +22,8 @@ Four Plots in a game for ten or more players at once left most of them nothing t
 - **Every Garden is identical** (Vulps): its own deed hut, screen and dome, besides its four Plots, sell point, three
   stalls and scoreboard. A town is only a layout.
 - **40–60 Plots is plenty** for the foreseeable future. Plots only have to cover the players in one instance at once:
-  a Plot is freed 180 s after its owner leaves, and worlds do not persist across instances.
+  a Plot is freed soon after its owner leaves ([[plot-ownership#Departures|plot-ownership → Departures]]), and Plots
+  and crops do not persist between sessions ([[persistence]]).
 
 - **Not a lattice, not rolled.** Islands clear only around Gardens that exist; a lattice of possible Garden sites
   kept most of the sky empty for Gardens that were never there.
@@ -83,7 +84,7 @@ Town_Capital
 ### What stays one
 
 - **The scoreboard's top ten.** The economy still sends the list on one board's bridge (Garden 0's), and every board
-  shows what arrives (`BalanceDisplayManager.Shown`).
+  shows what arrives (`BalanceDisplayManager.Shown`, [[scoreboard]]).
 - **The spawn and the tutorial** are Garden 0's: everyone arrives there.
 
 > [!info] Networking

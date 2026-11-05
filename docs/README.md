@@ -18,12 +18,12 @@ on 2026-10-31 and works.
 
 Every doc is tagged by the kinds of thing it defines; `Docs.base` lists them by kind. Read [[terminology]] first
 (several words used to mean something else), then [[principles]], then the planning docs: [[todolist]] and
-[[roadmap]].
+[[roadmap]]. Playtest reports gathered for one fixing pass: [[playtest-2026-11-04]].
 
 - **Rules:** [[principles]], [[layers]], [[conventions]].
-- **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]], [[fun-seeds]] (the upgrade seeds: [[popcorn]], [[moonflower]], [[spotlight-tulip]]), [[light-show]] (ARS and the Garden dancing), [[almanac]] (every crop's page on the tablet).
-- **Mechanics:** [[shop]], [[economy]], [[plot-ownership]], [[flight]], [[climbing]].
-- **Interaction:** [[entity-components]], [[tutorial]], [[notifier]] (toasts in the player's view).
+- **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]] (and the [[trip]] it starts), [[fun-seeds]] (the upgrade seeds: [[popcorn]], [[moonflower]], [[spotlight-tulip]]), [[light-show]] (ARS and the Garden dancing), [[almanac]] (every crop's page on the tablet).
+- **Mechanics:** [[shop]], [[economy]], [[thatch-sinks]] (ways to spend Thatch, not chosen), [[scoreboard]], [[persistence]], [[warehouse]] (designed, not built), [[plot-ownership]], [[flight]], [[climbing]].
+- **Interaction:** [[entity-components]], [[tutorial]], [[notifier]] (toasts in the player's view), [[world-settings]] (our section in the tablet's Settings).
 - **Game:** [[procgen-islands]], [[towns]] (the Gardens, in three towns).
 - **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[tablet]] (Somnium's tablet, as Unity sees it), [[dev-tools]] (the Developer Market), [[detail]] (level of detail and draw distance), [[testing]], [[tooling]].
 - **Reference:** [[terminology]], [[packaging]], [[fractured-isles-tutorial-script]], [[tutorial-transcript-mapping]].

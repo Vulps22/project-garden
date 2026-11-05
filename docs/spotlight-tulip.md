@@ -11,7 +11,7 @@ time with the music ([[light-show]]).
 
 ## The design
 
-**Status (2026-11-03):** built; played in-world. In the stalls since 2026-11-03 (`Buyable_SpotlightTulip`, weight 0.2, Rare); untested there.
+**Status (2026-11-03):** built; played in-world. In the stalls since 2026-11-03 (`Buyable_SpotlightTulip`, weight 0.04, rare: about 1 island stall in 22); untested there.
 
 - **Vulps's brief**: a light at about half the height of a Moonflower's beam ([[moonflower]]), pointing at the island
   and panning around it.
@@ -22,7 +22,7 @@ time with the music ([[light-show]]).
 
 **Status (2026-11-03):** built; played in-world.
 
-- **Seed** `Seed_SpotlightTulip`: a tulip bulb. Buy 60, nothing to sell, grows in 40 s, `spawnWeight` 0.2.
+- **Seed** `Seed_SpotlightTulip`: a tulip bulb, nothing to sell ([[crops#Balance|crops → Balance]]).
 - **Plant** `Plant_SpotlightTulip` (`SpotlightPlant`, `Show/`): a magenta tulip on a 0.5 m stem. Grown, its cup opens
   and a stage light (`Spotlight_Lamp`: a black can with fins and a glowing lens) rises out of it over 4 s, growing as it
   goes, to **half the height of its Garden's dome above the plant**, about 15 m. Rising, it looks up; risen, it turns

@@ -7,22 +7,49 @@ tags:
 ---
 # Plot ownership
 
-The mechanism behind **roadmap step 1, "Plot ownership"**. Designed 2026-09-03, not yet built.
-Vulps's design; the engineering notes are mine and are flagged as such. Words here follow
-[[terminology]] — a **Plot** is the claimable patch, a **PlantSlot** is one square
-of dirt inside it, and 24 PlantSlots make a Plot.
+How a Plot comes to belong to someone, who may use it, and what happens when they leave: roadmap step 1
+([[roadmap]]). Vulps's design; the engineering notes are flagged as such. Words here follow [[terminology]] — a
+**Plot** is the claimable patch, a **PlantSlot** is one square of dirt inside it, and 24 PlantSlots make a Plot.
 
 ## What it has to do
 
+**Status (2026-11-04):** claiming, teammates and the planting check built; the harvest check and the pickup rule
+designed, not built.
+
 - A Plot can be **claimed**, and the claimant's id is stored on it.
-- Only the claimant and their **teammates** may plant or harvest there.
+- Only the claimant and their **teammates** may plant there (`PlotStateManager.CanBeUsedBy`). **Harvesting is not
+  checked yet:** the master refuses a harvest only when the produce is unripe or already taken
+  (`Produce.OnHarvestRequested`), so anyone who can reach it may pick it.
 - **The planter is who counts, not the seed's buyer** (2026-11-03): the holder's client sends its own id with the plant
   request, and the master checks that against the Plot. A seed handed to someone, or spawned from the Developer Market
   and passed on, is theirs to plant in their own Plot.
 - An **unclaimed** Plot allows no planting at all.
 - The claimant can **add and remove** teammates.
 
+## Ownership is a fact, not state authority
+
+**Status (2026-11-04):** built.
+
+Fusion's state authority is the obvious candidate for "whose is this" and is the wrong one:
+
+1. **It follows a grab.** Seeds and produce pass authority to whoever last held them, so authority-as-ownership
+   would make anything you pick up yours
+   ([[networking#Three notions of ownership|networking → Three notions of ownership]]).
+2. **Authority is the master's action channel.** `SellPoint`, the stalls and `AuthorityController` take authority
+   as routine business; if authority meant ownership, each of those would be the shop confiscating something.
+3. **`DestroyWhenStateAuthorityLeaves` cannot wait** for a player to come back ([[#Departures]]).
+
+Instead, **`OwnerId` is a Somnium player id, decided by the master and replicated as a fact**, the same shape as
+`IHeldObject.HolderId` one level up:
+
+- **The Plot owns, not the plant.** `PlotLeaseManager` holds the Plot's owner and teammates; anything standing in a
+  Plot is that player's by transitivity, so plants and produce are never stamped. Ownership is checked once, when
+  the master decides a plant request.
+- **A seed carries its own `OwnerId`**, its buyer, because it is the one thing that leaves the Garden.
+
 ## The shape: everything is an object you carry
+
+**Status (2026-11-04):** Vulps's design; built for claiming, the teammate wall and removing a teammate.
 
 There is no UI anywhere in this design. Every ownership change is a physical object moved from one
 place to another, and the vocabulary is one verb learned once:
@@ -35,12 +62,15 @@ and one decision point for the master.
 
 ## The shed
 
+**Status (2026-11-04):** built (`DeedClaimZone`, `ApplicationAcceptZone`, `PlotTeammateRoster`,
+`PlotClaimSignage`).
+
 **One shed per Garden**, physically: its deed hut, answering for its own four Plots ([[towns]], 14 Gardens since
 2026-11-03). What is *inside* it depends on who is looking:
 
 | Viewer | Sees |
 |---|---|
-| anyone | the **barrel**, with a scroll hovering above it |
+| anyone | the **barrel**, with a scroll hovering above it (switched off: *Joining someone's Plot*) |
 | a Plot owner | their **deed**, and their **teammate list** |
 | everyone else | nothing else |
 
@@ -48,6 +78,8 @@ The barrel being visible to everybody is what makes the whole thing bootstrap: a
 nothing can still take a scroll and ask for something.
 
 ## Claiming
+
+**Status (2026-11-04):** built.
 
 An unclaimed Plot has its **deed** sitting at the centre, on the same rig shop stock uses —
 `ReturnableEntity` + `AlignableEntity` with auto-recall — except the grab is **not** killed, so it can
@@ -70,8 +102,8 @@ A owns a Plot; B wants to team up:
 2. B drops it **in A's Plot**.
 3. Only A can pick it up (see the pickup rule below), so it sits there as a private message.
 4. **Accept** — A carries it into the shed. B joins A's Plot.
-5. **Reject** — A drops it anywhere that is not the shed. Anyone can destroy it by putting it in the
-   SellPoint.
+5. **Reject** — A drops it anywhere that is not the shed. Destroying it in the SellPoint is designed, not built: the
+   scroll carries no `SellableEntity`.
 
 **Why the applicant issues it, and not the owner.** The token names its *beneficiary*, and the
 beneficiary is fixed the moment it leaves the barrel. So stealing one gains a thief nothing: carry
@@ -91,6 +123,8 @@ Plot. The Plot becomes an inbox.
 
 ## The pickup rule
 
+**Status (2026-11-04):** designed, not built.
+
 > Anything dropped in a Plot can only be picked up by someone with access to that Plot.
 
 This is load-bearing twice over: it stops produce being stolen out of someone's Plot, and it is what
@@ -102,96 +136,50 @@ here — rule 3 forbids local state driving the decision, not local evaluation o
 
 ## What is networked, and what is not
 
-This is the part that keeps it cheap.
+**Status (2026-11-04):** built.
 
 | Networked | Local, derived |
 |---|---|
-| the claim table — `plotId → claimantId + teammateIds` | the deed shown in the shed |
+| each Plot's claim — owner and teammate ids, on `PlotLeaseManager` | the deed and name shown in the shed |
 | application scrolls dispensed by the barrel | the teammate list shown in the shed |
 | the deed while it sits on an unclaimed Plot | everything else inside the shed |
+| which of the Plot's 24 PlantSlots are occupied, on `PlotStateManager` | |
 
 Two players standing in the shed together see different things in the same space, and that costs
-nothing, because none of it is real. Dragging a local scroll out is a local gesture that sends a
+nothing, because none of it is real. Dragging a teammate's parchment out is a local gesture that sends a
 request; the master's next broadcast is what actually changes anything.
+
+**One Plot, one NetworkObject.** A Plot's managers share its single `NetworkMessenger`, and so one id space,
+`PlotMessageType`: `OwnerChanged` 0, `TeammatesChanged` 5 and `TeammateRemoveRequest` 6 are `PlotLeaseManager`'s;
+`SlotOccupancyChanged` 1, `PlantRequest` 2, `Planted` 3 and `FullStateSync` 4 (all 24 slots as a 3-byte mask, for a
+late joiner) are `PlotStateManager`'s. **A `PlantSlot` holds no state and no messenger**: it is a marker that
+forwards a plant request to its Plot, which knows the slot's index. A plant anchors to (Plot `NetworkId`, slot
+index).
 
 **Engineering notes.**
 
-- The claim table is **the `EconomyManager` pattern verbatim**: master-owned, master-mutated, whole
-  table rebroadcast on change, everyone rebuilding from scratch. Consider putting it beside
-  `EconomyManager` rather than in a new singleton.
 - The shed interior is a **derivation** in the [[principles]] tier sense — computed from a fact every peer
-  already holds, never sent. Do not be tempted to network the scrolls inside it; they look like the
-  application scrolls and behave nothing like them, and if they ever share a prefab someone will
-  network the wrong one.
-- `PlantSlot` should **stop holding its own `OwnerId`** and ask its Plot. Two levels each holding an
-  owner is two sources of truth for "may I plant here" — rule 1, one owner per shared property.
-- The departure grace (180 s, [[#Departures]]) was inherited from when it held PlantSlots; a claim is a much
-  larger thing to lose than a slot, so that number should be re-judged rather than carried over.
+  already holds, never sent. Do not network the parchments inside it (`TeammateSlotDisplay` is a plain
+  `XRGrabInteractable`); they look like the application scrolls and behave nothing like them.
+- The departure grace (180 s, [[#Departures]]) was set when it held PlantSlots; a claim is a much larger thing to
+  lose than a slot, so that number should be re-judged rather than carried over.
 
-## Almost all of this is already built
+## How it is built
 
-- **The barrel is `ShopSlot` at price zero.** Spawns stock, hovers it, restocks when empty, master
-  decides the take and stamps an id on the way out. That includes the parts that cost uploads to get
-  right — `HasLeftSlot()` checking geometry rather than trusting `OnTriggerExit`, and the holder
-  *requesting* rather than the slot inferring.
-- **An application scroll is a `Seed` with a different payload**: `NetworkBridge` +
-  `NetworkGrabbable`, a replicated id stamped by the master, `SingleHolderFilter` so two people
-  cannot hold it, `HoveringEntity` for the barrel hover, `ReturnableEntity` so a stray one tidies
-  itself.
-- **Destroying one in the SellPoint is free.** `SellableEntity` with a serialized value of 0;
-  `OnSold()` already *defaults* to despawning. `SellPoint` never learns what a scroll is.
-- **Keep the barrel to one scroll at a time**, restocking after the previous is taken — `ShopSlot`
-  already has exactly this shape in `_currentSeed`. Otherwise a player can carpet the Garden in
-  scrolls.
+**Status (2026-11-04):** built; joining switched off.
 
-## The structural half: one Plot, one NetworkObject, 24 sockets
-
-Moving `OwnerId` up from the PlantSlot to the Plot is not only a correctness fix. It is what makes
-the slot's `NetworkObject` pointless, and removing 24 network identities per Plot is what makes the
-rest of the roadmap affordable. **These are one refactor, and splitting them would hide that.**
-
-Look at what a `PlantSlot` actually replicates today:
-
-```csharp
-public bool          IsOccupied { get; private set; }
-public string        OwnerId    { get; private set; }
-public IPlantSlotOccupant Occupant   { get; private set; }   // local reference, never synced
-```
-
-`Occupant` is not networked — a plant positions itself from the slot's NetworkId. So the *only*
-reason a patch of dirt carries a `NetworkObject` **and** a `NetworkBridge` is `OwnerId`, and this
-document has already decided `OwnerId` does not belong there. Take it away and a socket's remaining
-networked state is **one bit**: occupied, or not. Twenty-four of those is three bytes as a mask.
-
-| | now | after |
-|---|---:|---:|
-| NetworkObjects per island | 96 | 4 |
-| authority reassignments per master transfer | 96 | 4 |
-| three chained islands (see roadmap) | 288 | 12 |
-
-The ~100 lines of `ReassignNullObjectsAuthority Plant_Slot` at every master transfer in the
-2026-09-03 logs are this problem printing itself, once per slot.
-
-**Two traps, both already paid for elsewhere.**
-
-- **Author the sockets as a plain `Transform[]`.** Arrays of custom `[Serializable]` classes arrive
-  empty from the bundle export — the `ProduceSlot` defect, invisible by every means the Editor
-  offers and only visible in-world. Build richer per-socket objects at `Awake`.
-- **`BytesWriter` is pre-sized**, so the Plot's payload calculation now covers 24 sockets. Small, but
-  it is exactly the shape of "add a field, forget the size, overflow".
-
-**One consequence to design deliberately.** A plant currently anchors to its slot's NetworkId; after
-this it anchors to **(plot NetworkId, socket index)**. That is better rather than worse — stable,
-meaningful, and it survives the socket not being a network object at all. `PlantSlot`'s
-`RequestPlant` comment already says it is "sent on the plot's bridge rather than the seed's", which
-is terminology debt today and becomes literally true afterwards.
-
-**Sequencing.** This depends on the scene tidy in [[roadmap]] — an island cannot be one prefab until
-it is one object, and a Plot cannot be one NetworkObject until the hierarchy says which sockets are
-its. Do it as part of that tidy, while the island is still *placed* in the scene rather than spawned:
-that step changes nothing about networking, so a Plot losing 24 NetworkObjects can be tested on its
-own before anything starts spawning islands at runtime.
-
+- **The barrel is a `DispensingEntity`** (`DeedHut/ItemDispenser`): spawns one free scroll at a time, hovers it,
+  restocks when it is taken, the master deciding the take. The same holder-requests, master-decides shape as a stall
+  ([[shop]]).
+- **An application scroll is a `CollectibleEntity`** (`Collectible_BlankDeedScroll`, `collectibleId`
+  `blank_scroll`) with a `PlotApplication` beside it: which Plot it was dropped on, and the accept when carried into
+  the shed (message ids 5–7 on the scroll's messenger).
+- **The deed is a `CollectibleEntity`** placed beside its Plot in the Garden ([[#The deed is part of the Garden]]);
+  carried into the shed, `DeedClaimZone` asks the master to claim.
+- **The teammate wall** (`PlotTeammateRoster`, `TeammateSlotDisplay`) shows the owner their teammates;
+  `PlotTeammateRevokeZone` asks to remove one whose parchment is carried out of the hut.
+- **The named deed** over the fireplace (`PlotClaimSignage`) shows the local player's name if they own one of the
+  Garden's Plots.
 
 ## Departures
 
@@ -206,7 +194,49 @@ balance row ([[economy]]). Plots first, so cleanup never runs against a player t
 Their `HolderId`, by contrast, is cleared **immediately**: that is a correction, not cleanup, and leaving it set makes
 `SingleHolderFilter` refuse the object to everyone for the rest of the session.
 
+## One seed, one plant
+
+**Status (2026-11-04):** built, untested in-world.
+
+A seed carried across two neighbouring slots touches both triggers, and each sends a plant request before the
+master's "planted" reply has come back to the seed. The master used to accept both: two seeds grew four turnips.
+`PlotStateManager` now remembers every seed it has planted until that seed is despawned, and refuses a second
+request for it. Test: sweep a seed across the line between two slots; one plant grows.
+
+## The deed is part of the Garden
+
+**Status (2026-11-04):** built (Editor compile clean, prefab and scene saved), untested in-world.
+
+Each Plot's deed is a scene object, not spawned: a `Deed` instance beside the `Plot` in `BorderedPlot.prefab`, at
+the deed socket, wired to `PlotLeaseManager._deed` (Vulps, 2026-11-04). A sibling rather than a child, so one network
+object never sits inside another; `NetworkGrabbable` moves it to the scene root at load, and the reference holds.
+
+- **Every client has it from load**, already in its socket (`CollectibleEntity._startsInDispenser`), so nothing is
+  sent to say so, and no master ever spawns a second.
+- **Claimed, it is hidden; relinquished, shown.** Every client applies the replicated owner (`PlotLeaseManager.ShowDeed`
+  on `OwnerChanged`, and at start): hidden, its grab is off (a hand holding it lets go), its renderers and colliders are off,
+  it is kinematic, and the client simulating it puts it straight back in its socket (`Socket.SnapHere`). If nobody
+  simulates it at that moment, auto-recall brings it home unseen once someone does. Shown again, it is held at its
+  socket and called back if it is away. Nothing is despawned, so who holds it never matters.
+- Claiming is unchanged: the holder carries it into the hut, `DeedClaimZone` asks, the master announces the owner.
+
+Test: two players. The second claims a Plot (the deed vanishes for both, is back in its socket when shown, and no
+"recall did not arrive" warning follows); the master leaves (no new deeds); the claimant leaves for good (their deed reappears in its socket).
+
+## Discarding a scroll
+
+**Status (2026-11-04):** built, compiles clean, untested in-world.
+
+An accepted scroll is ended by the master, but the player holding it has its state authority, and only authority can
+despawn. `CollectibleEntity.Discard()` therefore announces it (`discard`, message 9 on the collectible's bridge):
+whoever has authority despawns it, and if nobody does, the master takes authority and does, as `Seed.RequestDiscard`
+does. The scroll dispenser adopts its stock on every client when it hears the scroll is stock
+(`CollectibleEntity.AnyInDispenser`), so a new master does not stock a second. Test: the owner accepts a scroll; it
+is gone for everyone; the master leaves and the barrel keeps one scroll.
+
 ## Open questions
+
+**Status (2026-11-04):** open.
 
 **1. Does a teammate see anything?** As specified, "don't own a Plot, see nothing" leaves an accepted
 teammate staring at an empty room: no confirmation they were accepted, no list of Plots they are on,
@@ -233,7 +263,6 @@ in the design and the easiest thing here to get wrong.
 already-accepted teammate a no-op and let question 2's lifetime rule clear the litter, rather than
 tracking pending applications.
 
-**5. How does a claim end?** Dragging the deed out relinquishes it deliberately, and `PlotLease`
-covers a disconnect. Neither covers a player who simply stops playing while still connected, nor a
-Garden whose four Plots are all claimed by people who will not be back — which is the question the
-old §1 engineering note raised and this design still does not answer.
+**5. How does a claim end?** Dragging the deed out relinquishes it deliberately, and the departure grace
+([[#Departures]]) covers a disconnect. Neither covers a player who simply stops playing while still connected, nor a
+Garden whose four Plots are all claimed by people who will not be back.

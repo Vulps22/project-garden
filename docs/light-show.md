@@ -57,7 +57,7 @@ The props carry the show on their own surfaces, so a dark Garden under the dome 
   alone, since it swaps only materials it knows.
 - **`ShowLit`** (`Shaders/ShowLit.shader` + `ShowLit.hlsl`): lit like URP Lit, replacing the hut's, board's and tarp's
   materials outright; one keyword per dance, nothing by day. Every vertex melts with the trip, so no trip twins; the hut,
-  scaled ×109, smears like an apparition while tripping, kept on purpose ([[weed]]).
+  scaled ×109, smears like an apparition while tripping, kept on purpose ([[trip]]).
   - **Board** (`Scoreboard_Panel` on `Board_Main`, `_SHOW_PLANKS`): the panel's five planks each take a colour and the
     colours step one plank along every beat; each plank glows with one band and flashes on the kick. The panel is a box
     in the board's object space (`_PanelMin`/`_PanelMax`); the frame and roof keep `M_WoodenBoard`.

@@ -11,7 +11,7 @@ the stage for the light show ([[light-show]]). Two or more and their beams arc i
 
 ## The design
 
-**Status (2026-11-03):** built; played in-world. In the stalls since 2026-11-03 (`Buyable_Moonflower`, weight 0.1, Very Rare); untested there.
+**Status (2026-11-03):** built; played in-world. In the stalls since 2026-11-03 (`Buyable_Moonflower`, weight 0.008, very rare: about 1 island stall in 99); untested there.
 
 - **Vulps's brief**: a ripe plant "creates a beam of light up to a point in the sky, and creates a black sphere around
   the island", with light show effects on it tied to ARS. The rest was filled in by Claude and accepted.
@@ -24,7 +24,7 @@ the stage for the light show ([[light-show]]). Two or more and their beams arc i
 
 **Status (2026-11-03):** built; played in-world.
 
-- **Seed** `Seed_Moonflower`: a large dark seed. Buy 150, nothing to sell, grows in 60 s, `spawnWeight` 0.1.
+- **Seed** `Seed_Moonflower`: a large dark seed, nothing to sell ([[crops#Balance|crops → Balance]]).
 - **Plant** `Plant_Moonflower` (`MoonflowerPlant`, `Show/`): a 1.1 m stem with pointed leaves and a closed white bud;
   grown, its five petals open over 3 s around a glowing centre. Each petal tilts out about the line across its base,
   worked out from where it sits, so the model's export axes do not matter.

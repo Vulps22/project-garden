@@ -3,7 +3,7 @@ aliases:
   - "Tablet"
 tags:
   - reference
-  - somnium
+  - tech
 ---
 # Somnium's tablet
 
@@ -149,47 +149,7 @@ one silent `AudioSource` in the scene from load and give every new source its gr
 
 ## World Settings
 
-**Status (2026-11-02):** built, compiles clean, untested in-world.
-
-Our own section in Somnium's Settings app (Vulps, 2026-11-02): **World**, holding a **World Settings** panel of this
-world's per-player switches on every player's tablet, and beneath it a **Developer** panel only on the developer's
-([[dev-tools]]). `WorldSettingsPage` (on the `GameSettings` object) builds it through `TabletManager` →
-`TabletBridge`; the panels stack in a column like Settings' own left column.
-
-- **A "World" button** at the bottom of the section column, cloned from Audio's with its localisation stripped and
-  its click replaced (Somnium's persistent call to `CanvasGroupManager.SwitchActiveCanvasGroup` goes with the old
-  event). Seven buttons overflow the column at Somnium's spacing of 40, so the spacing is closed up to fit.
-- **How Settings switches sections** (seen 2026-11-02, every section clicked): plain `SetActive`. A section button's
-  two persistent calls (`CanvasGroupManager.SwitchActiveCanvasGroup` on `ContentView` and on `SelectorPanel`) switch
-  the previous `OptionsTab.<Name>` panel off and the new one on, and likewise the buttons' `<Name>_Highlight`
-  children (Avatars' highlight is named `Graphics_Highlight`, a Somnium slip).
-- **Ours is a real section**: `OptionsTab.World (Grow A Garden)`, a sibling of `OptionsTab.General` and the rest, with
-  no background of its own, holding a `Left` column of panels in Settings' own dark sprite. Picking World switches
-  every other section panel and highlight off and ours on, as Somnium does. Picking one of Somnium's sections hides
-  ours (a listener added to each button, which runs after Somnium's own calls); Somnium's manager still thinks its
-  last section is open, so if it did not bring the picked panel back, we switch it on ourselves.
-  - The first upload had an opaque page over Settings instead, and its panels were parented to nothing (built
-    outside the tablet), so it showed as a blank background over Settings.
-  - **Heights are stated, not fitted**: each panel's title (42) and rows (116.5 a line, two to a line, 11.6 apart)
-    carry a `LayoutElement`, and the column spaces panels 22 apart. Content-size fitters nested in layout groups came
-    out short on the second upload and the rows overlapped.
-- **The switches are Somnium's on/off row**, cloned from `Option_FolowPlayer` with `OptionViewBase`, `On_OffToggle`
-  and the localisation stripped, and its `Toggle` event replaced. We draw the state as Somnium does: the handle at
-  x −21 off and +21 on, the fill's alpha 0 or 1.
-  - **Allow Stoned Effects**, on by default. Off, `TripManager` starts no trip and ends one running (over 4 s, as
-    covering the eyes does); eating and smoking still happen, they just do nothing to this player ([[weed]]).
-  - **Allow Force Feeding (soon)**: shown off and greyed, since the feature does not exist yet.
-  - **Show Notifications**, on by default. Off, the Notifier shows nothing ([[notifier]]).
-  - **Draw Distance**, a slider row cloned from Audio's Main volume, 300 m to 2 km ([[detail]]).
-  - **Voice Tutorial → Reset**: a row with a button rather than a switch. `TutorialManager.ResetProgress` forgets
-    every line heard, saves that, stops the line playing and starts again from the first line ([[tutorial]]).
-- **The Developer section** (on the World page, in the right-hand column as Somnium's own pages have one, at x 890; shown only to anyone with developer access): **Notify Everyone** ([[dev-tools#Notify everyone|dev-tools → Notify everyone]]) and **Enable Native Flight** turns Somnium's own fly mode back on
-  (`Motion.SetFlyModeDisableState(false)`), so the sidebar's Fly Mode button returns. Glide stays off. Our flight
-  switches both off when it takes hold of the player at spawn (`FlightController.Resolve` →
-  `SuppressSomniumLocomotion`, [[flight]]); `Resolve` then gives fly mode back if the developer has this on.
-- **Stored by `GameSettings`** (per player, local storage, key `player_settings`) beside the flight trim and the
-  narration switches, so they survive between visits (`devNativeFlight` too, which only the developer's client acts on). `noStonedEffects` is stored inverted so saves from before it
-  read as allowed.
+Our own section in Settings, built onto this app: [[world-settings]].
 
 ## Keeping our additions on the tablet
 

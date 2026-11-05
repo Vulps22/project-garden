@@ -29,7 +29,8 @@ Assets/#User/GrowAGarden/         scene, prefabs, materials, sounds: everything 
   under it, CM's and ours. Assembly and namespace must both be unique across every uploaded Somnium world, and
   every public type must sit in the root namespace or below it. Our sub-namespaces follow folders
   ([[conventions#Code|conventions → Code]]).
-- **Git tracks only our part of CM**: `Scripts/GrowAGarden/` and `Scripts/Vulps.GrowAGarden.asmdef`. The rest of CM
+- **Git tracks only our part of CM**: `Scripts/GrowAGarden/`, `Scripts/Vulps.GrowAGarden.asmdef`, and the one CM
+  file edited in place, `Scripts/ARS Plugin/VideoPlayer/ARSVideoPlayer.cs` ([[light-show]]). The rest of CM
   is template-supplied, like `Packages/` and `Assets/Photon/`, and a fresh clone needs CM 4.0 installed first.
   The Namespace Helper's rename of CM's own scripts is therefore not in git either; rerun it after reinstalling CM.
 - **CM's files are edited in place, never deleted** without asking Vulps.

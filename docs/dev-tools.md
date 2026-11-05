@@ -49,23 +49,17 @@ as a [[notifier]] toast, the sender included; a player with Show Notifications o
   client, the sender's included, shows it with `Notifier.Push`.
 ## Native flight
 
-**Status (2026-11-02):** built, compiles clean, untested in-world.
-
-Settings → World → **Developer** panel → *Enable Native Flight*, a panel only the developer's tablet gets
-([[tablet#World Settings|tablet → World Settings]]). On, Somnium's own fly mode is allowed again for the developer
-(the sidebar's Fly Mode toggle comes back); glide stays off. Stored, and re-applied each time our flight takes hold of
-the player. Ours is still running alongside it: switching Somnium's fly mode on while ours is in the air is untried.
+A developer switch in World Settings that gives Somnium's own fly mode back: [[world-settings#The switches|world-settings → The switches]].
 
 ## The Developer Market
 
-**Status (2026-11-02):** built, compiles clean, untested in-world.
+**Status (2026-11-02):** built; played in-world 2026-11-02: the app built, the page opened, a Weed Seed was asked for
+and spawned by the master. Taking an item by trigger is not yet seen in-world (below).
 
-An app on Vulps's tablet (Vulps, 2026-11-02): a searchable, scrolling grid of every seed, fruit and the splif, each
-with a picture. **Point a hand's ray at one and press grip**: it is pulled out of the tablet into that hand, free. A
-seed comes already bought, so it can be planted; a fruit comes ripe, and grabbing it harvests it as usual.
-
-**Played 2026-11-02** (first try): the app built, the page opened, a Weed Seed was asked for and spawned by the master.
-The pictures were missing (sprites, above) and grip also grabbed the tablet, so it is now the trigger.
+An app on the tablet of anyone with developer access (Vulps, 2026-11-02): a searchable, scrolling grid of every seed,
+fruit and the splif, each with a picture. **Point a hand's ray at one and pull the trigger**: it is pulled out of the
+tablet into that hand, free. A seed comes already bought, so it can be planted; a fruit comes ripe, and grabbing it
+harvests it as usual.
 
 **On the tablet** (`MarketApp`, on SceneManager): built in code onto Somnium's tablet through `TabletManager` →
 `TabletBridge` ([[tablet]]), only when `Developer.IsLocal`.
@@ -94,16 +88,15 @@ keeps it if grip is held and drops it if not.
 
 ```
 developer's client                         master
-  Request(item, place, hand)   ── 7 ──▶    is the asker Developer.ID? spawn it there,
-                                            a seed Purchase()d by the developer, a fruit Init()ed ripe,
-                                            state re-sent at 0.25 / 0.75 / 1 s
+  Request(item, place, hand)   ── 7 ──▶    Developer.Has(asker)? spawn it there,
+                                            a seed Purchase()d by the developer, a fruit Init()ed ripe
   PutInHand: wait for it here  ◀── 8 ──    which NetworkId, which hand
   (up to 3 s), then XRInteractionManager.SelectEnter with that hand's Near-Far Interactor
 ```
 
 > [!info] Networking
 > Spawning is a fact, so the master does it, as for every runtime spawn; the developer need not be master. The
-> master checks the asker's id against `Developer.ID` and refuses anyone else, logged. The id travels in the message
+> master checks `Developer.Has(asker)` and refuses anyone else, logged. The id travels in the message
 > and is not authenticated: a modified client could claim it, which is acceptable for a debug tool in a world where
 > every client runs our assembly. The hand grab is local: grabbing takes authority as any grab does.
 
@@ -121,7 +114,7 @@ trigger), so an eggplant brought to it bends toward it ([[crops#The eggplant eas
 
 **The Grow Wand** (2026-11-03, Vulps): `prefab_items/GrowWand`, a 36 cm wooden stick with a glowing green tip, built
 from the SPS Receiver's prefab (`GrowWand_Stick`, `GrowWand_Tip` materials; Unity's built-in cylinder and sphere).
-Status: built, compiles clean, untested in-world.
+**Status (2026-11-03):** built, compiles clean, untested in-world.
 
 - **Touch a planted slot, a plant or an unripe fruit with it** and it grows: a plant is fully grown at once and what it
   bears comes out ripe; already grown, what hangs on it ripens; a fruit ripens. A rooted crop in the ground ripens.

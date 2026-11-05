@@ -380,40 +380,43 @@ existing button map was confirmed by Vulps's stated press order rather than by t
 
 ---
 
-## Planned: a settings menu in the hut
+## A player's own flight settings
 
-Vulps's, 2026-09-09. To be built once the model is proven — noted now because one piece of it is
-already answered and one is more work than it looks.
+**Status (2026-11-04):** trim built but not settable in-world; the rest designed, not built (Vulps, 2026-09-09).
 
-Players tune their own flight at the hut: **trim**, **arm-extension range**, **basic versus advanced
-flight**, and a toggle back to **Somnium's own flight** for anyone who prefers it.
+Players tune their own flight: **trim**, **arm-extension range**, **basic versus advanced flight**, and a toggle back
+to **Somnium's own flight** for anyone who prefers it. All of it is per player and local: no RPCs, no master
+decisions, nothing replicated. Where the switches live and how they are stored: [[world-settings]].
 
-The hut is the right home for it — [[plot-ownership]] already makes it the one
-place where things are committed rather than merely done, so a settings panel there needs no new
-idea about where the world's controls live.
-
-**It is all per-client, which makes it the cheapest UI in the project.** Flight is entirely local:
-no RPCs, no master decisions, nothing replicated. Nobody else can see or is affected by any of it.
-
-**`SomniumBridge.LocalStorage` means settings can persist between sessions.** Per-world local
-storage in JSON or text, with `JsonExists`, `DeleteJson`, `GetAllJsonNames`, `GetUsedSpaceBytes` and
-`ClearAllData` documented (the read and write calls themselves want confirming in-world — the XML
-lists only the housekeeping). That matters more than it sounds: a trim you must re-dial on every
-join is worse than no trim, and a comfort setting that forgets you is actively hostile.
-
-**Trim as a player setting is the correct answer to the calibration mistake above.** People hold
-their wrists differently. The fix was never automation — it is letting the player set the number
-once, deliberately, and remembering it.
+- **Trim is a player setting, not a calibration.** People hold their wrists differently, and the fix for the
+  calibration mistake above was never automation: the player sets the number once, deliberately, and it is
+  remembered. `FlightController` reads `GameSettings.TrimDegrees`; the panel that captures it is out of the scene
+  ([[world-settings#The hut panel|world-settings → The hut panel]]).
+- **Somnium's own flight** is a developer switch today ([[world-settings#The switches|world-settings → The switches]]),
+  which gives back fly mode only. Arm-extension range, basic versus advanced and a player's toggle back to
+  Somnium's flight are not built.
 
 **⚠ "OG flight" has to hand back four things, not one.** `SetFlyModeDisableState(false)` and
 `SetGlideDisableState(false)` return Somnium's flight, but `SetGravity` and `SetMovementSpeed` also
 have to go back to 1, and `FlightController` has to stop writing `Root`. Those pieces exist —
 `SetFlying(false)` already does the gravity and locomotion half on landing — but they are spread
 across the contact gate rather than gathered into one "hand everything back" path. Worth writing
-that path before the toggle needs it, because a half-restored player is a player stuck with no
+that path before a player's toggle needs it, because a half-restored player is a player stuck with no
 gravity and no walking.
 
 ---
+
+## What counts as ground
+
+**Status (2026-11-04):** built (prefabs and scene saved, compiles clean), untested in-world.
+
+Flight ends on touching anything in `FlightController._terrainMask` within the contact sphere, which was every layer, so
+a seed in the hand counted as ground: after buying on an island, flight started only once falling and the flight home
+landed and relaunched every half second ([[playtest-2026-11-04]] item 9). The mask is now every layer but 7
+`PhysicalObject`, and every carryable is on 7: seeds, produce, the deed, the scroll, the splif, the Grow Wand, the SPS
+receiver and the hut's teammate slots (`GuestDeed`). Somnium's own VR hand boxes are on 7 too, so they no longer count.
+Ground is a layer, not "not in my hand", so grabbing the island you stand on cannot end the contact (Vulps,
+2026-11-04). A new carryable prefab goes on 7; Somnium's grab interactors pick up 7, and Default triggers meet it.
 
 ## Open questions
 
@@ -426,16 +429,7 @@ gravity and no walking.
    trip free and might make the flap feel less precious.
 5. **Does flight need engaging**, or are you flying whenever you are off the ground?
 6. **Advanced flight's clamps** — which ones come off, and does yaw become roll-to-turn when they do?
-7. **The terrain mask has to stop including Default before seeds exist again.** Fine while the
-   model is being tuned in an empty world, and left wide on purpose for that. But `Seed_*`,
-   `Produce_*`, `Deed` and `Collectible_BlankDeedScroll` are all `m_Layer: 0`, and a carried one
-   sits inside the contact sphere — so once crops are back, carrying anything would suspend flight
-   permanently, which is precisely the loop the design exists for. Two fixes: move island geometry
-   to `Terrain` (hundreds of scene objects, and the prefab assets too or spawned islands land on
-   Default), or move the eleven carryable prefabs to layer 7 `PhysicalObject`, which is where a
-   carryable rigidbody arguably belongs and gets procgen right for free. Note the collision-matrix
-   export trap does *not* apply — `_terrainMask` is a serialized int on our own component, so it
-   travels; only ProjectSettings' layer *collision rules* are lost.
+7. Answered: carrying does not count as ground ([[#What counts as ground]]).
 8. **⚠ What happens when an inverted player touches terrain and Somnium takes over?** Advanced-only
    by construction: basic mode writes only `position` and a yaw `Rotate`, so `Root` cannot leave
    upright. Once loops exist it can, and handing back to Somnium mid-loop has three possible
