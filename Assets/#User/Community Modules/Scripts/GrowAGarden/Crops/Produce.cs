@@ -117,6 +117,10 @@ namespace Vulps.GrowAGarden.Crops
 
         public bool IsRipe => GetRipeness() >= 1f;
 
+        /// <summary>A produce ripened on this client (every client sees its own). Not raised for one that arrived ripe.</summary>
+        public static event System.Action<Produce> AnyRipened;
+        private bool _seenUnripe, _announcedRipe;
+
         protected virtual void Awake()
         {
             _hovering = GetComponent<HoveringEntity>();
@@ -239,6 +243,9 @@ namespace Vulps.GrowAGarden.Crops
             if (_sellable != null && _sellable.IsPending) return;
 
             bool ripe = IsRipe;
+            // Ripened here, having been seen unripe: one that arrives ripe (a late joiner, the Developer Market) is not news.
+            if (!ripe && _ripenTimestamp != 0) _seenUnripe = true;   // 0 is "state not here yet", not unripe
+            else if (_seenUnripe && !_announcedRipe) { _announcedRipe = true; AnyRipened?.Invoke(this); }
             if (_grabInteractable != null && _grabInteractable.enabled != ripe) SetGrabbable(ripe);
             if (_sellable != null && _sellable.enabled != ripe) _sellable.enabled = ripe;
         }

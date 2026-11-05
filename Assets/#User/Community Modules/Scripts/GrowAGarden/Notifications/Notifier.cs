@@ -14,7 +14,8 @@ namespace Vulps.GrowAGarden.Notifications
     /// </summary>
     public class Notifier : MonoBehaviour
     {
-        private const float SHOW_SECONDS = 2f;
+        private const float DEFAULT_SECONDS = 3f;   // long enough to read (Vulps)
+        private const float HARVEST_REPEAT_SECONDS = 10f;   // a plant bearing nine blooms is one notice, not nine
         private const float FADE_SECONDS = 0.25f;
         private const float QUIET_SECONDS = 5f;     // a push this soon after the last one makes no sound (Vulps)
         private const float SETTLE_SECONDS = 10f;   // joins this soon after our own are the room arriving, not news
@@ -38,37 +39,85 @@ namespace Vulps.GrowAGarden.Notifications
         private Material _boxMaterial;
         private float _lastPush = float.NegativeInfinity;
         private float _settledAt = float.PositiveInfinity;
-        private readonly List<(CanvasGroup group, float shownAt)> _shown = new List<(CanvasGroup, float)>();
+        private readonly List<(CanvasGroup group, float shownAt, float seconds)> _shown = new List<(CanvasGroup, float, float)>();
+        private readonly Dictionary<PlotLeaseManager, float> _lastHarvestNotice = new Dictionary<PlotLeaseManager, float>();
+        private bool _wasDeveloper;
 
-        /// <summary>Shows a toast to this player, unless they have turned notifications off.</summary>
-        public static void Push(string text)
+        /// <summary>Shows a toast to this player for <paramref name="seconds"/>, unless they have turned notifications off.</summary>
+        public static void Push(string text, float seconds = DEFAULT_SECONDS)
         {
             if (_instance == null) { Logger.Warn($"Push() — no Notifier in the scene; dropped '{text}'"); return; }
-            _instance.Show(text);
+            _instance.Show(text, Mathf.Max(0.5f, seconds));
         }
 
-        private void Awake() => _instance = this;
-
-        private void OnEnable()
+        private void Awake()
         {
+            _instance = this;
+            enabled = false;   // the fades run only while a toast is up
             PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
             PlayerManager.PlayerJoined += OnPlayerJoined;
-        }
-
-        private void OnDisable()
-        {
-            PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
-            PlayerManager.PlayerJoined -= OnPlayerJoined;
+            Crops.Produce.AnyRipened += OnProduceRipened;
+            DevTools.DeveloperAccess.Changed += OnDeveloperAccessChanged;
         }
 
         private void OnDestroy()
         {
+            PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
+            PlayerManager.PlayerJoined -= OnPlayerJoined;
+            Crops.Produce.AnyRipened -= OnProduceRipened;
+            DevTools.DeveloperAccess.Changed -= OnDeveloperAccessChanged;
             if (_instance == this) _instance = null;
             if (_column != null) Destroy(_column.gameObject);
             if (_boxMaterial != null) Destroy(_boxMaterial);
         }
 
-        private void OnLocalPlayerJoined(string id, string name) => _settledAt = Time.time + SETTLE_SECONDS;
+        private void OnLocalPlayerJoined(string id, string name)
+        {
+            _settledAt = Time.time + SETTLE_SECONDS;
+            _wasDeveloper = DevTools.Developer.IsLocal;
+        }
+
+        /// <summary>Something ripened on a Plot this player owns or is a teammate on: one notice per Plot every 10 s.</summary>
+        private void OnProduceRipened(Crops.Produce produce)
+        {
+            string me = PlayerManager.LocalPlayerId;
+            if (produce == null || string.IsNullOrEmpty(me)) return;
+            PlotLeaseManager plot = PlotAt(produce.transform.position);
+            if (plot == null || !(plot.OwnerId == me || Contains(plot.TeammateIds, me))) return;
+            if (_lastHarvestNotice.TryGetValue(plot, out float last) && Time.time - last < HARVEST_REPEAT_SECONDS) return;
+            _lastHarvestNotice[plot] = Time.time;
+            Push("Something is ready to harvest");
+        }
+
+        /// <summary>The Plot a point is in: the nearest of its Garden's four, if it is close enough to be on it.</summary>
+        private static PlotLeaseManager PlotAt(Vector3 point)
+        {
+            Islands.Garden garden = Islands.Garden.Nearest(point);
+            if (garden == null) return null;
+            PlotLeaseManager best = null;
+            float bestSqr = 15f * 15f;
+            foreach (PlotLeaseManager plot in garden.Plots)
+            {
+                if (plot == null) continue;
+                float sqr = Islands.Garden.FlatSqr(plot.transform.position, point);
+                if (sqr < bestSqr) { bestSqr = sqr; best = plot; }
+            }
+            return best;
+        }
+
+        private static bool Contains(IReadOnlyList<string> ids, string id)
+        {
+            foreach (string each in ids) if (each == id) return true;
+            return false;
+        }
+
+        /// <summary>This player was just given developer access (the owner always has it, so is never told).</summary>
+        private void OnDeveloperAccessChanged()
+        {
+            bool now = DevTools.Developer.IsLocal;
+            if (now && !_wasDeveloper && !DevTools.Developer.IsLocalOwner) Push("You have been given Developer Access");
+            _wasDeveloper = now;
+        }
 
         private void OnPlayerJoined(string id, string name)
         {
@@ -76,7 +125,7 @@ namespace Vulps.GrowAGarden.Notifications
             Push(string.IsNullOrEmpty(name) ? "A new player has joined the world" : $"{name} has joined the world");
         }
 
-        private void Show(string text)
+        private void Show(string text, float seconds)
         {
             GameSettings settings = GameSettings.GetInstance();
             if (settings != null && !settings.ShowNotifications) { Logger.Info($"Show() '{gameObject.name}' — notifications off; '{text}'"); return; }
@@ -88,19 +137,21 @@ namespace Vulps.GrowAGarden.Notifications
             Logger.Info($"Show() '{gameObject.name}' — '{text}'{(chime ? string.Empty : ", silent")}");
 
             while (_shown.Count >= MAX_SHOWN) Drop(0);
-            _shown.Add((MakeToast(text), Time.time));
+            _shown.Add((MakeToast(text), Time.time, seconds));
+            enabled = true;
         }
 
         private void Update()
         {
             for (int i = _shown.Count - 1; i >= 0; i--)
             {
-                (CanvasGroup group, float shownAt) = _shown[i];
+                (CanvasGroup group, float shownAt, float seconds) = _shown[i];
                 if (group == null) { _shown.RemoveAt(i); continue; }
                 float age = Time.time - shownAt;
-                if (age >= SHOW_SECONDS) { Drop(i); continue; }
-                group.alpha = Mathf.Clamp01(Mathf.Min(age, SHOW_SECONDS - age) / FADE_SECONDS);
+                if (age >= seconds) { Drop(i); continue; }
+                group.alpha = Mathf.Clamp01(Mathf.Min(age, seconds - age) / FADE_SECONDS);
             }
+            if (_shown.Count == 0) enabled = false;
         }
 
         private void Drop(int index)
