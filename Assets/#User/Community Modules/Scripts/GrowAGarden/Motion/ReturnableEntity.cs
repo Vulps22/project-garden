@@ -135,6 +135,18 @@ namespace Vulps.GrowAGarden.Motion
             }
         }
 
+        /// <summary>Puts it on its target at once, for something nobody can see travel. Only the state authority can move it.</summary>
+        public void SnapHome()
+        {
+            if (_returnTo == null || _rigidbody == null || !HasStateAuthority) return;
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            _rigidbody.position = _returnTo.position;
+            _rigidbody.rotation = _returnTo.rotation;
+            transform.SetPositionAndRotation(_returnTo.position, _returnTo.rotation);
+            StopReturning();
+        }
+
         /// <summary>Keeps the grab off until an enforced recall in progress arrives. False when no enforced recall is under way.</summary>
         public bool KeepGrabUntilArrival()
         {
