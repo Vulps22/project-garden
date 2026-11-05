@@ -55,6 +55,8 @@ namespace Vulps.GrowAGarden.Video
             text.color = Color.white;
             text.outlineWidth = 0.2f;
             text.outlineColor = new Color32(0, 0, 0, 255);
+            // TextMeshPro draws both sides, so each face would show the other's text mirrored through it: front only.
+            text.fontMaterial.SetFloat(ShaderUtilities.ShaderTag_CullMode, (float)UnityEngine.Rendering.CullMode.Back);
         }
 
         private void LateUpdate()
