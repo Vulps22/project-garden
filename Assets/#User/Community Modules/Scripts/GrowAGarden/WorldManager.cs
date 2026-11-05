@@ -74,8 +74,6 @@ namespace Vulps.GrowAGarden
         public static NetworkObject Find(uint rawId) => WorldBridge.Find(rawId);
 
         /// <summary>The component of type T on the object with this network id, or null.</summary>
-        /// <summary>How many players are in the room, this one included.</summary>
-
         public static T Find<T>(uint rawId) where T : Component => WorldBridge.Find<T>(rawId);
 
         /// <summary>

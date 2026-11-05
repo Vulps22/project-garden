@@ -33,6 +33,9 @@ namespace Vulps.GrowAGarden
 
         private static bool _sessionAnnounced;
 
+        /// <summary>Raised by one every time Vulps says a build was uploaded, so the log says which build is running.</summary>
+        public const int BUILD = 2;
+
         /// <summary>
         /// Prints one banner at the top of this run's log, once.
         ///
@@ -44,9 +47,6 @@ namespace Vulps.GrowAGarden
         ///
         /// Idempotent, so wiring it to more than one manager is harmless.
         /// </summary>
-        /// <summary>Raised by one every time Vulps says a build was uploaded, so the log says which build is running.</summary>
-        public const int BUILD = 2;
-
         public static void BeginSession()
         {
             if (_sessionAnnounced) return;
