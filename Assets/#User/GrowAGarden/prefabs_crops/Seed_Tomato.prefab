@@ -26,6 +26,7 @@ GameObject:
   - component: {fileID: 1030967210836959154}
   - component: {fileID: 6429525132429869011}
   - component: {fileID: 127057365816403979}
+  - component: {fileID: 8223991759139723314}
   m_Layer: 7
   m_Name: Seed_Tomato
   m_TagString: Untagged
@@ -499,6 +500,19 @@ MonoBehaviour:
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
+--- !u!114 &8223991759139723314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: seed.tomato
 --- !u!1001 &1442449882710040734
 PrefabInstance:
   m_ObjectHideFlags: 0

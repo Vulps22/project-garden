@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 1904810602212056260}
   - component: {fileID: 6375846277293799979}
   - component: {fileID: 6769623580119517544}
+  - component: {fileID: 563918620672179132}
   m_Layer: 7
   m_Name: Produce_Corn
   m_TagString: Untagged
@@ -475,6 +476,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.048193157, y: 0.13500887, z: 0.038262147}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &563918620672179132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969558867835806848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: crop.corn
 --- !u!1001 &3870581374204517727
 PrefabInstance:
   m_ObjectHideFlags: 0

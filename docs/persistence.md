@@ -48,3 +48,7 @@ own backend, behind an opt-in account.
 `warehouse: player_id, socket_index, item_id`: one item per shelf socket, the item by its stable string id, and the
 unlock a flag on the account.
 
+**Item ids exist** (2026-11-05): `Interaction/ItemIdentity`, a field typed on every carryable prefab (Vulps): `seed.<crop>`,
+`crop.<crop>` (crop as in `SeedDefinition.seedId`, e.g. `seed.spotlight_tulip`) and `item.<name>` (`item.deed`,
+`item.blank_scroll`, `item.splif`, `item.grow_wand`, `item.sps_receiver`). Never change one once players have stored it.
+The stock table already carries them, so the stall and the master check a seed is the kind they expect ([[shop]]).

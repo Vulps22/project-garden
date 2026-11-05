@@ -52,6 +52,25 @@ namespace Vulps.GrowAGarden
         public string OwnerId { get; private set; }
 
         public uint NetworkId => networkBridge?.Object == null ? _spawnedId : networkBridge.Object.Id.Raw;
+
+        /// <summary>What kind of seed this is ("seed.tomato"), from its prefab's ItemIdentity; empty if it has none.</summary>
+        public string ItemId => _itemId ??= ItemIdentity.Of(this);
+        private string _itemId;
+
+        /// <summary>
+        /// Left over from a stall the table has moved on to another seed: the client simulating it ends it. Asked whenever the
+        /// table changes, this client takes over simulating it, its state arrives or a hand lets go, so one nobody simulates
+        /// goes as soon as someone does. Never while held: a purchase may be under way.
+        /// </summary>
+        public void CheckSuperseded()
+        {
+            if (IsDiscarded || IsBought || !InShop || IsHeld || _grabber.Exists) return;
+            if (!HasLocalAuthority || !ShopKeeper.IsSuperseded(this)) return;
+            Logger.Info($"CheckSuperseded() '{gameObject.name}' — seed {NetworkId} '{ItemId}' is left over at {Stall}; ending it");
+            IsDiscarded = true;
+            ForceRelease();
+            WorldManager.DespawnIfStateAuthority(networkBridge.Object);
+        }
         private uint _spawnedId;   // kept from the spawn, so the id is still known while the object is being destroyed
         public NetworkObject PlantPrefab => _plantPrefab;
         public bool CanBePlanted => IsBought && !InShop;
@@ -185,6 +204,7 @@ namespace Vulps.GrowAGarden
         private void OnStateAuthorityChanged(bool hasAuthority)
         {
             if (hasAuthority && PlayerManager.IsMaster) broadcastState();
+            if (hasAuthority) CheckSuperseded();
         }
 
         /// <summary>
@@ -445,6 +465,7 @@ namespace Vulps.GrowAGarden
                     // client, so raising here lets AuthorityController reclaim a shop seed the
                     // moment it leaves a player's hand.
                     LifecycleChanged?.Invoke();
+                    if (!hasGrabber) CheckSuperseded();
                     break;
                 case SeedMessageType.purchaseRequest:
                     ShopKeeper.OnPurchaseRequested(this);
@@ -481,6 +502,7 @@ namespace Vulps.GrowAGarden
 
             _grabInteractable.enabled = true;
             LifecycleChanged?.Invoke();
+            CheckSuperseded();
         }
 
         public void SetGrabEnabled(bool enabled)

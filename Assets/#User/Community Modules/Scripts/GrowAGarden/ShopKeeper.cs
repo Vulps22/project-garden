@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 using Vulps.GrowAGarden.Economy;
+using Vulps.GrowAGarden.Interaction;
 using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden
@@ -37,6 +38,7 @@ namespace Vulps.GrowAGarden
         private static ShopKeeper _instance;
         private static readonly Dictionary<StallId, uint> _stock = new Dictionary<StallId, uint>();   // the fact: stall → seed's network id
         private static readonly Dictionary<uint, StallId> _stallOf = new Dictionary<uint, StallId>();
+        private static readonly Dictionary<StallId, string> _stockItem = new Dictionary<StallId, string>();   // what kind each stall's stock is
         private static readonly HashSet<StallId> _taken = new HashSet<StallId>();
         private static readonly Dictionary<StallId, Action> _watchers = new Dictionary<StallId, Action>();
         private static bool _hasTable;   // this client has the master's table: until then an empty stall may only look stocked-elsewhere
@@ -52,7 +54,38 @@ namespace Vulps.GrowAGarden
         public static event Action StockChanged;
 
         /// <summary>The seed stocking a stall, or null: none, or not spawned on this client yet.</summary>
-        public static Seed StockAt(StallId stall) => _stock.TryGetValue(stall, out uint id) ? SeedById(id) : null;
+        public static Seed StockAt(StallId stall)
+        {
+            if (!_stock.TryGetValue(stall, out uint id)) return null;
+            Seed seed = SeedById(id);
+            return seed != null && IsExpectedKind(stall, seed) ? seed : null;
+        }
+
+        /// <summary>The kind the table says a stall's stock is ("seed.tomato"), or empty if unknown.</summary>
+        public static string ItemAt(StallId stall) => _stockItem.TryGetValue(stall, out string item) ? item : string.Empty;
+
+        private static bool IsExpectedKind(StallId stall, Seed seed)
+        {
+            string expected = ItemAt(stall);
+            return expected.Length == 0 || expected == seed.ItemId;
+        }
+
+        /// <summary>
+        /// Whether the table has moved this seed's stall on to a different seed: it is left over (an old cycle's stock, or a stall
+        /// restocked while it was away). An empty stall is not enough, since a new seed can arrive before the table names it.
+        /// </summary>
+        public static bool IsSuperseded(Seed seed)
+        {
+            if (seed == null || !seed.HasStall || !HasTable) return false;
+            return _stock.TryGetValue(seed.Stall, out uint id) && id != seed.NetworkId;
+        }
+
+        /// <summary>Every seed on this client recorded against a stall, other than its current stock, checks whether it is left over.</summary>
+        private static void CheckLeftovers(StallId stall)
+        {
+            foreach (Seed seed in new List<Seed>(_arrived.Values))
+                if (seed != null && seed.HasStall && seed.Stall.Equals(stall)) seed.CheckSuperseded();
+        }
 
         private static Seed SeedById(uint id) =>
             _arrived.TryGetValue(id, out Seed seed) && seed != null ? seed : WorldManager.Find<Seed>(id);
@@ -126,6 +159,7 @@ namespace Vulps.GrowAGarden
         public static void OnSeedGone(Seed seed)
         {
             _asked.Remove(seed);
+            if (seed != null && _arrived.TryGetValue(seed.NetworkId, out Seed known) && known == seed) _arrived.Remove(seed.NetworkId);
             if (_instance == null || seed == null || !PlayerManager.IsMaster) return;
             if (!_stallOf.TryGetValue(seed.NetworkId, out StallId stall)) return;
             _instance.SendEmptied(stall, seed.NetworkId);
@@ -137,6 +171,21 @@ namespace Vulps.GrowAGarden
             if (seed == null || seed.IsBought || !seed.InShop) return;
             _asked.Add(seed);
             if (_instance == null || !PlayerManager.IsMaster) return;
+            if (seed.HasStall && _stock.TryGetValue(seed.Stall, out uint stocked) && stocked == seed.NetworkId && !IsExpectedKind(seed.Stall, seed))
+            {
+                // The table's id now names a different kind of seed: discard this one and empty the stall, which asks for its real stock.
+                Logger.Warn($"OnPurchaseRequested() 'ShopKeeper' — seed {seed.NetworkId} is '{seed.ItemId}', but {seed.Stall} should hold '{ItemAt(seed.Stall)}'; discarding it and restocking");
+                seed.RequestDiscard();
+                _instance.SendEmptied(seed.Stall, seed.NetworkId);
+                return;
+            }
+            if (IsSuperseded(seed))
+            {
+                // Left over from an earlier stock: never sold, discarded; the stall already has its real stock.
+                Logger.Warn($"OnPurchaseRequested() 'ShopKeeper' — seed {seed.NetworkId} '{seed.ItemId}' is left over at {seed.Stall}, which holds {_stock[seed.Stall]} '{ItemAt(seed.Stall)}'; discarding it");
+                seed.RequestDiscard();
+                return;
+            }
             if (!seed.HasStall || !_stock.TryGetValue(seed.Stall, out uint id) || id != seed.NetworkId)
             {
                 // Said out loud: a dropped request leaves the seed in the buyer's hand, unbought and unplantable.
@@ -152,6 +201,7 @@ namespace Vulps.GrowAGarden
             _hasTable = false;
             _stock.Clear();
             _stallOf.Clear();
+            _stockItem.Clear();
             _arrived.Clear();
             _taken.Clear();
             _watchers.Clear();
@@ -186,6 +236,7 @@ namespace Vulps.GrowAGarden
             if (_instance == this) _instance = null;
             _stock.Clear();
             _stallOf.Clear();
+            _stockItem.Clear();
             _arrived.Clear();
             _taken.Clear();
             _watchers.Clear();
@@ -289,11 +340,15 @@ namespace Vulps.GrowAGarden
             Logger.Info($"OnStockRequested() '{gameObject.name}' — stocked {stall} with '{definition.seedId}' at {position}");
             seed.PlaceInShop(position, rotation);
             // Into the master's own table at once, so a second ask before the message loops back is ignored.
+            string item = seed.ItemId;
+            if (item.Length == 0) Logger.Warn($"OnStockRequested() '{gameObject.name}' — '{spawned.name}' has no ItemIdentity; its kind cannot be checked");
             _stock[stall] = spawned.Id.Raw;
             _stallOf[spawned.Id.Raw] = stall;
-            var writer = new BytesWriter(StallId.Size + BytesWriter.IntSize);
+            _stockItem[stall] = item;
+            var writer = new BytesWriter(StallId.Size + BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(item));
             stall.Write(writer);
             writer.AddInt((int)spawned.Id.Raw);
+            writer.AddAutoString(item);
             _bridge.SendToAll(STOCKED_ID, writer.Data);
         }
 
@@ -362,10 +417,14 @@ namespace Vulps.GrowAGarden
             var reader = new BytesReader(data);
             StallId stall = StallId.Read(reader);
             uint id = (uint)reader.NextInt();
-            if (_stock.TryGetValue(stall, out uint old) && old != id) { _stallOf.Remove(old); _arrived.Remove(old); }
+            string item = reader.NextAutoString();
+            if (_stock.TryGetValue(stall, out uint old) && old != id) _stallOf.Remove(old);
             _stock[stall] = id;
             _stallOf[id] = stall;
+            _stockItem[stall] = item;
             SeedById(id)?.ApplyStall(stall);   // not spawned here yet: OnSeedSpawned completes it
+            Logger.Info($"ApplyStocked() 'ShopKeeper' — {stall} stocked with seed {id} '{item}'");
+            CheckLeftovers(stall);
             Raise(stall);
         }
 
@@ -377,7 +436,7 @@ namespace Vulps.GrowAGarden
             if (!_stock.TryGetValue(stall, out uint id) || id != seedId) return;
             _stock.Remove(stall);
             _stallOf.Remove(id);
-            _arrived.Remove(id);
+            _stockItem.Remove(stall);
             Raise(stall);
         }
 
@@ -385,12 +444,16 @@ namespace Vulps.GrowAGarden
         private void SendTable()
         {
             if (!PlayerManager.IsMaster || !_bridge.CanSend) return;
-            var writer = new BytesWriter(BytesWriter.IntSize + _stock.Count * (StallId.Size + BytesWriter.IntSize));
+            int size = BytesWriter.IntSize;
+            foreach (KeyValuePair<StallId, uint> pair in _stock)
+                size += StallId.Size + BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(ItemAt(pair.Key));
+            var writer = new BytesWriter(size);
             writer.AddInt(_stock.Count);
             foreach (KeyValuePair<StallId, uint> pair in _stock)
             {
                 pair.Key.Write(writer);
                 writer.AddInt((int)pair.Value);
+                writer.AddAutoString(ItemAt(pair.Key));
             }
             _bridge.SendToAll(TABLE_ID, writer.Data);
         }
@@ -401,15 +464,18 @@ namespace Vulps.GrowAGarden
             int count = reader.NextInt();
             _stock.Clear();
             _stallOf.Clear();
+            _stockItem.Clear();
             for (int i = 0; i < count; i++)
             {
                 StallId stall = StallId.Read(reader);
                 uint id = (uint)reader.NextInt();
                 _stock[stall] = id;
                 _stallOf[id] = stall;
+                _stockItem[stall] = reader.NextAutoString();
                 SeedById(id)?.ApplyStall(stall);
             }
             _hasTable = true;
+            foreach (Seed seed in new List<Seed>(_arrived.Values)) seed?.CheckSuperseded();
             RaiseAll();   // every stall looks again: an empty one asks
         }
 
@@ -430,6 +496,7 @@ namespace Vulps.GrowAGarden
         {
             _stock.Clear();
             _stallOf.Clear();
+            _stockItem.Clear();
             _taken.Clear();
             _hasTable = true;
             Recycled?.Invoke();

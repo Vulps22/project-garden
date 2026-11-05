@@ -227,6 +227,7 @@ GameObject:
   - component: {fileID: 7259190285203164959}
   - component: {fileID: 6429525132429869011}
   - component: {fileID: 6272892565872931044}
+  - component: {fileID: 6266490516465943178}
   m_Layer: 7
   m_Name: GrowWand
   m_TagString: Untagged
@@ -664,3 +665,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6c9c26ce35c32290b54d07368cc2ce2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.DevTools.GrowWand
+--- !u!114 &6266490516465943178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: item.grow_wand

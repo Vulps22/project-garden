@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 7876869046359010860}
   - component: {fileID: 4179585410284388070}
   - component: {fileID: 8628774571008810063}
+  - component: {fileID: 5646464218968926519}
   m_Layer: 7
   m_Name: Produce_Pumpkin
   m_TagString: Untagged
@@ -476,6 +477,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
+--- !u!114 &5646464218968926519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4124003288883198523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: crop.pumpkin
 --- !u!1001 &6041345796280616393
 PrefabInstance:
   m_ObjectHideFlags: 0

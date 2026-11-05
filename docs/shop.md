@@ -47,17 +47,27 @@ in-world. The shared clock and restock timer: compiles clean, untested in-world.
   stalls is in [[crops#Balance|crops → Balance]]. The seed is spawned at the pose (`Seed.PlaceInShop`).
 - **Which seed is a stall's stock is the master's fact**, `ShopKeeper`'s table of stall → seed network id, sent on
   SceneManager's messenger (message ids 16–19):
-  - **stocked** (16): stall and seed id, when the master stocks it;
+  - **stocked** (16): stall, seed id and the seed's item id ("seed.tomato"), when the master stocks it;
   - **emptied** (17): stall and seed id, when it is sold or its seed goes; applied only if that seed is still the
     stall's, so a late one never empties the stall's next stock;
-  - **table** (18): the whole table, to a late joiner (after the sold-out list) and from a new master;
+  - **table** (18): the whole table, item ids included, to a late joiner (after the sold-out list) and from a new master;
   - **table request** (19): a joiner asks once its own messenger can talk, because the master's push on the join can
     arrive before the joiner's scene objects are attached.
 
   Every client mirrors it and decides nothing from it. A seed and its "stocked" message arrive in either order;
   whichever comes second completes the match (`ShopKeeper.OnSeedSpawned`, `Seed.ApplyStall`). Every seed is kept by
-  id as it spawns (`ShopKeeper._arrived`) and looked up there before the runner, which may not find a seed from inside
-  its own spawn (2026-11-04, untested; [[playtest-2026-11-04]] item 7). A seed that has just
+  id from its spawn until it is destroyed (`ShopKeeper._arrived`) and looked up there before the runner, which may not
+  find a seed from inside its own spawn. A stall takes a seed only if it is the kind the table names
+  (`Interaction/ItemIdentity`, [[persistence]]).
+- **A left-over seed ends itself** (2026-11-05, built, untested; [[playtest-2026-11-04]] items 7–8). A seed whose stall
+  the table has moved on to a different seed (an old cycle's stock the master could not find to discard, or a stall
+  restocked while its island was unloaded) is left over. Every client can tell from the table it mirrors, so nothing is
+  sent: the client simulating it despawns it when the table changes, when it takes over simulating it, when its state
+  arrives or when a hand lets go (`Seed.CheckSuperseded`, `ShopKeeper.IsSuperseded`). One nobody simulates goes the
+  moment someone in its sector does. An empty stall alone is not enough (a new seed can arrive before the table names
+  it), and a held seed is left alone (a purchase may be under way). If a purchase still reaches the master for one, it
+  is discarded, not sold; a seed whose id names the stall's stock but whose kind is wrong is discarded and the stall
+  emptied, so it asks for its real stock. A seed that has just
   spawned on a proxy asks its owner for its state (`SeedMessageType.stateRequest`), so nothing is re-sent on a timer.
 - **Each stall listens to its own stall** (`ShopKeeper.Watch`): it adopts what the table says and asks when empty. No
   per-frame lookup. The Almanac's stall count listens to `ShopKeeper.StockChanged`.

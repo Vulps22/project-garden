@@ -24,6 +24,7 @@ GameObject:
   - component: {fileID: 8680884562149606297}
   - component: {fileID: 1904810602212056260}
   - component: {fileID: 4145173503899029008}
+  - component: {fileID: 6277822623143207833}
   m_Layer: 7
   m_Name: Produce_Tomato
   m_TagString: Untagged
@@ -454,6 +455,19 @@ MonoBehaviour:
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
+--- !u!114 &6277822623143207833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969558867835806848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: crop.tomato
 --- !u!1001 &5619855331439353111
 PrefabInstance:
   m_ObjectHideFlags: 0

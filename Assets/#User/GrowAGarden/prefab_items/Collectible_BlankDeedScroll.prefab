@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 7259190285203164959}
   - component: {fileID: 3056815196403952400}
   - component: {fileID: 6429525132429869011}
+  - component: {fileID: 3660997867104962404}
   m_Layer: 7
   m_Name: Collectible_BlankDeedScroll
   m_TagString: Untagged
@@ -463,6 +464,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
+--- !u!114 &3660997867104962404
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: item.blank_scroll
 --- !u!1001 &3316487622308164166
 PrefabInstance:
   m_ObjectHideFlags: 0

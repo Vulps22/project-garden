@@ -117,6 +117,7 @@ GameObject:
   - component: {fileID: 5890289447934975146}
   - component: {fileID: 3172172205824321995}
   - component: {fileID: 8267328922974447784}
+  - component: {fileID: 2909483912772554496}
   m_Layer: 7
   m_Name: Produce_WeedBloom
   m_TagString: Untagged
@@ -599,3 +600,16 @@ MonoBehaviour:
   _seconds: 180
   _mouthRadius: 0.12
   _dwellSeconds: 0.5
+--- !u!114 &2909483912772554496
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4124003288883198523}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: crop.weed
