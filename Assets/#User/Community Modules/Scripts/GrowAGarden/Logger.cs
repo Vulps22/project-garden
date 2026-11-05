@@ -44,12 +44,15 @@ namespace Vulps.GrowAGarden
         ///
         /// Idempotent, so wiring it to more than one manager is harmless.
         /// </summary>
+        /// <summary>Raised by one every time Vulps says a build was uploaded, so the log says which build is running.</summary>
+        public const int BUILD = 1;
+
         public static void BeginSession()
         {
             if (_sessionAnnounced) return;
             _sessionAnnounced = true;
 
-            Debug.Log($"[GrowAGarden] Logging Session Started {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            Debug.Log($"[GrowAGarden] Logging Session Started {System.DateTime.Now:yyyy-MM-dd HH:mm:ss} build {BUILD}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

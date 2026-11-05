@@ -1982,7 +1982,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: c578d2cd28dafead0a5adb6811f61db1, type: 3}
-  LastBuildSizeBytes: 87618394
+  LastBuildSizeBytes: 87649116
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -2010,7 +2010,7 @@ MonoBehaviour:
     Free:
       Count: 4
       MaxCount: 10
-      AvailableSize: 211144886
+      AvailableSize: 211114164
     Paid:
       Entries: []
   OwnedTokens: []
