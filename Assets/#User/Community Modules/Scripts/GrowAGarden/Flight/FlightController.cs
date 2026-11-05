@@ -33,7 +33,7 @@ namespace Vulps.GrowAGarden.Flight
 
         [Tooltip("Layers that count as solid world. Touching any of them suspends flight and hands " +
                  "the player back to Somnium's own locomotion.")]
-        [SerializeField] private LayerMask _terrainMask = ~0;
+        [SerializeField] private LayerMask _terrainMask = ~(1 << 7);   // all but PhysicalObject: carryables and the VR hands
 
         [Tooltip("Radius of the contact test around the player. Generous on purpose — this is " +
                  "'am I touching the island at all', not 'am I stood on it'.")]

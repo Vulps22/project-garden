@@ -26,7 +26,7 @@ GameObject:
   - component: {fileID: 1030967210836959154}
   - component: {fileID: 6429525132429869011}
   - component: {fileID: 1123348352221554430}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Seed_Eggplant
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -485,11 +485,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.EggplantSeed
   seedId: eggplant
   displayName: Eggplant
+  tagline: did someone say SPS? ;)
+  description: 'Fruits three times on three branches: nine to sell from one seed.
+    Some say it has other uses.'
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4360997998222114339}
-  spawnWeight: 0.3
-  buyPrice: 45
-  sellValue: 14
+  spawnWeight: 0.08
+  buyPrice: 90
+  sellValue: 50
   harvestCount: 3
+  fruitPerPlant: 9
+  upgradeBonus: 0
   growthDuration: 40
   ripenDuration: 25
   witherDuration: 20
@@ -504,6 +510,10 @@ PrefabInstance:
     - target: {fileID: 1000012171661116, guid: 97c7589824dbbb24cbc2b95a9345ebb1, type: 3}
       propertyPath: m_Name
       value: Eggplant_Plant
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000012171661116, guid: 97c7589824dbbb24cbc2b95a9345ebb1, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000012227641834, guid: 97c7589824dbbb24cbc2b95a9345ebb1, type: 3}
       propertyPath: m_LocalScale.x

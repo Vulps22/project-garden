@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 18352426254909569}
   - component: {fileID: 5254453766289378864}
   - component: {fileID: 9058939629678535271}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Ring
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -99,7 +99,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6649347865896807956}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SPS_Target
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -145,7 +145,7 @@ GameObject:
   - component: {fileID: 1030967210836959154}
   - component: {fileID: 7259190285203164959}
   - component: {fileID: 6429525132429869011}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SpsReceiver
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -557,6 +557,7 @@ MonoBehaviour:
   displayName: Splif
   networkBridge: {fileID: 1872664296389260042}
   _grabInteractable: {fileID: 7802783851439514983}
+  _startsInDispenser: 0
 --- !u!114 &6429525132429869011
 MonoBehaviour:
   m_ObjectHideFlags: 0

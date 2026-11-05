@@ -24,7 +24,7 @@ GameObject:
   - component: {fileID: 7960585365031774276}
   - component: {fileID: 8680884562149606297}
   - component: {fileID: 1904810602212056260}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Produce_Carrot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -330,12 +330,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
   seedId: carrot
   displayName: Carrot
+  tagline: quick to grow, quick to sell
+  description: 'The staple. Ready in seconds and always wanted at the sell point:
+    plant a row and keep the Thatch coming.'
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4360997998222114339, guid: 17da2c2486b0ce26894a3e906bc69759,
     type: 3}
   spawnWeight: 1
   buyPrice: 10
   sellValue: 15
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -459,6 +465,10 @@ PrefabInstance:
     - target: {fileID: 1000014111768446, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
       propertyPath: m_Name
       value: Carrot_Fruit
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000014111768446, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
       propertyPath: m_LocalScale.x

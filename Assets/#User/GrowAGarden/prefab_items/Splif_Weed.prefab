@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 18352426254909569}
   - component: {fileID: 5254453766289378864}
   - component: {fileID: 9058939629678535271}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Splif_Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -101,7 +101,7 @@ GameObject:
   - component: {fileID: 1234202748965299679}
   - component: {fileID: 4300929707346249854}
   - component: {fileID: 386580383119538278}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Smoke
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4951,7 +4951,7 @@ GameObject:
   - component: {fileID: 7259190285203164959}
   - component: {fileID: 6429525132429869011}
   - component: {fileID: 2108590752747057510}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Splif_Weed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5363,6 +5363,7 @@ MonoBehaviour:
   displayName: Splif
   networkBridge: {fileID: 1872664296389260042}
   _grabInteractable: {fileID: 7802783851439514983}
+  _startsInDispenser: 0
 --- !u!114 &6429525132429869011
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7749801349149800556}
   - component: {fileID: 755655057760413512}
   - component: {fileID: 8580076022536430328}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -123,7 +123,7 @@ GameObject:
   - component: {fileID: 4808154498675583977}
   - component: {fileID: 4540258874261951137}
   - component: {fileID: 107591139424456759}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Stick
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -227,7 +227,7 @@ GameObject:
   - component: {fileID: 7259190285203164959}
   - component: {fileID: 6429525132429869011}
   - component: {fileID: 6272892565872931044}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GrowWand
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -639,6 +639,7 @@ MonoBehaviour:
   displayName: Splif
   networkBridge: {fileID: 1872664296389260042}
   _grabInteractable: {fileID: 7802783851439514983}
+  _startsInDispenser: 0
 --- !u!114 &6429525132429869011
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -24,7 +24,7 @@ GameObject:
   - component: {fileID: 4797936732583150168}
   - component: {fileID: 3142100050312599064}
   - component: {fileID: 867802878126735032}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Produce_Turnip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -330,12 +330,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.TurnipSeed
   seedId: turnip
   displayName: Turnip
+  tagline: a little slower, a little richer
+  description: 'The carrot''s patient cousin: a few seconds longer in the ground,
+    a few more Thatch when you sell it.'
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4238708424358438818, guid: 56add58f7a7cd95a8ba2beceb37fdaec,
     type: 3}
   spawnWeight: 0.6
   buyPrice: 18
-  sellValue: 25
+  sellValue: 26
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 15
   ripenDuration: 1
   witherDuration: 0
@@ -459,6 +465,10 @@ PrefabInstance:
     - target: {fileID: 1000013984154124, guid: 9c0476b14d8c518499bcc0adff155ff8, type: 3}
       propertyPath: m_Name
       value: Turnip_Fruit
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000013984154124, guid: 9c0476b14d8c518499bcc0adff155ff8, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000014221411770, guid: 9c0476b14d8c518499bcc0adff155ff8, type: 3}
       propertyPath: m_LocalScale.x

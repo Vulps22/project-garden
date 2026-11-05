@@ -26,7 +26,7 @@ GameObject:
   - component: {fileID: 1030967210836959154}
   - component: {fileID: 6429525132429869011}
   - component: {fileID: 127057365816403979}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Seed_Tomato
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -485,11 +485,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.TomatoSeed
   seedId: tomato
   displayName: Tomato
+  tagline: fruits three times
+  description: A cheap plant that fruits three times before it withers, so one seed
+    keeps paying.
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4360997998222114339}
-  spawnWeight: 0.85
+  spawnWeight: 0.5
   buyPrice: 20
-  sellValue: 6
+  sellValue: 22
   harvestCount: 3
+  fruitPerPlant: 12
+  upgradeBonus: 0
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -504,6 +510,10 @@ PrefabInstance:
     - target: {fileID: 1000013832410636, guid: 323e5d46aea633c42bfadb66b36971d8, type: 3}
       propertyPath: m_Name
       value: Tomato_Plant
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000013832410636, guid: 323e5d46aea633c42bfadb66b36971d8, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000013634387022, guid: 323e5d46aea633c42bfadb66b36971d8, type: 3}
       propertyPath: m_LocalScale.x

@@ -632,7 +632,7 @@ MonoBehaviour:
     TroughMaxBonus: 15
   _terrainMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1475593079
   _contactRadius: 1
   _contactHeight: 1
   _armExtension: 0.55
