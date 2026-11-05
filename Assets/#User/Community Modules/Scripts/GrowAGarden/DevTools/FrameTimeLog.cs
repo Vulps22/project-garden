@@ -84,8 +84,7 @@ namespace Vulps.GrowAGarden.DevTools
         {
             string bubble = DetailManager.CurrentBubble;
             GameSettings settings = GameSettings.GetInstance();
-            int players = 0;
-            foreach (var _ in DeveloperAccess.Present) players++;
+            int players = Ownership.PlayerManager.PlayerCount;
             Vector3 at = PlayerTracker.HasPosition ? PlayerTracker.Position : Vector3.zero;
             return $"night={(Show.ShowManager.Night > 0f ? "yes" : "no")} bubble={(bubble ?? "none")} players={players} " +
                    $"draw={(settings != null ? settings.DrawDistance : GameSettings.DEFAULT_DRAW_DISTANCE):0}m tripping={(Shader.GetGlobalFloat("_GAG_Trip") > 0f ? "yes" : "no")} " +

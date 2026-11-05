@@ -68,6 +68,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// <summary>Whether the local player is the one who decides things for the world.</summary>
         public static bool IsMaster => PlayerBridge.IsMaster;
 
+        /// <summary>How many players Somnium has in the world, this one included.</summary>
+        public static int PlayerCount => PlayerBridge.PlayerCount;
+
         /// <summary>A remote peer entered the room and can now receive RPCs. Push it state.</summary>
         public static event System.Action OtherPlayerJoined
         {
