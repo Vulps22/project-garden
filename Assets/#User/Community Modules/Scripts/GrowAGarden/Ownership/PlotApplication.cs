@@ -32,11 +32,19 @@ namespace Vulps.GrowAGarden.Ownership
         private void Awake()
         {
             _networkBridge.MessageToAll += OnMessageToAll;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
         }
 
         private void OnDestroy()
         {
             if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
+        }
+
+        /// <summary>Fusion does not replay the announcement: a joiner, and so a later master, hears the scroll's Plot again.</summary>
+        private void OnOtherPlayerJoined()
+        {
+            if (PlayerManager.IsMaster && AssociatedPlotId != 0 && _networkBridge.CanSend) Associate(AssociatedPlotId);
         }
 
         /// <summary>The holder walked this scroll onto a Plot — see PlotApplicationZone. Every

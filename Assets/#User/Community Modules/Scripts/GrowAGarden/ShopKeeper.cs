@@ -61,6 +61,9 @@ namespace Vulps.GrowAGarden
         // holding nothing and its sign naming the seed before.
         private static readonly Dictionary<uint, Seed> _arrived = new Dictionary<uint, Seed>();
 
+        // Every client: purchases asked for and not yet bought, so a new master can decide what the old one left open.
+        private static readonly HashSet<Seed> _asked = new HashSet<Seed>();
+
         /// <summary>Whether the master has stocked a stall, whether or not the seed has reached this client yet.</summary>
         public static bool HasStock(StallId stall) => _stock.ContainsKey(stall);
 
@@ -122,6 +125,7 @@ namespace Vulps.GrowAGarden
         /// <summary>A seed is going. If it was a stall's unsold stock, the master says the stall is empty.</summary>
         public static void OnSeedGone(Seed seed)
         {
+            _asked.Remove(seed);
             if (_instance == null || seed == null || !PlayerManager.IsMaster) return;
             if (!_stallOf.TryGetValue(seed.NetworkId, out StallId stall)) return;
             _instance.SendEmptied(stall, seed.NetworkId);
@@ -130,8 +134,9 @@ namespace Vulps.GrowAGarden
         /// <summary>The holder asked to buy. Master only: it owns the economy.</summary>
         public static void OnPurchaseRequested(Seed seed)
         {
-            if (_instance == null || !PlayerManager.IsMaster) return;
             if (seed == null || seed.IsBought || !seed.InShop) return;
+            _asked.Add(seed);
+            if (_instance == null || !PlayerManager.IsMaster) return;
             if (!seed.HasStall || !_stock.TryGetValue(seed.Stall, out uint id) || id != seed.NetworkId)
             {
                 // Said out loud: a dropped request leaves the seed in the buyer's hand, unbought and unplantable.
@@ -150,6 +155,7 @@ namespace Vulps.GrowAGarden
             _arrived.Clear();
             _taken.Clear();
             _watchers.Clear();
+            _asked.Clear();
         }
 
         private void Start()
@@ -159,6 +165,8 @@ namespace Vulps.GrowAGarden
             _bridge.OnSpawned += AskForTable;
             PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
             PlayerManager.BecameWorldMaster += SendTable;
+            PlayerManager.BecameWorldMaster += DecideOpenPurchases;
+            Seed.AnyPurchased += OnAnyPurchased;
             WorldBridge.NetworkReady += FlushRequests;
             WorldBridge.NetworkReady += AskForTable;
             if (WorldBridge.IsNetworkReady) AskForTable();
@@ -170,6 +178,8 @@ namespace Vulps.GrowAGarden
             if (_bridge != null) { _bridge.MessageToAll -= OnMessageToAll; _bridge.OnSpawned -= FlushRequests; _bridge.OnSpawned -= AskForTable; }
             PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
             PlayerManager.BecameWorldMaster -= SendTable;
+            PlayerManager.BecameWorldMaster -= DecideOpenPurchases;
+            Seed.AnyPurchased -= OnAnyPurchased;
             WorldBridge.NetworkReady -= FlushRequests;
             WorldBridge.NetworkReady -= AskForTable;
             WorldManager.StockRecycled -= OnStockRecycled;
@@ -179,6 +189,7 @@ namespace Vulps.GrowAGarden
             _arrived.Clear();
             _taken.Clear();
             _watchers.Clear();
+            _asked.Clear();
             Recycled = null;
             StockChanged = null;
         }
@@ -463,6 +474,21 @@ namespace Vulps.GrowAGarden
         }
 
         // ── Deciding a sale (master) ──────────────────────────────────────────────
+
+        private static void OnAnyPurchased(Seed seed) => _asked.Remove(seed);
+
+        /// <summary>A new master decides the purchases the old one left open: asked for, still stock, still in a hand.</summary>
+        private void DecideOpenPurchases()
+        {
+            var open = new List<Seed>(_asked);
+            _asked.Clear();
+            foreach (Seed seed in open)
+            {
+                if (seed == null || seed.IsBought || !seed.InShop || !seed.GetGrabber().Exists) continue;
+                Logger.Info($"DecideOpenPurchases() '{gameObject.name}' — deciding '{seed.name}', left open by the last master");
+                OnPurchaseRequested(seed);
+            }
+        }
 
         /// <summary>
         /// Decides now if the buyer's grab and authority are already here, else when the seed's lifecycle next changes

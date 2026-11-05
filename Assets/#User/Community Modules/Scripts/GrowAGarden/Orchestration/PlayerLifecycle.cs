@@ -26,12 +26,25 @@ namespace Vulps.GrowAGarden.Orchestration
         {
             PlayerManager.PlayerJoined += OnPlayerJoined;
             PlayerManager.PlayerDestroyed += OnPlayerDestroyed;
+            EconomyManager.TableApplied += HoldThoseGone;
         }
 
         private void OnDisable()
         {
             PlayerManager.PlayerJoined -= OnPlayerJoined;
             PlayerManager.PlayerDestroyed -= OnPlayerDestroyed;
+            EconomyManager.TableApplied -= HoldThoseGone;
+        }
+
+        /// <summary>
+        /// A master that joined after someone left never saw them go, so would never clear up after them. The balance
+        /// table lists everyone not yet cleared: anyone in it who is not here starts a grace period on this master.
+        /// </summary>
+        private void HoldThoseGone()
+        {
+            if (!PlayerManager.IsMaster || EconomyManager.Instance == null) return;
+            foreach (string id in new System.Collections.Generic.List<string>(EconomyManager.Instance.PlayerIds))
+                PlayerManager.HoldDeparted(id);
         }
 
         private void OnPlayerJoined(string playerId, string playerName)

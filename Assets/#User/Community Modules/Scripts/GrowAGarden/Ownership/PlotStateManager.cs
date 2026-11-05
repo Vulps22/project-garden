@@ -271,7 +271,7 @@ namespace Vulps.GrowAGarden.Ownership
             for (int i = 0; i < _slots.Length; i++)
             {
                 if (!_slots[i].IsOccupied) continue;
-                _slots[i].Occupant?.Uproot();
+                if (_slots[i].Occupant is Object occupant && occupant != null) _slots[i].Occupant.Uproot();   // not one already destroyed
                 _slots[i].IsOccupied = false;
                 _slots[i].Occupant = null;
                 AnnounceOccupancy(i);
@@ -325,7 +325,11 @@ namespace Vulps.GrowAGarden.Ownership
                     var occReader = new BytesReader(data);
                     int occIndex = occReader.NextByte();
                     bool occupied = occReader.NextByte() == 1;
-                    if (occIndex >= 0 && occIndex < _slots.Length) _slots[occIndex].IsOccupied = occupied;
+                    if (occIndex >= 0 && occIndex < _slots.Length)
+                    {
+                        _slots[occIndex].IsOccupied = occupied;
+                        if (!occupied) _slots[occIndex].Occupant = null;
+                    }
                     break;
 
                 case PlotMessageType.PlantRequest:
@@ -349,6 +353,7 @@ namespace Vulps.GrowAGarden.Ownership
                         int bit = i % 8;
                         byte b = i / 8 == 0 ? fb0 : i / 8 == 1 ? fb1 : fb2;
                         _slots[i].IsOccupied = (b & (1 << bit)) != 0;
+                        if (!_slots[i].IsOccupied) _slots[i].Occupant = null;
                     }
                     break;
 

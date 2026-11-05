@@ -133,7 +133,10 @@ namespace Vulps.GrowAGarden.Ownership
                 case AuthorityRule.Sector:
                     Vector2Int sector = _hasSector ? _sector : SectorManager.SectorOf(transform.position);
                     int me = SectorManager.LocalPeerId;
-                    if (me < 0 || SectorManager.PickFor(sector) != me) return;
+                    int pick = SectorManager.PickFor(sector);
+                    // Nobody in its sector and nobody simulating it: the master keeps it, so it still has state to send joiners.
+                    if (pick < 0) { if (PlayerManager.IsMaster && obj.StateAuthority.IsNone) break; return; }
+                    if (me < 0 || pick != me) return;
                     if (!obj.StateAuthority.IsNone && SectorManager.IsPeerIn(obj.StateAuthority.PlayerId, sector)) return;
                     // Never take it from a player who has not said where they are yet: they may be holding it.
                     if (!obj.StateAuthority.IsNone && !SectorManager.IsKnownPeer(obj.StateAuthority.PlayerId)) return;

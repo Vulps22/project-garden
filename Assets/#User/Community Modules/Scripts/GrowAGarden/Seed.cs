@@ -191,10 +191,13 @@ namespace Vulps.GrowAGarden
         /// Spawned on this client. The owner's state sent at the moment of spawning can reach a proxy before the object
         /// does, so a proxy asks the owner for it now; and if the stock table already names this seed, it takes its stall.
         /// </summary>
+        // This client holds the real state: it spawned this, or a state sync has arrived. A blank copy is never broadcast.
+        private bool _stateKnown;
+
         private void OnSpawned()
         {
             _spawnedId = networkBridge.Object.Id.Raw;
-            if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
+            if (networkBridge.Object.HasStateAuthority) { _stateKnown = true; LifecycleChanged?.Invoke(); }
             else if (CanSendRpc) networkBridge.SendToController((byte)SeedMessageType.stateRequest, new byte[0]);
             ShopKeeper.OnSeedSpawned(this);
         }
@@ -411,7 +414,7 @@ namespace Vulps.GrowAGarden
         public void broadcastState()
         {
             if (networkBridge.Object == null) return;
-            if (!networkBridge.Object.HasStateAuthority) return;
+            if (!networkBridge.Object.HasStateAuthority || !_stateKnown) return;
 
             string owner = OwnerId ?? string.Empty;
             int size = BytesWriter.ByteSize * 3 + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner) + StallId.Size;
@@ -464,6 +467,7 @@ namespace Vulps.GrowAGarden
         private void OnMessageToProxies(byte id, byte[] data)
         {
             if ((SeedMessageType)id != SeedMessageType.stateSync) return;
+            _stateKnown = true;
 
             BytesReader reader = new BytesReader(data);
             InShop = reader.NextByte() == 1;

@@ -193,8 +193,12 @@ namespace Vulps.GrowAGarden.Crops
         }
 
         /// <summary>The owner's state sent at the moment of spawning can reach a proxy before the object does: a proxy asks for it.</summary>
+        // This client holds the real state: it spawned this, or a state sync has arrived. A blank copy is never broadcast.
+        private bool _stateKnown;
+
         private void OnSpawned()
         {
+            if (networkBridge.Object != null && networkBridge.Object.HasStateAuthority) _stateKnown = true;
             ApplyRipeness();
             RaiseLifecycleChanged();
             NetworkObject obj = networkBridge.Object;
@@ -368,13 +372,14 @@ namespace Vulps.GrowAGarden.Crops
         public void broadcastState()
         {
             if (networkBridge == null || networkBridge.Object == null) return;
-            if (!networkBridge.Object.HasStateAuthority) return;
+            if (!networkBridge.Object.HasStateAuthority || !_stateKnown) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 3 + BytesWriter.ByteSize);
+            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 3 + BytesWriter.ByteSize * 2);
             writer.AddInt((int)(_ripenTimestamp >> 32));
             writer.AddInt((int)(_ripenTimestamp & 0xFFFFFFFFL));
             writer.AddByte(IsHarvested ? (byte)1 : (byte)0);
             writer.AddInt((int)_grownInId);
+            writer.AddByte((byte)(_slotIndex < 0 ? 255 : _slotIndex));   // the slot it stands in, for a new master to free
             networkBridge.SendToProxies((byte)ProduceMessageType.stateSync, writer.Data);
         }
 
@@ -406,6 +411,7 @@ namespace Vulps.GrowAGarden.Crops
         private void OnMessageToProxies(byte id, byte[] data)
         {
             if ((ProduceMessageType)id != ProduceMessageType.stateSync) return;
+            _stateKnown = true;
 
             BytesReader reader = new BytesReader(data);
             long high = reader.NextInt();
@@ -415,6 +421,13 @@ namespace Vulps.GrowAGarden.Crops
             bool harvested = reader.NextByte() == 1;
             uint grownInId = (uint)reader.NextInt();
             if (grownInId != _grownInId) { _grownInId = grownInId; _grownIn = null; }
+            int slotIndex = reader.NextByte();
+            if (!harvested && !IsHarvested && slotIndex != 255 && _plot == null && GrownIn != null)
+            {
+                _plot = GrownIn;
+                _slotIndex = slotIndex;
+                _plot.SetOccupant(_slotIndex, this);
+            }
             if (harvested && !IsHarvested) ApplyHarvested();
 
             ApplyRipeness();

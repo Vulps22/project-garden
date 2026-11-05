@@ -10,6 +10,8 @@ namespace Vulps.GrowAGarden.Economy
     public class EconomyManager : MonoBehaviour
     {
         private const byte MESSAGE_ID = 0;
+        private const byte TABLE_REQUEST_ID = 22;   // payload: 0 a joiner asking the master, 1 a new master asking everyone
+        private const byte TABLE_OFFER_ID = 23;     // a peer's copy of the table, for a new master that never had it
 
         public static EconomyManager Instance;
         public static event Action<int, int> PlayerBalanceChanged;
@@ -20,6 +22,9 @@ namespace Vulps.GrowAGarden.Economy
 
         private Dictionary<string, PlayerBalance> _balances = new Dictionary<string, PlayerBalance>();
         private string _localPlayerId;
+
+        // A table has arrived, or this client opened it as the first master: until then it knows only its own row.
+        private bool _hasTable;
 
         private void Awake()
         {
@@ -36,14 +41,30 @@ namespace Vulps.GrowAGarden.Economy
         private void Start()
         {
             _bridge.MessageToAll += OnMessageToAll;
+            _bridge.OnSpawned += AskForTable;
             PlayerBridge.BecameWorldMaster += OnBecomeWorldMaster;
+            PlayerManager.OtherPlayerJoined += OnOtherPlayerJoined;
+            WorldBridge.NetworkReady += AskForTable;
+            if (WorldBridge.IsNetworkReady) AskForTable();
         }
 
         private void OnDestroy()
         {
-            _bridge.MessageToAll -= OnMessageToAll;
+            if (_bridge != null) { _bridge.MessageToAll -= OnMessageToAll; _bridge.OnSpawned -= AskForTable; }
             PlayerBridge.BecameWorldMaster -= OnBecomeWorldMaster;
+            PlayerManager.OtherPlayerJoined -= OnOtherPlayerJoined;
+            WorldBridge.NetworkReady -= AskForTable;
             PlayerManager.LocalPlayerJoined -= OnLocalPlayerJoined;
+        }
+
+        /// <summary>A joiner's board is filled by the master's push on the join, or by asking once its messenger can
+        /// talk: the push can arrive before the joiner's scene objects are attached, and is then lost.</summary>
+        private void OnOtherPlayerJoined() => BroadcastBalances();
+
+        private void AskForTable()
+        {
+            if (_hasTable || PlayerManager.IsMaster || _bridge == null || !_bridge.CanSend) return;
+            _bridge.SendToAll(TABLE_REQUEST_ID, new byte[] { 0 });
         }
 
         private void OnBecomeWorldMaster()
@@ -51,10 +72,14 @@ namespace Vulps.GrowAGarden.Economy
             StartCoroutine(BroadcastNextFrame());
         }
 
+        /// <summary>A new master that never received the table would wipe everyone's balances with its own row: it asks
+        /// the others for theirs instead, and broadcasts once one arrives (OnTableOffered).</summary>
         private IEnumerator BroadcastNextFrame()
         {
             yield return null;
-            BroadcastBalances();
+            if (_hasTable) { BroadcastBalances(); yield break; }
+            Logger.Warn($"BroadcastNextFrame() '{gameObject.name}' — master without the balance table; asking the others for it");
+            if (_bridge != null && _bridge.CanSend) _bridge.SendToAll(TABLE_REQUEST_ID, new byte[] { 1 });
         }
 
         private void OnLocalPlayerJoined(string playerId, string playerName)
@@ -62,7 +87,7 @@ namespace Vulps.GrowAGarden.Economy
             _localPlayerId = playerId;
             if (_balances.Count > 0) return;
             _balances.Add(playerId, new PlayerBalance(playerId, playerName, _startingBalance));
-            if (PlayerManager.IsMaster) BroadcastBalances();
+            if (PlayerManager.IsMaster) { _hasTable = true; BroadcastBalances(); }
         }
 
         /// <summary>
@@ -163,8 +188,12 @@ namespace Vulps.GrowAGarden.Economy
 
         private void BroadcastBalances()
         {
-            if (!PlayerManager.IsMaster) return;
+            if (!PlayerManager.IsMaster || _bridge == null || !_bridge.CanSend) return;
+            _bridge.SendToAll(MESSAGE_ID, WriteTable());
+        }
 
+        private byte[] WriteTable()
+        {
             int size = BytesWriter.ByteSize; // entry count
             foreach (var b in _balances.Values)
             {
@@ -182,17 +211,53 @@ namespace Vulps.GrowAGarden.Economy
                 writer.AddAutoString(b.GetPlayerName());
                 writer.AddInt(b.GetBalance());
             }
-
-            _bridge.SendToAll(MESSAGE_ID, writer.Data);
+            return writer.Data;
         }
 
         private void OnMessageToAll(byte id, byte[] data)
         {
-            if (id != MESSAGE_ID)
+            switch (id)
             {
-                return;
+                case MESSAGE_ID: ApplyTable(data); break;
+                case TABLE_REQUEST_ID: OnTableRequested(data); break;
+                case TABLE_OFFER_ID: OnTableOffered(data); break;
             }
+        }
 
+        /// <summary>The master answers a joiner; anyone holding the table answers a master that lacks it.</summary>
+        private void OnTableRequested(byte[] data)
+        {
+            if (PlayerManager.IsMaster) { if (_hasTable) BroadcastBalances(); return; }
+            bool fromNewMaster = data.Length > 0 && data[0] == 1;
+            if (fromNewMaster && _hasTable && _bridge.CanSend) _bridge.SendToAll(TABLE_OFFER_ID, WriteTable());
+        }
+
+        /// <summary>A peer's table reaching a master that lacked it: the first one overrides the master's own rows, which
+        /// were opened blank, and keeps any others; later offers add only what is still missing.</summary>
+        private void OnTableOffered(byte[] data)
+        {
+            if (!PlayerManager.IsMaster) return;
+            var reader = new BytesReader(data);
+            int count = reader.NextByte();
+            bool added = !_hasTable;
+            for (int i = 0; i < count; i++)
+            {
+                string playerId = reader.NextAutoString();
+                string playerName = reader.NextAutoString();
+                int balance = reader.NextInt();
+                if (!_hasTable || !_balances.ContainsKey(playerId))
+                {
+                    _balances[playerId] = new PlayerBalance(playerId, playerName, balance);
+                    added = true;
+                }
+            }
+            _hasTable = true;
+            if (added) BroadcastBalances();
+        }
+
+        private void ApplyTable(byte[] data)
+        {
+            _hasTable = true;
             PlayerBalance oldBalance = GetLocalPlayer();
 
             var reader = new BytesReader(data);
@@ -208,6 +273,7 @@ namespace Vulps.GrowAGarden.Economy
             }
 
             UpdateDisplay();
+            TableApplied?.Invoke();
 
             // Compare by value, not by reference. The rebuild above replaces every
             // PlayerBalance with a fresh instance, so a reference comparison is always
@@ -253,6 +319,12 @@ namespace Vulps.GrowAGarden.Economy
             _balances.TryGetValue(_localPlayerId, out PlayerBalance player);
             return player;
         }
+
+        /// <summary>Everyone with a balance: the players here, and those gone but inside their grace period.</summary>
+        public IEnumerable<string> PlayerIds => _balances.Keys;
+
+        /// <summary>Raised on every client when a balance table has been applied.</summary>
+        public static event Action TableApplied;
 
         /// <summary>Returns the balance for <paramref name="id"/>, or null if unknown.</summary>
         public PlayerBalance GetPlayer(string id)

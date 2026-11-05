@@ -278,6 +278,7 @@ namespace Vulps.GrowAGarden.Crops
 
             _plot = WorldManager.Find<PlotStateManager>(plotRawId);
             if (_plot == null) return;
+            _plot.SetOccupant(slotIndex, this);   // every client knows the occupant, so a new master can uproot it
             OnPlotKnown(_plot);
 
             _slotIndex = slotIndex;

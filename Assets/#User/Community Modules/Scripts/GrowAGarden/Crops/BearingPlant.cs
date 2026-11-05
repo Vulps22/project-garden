@@ -43,10 +43,43 @@ namespace Vulps.GrowAGarden.Crops
             }
         }
 
+        // Sockets whose produce this client listens to for its harvest: only the master hears Harvested.
+        private readonly System.Collections.Generic.HashSet<ProduceSlot> _watched = new System.Collections.Generic.HashSet<ProduceSlot>();
+
         protected override void Awake()
         {
             base.Awake();
             BuildSlots();
+            PlayerManager.BecameWorldMaster += OnBecameWorldMaster;
+        }
+
+        protected override void OnDestroy()
+        {
+            PlayerManager.BecameWorldMaster -= OnBecameWorldMaster;
+            base.OnDestroy();
+        }
+
+        /// <summary>A new master listens to what the old one bore; fruit taken in between counts as harvested now.</summary>
+        private void OnBecameWorldMaster()
+        {
+            foreach (ProduceSlot slot in _produceSlots)
+            {
+                if (slot.IsEmpty || _watched.Contains(slot)) continue;
+                Produce produce = FindProduce(slot.produceId);
+                if (produce == null || produce.IsHarvested)
+                {
+                    Logger.Info($"OnBecameWorldMaster() '{gameObject.name}' — socket's produce {slot.produceId} was taken during the handover");
+                    OnHarvested(slot);
+                    continue;
+                }
+                Watch(slot, produce);
+            }
+        }
+
+        private void Watch(ProduceSlot slot, Produce produce)
+        {
+            if (!_watched.Add(slot)) return;
+            produce.Harvested += () => OnHarvested(slot);
         }
 
         /// <summary>
@@ -100,9 +133,7 @@ namespace Vulps.GrowAGarden.Crops
 
                 produce.Init(null, -1, RipenStart(), _plot);
                 slot.produceId = produce.NetworkId;
-
-                ProduceSlot captured = slot;
-                produce.Harvested += () => OnHarvested(captured);
+                Watch(slot, produce);
             }
 
             broadcastState();
@@ -133,6 +164,7 @@ namespace Vulps.GrowAGarden.Crops
         {
             if (!PlayerManager.IsMaster) return;
 
+            _watched.Remove(slot);
             slot.produceId = 0;
             slot.harvestedCount++;
             broadcastState();
