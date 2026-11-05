@@ -20,11 +20,11 @@ namespace Vulps.GrowAGarden.Seeds
             tagline = "big, slow and worth it";
             description = "A long wait for one big fruit, and the best price a single crop fetches.";
             buyPrice = 60;
-            sellValue = 110;
+            sellValue = 75;           // pinned at every Garden: the reliable home crop, below anything found
             growthDuration = 60f;
             ripenDuration = 60f;
             witherDuration = 30f;
-            spawnWeight = 0.25f;     // the one you hope to find in a slot
+            spawnWeight = 0.25f;     // also an island find
         }
     }
 }

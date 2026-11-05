@@ -224,7 +224,7 @@ MonoBehaviour:
     type: 3}
   spawnWeight: 0.6
   buyPrice: 18
-  sellValue: 25
+  sellValue: 26
   harvestCount: 1
   growthDuration: 15
   ripenDuration: 1
@@ -265,9 +265,9 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: a1c91ca03235e59968ab65cd32060183, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: a86d10e2c8f4c55c8b34192c4a0aca82,
     type: 3}
-  spawnWeight: 0.45
-  buyPrice: 25
-  sellValue: 13
+  spawnWeight: 0.2
+  buyPrice: 30
+  sellValue: 55
   harvestCount: 1
   growthDuration: 20
   ripenDuration: 15
@@ -560,6 +560,7 @@ MonoBehaviour:
   - {fileID: 1401735099}
   - {fileID: 260359765}
   - {fileID: 924002264}
+  - {fileID: 1927546514}
   _recycleSeconds: 300
   _bridge: {fileID: 163550767}
 --- !u!114 &163550773
@@ -1048,8 +1049,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36de348d2947119119084433fcd3bfb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Almanac.AlmanacBook
-  _comingSoon:
-  - {fileID: 1927546514}
+  _comingSoon: []
 --- !u!114 &163550793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1468,7 +1468,7 @@ MonoBehaviour:
     type: 3}
   spawnWeight: 0.25
   buyPrice: 60
-  sellValue: 110
+  sellValue: 75
   harvestCount: 1
   growthDuration: 60
   ripenDuration: 60
@@ -1525,8 +1525,8 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9,
     type: 3}
-  spawnWeight: 0.1
-  buyPrice: 150
+  spawnWeight: 0.008
+  buyPrice: 600
   sellValue: 0
   harvestCount: 1
   growthDuration: 60
@@ -2788,9 +2788,9 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 9a36ef1a61593acd19d8ce46a5762306, type: 3}
   seedPrefab: {fileID: 7457805046529267251, guid: 8ddeee09c3e16693f8596a9c3899fd60,
     type: 3}
-  spawnWeight: 0.15
-  buyPrice: 80
-  sellValue: 30
+  spawnWeight: 0.02
+  buyPrice: 200
+  sellValue: 140
   harvestCount: 1
   growthDuration: 90
   ripenDuration: 60
@@ -8482,8 +8482,8 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0,
     type: 3}
-  spawnWeight: 0.2
-  buyPrice: 60
+  spawnWeight: 0.04
+  buyPrice: 250
   sellValue: 0
   harvestCount: 1
   growthDuration: 40
@@ -9337,9 +9337,9 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 022a2abc670dcd679801f31dfc803a58, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 20e6e5ec57a63b703aaa19524962ab34,
     type: 3}
-  spawnWeight: 0.85
+  spawnWeight: 0.5
   buyPrice: 20
-  sellValue: 6
+  sellValue: 22
   harvestCount: 3
   growthDuration: 20
   ripenDuration: 15
@@ -9762,9 +9762,9 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: ee2e574a4e4668158bb94f7416a04aeb, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 0f77a5bed1989f67aad91925e003cf70,
     type: 3}
-  spawnWeight: 0.3
-  buyPrice: 45
-  sellValue: 14
+  spawnWeight: 0.08
+  buyPrice: 90
+  sellValue: 50
   harvestCount: 3
   growthDuration: 40
   ripenDuration: 25
@@ -10892,8 +10892,8 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 7ed404b126f863c95b335d48c176984f, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 9272b2d1257d8fccf873eaf266c9bf67,
     type: 3}
-  spawnWeight: 0.12
-  buyPrice: 120
+  spawnWeight: 0.045
+  buyPrice: 400
   sellValue: 0
   harvestCount: 1
   growthDuration: 60

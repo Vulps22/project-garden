@@ -12,12 +12,12 @@ namespace Vulps.GrowAGarden.Seeds
             displayName = "Moonflower";
             tagline = "brings the night";
             description = "Grown, it beams into the sky and closes a black dome over the Garden, a light show to the screen's music. Grow two and the beams meet overhead.";
-            buyPrice = 150;
+            buyPrice = 600;
             sellValue = 0;           // an upgrade, not a crop
             growthDuration = 60f;
             ripenDuration = 0f;
             witherDuration = 0f;
-            spawnWeight = 0.1f;      // a rare find, and the Garden's night
+            spawnWeight = 0.008f;    // very rare: about one island stall in 100, and the Garden's night
         }
     }
 }

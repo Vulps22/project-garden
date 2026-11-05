@@ -12,12 +12,12 @@ namespace Vulps.GrowAGarden.Seeds
             displayName = "Spotlight Tulip";
             tagline = "a stage light for the Garden";
             description = "A stage light on a stem. It rises over the Garden and sweeps it in time with the music.";
-            buyPrice = 60;
+            buyPrice = 250;
             sellValue = 0;           // an upgrade, not a crop
             growthDuration = 40f;
             ripenDuration = 0f;
             witherDuration = 0f;
-            spawnWeight = 0.2f;      // uncommon: a light rig is a few of them
+            spawnWeight = 0.04f;     // rare: about one island stall in 22; a light rig is a few of them
         }
     }
 }
