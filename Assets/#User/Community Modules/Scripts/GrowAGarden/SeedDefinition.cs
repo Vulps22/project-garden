@@ -51,6 +51,10 @@ namespace Vulps.GrowAGarden
         [Tooltip("For an upgrade seed: the share of profit it adds to what its Plot grows once grown (0.05 is 5%). Set in Init().")]
         public float upgradeBonus;
 
+        [Header("Buff")]
+        [Tooltip("For a buffing seed: how many times bigger, and more profitable, a crop grown wholly under it is (docs/economy.md → Crop scale). Set in Init().")]
+        public float buffMultiplier = 1f;
+
         /// <summary>One fruit's profit: what it sells for less its share of the seed's price, never below 0.</summary>
         public float ProfitPerFruit => Mathf.Max(0f, sellValue - (float)buyPrice / Mathf.Max(1, fruitPerPlant));
 

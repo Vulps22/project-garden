@@ -55,7 +55,32 @@ kinds add up (all three: +42%).
   so the master that prices the sale knows it after a handover and after the fruit is picked. Each standing plant
   registers with its Plot on every client once it knows its Plot (`IPlotUpgrade`, `PlotStateManager.UpgradeBonus`);
   whether it is grown is read from the clock at the sale. Nothing new is sent.
-- Buffs and Yggdrasil are not built ([[roadmap]]).
+- Buffs are not built ([[roadmap]], [[yggdrasil]]).
+
+## Crop scale
+
+**Status (2026-11-06):** decided by Vulps; built, compiles clean, untested in-world.
+
+A buff multiplies a crop's size and its profit, in proportion to how much of its growing it spent under the buff.
+Every crop grows at scale 1; a buffing seed has its own multiplier, and Yggdrasil's is 20–30×, the endgame, given its
+rarity ([[yggdrasil]]).
+
+- **Counted at the sale** (Vulps), like the upgrade bonus: the crop carries how much buff it took while it grew, and
+  the sale works the value out from that and the upgrades.
+- **On profit, with the upgrade bonus** (Vulps): `(profit + upgrade bonus) × scale`.
+- **The fruit is drawn at its scale** (Vulps): a huge carrot that blocks your view is the fun of it.
+
+- **The scale** (Vulps, 2026-11-05): `floor(1 + (multiplier − 1) × share)`, share being the fraction of its growing
+  done under the buff. 10× for half its growing → 5.5 → 5×; none → 1×; all → 10×. Never less than no buff.
+- **Its growing** runs from planting for a rooted crop, and from being borne for a bearing one, to ripe.
+- **A sale pays** its price, plus the upgrade bonus, plus (profit + upgrade bonus) × (scale − 1), floored
+  (`Produce.SellValue`).
+- **Drawn at its scale, unfloored**, growing as it does (`Produce.CropScale`).
+
+> [!info] Networking
+> Each Plot keeps the buffs that have stood on it, on every client, after their source is gone
+> (`PlotStateManager.SetBuff`/`BuffScale`). The master stamps a crop's scale when it ripens, so it outlives the buff, a
+> handover and a late join: `Produce`'s state sync gained its growing start and the scale, appended.
 
 ## Selling
 

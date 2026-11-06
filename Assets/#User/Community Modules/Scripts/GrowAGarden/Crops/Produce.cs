@@ -36,7 +36,10 @@ namespace Vulps.GrowAGarden.Crops
         /// <summary>True once a player has taken this. Loose in the world from here on.</summary>
         public bool IsHarvested { get; private set; }
 
-        /// <summary>Its price, plus the share of its profit that its Plot's upgrades add at the moment of sale.</summary>
+        /// <summary>
+        /// Its price, plus the share of its profit that its Plot's upgrades add at the moment of sale, the profit and
+        /// that share then multiplied by its crop scale, floored (docs/economy.md → Crop scale).
+        /// </summary>
         public int SellValue
         {
             get
@@ -44,11 +47,36 @@ namespace Vulps.GrowAGarden.Crops
                 if (seedDefinition == null) return 0;
                 PlotStateManager grownIn = GrownIn;
                 float bonus = grownIn == null ? 0f : grownIn.UpgradeBonus;
+                float profit = seedDefinition.ProfitPerFruit;
                 // To the hundredth, then up: 7.01 → 8, 7.001 → 7.
-                int hundredths = Mathf.RoundToInt(bonus * seedDefinition.ProfitPerFruit * 100f);
-                return seedDefinition.sellValue + (hundredths + 99) / 100;
+                int hundredths = Mathf.RoundToInt(bonus * profit * 100f);
+                int upgrade = (hundredths + 99) / 100;
+                int scale = Mathf.Max(1, Mathf.FloorToInt(CropScale + 0.0001f));
+                return seedDefinition.sellValue + upgrade + Mathf.FloorToInt((scale - 1) * (profit + upgrade));
             }
         }
+
+        /// <summary>
+        /// How many times bigger and more profitable the buffs it grew under made it, unfloored: stamped by the master when
+        /// it ripens, worked out from its Plot's buffs until then (docs/economy.md → Crop scale).
+        /// </summary>
+        public float CropScale
+        {
+            get
+            {
+                if (_cropScale > 0f) return _cropScale;
+                PlotStateManager grownIn = GrownIn;
+                if (grownIn == null || _ripenTimestamp == 0) return 1f;
+                long from = GrowthStart;
+                return grownIn.BuffScale(from, RipeAt, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            }
+        }
+
+        // When its growing began: at planting for a rooted crop, when it was borne for a bearing one.
+        private long GrowthStart => _growthStart != 0 ? _growthStart : _ripenTimestamp;
+        private long RipeAt => _ripenTimestamp + (long)Mathf.Ceil(Mathf.Max(0.01f, seedDefinition == null ? 1f : seedDefinition.ripenDuration));
+        private long _growthStart;
+        private float _cropScale;   // 0 until the master stamps it
 
         /// <summary>The Plot it grew in, on every client and after it is picked; null for one that grew in none.</summary>
         private PlotStateManager GrownIn
@@ -229,8 +257,9 @@ namespace Vulps.GrowAGarden.Crops
         /// overloaded null then makes every `seedDefinition != null` read false, which is how a
         /// carrot came to sell for nothing while its ripening still looked correct by coincidence.
         /// </summary>
-        public void Init(PlotStateManager plot, int slotIndex, long ripenTimestamp, PlotStateManager grownIn = null)
+        public void Init(PlotStateManager plot, int slotIndex, long ripenTimestamp, PlotStateManager grownIn = null, long growthStart = 0)
         {
+            _growthStart = growthStart;
             _grownIn = grownIn;
             _grownInId = grownIn == null ? 0u : grownIn.NetworkId;
             if (seedDefinition == null)
@@ -246,6 +275,16 @@ namespace Vulps.GrowAGarden.Crops
         private void Update()
         {
             ApplyRipeness();
+            StampCropScale();
+        }
+
+        /// <summary>Ripe and still on its plant: the master fixes its crop scale, so it outlives the buffs it grew under.</summary>
+        private void StampCropScale()
+        {
+            if (_cropScale > 0f || IsHarvested || !IsRipe || !PlayerManager.IsMaster || !HasLocalAuthority) return;
+            _cropScale = CropScale;
+            if (_cropScale > 1f) Logger.Info($"StampCropScale() '{gameObject.name}' — grew under buffs: crop scale {_cropScale:F2}");
+            broadcastState();
         }
 
         /// <summary>The grow wand touched it. Whoever simulates it moves the ripening start back so it is ripe now, and says so.</summary>
@@ -287,7 +326,7 @@ namespace Vulps.GrowAGarden.Crops
         protected virtual void ApplyScale()
         {
             if (_bodyToScale == null || IsHarvested) return;
-            _bodyToScale.localScale = Vector3.one * Mathf.Max(0.001f, GetRipeness() * _maxScale);
+            _bodyToScale.localScale = Vector3.one * Mathf.Max(0.001f, GetRipeness() * _maxScale * CropScale);
         }
 
         private void SetGrabbable(bool grabbable)
@@ -374,12 +413,15 @@ namespace Vulps.GrowAGarden.Crops
             if (networkBridge == null || networkBridge.Object == null) return;
             if (!networkBridge.Object.HasStateAuthority || !_stateKnown) return;
 
-            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 3 + BytesWriter.ByteSize * 2);
+            BytesWriter writer = new BytesWriter(BytesWriter.IntSize * 5 + BytesWriter.ByteSize * 2 + BytesWriter.FloatSize);
             writer.AddInt((int)(_ripenTimestamp >> 32));
             writer.AddInt((int)(_ripenTimestamp & 0xFFFFFFFFL));
             writer.AddByte(IsHarvested ? (byte)1 : (byte)0);
             writer.AddInt((int)_grownInId);
             writer.AddByte((byte)(_slotIndex < 0 ? 255 : _slotIndex));   // the slot it stands in, for a new master to free
+            writer.AddInt((int)(_growthStart >> 32));
+            writer.AddInt((int)(_growthStart & 0xFFFFFFFFL));
+            writer.AddFloat(_cropScale);
             networkBridge.SendToProxies((byte)ProduceMessageType.stateSync, writer.Data);
         }
 
@@ -422,6 +464,10 @@ namespace Vulps.GrowAGarden.Crops
             uint grownInId = (uint)reader.NextInt();
             if (grownInId != _grownInId) { _grownInId = grownInId; _grownIn = null; }
             int slotIndex = reader.NextByte();
+            high = reader.NextInt();
+            low = (uint)reader.NextInt();
+            _growthStart = (high << 32) | low;
+            _cropScale = reader.NextFloat();
             if (!harvested && !IsHarvested && slotIndex != 255 && _plot == null && GrownIn != null)
             {
                 _plot = GrownIn;

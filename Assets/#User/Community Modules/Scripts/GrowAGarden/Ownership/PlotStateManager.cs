@@ -35,6 +35,30 @@ namespace Vulps.GrowAGarden.Ownership
         // Upgrades standing here, on every client: each registers itself once it knows its Plot.
         private readonly HashSet<IPlotUpgrade> _upgrades = new HashSet<IPlotUpgrade>();
 
+        // Buffs that have stood here, on every client, kept after their source is gone: a crop grown under one still knows.
+        private readonly Dictionary<object, (float multiplier, long start, long end)> _buffs = new Dictionary<object, (float, long, long)>();
+
+        /// <summary>A buff stands here from start until end (Unix seconds; end 0 while it is open). Its source calls this again as either changes.</summary>
+        public void SetBuff(object source, float multiplier, long start, long end) => _buffs[source] = (multiplier, start, end);
+
+        /// <summary>
+        /// The crop scale of a crop growing from `from` to `to`, counting its growing up to `until`: 1, plus each buff's
+        /// multiplier less 1 for the share of the whole growing it overlapped (docs/economy.md → Crop scale). Unfloored.
+        /// </summary>
+        public float BuffScale(long from, long to, long until)
+        {
+            float total = Mathf.Max(1f, to - from);
+            long last = System.Math.Min(to, until);
+            float scale = 1f;
+            foreach ((float multiplier, long start, long end) in _buffs.Values)
+            {
+                long stop = end == 0 ? last : System.Math.Min(end, last);
+                long overlap = stop - System.Math.Max(from, start);
+                if (overlap > 0) scale += (multiplier - 1f) * overlap / total;
+            }
+            return scale;
+        }
+
         public void AddUpgrade(IPlotUpgrade upgrade) => _upgrades.Add(upgrade);
         public void RemoveUpgrade(IPlotUpgrade upgrade) => _upgrades.Remove(upgrade);
 

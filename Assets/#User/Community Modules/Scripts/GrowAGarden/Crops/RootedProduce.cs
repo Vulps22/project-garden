@@ -19,7 +19,7 @@ namespace Vulps.GrowAGarden.Crops
         protected override void ApplyScale()
         {
             if (_bodyToScale == null || IsHarvested) return;
-            _bodyToScale.localScale = Vector3.one * _maxScale;
+            _bodyToScale.localScale = Vector3.one * _maxScale * CropScale;
         }
     }
 }
