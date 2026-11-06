@@ -21,7 +21,7 @@ Every doc is tagged by the kinds of thing it defines; `Docs.base` lists them by 
 [[roadmap]]. Playtest reports gathered for one fixing pass: [[playtest-2026-11-04]].
 
 - **Rules:** [[principles]], [[layers]], [[conventions]].
-- **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]] (and the [[trip]] it starts), [[fun-seeds]] (the upgrade seeds: [[popcorn]], [[moonflower]], [[spotlight-tulip]]), [[light-show]] (ARS and the Garden dancing), [[almanac]] (every crop's page on the tablet).
+- **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]] (and the [[trip]] it starts), [[fun-seeds]] (the upgrade seeds: [[popcorn]], [[moonflower]], [[spotlight-tulip]]), [[yggdrasil]] (the god seed, a buff; Developer Market only), [[light-show]] (ARS and the Garden dancing), [[almanac]] (every crop's page on the tablet).
 - **Mechanics:** [[shop]], [[economy]], [[thatch-sinks]] (ways to spend Thatch, not chosen), [[scoreboard]], [[persistence]], [[warehouse]] (designed, not built), [[plot-ownership]], [[flight]], [[climbing]].
 - **Interaction:** [[entity-components]], [[tutorial]], [[notifier]] (toasts in the player's view), [[world-settings]] (our section in the tablet's Settings).
 - **Game:** [[procgen-islands]], [[towns]] (the Gardens, in three towns).

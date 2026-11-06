@@ -58,6 +58,9 @@ namespace Vulps.GrowAGarden.Crops
         public bool HasLocalAuthority =>
             networkBridge != null && networkBridge.Object != null && networkBridge.Object.HasStateAuthority;
 
+        /// <summary>Asked of the prefab before planting, on the master: whether one may be planted now. Yggdrasil stands alone.</summary>
+        public virtual bool MayBePlanted => true;
+
         /// <summary>Growth completion [0,1], derived from the clock on every client.</summary>
         public float GetGrowthCompletion()
         {

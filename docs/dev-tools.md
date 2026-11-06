@@ -102,7 +102,7 @@ developer's client                         master
 
 **The stock** is three matching arrays on `DeveloperMarket` (items, names, pictures), not an array of a custom class,
 because arrays of custom `[Serializable]` classes arrive empty from the bundle export ([[weed]]). Order: the eight
-seeds, the seven fruits, the splif, the SPS Receiver, the Moonflower Seed, the Spotlight Tulip Bulb, then the Grow Wand.
+seeds, the seven fruits, the splif, the SPS Receiver, the Moonflower Seed, the Spotlight Tulip Bulb, the Grow Wand, then the Yggdrasil Seed ([[yggdrasil]], not in the stalls yet).
 A new item is appended to all three, and its prefab appended to `SceneNetworking._networkPrefabs` together with a new
 GUID in `_networkPrefabsGuid` in one change (if the lengths differ for even one `OnValidate`, it regenerates every
 GUID; appending through two `SerializedProperty` writes does exactly that).

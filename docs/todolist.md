@@ -45,6 +45,7 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Growth pivots: a `ScalePivot` per crop prefab. [[crops#Growth pivots|crops → Growth pivots]]
 - [ ] Roll a plant's stats (`HarvestCount`, value, size), perhaps from the stall's rarity. [[crops]]
 - [ ] **Fun seeds in the stalls (untested there):** buy popcorn, a Moonflower and a Spotlight Tulip from a stall and grow each. [[fun-seeds]]
+- [ ] **Yggdrasil (built, untested):** from the Developer Market, plant it and watch the rune fountain swell as the sapling grows (not with the wand, which skips it), then watch the stream build the tree to the rumble; the slot frees; climb it and stand on the canopy; grow a carrot under it and sell (20× for a whole growing); a second won't plant; claim the Plot again after its owner leaves, or wait out the 30 minutes, and watch it fall. Then set the sapling's growth time and the multiplier. [[yggdrasil]] [[economy#Crop scale|economy → Crop scale]]
 - [ ] Seed ideas: GitHub issues #44, #47. A `PlantableEntity` (planting a sword to grow an auto-harvester) is an idea, not a plan.
 
 ## Tablet

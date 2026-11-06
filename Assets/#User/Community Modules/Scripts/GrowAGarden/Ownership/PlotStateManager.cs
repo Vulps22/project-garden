@@ -204,6 +204,13 @@ namespace Vulps.GrowAGarden.Ownership
                 return;
             }
 
+            Plant kind = plantable.PlantPrefab == null ? null : plantable.PlantPrefab.GetComponent<Plant>();
+            if (kind != null && !kind.MayBePlanted)
+            {
+                Logger.Warn($"OnPlantRequested() '{gameObject.name}' — '{kind.name}' may not be planted now (one at a time); refused");
+                return;
+            }
+
             if (!CanBeUsedBy(planterId))
             {
                 Logger.Warn($"OnPlantRequested() '{gameObject.name}' — claimed={_lease != null && _lease.IsClaimed} owner='{(_lease == null ? "<no lease>" : _lease.OwnerId)}' refuses planter '{planterId}'");

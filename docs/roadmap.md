@@ -219,11 +219,7 @@ meaningful.
 
 ## Future — Yggdrasil, the god seed
 
-**Status (2026-11-04):** an idea from Vulps, not designed. The endgame **buff** (Vulps, 2026-11-04): about 1 island
-stall in 1,000. Planted, it makes everything the Plot grows exponentially more valuable, and it is lost with the crops.
-Open: whether it lasts the session or expires on a timer
-vulps note: I was initially unsure is this should be an upgrade or a buff.... but if i plan to add persistence in future, it should absolutely be a buff.... this is a point we need to discuss.... with warehouses, does it go back to the warehouse as an upgrade? or does Ygdrasil expire after 30 minutes 🤔🤔
-([[playtest-2026-11-04#Economy|playtest 2026-11-04 → Economy]]).
+**Status (2026-11-06):** built, Developer Market only, untested in-world: [[yggdrasil]].
 
 ## Future — the portal seed
 

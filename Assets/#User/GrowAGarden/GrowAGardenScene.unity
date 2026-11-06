@@ -228,6 +228,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 1
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 15
   ripenDuration: 1
   witherDuration: 0
@@ -273,6 +274,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 3
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -387,6 +389,8 @@ MonoBehaviour:
   - {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
   - {fileID: 8889210848319893590, guid: d0e99dffa9d3c57cc92d16db0f9bc3d3, type: 3}
   - {fileID: 4360997998222114339, guid: 1caf9dca9d1f22efc82f1d8685036499, type: 3}
+  - {fileID: 4360997998222114339, guid: ac800d80bfbf8633ea284928b298b69f, type: 3}
+  - {fileID: 8889210848319893590, guid: 357086be97ac89ea380b41fb34918e25, type: 3}
   _networkPrefabsGuid:
   - af7676cb-2b49-4631-8c42-e30d07cc671d
   - ec31026d-adfa-4ef0-bacc-67b6300fc846
@@ -420,6 +424,8 @@ MonoBehaviour:
   - 1d9c6c6b-eac8-4a0c-bf6f-9bac33be0065
   - 63aa7d63-b96e-4bd5-a2e1-d223e838c5a1
   - e4657d78-6230-4446-a30c-949733dfa557
+  - 01f7d820-ee0e-4430-bbdf-97fe2dc32354
+  - b3326895-2618-4a8e-98d4-20516e0d4eff
 --- !u!4 &163550764
 Transform:
   m_ObjectHideFlags: 0
@@ -951,6 +957,7 @@ MonoBehaviour:
   - {fileID: 4360997998222114339, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9, type: 3}
   - {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
   - {fileID: 4360997998222114339, guid: 1caf9dca9d1f22efc82f1d8685036499, type: 3}
+  - {fileID: 4360997998222114339, guid: ac800d80bfbf8633ea284928b298b69f, type: 3}
   _names:
   - Carrot Seed
   - Turnip Seed
@@ -972,6 +979,7 @@ MonoBehaviour:
   - Moonflower Seed
   - Spotlight Tulip Bulb
   - Grow Wand
+  - Yggdrasil Seed
   _previews:
   - {fileID: 2800000, guid: 2f81a9c7857c961ee91f9d2ac2d8f09a, type: 3}
   - {fileID: 2800000, guid: aa803682eee570a759288467a4561796, type: 3}
@@ -993,6 +1001,7 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
   - {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
   - {fileID: 2800000, guid: a929d18e18deadc2dbb304a3246f0505, type: 3}
+  - {fileID: 2800000, guid: 1a059e1f3e5c0f2ae888ff5bd9697626, type: 3}
 --- !u!114 &163550789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1496,6 +1505,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 1
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 60
   ripenDuration: 60
   witherDuration: 30
@@ -1557,6 +1567,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 1
   upgradeBonus: 0.3
+  buffMultiplier: 1
   growthDuration: 60
   ripenDuration: 0
   witherDuration: 0
@@ -2562,6 +2573,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 1
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -2864,6 +2876,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 9
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 90
   ripenDuration: 60
   witherDuration: 30
@@ -8600,6 +8613,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 1
   upgradeBonus: 0.07
+  buffMultiplier: 1
   growthDuration: 40
   ripenDuration: 0
   witherDuration: 0
@@ -9517,6 +9531,7 @@ MonoBehaviour:
   harvestCount: 3
   fruitPerPlant: 12
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -9964,6 +9979,7 @@ MonoBehaviour:
   harvestCount: 3
   fruitPerPlant: 9
   upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 40
   ripenDuration: 25
   witherDuration: 20
@@ -11176,6 +11192,7 @@ MonoBehaviour:
   harvestCount: 1
   fruitPerPlant: 1
   upgradeBonus: 0.05
+  buffMultiplier: 1
   growthDuration: 60
   ripenDuration: 0
   witherDuration: 0
