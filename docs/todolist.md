@@ -63,7 +63,6 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Notify Everyone from Settings → World → Developer: reaches another player and yourself; the keyboard fits the panel. [[dev-tools]]
 - [ ] Frame time benchmark: does a PERF line appear every minute, does the first say whether CPU/GPU timing is available, and record a day and a night baseline in the same spot. [[testing]]
 - [ ] Grow Wand: touch a seedling's soil, a grown bearing plant, a carrot in the ground; does a second player see it grow? [[dev-tools]]
-- [ ] Level of detail: walk out of a Garden's dome (solid hut, no fire), past 300 m (small things gone), past the draw distance; drag Draw Distance and watch islands and towns come and go; does the pinned core ease? [[detail]]
 
 ## Changelog
 

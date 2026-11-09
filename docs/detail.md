@@ -12,7 +12,7 @@ what the player can actually see. Everything here is local: each client decides 
 
 ## Gardens
 
-**Status (2026-11-03):** built, compiles clean, untested in-world. Designed with Vulps 2026-11-03.
+**Status (2026-11-09):** tested in-world. Designed with Vulps 2026-11-03.
 
 **Drawing is Unity's `LODGroup`**, one on the `GardenIsland` prefab, switched by the engine during culling with no
 script running:
@@ -46,7 +46,7 @@ does not flicker), and `GardenDetail.SetBubble` acts on a change and raises `Bub
 
 ## Islands
 
-**Status (2026-11-03):** built, compiles clean, untested in-world.
+**Status (2026-11-09):** tested in-world.
 
 `IslandField` loads islands out to the player's draw distance instead of a fixed 1.2 km
 ([[procgen-islands]]). Their colliders stay as they are at every distance (Vulps): static colliders cost little, and
@@ -54,7 +54,7 @@ switching them would rebuild the physics as the player flies and drop whatever r
 
 ## Draw distance
 
-**Status (2026-11-03):** built, compiles clean, untested in-world.
+**Status (2026-11-09):** tested in-world.
 
 World Settings → **Draw Distance**: Somnium's own slider row, cloned from Audio's Main volume
 (`TabletManager.AddSettingsSlider`), 300 m to 2 km in 100 m steps, the arrows a step each, default 1.2 km. Stored per
