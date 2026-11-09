@@ -45,7 +45,9 @@ Nothing in the Unity Editor console sees in-world behaviour. The client log is:
 > [!warning] Find the session banner first. Never read the log without it.
 > `Logger.BeginSession()` prints one line from `WorldManager.Awake()` at the start of every run:
 > `[GrowAGarden] Logging Session Started 2026-11-05 00:31:07 build 1`.
-> **The build number is `Logger.BUILD`**, raised by one each time Vulps says a build was uploaded (from 2026-11-05).
+> **The build number is `Logger.BUILD`**, raised by one after every upload. `BuildNumberBump` (Editor) does it when
+> Somnium's uploader logs `[Build & Upload]: Build and upload complete.` (from 2026-11-09; by hand before). So the
+> number in the code is the *next* upload's, and the build just uploaded prints one less.
 > A banner with the old number, or none, means the client is not running the upload being judged.
 > The client log is **append-only across runs**, so a histogram or a `grep -c` over the whole file counts every
 > session it remembers, including the build before the fix being judged. Read only from the last banner:

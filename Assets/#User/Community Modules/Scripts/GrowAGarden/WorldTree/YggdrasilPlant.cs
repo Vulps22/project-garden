@@ -17,6 +17,9 @@ namespace Vulps.GrowAGarden.WorldTree
         /// <summary>One at a time, worldwide: none may be planted while another exists.</summary>
         public override bool MayBePlanted => _all.Count == 0;
 
+        /// <summary>Whether a Yggdrasil exists anywhere in the world, sapling to falling tree.</summary>
+        public static bool AnyStanding => _all.Count > 0;
+
         /// <summary>The Plot it stands behind, once this client knows it.</summary>
         public PlotStateManager Plot => _standingBehind;
         public long PlantedAt => _plantedTimestamp;

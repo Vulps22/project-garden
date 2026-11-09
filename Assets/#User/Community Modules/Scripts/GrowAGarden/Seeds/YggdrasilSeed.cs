@@ -9,6 +9,9 @@ namespace Vulps.GrowAGarden.Seeds
         /// <summary>From the tree being formed to its fall (Vulps: 30 minutes).</summary>
         public const float LifeSeconds = 1800f;
 
+        /// <summary>One at a time, worldwide: no stall stocks it while a Yggdrasil stands.</summary>
+        public override bool MayBeStocked => !WorldTree.YggdrasilPlant.AnyStanding;
+
         protected override void Init()
         {
             seedId = "yggdrasil";
@@ -21,7 +24,7 @@ namespace Vulps.GrowAGarden.Seeds
             growthDuration = 180f;   // the sapling; a placeholder until Vulps sets it
             ripenDuration = 0f;
             witherDuration = WorldTree.YggdrasilTree.DyingSeconds;   // from the leaves turning to the tree gone below the floor
-            spawnWeight = 0f;        // not in the stalls until Vulps has tried it from the Developer Market
+            spawnWeight = 0.0008f;   // the rarest: about one island stall in 1,000 (Vulps)
         }
     }
 }

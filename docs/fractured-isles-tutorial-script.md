@@ -6,6 +6,9 @@ tags:
 ---
 # Fractured Isles — Tutorial Voice Script
 
+**Status (2026-11-09):** retired. The narrator these lines belonged to is replaced by the guided [[tutorial]]; only the
+tips still play.
+
 ## 0. Beta Notice
 Hey, just a quick note to say the following tutorial is based on the assumption that the game is in a perfectly working state. Some features are unfinished and may not match the tutorial yet, but everything should be close enough.
 

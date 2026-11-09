@@ -85,7 +85,7 @@ Town_Capital
 
 - **The scoreboard's top ten.** The economy still sends the list on one board's bridge (Garden 0's), and every board
   shows what arrives (`BalanceDisplayManager.Shown`, [[scoreboard]]).
-- **The spawn and the tutorial** are Garden 0's: everyone arrives there.
+- **The spawn** is Garden 0's: everyone arrives there, and the tutorial sends its players there ([[tutorial]]).
 
 > [!info] Networking
 > Nothing new is sent. Every Garden, Plot, sell point and scoreboard is a scene object, registered by `SceneNetworking`

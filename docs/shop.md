@@ -15,7 +15,8 @@ holds the stock and knows nothing about money. The buy point holds and shows its
 hand taking a seed. **`ShopKeeper`** (on `SceneManager`) is the master's half of every stall: it rolls, spawns,
 sells and recycles **by stall id**, so the master never needs the stall loaded. `DispensingEntity` is the older
 single-component shape for free items, kept because a dispenser stands in the scene and every master has it;
-`PlotLeaseManager` uses it for deeds.
+`PlotLeaseManager` uses it for deeds. A buy point holding a seed with a voiceover plays it to a player walking up:
+[[tutorial#Seed voiceovers]].
 
 ## Stall ids
 

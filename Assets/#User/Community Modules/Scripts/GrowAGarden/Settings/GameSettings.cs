@@ -40,10 +40,7 @@ namespace Vulps.GrowAGarden.Settings
         /// </summary>
         public float TrimDegrees { get; private set; }
 
-        /// <summary>Silences the linear tutorial — the numbered script steps.</summary>
-        public bool SkipTutorial { get; private set; }
-
-        /// <summary>Silences the context tips, which are not part of the linear script.</summary>
+        /// <summary>Silences the recorded tips (TipNarrator).</summary>
         public bool DisableVoiceTips { get; private set; }
 
         /// <summary>Whether eating or smoking weed may get this player stoned. On unless they turn it off (World Settings).</summary>
@@ -71,7 +68,6 @@ namespace Vulps.GrowAGarden.Settings
         private class Stored
         {
             public float trim;
-            public bool skipTutorial;
             public bool disableVoiceTips;
             public bool noStonedEffects;    // inverted so a save from before it existed reads as allowed
             public bool allowForceFeeding;
@@ -103,13 +99,6 @@ namespace Vulps.GrowAGarden.Settings
             // model can recover from — the 55-degree scene value did exactly that for two evenings.
             TrimDegrees = Mathf.Clamp(degrees, -45f, 45f);
             Logger.Info($"SetTrim() '{gameObject.name}' — trim now {TrimDegrees:F1} degrees");
-            Commit();
-        }
-
-        public void SetSkipTutorial(bool skip)
-        {
-            SkipTutorial = skip;
-            Logger.Info($"SetSkipTutorial() '{gameObject.name}' — {(skip ? "tutorial silenced" : "tutorial on")}");
             Commit();
         }
 
@@ -193,7 +182,6 @@ namespace Vulps.GrowAGarden.Settings
             if (s == null) return;
 
             TrimDegrees = Mathf.Clamp(s.trim, -45f, 45f);
-            SkipTutorial = s.skipTutorial;
             DisableVoiceTips = s.disableVoiceTips;
             AllowStonedEffects = !s.noStonedEffects;
             AllowForceFeeding = s.allowForceFeeding;
@@ -201,7 +189,7 @@ namespace Vulps.GrowAGarden.Settings
             ShowNotifications = !s.noNotifications;
             DrawDistance = s.drawDistance <= 0f ? DEFAULT_DRAW_DISTANCE : Mathf.Clamp(s.drawDistance, MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
-            Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} skipTutorial={SkipTutorial} " +
+            Logger.Info($"Load() '{gameObject.name}' — trim={TrimDegrees:F1} " +
                         $"disableVoiceTips={DisableVoiceTips} allowStoned={AllowStonedEffects} allowForceFeeding={AllowForceFeeding} notifications={ShowNotifications} drawDistance={DrawDistance:F0}");
         }
 
@@ -210,7 +198,6 @@ namespace Vulps.GrowAGarden.Settings
             StorageBridge.Write(StorageKey, new Stored
             {
                 trim = TrimDegrees,
-                skipTutorial = SkipTutorial,
                 disableVoiceTips = DisableVoiceTips,
                 noStonedEffects = !AllowStonedEffects,
                 allowForceFeeding = AllowForceFeeding,

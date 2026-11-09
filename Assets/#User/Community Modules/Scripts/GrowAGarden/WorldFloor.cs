@@ -159,51 +159,6 @@ namespace Vulps.GrowAGarden
             WorldManager.Despawn(obj, $"Discard() '{go.name}'");
         }
 
-        /// <summary>
-        /// Lets go of whatever this player is carrying, so it is left behind at the bottom of the
-        /// world instead of riding the teleport home.
-        ///
-        /// This is the whole of the script's "teleported right back to the garden without any of
-        /// the seeds you found along the way" — Somnium's own respawn moves the player and nothing
-        /// else, so losing the cargo only happens because of this.
-        ///
-        /// isSelected is the right question here despite CLAUDE.md's rule against local state
-        /// driving networked decisions, and XRGrabInteractableRef says why: it is true only on the
-        /// machine whose hand is actually on the object, and that machine is the one entitled to
-        /// say "I am putting this down". The drop then travels as a grabber RPC like any other.
-        /// </summary>
-        private void DropEverythingHeld()
-        {
-            var grabbables = FindObjectsByType<XRGrabInteractable>(FindObjectsSortMode.None);
-            int dropped = 0;
-
-            for (int i = 0; i < grabbables.Length; i++)
-            {
-                XRGrabInteractable grab = grabbables[i];
-                if (grab == null || !grab.isSelected) continue;
-                if (grab.GetComponent<IHeldObject>() == null) continue;   // only ours; never the player's own tools
-
-                StartCoroutine(ReleaseThenRearm(grab));
-                dropped++;
-            }
-
-            if (dropped > 0)
-                Logger.Info($"DropEverythingHeld() '{gameObject.name}' — let go of {dropped} held object(s) below the floor");
-        }
-
-        /// <summary>
-        /// Disabling the interactable is what forces the deselect; re-enabling a frame later leaves
-        /// the object grabbable again. That matters for the case where the sweep never gets to it —
-        /// a permanently ungrabbable object lost in the void is a worse outcome than a grabbable
-        /// one, and this way the failure is only that the seed survives.
-        /// </summary>
-        private static IEnumerator ReleaseThenRearm(XRGrabInteractable grab)
-        {
-            grab.enabled = false;
-            yield return null;
-            if (grab != null) grab.enabled = true;
-        }
-
         private void Rescue(float fellTo)
         {
             // Back to the Garden nearest where they fell, by its hut; with none, the scene's return point.
@@ -234,7 +189,8 @@ namespace Vulps.GrowAGarden
             // Before the teleport, not after. XRI keeps a held object with the hand, so a seed
             // still selected when the player moves arrives in the garden with them — which is the
             // opposite of the rule, and would quietly make falling free.
-            DropEverythingHeld();
+            int dropped = HeldObjects.ReleaseAll(this);
+            if (dropped > 0) Logger.Info($"Rescue() '{gameObject.name}' — let go of {dropped} held object(s) below the floor");
 
             // The tip goes in the callback, not on the next line. DoTeleportToPoint is asynchronous
             // — that is what the 'done' parameter is for — and starting 20 seconds of narration
@@ -243,7 +199,7 @@ namespace Vulps.GrowAGarden
             PlayerManager.TeleportLocalPlayer(target, direction, () =>
             {
                 Logger.Info($"Rescue() '{gameObject.name}' — teleport complete, playing the falling tip");
-                TutorialManager.GetInstance()?.TriggerTooltip(TutorialManager.Tooltips.Tips.Falling);
+                TipNarrator.Play(TipNarrator.Tips.Falling);
             });
         }
     }

@@ -26,6 +26,13 @@ namespace Vulps.GrowAGarden
             return tablet;
         }
 
+        /// <summary>Whether the tablet is out: Somnium hides it by fading its Canvases' CanvasGroup to 0. False if it cannot tell.</summary>
+        public static bool IsOut(Transform tablet)
+        {
+            CanvasGroup group = tablet == null ? null : tablet.Find("Canvases")?.GetComponent<CanvasGroup>();
+            return group != null && group.alpha > 0.5f;
+        }
+
         /// <summary>Adds a button to the home grid, cloned from Somnium's Map button but opening nothing of theirs. Null if the grid has moved.</summary>
         public static Button AddHomeButton(Transform tablet, string name, Sprite icon, string label)
         {

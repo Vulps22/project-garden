@@ -47,6 +47,7 @@ the rebalance, [[crops#Balance|crops → Balance]]).
 | 08 | Moonflower | 0.3% | Very Rare |
 | 09 | Spotlight Tulip | 1.5% | Rare |
 | 10 | Popcorn | 1.6% | Rare |
+| 11 | Yggdrasil | 0.03% | Very Rare |
 
 The share is the base roll. Island stalls also weigh rare crops up by their own rarity ([[shop]]), so far stalls find
 the rare ones more often than the table says ([[crops#Balance|crops → Balance]]).

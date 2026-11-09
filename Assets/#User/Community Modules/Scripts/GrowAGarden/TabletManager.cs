@@ -12,6 +12,7 @@ namespace Vulps.GrowAGarden
         public static RectTransform AddPage(Transform tablet, string name) => TabletBridge.AddPage(tablet, name);
         public static void ShowHome(Transform tablet, bool show) => TabletBridge.ShowHome(tablet, show);
         public static bool SomniumPageOpen(Transform tablet, Transform ours) => TabletBridge.SomniumPageOpen(tablet, ours);
+        public static bool IsOut(Transform tablet) => TabletBridge.IsOut(tablet);
         public static TMP_FontAsset Font(Transform tablet) => TabletBridge.Font(tablet);
         public static Sprite PanelSprite(Transform tablet) => TabletBridge.PanelSprite(tablet);
         public static Button[] SettingsSections(Transform tablet) => TabletBridge.SettingsSections(tablet);

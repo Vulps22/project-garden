@@ -6,6 +6,9 @@ tags:
 ---
 # Tutorial Script → MP3 File Mapping
 
+**Status (2026-11-09):** retired. The narrator these lines belonged to is replaced by the guided [[tutorial]]; only the
+tips still play.
+
 ## Tutorials (linear progression)
 
 | Step | Script Section | MP3 File | Duration | Trigger |
@@ -54,7 +57,7 @@ If a player somehow bypasses a step (e.g., debug warp to 100 Thatch), they don't
 - Skipped steps are an edge case, not a design path
 
 ### File Locations
-All audio files live in: `Assets/#User/GrowAGarden/sounds/`
+All audio files live in: `Assets/#User/GrowAGarden/sounds/Tutorial/Old narrator/` (the teams line is now the tip `sounds/Tips/tip_teams`)
 
 ### Audio Properties
 - **Format:** MP3 (stereo, 44.1 kHz)

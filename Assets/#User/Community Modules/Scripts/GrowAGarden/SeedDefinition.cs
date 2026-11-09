@@ -31,6 +31,10 @@ namespace Vulps.GrowAGarden
                  "SceneNetworking component, or Fusion has no id to spawn it by.")]
         public NetworkObject seedPrefab;
 
+        [Tooltip("A voiceover played once to a player who walks up to a buy point holding this seed (sounds/Tips/tip_<seed>). " +
+                 "Empty for most crops; only the very special ones have one. Set on the Seed_ prefab, not in Init().")]
+        public AudioClip approachVoice;
+
         [Header("Stocking")]
         [Tooltip("Relative chance of a slot rolling this crop. Higher is more common. Set in " +
                  "Init() with the rest of the balance, not in the Inspector.")]
@@ -54,6 +58,9 @@ namespace Vulps.GrowAGarden
         [Header("Buff")]
         [Tooltip("For a buffing seed: how many times bigger, and more profitable, a crop grown wholly under it is (docs/economy.md → Crop scale). Set in Init().")]
         public float buffMultiplier = 1f;
+
+        /// <summary>Whether a stall may stock this crop right now. A crop that can only exist once in the world says no while it does.</summary>
+        public virtual bool MayBeStocked => true;
 
         /// <summary>One fruit's profit: what it sells for less its share of the seed's price, never below 0.</summary>
         public float ProfitPerFruit => Mathf.Max(0f, sellValue - (float)buyPrice / Mathf.Max(1, fruitPerPlant));

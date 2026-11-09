@@ -4,6 +4,7 @@ using UnityEngine.XR;
 using Vulps.GrowAGarden.Climbing;
 using Vulps.GrowAGarden.Ownership;
 using Vulps.GrowAGarden.Settings;
+using Vulps.GrowAGarden.Tutorial;
 
 namespace Vulps.GrowAGarden.Flight
 {
@@ -145,6 +146,12 @@ namespace Vulps.GrowAGarden.Flight
 
         public bool IsFlying => _flying;
 
+        /// <summary>Both arms are held out now, as they must be to take off: the tutorial's T pose.</summary>
+        public bool ArmsOutNow => Resolve() && ArmsOut(_armExtension);
+
+        /// <summary>The player is touching the world: standing, not falling.</summary>
+        public bool Grounded => Resolve() && Touching();
+
         /// <summary>Statics outlive a scene when domain reload is off; a subscriber from the last
         /// session is a destroyed object waiting to be called.</summary>
         private void OnDestroy()
@@ -173,12 +180,20 @@ namespace Vulps.GrowAGarden.Flight
         {
             ClimbController.ClimbStarted += OnClimbStarted;
             ClimbController.ClimbEnded += OnClimbEnded;
+            TutorialManager.FlightLockChanged += OnFlightLockChanged;
         }
 
         private void OnDisable()
         {
             ClimbController.ClimbStarted -= OnClimbStarted;
             ClimbController.ClimbEnded -= OnClimbEnded;
+            TutorialManager.FlightLockChanged -= OnFlightLockChanged;
+        }
+
+        /// <summary>The tutorial locked flight: a player in the air comes down.</summary>
+        private void OnFlightLockChanged()
+        {
+            if (TutorialManager.FlightLocked && _flying) SetFlying(false);
         }
 
         /// <summary>A hand on a rock is a landing: climbing owns the player until it lets go.</summary>
@@ -198,7 +213,7 @@ namespace Vulps.GrowAGarden.Flight
 
         private void Update()
         {
-            if (!_enabled || _climbing) return;
+            if (!_enabled || _climbing || TutorialManager.FlightLocked) return;
             MeasurePreviousWrite();
             if (!Resolve()) return;
 
@@ -406,6 +421,9 @@ namespace Vulps.GrowAGarden.Flight
             // about it would be permanently out of step.
             if (flying && !was) Launched?.Invoke();
             else if (!flying && was) Landed?.Invoke(Time.time - _airborneSince);
+
+            // A listener that turned flight back (the tutorial locking it on take-off) already handed locomotion back.
+            if (_flying != flying) return;
 
             if (!PlayerManager.CanDriveLocalPlayer) return;
 

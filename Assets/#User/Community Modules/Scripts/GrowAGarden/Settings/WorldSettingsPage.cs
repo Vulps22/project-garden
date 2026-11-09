@@ -10,7 +10,7 @@ namespace Vulps.GrowAGarden.Settings
 {
     /// <summary>
     /// Our sections in Somnium's own Settings app: World, for every player (stoned effects, force feeding, notifications,
-    /// resetting the voice tutorial, draw distance), and beside it a Developer section, shown to anyone with developer
+    /// skipping or repeating the tutorial, draw distance), and beside it a Developer section, shown to anyone with developer
     /// access (Somnium's fly mode; a notification to everyone, typed on its own keyboard). Built in code onto the tablet through <see cref="TabletManager"/>, stored by
     /// <see cref="GameSettings"/>. Local only. See docs/tablet.md → World Settings.
     /// </summary>
@@ -28,6 +28,7 @@ namespace Vulps.GrowAGarden.Settings
         private Toggle _notifications;
         private Toggle _nativeFlight;
         private TMP_Text _notifyField;
+        private TMP_Text _tutorialButton;
         private string _notifyText = string.Empty;
         private bool _caps = true;
         private GameObject _developerSection;   // the right-hand column, shown while this player has developer access
@@ -36,8 +37,19 @@ namespace Vulps.GrowAGarden.Settings
         private float _nextTabletCheck;
         private bool _built;
 
-        private void OnEnable() => GameSettings.Changed += Refresh;
-        private void OnDisable() => GameSettings.Changed -= Refresh;
+        private void OnEnable()
+        {
+            GameSettings.Changed += Refresh;
+            TutorialManager.Started += ShowTutorialButton;
+            TutorialManager.Ended += ShowTutorialButton;
+        }
+
+        private void OnDisable()
+        {
+            GameSettings.Changed -= Refresh;
+            TutorialManager.Started -= ShowTutorialButton;
+            TutorialManager.Ended -= ShowTutorialButton;
+        }
 
         private void OnDestroy()
         {
@@ -75,7 +87,11 @@ namespace Vulps.GrowAGarden.Settings
             _stoned = TabletManager.AddSettingsToggle(_tablet, world, "Option_AllowStonedEffects", "Allow Stoned Effects");
             _forceFeeding = TabletManager.AddSettingsToggle(_tablet, world, "Option_AllowForceFeeding", "Allow Force Feeding (soon)");
             _notifications = TabletManager.AddSettingsToggle(_tablet, world, "Option_ShowNotifications", "Show Notifications");
-            ActionRow(world, "Option_ResetVoiceTutorial", "Voice Tutorial", "Reset", ResetTutorial);
+            if (TutorialManager.Available)
+            {
+                _tutorialButton = ActionRow(world, "Option_Tutorial", "Tutorial", "Repeat", SkipOrRepeatTutorial);
+                ShowTutorialButton();
+            }
             if (_stoned != null) _stoned.onValueChanged.AddListener(on => GameSettings.GetInstance()?.SetAllowStonedEffects(on));
             if (_notifications != null) _notifications.onValueChanged.AddListener(on => GameSettings.GetInstance()?.SetShowNotifications(on));
             FitRows(world);
@@ -180,7 +196,7 @@ namespace Vulps.GrowAGarden.Settings
         }
 
         /// <summary>A row like Settings' own, a label over a button instead of a switch.</summary>
-        private void ActionRow(Transform parent, string name, string label, string buttonLabel, UnityEngine.Events.UnityAction act)
+        private TMP_Text ActionRow(Transform parent, string name, string label, string buttonLabel, UnityEngine.Events.UnityAction act)
         {
             var row = new GameObject(name, typeof(RectTransform));
             row.transform.SetParent(parent, false);
@@ -203,6 +219,7 @@ namespace Vulps.GrowAGarden.Settings
             text.raycastTarget = false;
             var textRect = (RectTransform)text.transform;
             textRect.anchorMin = Vector2.zero; textRect.anchorMax = Vector2.one; textRect.offsetMin = textRect.offsetMax = Vector2.zero;
+            return text;
         }
 
         private TMP_Text Label(string name, Transform parent, string text, float size, TextAlignmentOptions align)
@@ -353,11 +370,20 @@ namespace Vulps.GrowAGarden.Settings
 
         // ── Behaviour ─────────────────────────────────────────────────────────────
 
-        private void ResetTutorial()
+        /// <summary>Skip while the tutorial runs; Repeat once it is over.</summary>
+        private void SkipOrRepeatTutorial()
         {
             TutorialManager tutorial = TutorialManager.GetInstance();
-            if (tutorial == null) { Logger.Warn($"ResetTutorial() '{gameObject.name}' — no TutorialManager"); return; }
-            tutorial.ResetProgress();
+            if (tutorial == null) { Logger.Warn($"SkipOrRepeatTutorial() '{gameObject.name}' — no TutorialManager"); return; }
+            if (tutorial.IsRunning) tutorial.Skip();
+            else tutorial.Repeat();
+        }
+
+        private void ShowTutorialButton()
+        {
+            if (_tutorialButton == null) return;
+            TutorialManager tutorial = TutorialManager.GetInstance();
+            _tutorialButton.text = tutorial != null && tutorial.IsRunning ? "Skip" : "Repeat";
         }
 
         private void SetNativeFlight(bool on)
