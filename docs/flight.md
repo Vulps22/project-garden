@@ -417,6 +417,16 @@ receiver and the hut's teammate slots (`GuestDeed`). Somnium's own VR hand boxes
 Ground is a layer, not "not in my hand", so grabbing the island you stand on cannot end the contact (Vulps,
 2026-11-04). A new carryable prefab goes on 7; Somnium's grab interactors pick up 7, and Default triggers meet it.
 
+## Locked by the tutorial
+
+**Status (2026-11-09):** built, compiles clean, untested in-world.
+
+While `TutorialManager.FlightLocked` is set, flight never starts, and a flight in progress ends with Somnium's gravity
+and walking handed back. The tutorial locks it from the moment the player takes off from its send-off disc, which is
+inside `Launched`: `SetFlying` checks after raising `Launched` or `Landed` whether a listener turned flight back, and if
+so leaves locomotion as that listener's landing set it. Without the check, the take-off went on to take gravity and
+walking away from a player who was no longer flying, who then hung in the air unable to move ([[tutorial]]).
+
 ## The rework
 
 **Status (2026-11-09):** proposed, not built (Vulps: "don't build the flight rework yet").

@@ -422,6 +422,9 @@ namespace Vulps.GrowAGarden.Flight
             if (flying && !was) Launched?.Invoke();
             else if (!flying && was) Landed?.Invoke(Time.time - _airborneSince);
 
+            // A listener that turned flight back (the tutorial locking it on take-off) already handed locomotion back.
+            if (_flying != flying) return;
+
             if (!PlayerManager.CanDriveLocalPlayer) return;
 
             if (flying)
