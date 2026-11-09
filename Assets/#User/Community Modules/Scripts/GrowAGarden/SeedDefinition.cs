@@ -31,6 +31,10 @@ namespace Vulps.GrowAGarden
                  "SceneNetworking component, or Fusion has no id to spawn it by.")]
         public NetworkObject seedPrefab;
 
+        [Tooltip("A voiceover played once to a player who walks up to a buy point holding this seed (sounds/Tips/tip_<seed>). " +
+                 "Empty for most crops; only the very special ones have one. Set on the Seed_ prefab, not in Init().")]
+        public AudioClip approachVoice;
+
         [Header("Stocking")]
         [Tooltip("Relative chance of a slot rolling this crop. Higher is more common. Set in " +
                  "Init() with the rest of the balance, not in the Inspector.")]

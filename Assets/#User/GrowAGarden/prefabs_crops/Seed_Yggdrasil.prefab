@@ -505,6 +505,7 @@ MonoBehaviour:
     falls.
   picture: {fileID: 2800000, guid: 1a059e1f3e5c0f2ae888ff5bd9697626, type: 3}
   seedPrefab: {fileID: 4360997998222114339}
+  approachVoice: {fileID: 8300000, guid: c93d535be315cb298912fd3e6215cc91, type: 3}
   spawnWeight: 0
   buyPrice: 2000
   sellValue: 0

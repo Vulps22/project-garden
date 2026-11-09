@@ -110,6 +110,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// </summary>
         public static Transform LocalPlayerHead => PlayerBridge.LocalHead;
 
+        /// <summary>Whether a collider entering a trigger is the local player.</summary>
+        public static bool IsLocalPlayer(Collider other) => PlayerBridge.IsLocalPlayer(other);
+
         /// <summary>Roughly where the local player's mouth is: a little below and in front of the headset. Null before the head exists.</summary>
         public static Vector3? LocalMouthPosition
         {

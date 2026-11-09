@@ -202,6 +202,7 @@ saved under the narrator's old key, `tutorial_progress`. **Voice Tips** off sile
 | `Upgrades` | `tip_upgrades` | parked |
 | `Buffing` | `tip_buffing` | parked |
 | `Teams` | `tip_teams` | parked: teammates exist on the plot, but nothing announces joining one |
+| `Seed:<seedId>` | the seed's `approachVoice` | **wired**: a buy point holding that seed, walked up to (Seed voiceovers below) |
 
 Wiring one is a fact announced by whatever system owns it and one `TipNarrator.Play` call. Do it as part of building
 that feature. The narrator's own lines (`sounds/Tutorial/Old narrator/`) are no longer played; their script and timings
@@ -210,5 +211,24 @@ are kept in [[fractured-isles-tutorial-script]] and [[tutorial-transcript-mappin
 **Where the clips are** (Vulps, 2026-11-09): tips in `sounds/Tips/` (`tip_<name>`), the tutorial's lines in
 `sounds/Tutorial/` (`tutorial_<number>`), the old narrator's in `sounds/Tutorial/Old narrator/`.
 
+### Seed voiceovers
+
+**Status (2026-11-09):** built, compiles clean, untested in-world.
+
+A seed can have a voiceover, `SeedDefinition.approachVoice`, set on its `Seed_` prefab (a clip cannot be set in
+`Init()`). Most have none; the very special ones do (Vulps). Today only Yggdrasil: `tip_yggdrasil`, "Holy shit. That's
+Yggdrasil! That's the rarest, most valuable seed in the game! It's a buffing seed, so use it wisely!"
+
+Every buy point has a `VoiceZone` child: a trigger box 4 × 3 × 4 m round the barrel, on the Triggers layer so it meets
+only players' head triggers (`ApproachVoiceZone`). It is **off unless the seed in the barrel has a voiceover**
+(Vulps); `BuyPoint` switches it whenever its stock changes. The local player walking in plays the line as a tip
+(`TipNarrator.PlaySeed`, id `Seed:<seedId>`): once ever per player, not while another tip plays, not while the tutorial
+runs, not with Voice Tips off. Nothing is sent: each player hears it on their own approach.
+
+> [!question] Open
+> - **Once ever** is mine, from it being a tip; every approach, or once per session, are the alternatives.
+> - **The zone's size** (4 × 3 × 4 m) is mine: check it in-world.
+> - **Yggdrasil never stocks a stall yet** (`spawnWeight` 0, Developer Market only; [[yggdrasil]]), so the line cannot be
+>   heard until it does. Pinning a test stall to it (`BuyPoint._override`) would hear it.
 
 Related: [[flight]] (the send-off), [[plot-ownership]] (the real deed the tutorial's scroll stands in for).

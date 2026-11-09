@@ -29,6 +29,9 @@ namespace Vulps.GrowAGarden
         [Tooltip("The sign. Optional — a stall with no sign simply does not show its prices.")]
         [SerializeField] private StallDisplay _display;
 
+        [Tooltip("The trigger round the stall that plays a special seed's voiceover. On only while it holds such a seed.")]
+        [SerializeField] private ApproachVoiceZone _voiceZone;
+
         private Seed _currentSeed;
         private bool _hasId;
         private StallId _id;
@@ -145,6 +148,7 @@ namespace Vulps.GrowAGarden
             if (_currentSeed != null) _currentSeed.LifecycleChanged -= OnCurrentSeedLifecycleChanged;
 
             _currentSeed = seed;
+            if (_voiceZone != null) _voiceZone.Show(_currentSeed != null ? _currentSeed.seedDefinition : null);
             if (_currentSeed == null) return;
 
             _currentSeed.LifecycleChanged += OnCurrentSeedLifecycleChanged;
@@ -163,6 +167,7 @@ namespace Vulps.GrowAGarden
         {
             if (_socket == null) _socket = GetComponentInChildren<Socket>(true);
             if (_display == null) _display = GetComponentInChildren<StallDisplay>(true);
+            if (_voiceZone == null) _voiceZone = GetComponentInChildren<ApproachVoiceZone>(true);
             if (_rarityMultiplier < 1f) _rarityMultiplier = 1f;
             if (_override != null && _override.seedPrefab == null)
                 Logger.Warn($"OnValidate() '{gameObject.name}' — override '{_override.seedId}' names no seedPrefab; stall cannot stock");

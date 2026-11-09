@@ -321,7 +321,7 @@ after it bears, so the produce would spend its life pointing at a component on a
 overloaded null then makes every `!= null` read false, which is how a carrot came to sell for nothing while its
 ripening still looked right by coincidence.
 
-**To add a crop:** a `SeedDefinition` subclass (with a `tagline` for the stall sign, [[shop]]), three prefabs (copy an existing crop of the same shape and swap the
+**To add a crop:** a `SeedDefinition` subclass (with a `tagline` for the stall sign, [[shop]]; a very special one may get an `approachVoice`, [[tutorial#Seed voiceovers]]), three prefabs (copy an existing crop of the same shape and swap the
 definition, models, colliders and the references between the three), all three registered on `SceneNetworking`, a
 `Buyable_<Crop>` object under SceneManager carrying the definition, listed in `WorldManager._buyables`, and trip
 twins of its materials on `TripManager` ([[trip]]). Nothing points a buy point at it: stalls roll from the buyables. **A crop still being worked on stays out of

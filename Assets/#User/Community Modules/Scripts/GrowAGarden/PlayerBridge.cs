@@ -76,6 +76,11 @@ namespace Vulps.GrowAGarden
             return Identify(_container.GetPlayerByID(somniumId));
         }
 
+        /// <summary>Whether a collider entering a trigger is the local player's own trigger (it sits at their head).</summary>
+        public static bool IsLocalPlayer(Collider other) =>
+            other != null && other.TryGetComponent(out ISomniumPlayerTrigger trigger) && trigger.Player != null
+            && trigger.Player.Properties != null && trigger.Player.Properties.IsLocal;
+
         /// <summary>The local player, or <see cref="PlayerIdentity.None"/> until they have spawned.</summary>
         public static PlayerIdentity LocalPlayer =>
             _container == null ? PlayerIdentity.None : Identify(_container.LocalPlayer);

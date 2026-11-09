@@ -50,7 +50,15 @@ namespace Vulps.GrowAGarden.Tutorial
         public static void Play(string tipId)
         {
             if (_instance == null) _instance = FindFirstObjectByType<TipNarrator>();
-            if (_instance != null) _instance.Trigger(tipId);
+            if (_instance != null) _instance.Trigger(tipId, _instance._byId.TryGetValue(tipId ?? string.Empty, out AudioClip clip) ? clip : null);
+        }
+
+        /// <summary>A seed's own approach voiceover, as a tip: heard once, under the same rules.</summary>
+        public static void PlaySeed(SeedDefinition seed)
+        {
+            if (seed == null || seed.approachVoice == null) return;
+            if (_instance == null) _instance = FindFirstObjectByType<TipNarrator>();
+            if (_instance != null) _instance.Trigger("Seed:" + seed.seedId, seed.approachVoice);
         }
 
         private void OnValidate()
@@ -85,14 +93,14 @@ namespace Vulps.GrowAGarden.Tutorial
                     Logger.Warn($"IndexClips() '{gameObject.name}' — tip '{pair.Key}' has no clip (expected '{pair.Value}')");
         }
 
-        private void Trigger(string tipId)
+        private void Trigger(string tipId, AudioClip clip)
         {
             if (string.IsNullOrEmpty(tipId) || _played.Contains(tipId)) return;
             GameSettings settings = GameSettings.GetInstance();
             if (settings != null && settings.DisableVoiceTips) return;
             TutorialManager tutorial = TutorialManager.GetInstance();
             if (tutorial != null && tutorial.IsRunning) { Logger.Log($"Trigger() '{gameObject.name}' — '{tipId}' held back: the tutorial is running"); return; }
-            if (!_byId.TryGetValue(tipId, out AudioClip clip) || clip == null || _audioSource == null)
+            if (clip == null || _audioSource == null)
             {
                 Logger.Warn($"Trigger() '{gameObject.name}' — no clip or AudioSource for '{tipId}', not marking it heard");
                 return;
