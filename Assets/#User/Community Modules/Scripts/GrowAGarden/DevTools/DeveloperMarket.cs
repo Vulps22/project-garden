@@ -37,6 +37,8 @@ namespace Vulps.GrowAGarden.DevTools
 
         public static int Count => _instance == null ? 0 : _instance._items.Length;
         public static string NameOf(int i) => _instance != null && i >= 0 && i < _instance._names.Length ? _instance._names[i] : "?";
+        /// <summary>The seed an item grows, or null if it is not a seed.</summary>
+        public static SeedDefinition SeedOf(int i) => _instance != null && i >= 0 && i < _instance._items.Length && _instance._items[i] != null ? _instance._items[i].GetComponent<SeedDefinition>() : null;
         public static Texture2D PreviewOf(int i) => _instance != null && i >= 0 && i < _instance._previews.Length ? _instance._previews[i] : null;
 
         /// <summary>Asks the master for an item, free, at a place. Only the developer's client asks.</summary>
