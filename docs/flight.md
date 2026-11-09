@@ -417,6 +417,22 @@ receiver and the hut's teammate slots (`GuestDeed`). Somnium's own VR hand boxes
 Ground is a layer, not "not in my hand", so grabbing the island you stand on cannot end the contact (Vulps,
 2026-11-04). A new carryable prefab goes on 7; Somnium's grab interactors pick up 7, and Default triggers meet it.
 
+## The rework
+
+**Status (2026-11-09):** proposed, not built (Vulps: "don't build the flight rework yet").
+
+- **A jump to take off.** Flight starts only on a jump, or when the player is already falling; arms out while
+  walking off a step, or arriving somewhere by teleport, no longer flies. Everywhere, not only in the tutorial
+  (Vulps). Somnium's jump is not an event we can hear (`PollBoostButton`), so the jump is either the controller's
+  primary button read directly, as the boost is, or a rise of the body we see ourselves.
+- **Thresholds that follow the player's size.** Small avatars, and small people, cannot clear the take-off reach
+  (`_armExtension` 0.55 m; also `_armRetract` 0.40 m and `_armDrop` 0.45 m), and the tutorial tells them to scale
+  up. The bridge cannot read avatar scale (`ISomniumPlayerScale` has only `SetHeight`). The likeliest signal is the
+  body capsule's height (`Root`'s `CharacterController`, which follows the headset in VR): scale all three by
+  `measured ÷ reference`. Before building: log the capsule height, `Root.lossyScale`, the head's height above the
+  ground and the reach at a full T pose, at normal size and shrunk, to see which moves. The reference height and the
+  clamp are Vulps's to set.
+
 ## Open questions
 
 1. **Does `Root` stay written?** The probe above. Everything is downstream.
