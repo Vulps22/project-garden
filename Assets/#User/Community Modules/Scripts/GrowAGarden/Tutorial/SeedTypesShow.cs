@@ -20,7 +20,7 @@ namespace Vulps.GrowAGarden.Tutorial
         [SerializeField] private float _scale = 2.5f;
         [Tooltip("Metres between seeds in a row.")]
         [SerializeField] private float _spacing = 0.7f;
-        [SerializeField] private float _holdSeconds = 3f;
+        [SerializeField] private float _holdSeconds = 3f;   // after the second it takes to build
         [SerializeField] private float _gapSeconds = 1f;
         [Tooltip("Degrees a second each seed turns while shown.")]
         [SerializeField] private float _spin = 40f;
@@ -56,9 +56,9 @@ namespace Vulps.GrowAGarden.Tutorial
             while (true)
             {
                 foreach (TutorialStage seed in _seeds) seed.Appear();
-                yield return new WaitForSeconds(_holdSeconds);
+                yield return new WaitForSeconds(TutorialStage.SECONDS + _holdSeconds);
                 foreach (TutorialStage seed in _seeds) seed.Vanish();
-                yield return new WaitForSeconds(_gapSeconds);
+                yield return new WaitForSeconds(TutorialStage.SECONDS + _gapSeconds);
             }
         }
 

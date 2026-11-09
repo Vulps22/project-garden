@@ -47,7 +47,15 @@ follow. The recorded **tips** stay, under *Tips* below.
   text, fire and (on carryables) its grab stripped off. The hut's show materials are swapped for their `_Plain`
   versions so nothing dances.
 - **An invisible floor and a ring of 24 invisible walls** 14 m out keep the player on it.
-- **Smoke:** every stage comes in from a puff of white smoke and goes out in one (`SmokePuff`, `TutorialStage`).
+- **Transitions are slow and whole** (Vulps, after the first run: "like whiplash"). A piece dissolves into smoke
+  over a second, shrinking while smoke keeps pouring over it, and is completely gone before the next piece builds
+  out of smoke over another second. Every change is at least two seconds; the text and highlight come only once the
+  new piece is whole (`TutorialStage.SECONDS`, `SmokePuff`).
+- **Pieces stand where the Garden stands them.** The Garden's ground is 0.5 m above its pieces' roots, so the plot is
+  sunk by that (1 cm proud of the void floor so the floor does not draw over its grass), and the barrel's root sits
+  0.35 m up. The barrel keeps its own labels (name, tagline, buy and sell price, filled as `StallDisplay` fills
+  them) and is turned so they face the player. The seed sits at the barrel's socket with its rotation, and the carrot
+  grows at the dirt pile's anchor, half in the soil, as a real plant does.
 - **The highlight:** a pulsing blue shell on a copy of the target's meshes (`TutorialGlow`, `GrowAGarden/TutorialGlow`).
 - **The text:** `InstructionPanel`, a panel fixed below the middle of the view, drawn over everything. It shows what
   the thing is, what to do now (bold, blue), and a passing aside under it. The Notifier's toasts are separate
@@ -92,11 +100,41 @@ follow. The recorded **tips** stay, under *Tips* below.
   (`FlightController.ArmsOutNow`, the pose flight itself needs) and goes back to the T pose when they drop. With no
   pose after 5 s, an aside stays up until there is one: "If your avatar is too small, the game will not detect your
   T pose. Try scaling up your avatar." Jumping with arms out takes off (`FlightController.Launched`). That is the
-  send-off: the player is teleported, still flying, to the world spawn (`GardenReturnPoint`, the same point
-  `WorldFloor` uses), and the tutorial saves as done.
+  send-off: flight locks again at once (ending the take-off), the player is teleported to the world spawn
+  (`GardenReturnPoint`, the same point `WorldFloor` uses), and flight stays locked until they are standing
+  (`FlightController.Grounded`, or 10 s at most). Only then does the tutorial end and save as done. Skipping lands the
+  same way.
+
+## Voice lines
+
+**Status (2026-11-09):** wired, nothing recorded. Asked for by Vulps after the first run: "that was a lot to try and
+read".
+
+Each step plays a recorded line if there is one, `sounds/tutorial2_<line>`, matched by name; the panel keeps the text
+as a caption. A passage with a line waits for it to finish plus a second; without one it waits for reading time. The
+builder wires every `tutorial2_*` clip it finds, so recording one is: drop the file in `sounds/`, rerun *Build
+Tutorial Platform*, save the scene. The lines to record, with the text each step shows:
+
+| Clip | Step | Says |
+|---|---|---|
+| `tutorial2_plot` | 1 | This is a plot. You must claim a plot before you can plant in it. Grab the highlighted scroll. |
+| `tutorial2_hut` | 2 | Take the scroll into your hut to claim the plot. |
+| `tutorial2_claimed` | 2b | This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming. |
+| `tutorial2_barrel` | 3 | This is a buy point… Buy the seed. |
+| `tutorial2_scoreboard` | 4 | This is your scoreboard… Thatch is the currency we use in the Fractured Isles. |
+| `tutorial2_plant` | 5 | Plant the seed by pushing it into the dirt pile on the ground. |
+| `tutorial2_growing` | 5b | Wait for the seed to turn into a carrot. Carrots take 10 seconds to grow. (The anus line, if wanted.) |
+| `tutorial2_harvest` | 6 | Grab the carrot out of the ground. |
+| `tutorial2_sell` | 7 | Bring the carrot to the sell point to sell it. |
+| `tutorial2_tablet` | 8 | Open your tablet. |
+| `tutorial2_almanac` | 8b | You can use the almanac… you will see a silhouette. |
+| `tutorial2_seedtypes` | 9 | There are three types of seed… for as long as you're in the world. |
+| `tutorial2_sendoff` | 10 | It is now time to spread your wings and fly. Make a T pose. |
+| `tutorial2_jump` | 10 | Press jump. |
+| `tutorial2_tposehint` | 10 | If your avatar is too small, the game will not detect your T pose. Try scaling up your avatar. |
 
 > [!question] Open
-> - **Reading time** for the passages with nothing to do (steps 2b, 4, 8b, 9) is 0.4 s a word, never under 4 s
+> - **Reading time** for passages with no recorded line yet (steps 2b, 4, 8b, 9) is 0.4 s a word, never under 4 s
 >   (`TutorialPlatform._secondsPerWord`, `_minimumReadSeconds`). That rule is mine, not Vulps's: check it in-world.
 > - **The hut's fire crackle** is on an AudioSource that is inactive at load and switched on at step 2b. Whether
 >   Somnium routes it through the player's volume like the Gardens' huts is untested ([[tablet#Settings|tablet → Settings]]).

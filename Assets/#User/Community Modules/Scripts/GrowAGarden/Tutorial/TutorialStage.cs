@@ -3,11 +3,12 @@ using UnityEngine;
 
 namespace Vulps.GrowAGarden.Tutorial
 {
-    /// <summary>One piece of the tutorial platform that comes in from smoke and goes out in smoke.</summary>
+    /// <summary>One piece of the tutorial platform that dissolves into smoke and builds back out of it, a second each way.</summary>
     public class TutorialStage : MonoBehaviour
     {
-        private const float GROW_SECONDS = 0.35f;
-        private const float SHRINK_SECONDS = 0.25f;
+        /// <summary>How long a piece takes to dissolve, and to build again (Vulps: a second each way).</summary>
+        public const float SECONDS = 1f;
+        private const float PUFF_EVERY = 0.15f;
 
         [SerializeField] private SmokePuff _smoke;
 
@@ -27,26 +28,25 @@ namespace Vulps.GrowAGarden.Tutorial
             _scaleKnown = true;
         }
 
-        /// <summary>Comes in from smoke.</summary>
+        /// <summary>Builds out of smoke over <see cref="SECONDS"/>.</summary>
         public void Appear()
         {
             RememberScale();
             if (_running != null) StopCoroutine(_running);
             gameObject.SetActive(true);
             transform.localScale = _scale;
-            Puff();
+            Bounds bounds = Extent();
             transform.localScale = _scale * 0.01f;
-            _running = StartCoroutine(Scale(0.01f, 1f, GROW_SECONDS, false));
+            _running = StartCoroutine(Run(bounds, 0.01f, 1f, false));
         }
 
-        /// <summary>Goes out in smoke.</summary>
+        /// <summary>Dissolves into smoke over <see cref="SECONDS"/>, then is gone.</summary>
         public void Vanish()
         {
             if (!gameObject.activeInHierarchy) return;
             RememberScale();
             if (_running != null) StopCoroutine(_running);
-            Puff();
-            _running = StartCoroutine(Scale(1f, 0.01f, SHRINK_SECONDS, true));
+            _running = StartCoroutine(Run(Extent(), transform.localScale.x / Mathf.Max(0.0001f, _scale.x), 0.01f, true));
         }
 
         /// <summary>Gone at once, no smoke.</summary>
@@ -58,28 +58,28 @@ namespace Vulps.GrowAGarden.Tutorial
             gameObject.SetActive(false);
         }
 
-        private void Puff()
+        /// <summary>The world-space box its renderers fill now.</summary>
+        private Bounds Extent()
         {
-            if (_smoke == null) return;
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0) { _smoke.Play(new Bounds(transform.position, Vector3.one)); return; }
-            Bounds bounds = default;
+            Bounds bounds = new Bounds(transform.position, Vector3.one);
             bool any = false;
-            foreach (Renderer r in renderers)
+            foreach (Renderer r in GetComponentsInChildren<Renderer>())
             {
                 if (r is ParticleSystemRenderer) continue;
                 if (!any) { bounds = r.bounds; any = true; }
                 else bounds.Encapsulate(r.bounds);
             }
-            _smoke.Play(any ? bounds : new Bounds(transform.position, Vector3.one));
+            return bounds;
         }
 
-        private IEnumerator Scale(float from, float to, float seconds, bool hideAfter)
+        /// <summary>Scales between two shares of full size while smoke keeps pouring over the piece.</summary>
+        private IEnumerator Run(Bounds bounds, float from, float to, bool hideAfter)
         {
-            for (float t = 0f; t < seconds; t += Time.deltaTime)
+            float nextPuff = 0f;
+            for (float t = 0f; t < SECONDS; t += Time.deltaTime)
             {
-                float k = Mathf.SmoothStep(from, to, t / seconds);
-                transform.localScale = _scale * k;
+                if (_smoke != null && t >= nextPuff) { _smoke.Play(bounds); nextPuff += PUFF_EVERY; }
+                transform.localScale = _scale * Mathf.Lerp(from, to, Mathf.SmoothStep(0f, 1f, t / SECONDS));
                 yield return null;
             }
             transform.localScale = _scale * to;

@@ -8,9 +8,9 @@ namespace Vulps.GrowAGarden.Tutorial
     {
         [SerializeField] private ParticleSystem _particles;
         [Tooltip("Particles per cubic metre of what the puff covers, before the limits below.")]
-        [SerializeField] private float _density = 6f;
-        [SerializeField] private int _minimum = 12;
-        [SerializeField] private int _maximum = 120;
+        [SerializeField] private float _density = 3f;
+        [SerializeField] private int _minimum = 6;
+        [SerializeField] private int _maximum = 60;
 
         private void OnValidate()
         {

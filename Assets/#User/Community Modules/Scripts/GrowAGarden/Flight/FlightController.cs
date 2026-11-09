@@ -149,6 +149,9 @@ namespace Vulps.GrowAGarden.Flight
         /// <summary>Both arms are held out now, as they must be to take off: the tutorial's T pose.</summary>
         public bool ArmsOutNow => Resolve() && ArmsOut(_armExtension);
 
+        /// <summary>The player is touching the world: standing, not falling.</summary>
+        public bool Grounded => Resolve() && Touching();
+
         /// <summary>Statics outlive a scene when domain reload is off; a subscriber from the last
         /// session is a destroyed object waiting to be called.</summary>
         private void OnDestroy()

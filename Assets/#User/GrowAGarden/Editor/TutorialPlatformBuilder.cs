@@ -17,6 +17,9 @@ namespace Vulps.GrowAGarden.EditorTools
         private static readonly Vector3 POSITION = new Vector3(0f, 5000f, 0f);
         private const float WALL_RADIUS = 14f;
         private const float SKY_RADIUS = 80f;
+        // The Garden's ground is 0.5 m above its pieces' roots: plots sink by it, and the barrel's root sits 0.35 m above it.
+        private const float GROUND = 0.5f;
+        private const float BARREL_HEIGHT = 0.35f;
 
         // What survives on a copy: drawing, text, fire, and (on carryables) grabbing.
         private static readonly HashSet<string> KEEP = new HashSet<string>
@@ -71,10 +74,13 @@ namespace Vulps.GrowAGarden.EditorTools
             var notifier = Object.FindFirstObjectByType<Notifications.Notifier>();
             if (notifier != null) Set(panel, "_font", new SerializedObject(notifier).FindProperty("_font").objectReferenceValue);
             TutorialGlow glow = helpers.AddComponent<TutorialGlow>();
+            AudioSource voice = helpers.AddComponent<AudioSource>();
+            voice.playOnAwake = false;
+            voice.spatialBlend = 0f;
             Set(glow, "_material", m.Glow);
 
             // The plot, with a dirt pile on its middle-right row.
-            GameObject plot = Copy("prefabs_world:BorderedPlot", "Plot", root.transform, new Vector3(0f, 0f, 1.5f), 180f,
+            GameObject plot = Copy("prefabs_world:BorderedPlot", "Plot", root.transform, new Vector3(0f, 0.01f - GROUND, 1.5f), 180f,
                 remove: new[] { "Deed", "Plot/DeedAnchor", "Plot/ApplicationDropZone" });
             Stage(plot, smoke);
             Transform dirtRow = plot.transform.Find("Plot/Dirt (2)");
@@ -97,10 +103,10 @@ namespace Vulps.GrowAGarden.EditorTools
             Transform namedDeed = hut.transform.Find("Named Deed");
             Transform fireplace = hut.transform.Find("Fireplace");
 
-            // The buy point: a barrel with a label, the seed hovering in its socket.
-            GameObject barrel = Copy("prefab_buyables:BuyPoint", "Barrel", root.transform, new Vector3(0f, 0f, 1.5f), 0f, remove: new[] { "GrooveGlow", "SalePoint/data" });
+            // The buy point: the barrel at its real height, its own labels towards the player, the seed in its socket.
+            GameObject barrel = Copy("prefab_buyables:BuyPoint", "Barrel", root.transform, new Vector3(0f, BARREL_HEIGHT, 1.5f), BARREL_YAW, remove: new[] { "GrooveGlow" });
             Stage(barrel, smoke);
-            TMP_Text barrelLabel = Label("PriceLabel", barrel.transform, new Vector3(0f, 1.35f, 0f), 0.9f, "Carrot\n10 Thatch", new Color(0.1f, 0.25f, 0.45f));
+            Transform labels = barrel.transform.Find("SalePoint/data");
             Transform socket = barrel.transform.Find("Socket");
 
             // The scoreboard: the wooden board, with our own line where the balance board was.
@@ -134,9 +140,9 @@ namespace Vulps.GrowAGarden.EditorTools
             // The carryables, apart from every stage so hiding a stage never takes one out of a hand.
             Transform items = Empty("Items", root.transform, Vector3.zero);
             Transform path = plot.transform.Find("Plot/Path");
-            TutorialItem scroll = Item("prefab_items:Collectible_BlankDeedScroll", "Scroll", items, (path != null ? path.position : plot.transform.position) + Vector3.up * 1.1f, smoke);
-            TutorialItem seed = Item("prefabs_crops:Seed_Carrot", "Seed", items, socket.position + Vector3.up * 0.35f, smoke);
-            TutorialItem produce = Item("prefabs_crops:Produce_Carrot", "Carrot", items, dirtPile.transform.position + Vector3.up * 0.05f, smoke);
+            TutorialItem scroll = Item("prefab_items:Collectible_BlankDeedScroll", "Scroll", items, (path != null ? path.position : plot.transform.position) + Vector3.up * (GROUND + 1.1f), smoke);
+            TutorialItem seed = Item("prefabs_crops:Seed_Carrot", "Seed", items, socket.position, smoke, socket.rotation);
+            TutorialItem produce = Item("prefabs_crops:Produce_Carrot", "Carrot", items, dirtPile.transform.position, smoke);
 
             // Wiring.
             Set(wiring, "_arrival", arrival);
@@ -166,7 +172,15 @@ namespace Vulps.GrowAGarden.EditorTools
             SerializedProperty fire = wiring.FindProperty("_fire");
             fire.arraySize = fireplace != null ? 1 : 0;
             if (fireplace != null) fire.GetArrayElementAtIndex(0).objectReferenceValue = fireplace.gameObject;
-            Set(wiring, "_barrelLabel", barrelLabel);
+            Set(wiring, "_barrelName", labels?.Find("Name")?.GetComponent<TMP_Text>());
+            Set(wiring, "_barrelTagline", labels?.Find("Tagline")?.GetComponent<TMP_Text>());
+            Set(wiring, "_barrelBuy", labels?.Find("PriceBuy")?.GetComponent<TMP_Text>());
+            Set(wiring, "_barrelSell", labels?.Find("PriceSell")?.GetComponent<TMP_Text>());
+            Set(wiring, "_voice", voice);
+            SerializedProperty clips = wiring.FindProperty("_voiceClips");
+            List<AudioClip> lines = VoiceLines();
+            clips.arraySize = lines.Count;
+            for (int i = 0; i < lines.Count; i++) clips.GetArrayElementAtIndex(i).objectReferenceValue = lines[i];
             Set(wiring, "_scoreboardText", scoreboardText);
             Set(wiring, "_dirtPile", dirtPile);
             wiring.ApplyModifiedPropertiesWithoutUndo();
@@ -180,6 +194,21 @@ namespace Vulps.GrowAGarden.EditorTools
             EditorSceneManager.MarkSceneDirty(scene);
             Selection.activeGameObject = root;
             Logger.Info($"Build() — tutorial platform built at {POSITION}");
+        }
+
+        // The barrel's labels face the player at this turn (its data labels are turned half round on the prefab).
+        private const float BARREL_YAW = 180f;
+
+        /// <summary>Every recorded step line: sounds/tutorial2_*.</summary>
+        private static List<AudioClip> VoiceLines()
+        {
+            var lines = new List<AudioClip>();
+            foreach (string guid in AssetDatabase.FindAssets("tutorial2_ t:AudioClip", new[] { ART + "sounds" }))
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(guid));
+                if (clip != null && clip.name.StartsWith("tutorial2_")) lines.Add(clip);
+            }
+            return lines;
         }
 
         // ── Pieces ────────────────────────────────────────────────────────────────
@@ -394,7 +423,7 @@ namespace Vulps.GrowAGarden.EditorTools
         }
 
         /// <summary>A stripped copy of a carryable that keeps its grab, as a tutorial item hovering at <paramref name="at"/>.</summary>
-        private static TutorialItem Item(string source, string name, Transform parent, Vector3 at, SmokePuff smoke)
+        private static TutorialItem Item(string source, string name, Transform parent, Vector3 at, SmokePuff smoke, Quaternion? rotation = null)
         {
             string[] parts = source.Split(':');
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{ART}{parts[0]}/{parts[1]}.prefab");
@@ -402,7 +431,7 @@ namespace Vulps.GrowAGarden.EditorTools
             go.name = name;
             go.transform.SetParent(parent, true);
             go.transform.position = at;
-            go.transform.rotation = Quaternion.identity;
+            go.transform.rotation = rotation ?? Quaternion.identity;
             Strip(go, t => true, true);
             ClearPersistentEvents(go.GetComponent("XRGrabInteractable"));
             var body = go.GetComponent<Rigidbody>();

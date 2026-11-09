@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using Vulps.GrowAGarden.Flight;
@@ -26,8 +27,14 @@ namespace Vulps.GrowAGarden.Tutorial
         [SerializeField] private InstructionPanel _panel;
         [SerializeField] private TutorialGlow _glow;
         [SerializeField] private FlightController _flight;
-        [Tooltip("The carrot: its price, sale value and growing time are the tutorial's.")]
+        [Tooltip("The carrot: its price, sale value, tagline and growing time are the tutorial's.")]
         [SerializeField] private SeedDefinition _carrot;
+
+        [Header("Voice")]
+        [Tooltip("Plays the step lines. In the scene from load, so Somnium routes it through the player's volume.")]
+        [SerializeField] private AudioSource _voice;
+        [Tooltip("The step lines, in any order: matched to their step by asset name (tutorial2_plot, tutorial2_hut, ...). A step with no clip is text only.")]
+        [SerializeField] private AudioClip[] _voiceClips = new AudioClip[0];
 
         [Header("Stages, in the order they come")]
         [SerializeField] private TutorialStage _voidFloor;
@@ -60,19 +67,27 @@ namespace Vulps.GrowAGarden.Tutorial
         [SerializeField] private TMP_Text _namedDeedText;
         [Tooltip("The hut's fire, its light and its smoke: lit once the plot is claimed.")]
         [SerializeField] private GameObject[] _fire = new GameObject[0];
-        [SerializeField] private TMP_Text _barrelLabel;
+        [Tooltip("The barrel's own labels, filled as StallDisplay fills them.")]
+        [SerializeField] private TMP_Text _barrelName;
+        [SerializeField] private TMP_Text _barrelTagline;
+        [SerializeField] private TMP_Text _barrelBuy;
+        [SerializeField] private TMP_Text _barrelSell;
         [SerializeField] private TMP_Text _scoreboardText;
         [Tooltip("The dirt pile, highlighted while the player has the seed to plant.")]
         [SerializeField] private GameObject _dirtPile;
 
         [Header("Timing")]
-        [Tooltip("Seconds to read a passage: this many per word, never under the minimum below.")]
+        [Tooltip("Seconds to read a passage with no voice line: this many per word, never under the minimum below.")]
         [SerializeField] private float _secondsPerWord = 0.4f;
         [SerializeField] private float _minimumReadSeconds = 4f;
+        [Tooltip("Seconds after a voice line ends before the next step starts.")]
+        [SerializeField] private float _afterVoiceSeconds = 1f;
         [Tooltip("Seconds without a T pose before the avatar-size hint shows.")]
         [SerializeField] private float _tPoseHintAfter = 5f;
         [Tooltip("Seconds the planted aside shows.")]
         [SerializeField] private float _asideSeconds = 5f;
+
+        private const string TPOSE = "Make a T pose: hold both arms straight out to your sides.";
 
         private Step _step;
         private int _run;
@@ -80,11 +95,19 @@ namespace Vulps.GrowAGarden.Tutorial
         private bool _posed;
         private bool _hinted;
         private Transform _tablet;
+        private Coroutine _entering;
+        private readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
+
+        private void OnValidate()
+        {
+            if (_voice == null) _voice = GetComponentInChildren<AudioSource>();
+        }
 
         private void Awake()
         {
             HideEverything();
-            enabled = false;   // Update runs only on the steps that watch the player's body
+            enabled = false;   // Update runs only while a step watches the player's body
+            foreach (AudioClip clip in _voiceClips) if (clip != null) _clips[clip.name] = clip;
             PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
             TutorialManager.Started += OnStarted;
             TutorialManager.SkipRequested += OnSkipRequested;
@@ -137,21 +160,28 @@ namespace Vulps.GrowAGarden.Tutorial
             Leave(true);
         }
 
-        /// <summary>Takes the player down to the world and tells the manager the tutorial is over.</summary>
+        /// <summary>Takes the player down to the world with flight locked, and ends the tutorial once they are standing.</summary>
         private void Leave(bool skipped)
         {
             _step = Step.Leaving;
             enabled = false;
+            StopAllCoroutines();
             int run = ++_run;
-            if (_scroll != null) _scroll.Release();
-            if (_seed != null) _seed.Release();
-            if (_produce != null) _produce.Release();
-            StartCoroutine(TeleportWhenAble(_worldReturn, run, () =>
-            {
-                HideEverything();
-                _step = Step.None;
-                TutorialManager.GetInstance()?.Complete(skipped);
-            }));
+            StopVoice();
+            TutorialManager.GetInstance()?.SetFlightLocked(true);
+            foreach (TutorialItem item in new[] { _scroll, _seed, _produce }) if (item != null) item.Release();
+            StartCoroutine(TeleportWhenAble(_worldReturn, run, () => StartCoroutine(FinishOnLanding(run, skipped))));
+        }
+
+        /// <summary>Flight stays locked until the player is down on the island, so arriving with arms out never flies.</summary>
+        private IEnumerator FinishOnLanding(int run, bool skipped)
+        {
+            HidePieces();
+            float giveUpAt = Time.time + 10f;
+            while (run == _run && _flight != null && !_flight.Grounded && Time.time < giveUpAt) yield return null;
+            if (run != _run) yield break;
+            _step = Step.None;
+            TutorialManager.GetInstance()?.Complete(skipped);
         }
 
         /// <summary>Teleports the local player once Somnium lets us drive them, then calls <paramref name="arrived"/> unless the run changed.</summary>
@@ -173,6 +203,13 @@ namespace Vulps.GrowAGarden.Tutorial
         private void HideEverything()
         {
             StopAllCoroutines();
+            HidePieces();
+        }
+
+        /// <summary>Every piece back in its place and hidden, without stopping what is running.</summary>
+        private void HidePieces()
+        {
+            StopVoice();
             if (_panel != null) _panel.Hide();
             if (_glow != null) _glow.Clear();
             foreach (TutorialStage stage in new[] { _voidFloor, _plot, _hut, _barrel, _scoreboard, _sellPoint, _disc })
@@ -190,132 +227,185 @@ namespace Vulps.GrowAGarden.Tutorial
         private void Go(Step step)
         {
             _step = step;
-            _stepStartedAt = Time.time;
             enabled = false;
             if (_glow != null) _glow.Clear();
+            if (_panel != null) _panel.Hide();
             Logger.Info($"Go() '{gameObject.name}' — step {step}");
+            if (_entering != null) StopCoroutine(_entering);
+            _entering = StartCoroutine(Enter(step, _run));
+        }
 
+        /// <summary>Takes the last step's pieces apart, builds this step's, then says what to do. Every change waits for the one before.</summary>
+        private IEnumerator Enter(Step step, int run)
+        {
             switch (step)
             {
                 case Step.Plot:
-                    _plot.Appear();
+                    yield return Build(_plot, Stage(_scroll));
                     Bring(_scroll, true);
-                    _panel.Show("This is a plot. You must claim a plot before you can plant in it.", "Grab the highlighted scroll.");
+                    Say("plot", "This is a plot. You must claim a plot before you can plant in it.", "Grab the highlighted scroll.");
                     Glow(_scroll.gameObject);
                     break;
 
                 case Step.Hut:
-                    _plot.Vanish();
-                    _hut.Appear();
-                    _panel.Show(string.Empty, "Take the scroll into your hut to claim the plot.");
+                    yield return Dissolve(_plot);
+                    yield return Build(_hut);
+                    Say("hut", string.Empty, "Take the scroll into your hut to claim the plot.");
                     Glow(_hutDoor);
                     break;
 
                 case Step.Claimed:
-                    Consume(_scroll);
+                    _scroll.SetGrabbable(false);
+                    yield return Dissolve(Stage(_scroll));
                     if (_namedDeedText != null) _namedDeedText.text = PlayerManager.GetLocalPlayer().Name;
                     if (_namedDeed != null) _namedDeed.SetActive(true);
                     foreach (GameObject piece in _fire) if (piece != null) piece.SetActive(true);
-                    Read("This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming.",
-                         string.Empty, Step.Barrel);
+                    yield return Read("claimed", "This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming.");
+                    Next(Step.Barrel, run);
                     break;
 
                 case Step.Barrel:
-                    _hut.Vanish();
-                    _barrel.Appear();
-                    if (_barrelLabel != null) _barrelLabel.text = $"{Name(_carrot)}\n{Price(_carrot)} Thatch";
+                    yield return Dissolve(_hut);
+                    FillBarrel();
+                    yield return Build(_barrel, Stage(_seed));
                     Bring(_seed, true);
-                    _panel.Show("This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed " +
-                                "inside it, you can buy the seed for the price listed on the barrel.", "Buy the seed.");
+                    Say("barrel", "This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed " +
+                                  "inside it, you can buy the seed for the price listed on the barrel.", "Buy the seed.");
                     Glow(_seed.gameObject);
                     break;
 
                 case Step.Scoreboard:
-                    _barrel.Vanish();
-                    _scoreboard.Appear();
+                    yield return Dissolve(_barrel);
                     if (_scoreboardText != null) _scoreboardText.text = $"{PlayerManager.GetLocalPlayer().Name}    0";
-                    Read("This is your scoreboard. This is how you see how much Thatch you currently own. Thatch is the currency " +
-                         "we use in the Fractured Isles.", string.Empty, Step.Plant);
+                    yield return Build(_scoreboard);
+                    yield return Read("scoreboard", "This is your scoreboard. This is how you see how much Thatch you currently own. Thatch is " +
+                                                    "the currency we use in the Fractured Isles.");
+                    Next(Step.Plant, run);
                     break;
 
                 case Step.Plant:
-                    _scoreboard.Vanish();
-                    _plot.Appear();
-                    _panel.Show(string.Empty, "Plant the seed by pushing it into the dirt pile on the ground.");
+                    yield return Dissolve(_scoreboard);
+                    yield return Build(_plot);
+                    Say("plant", string.Empty, "Plant the seed by pushing it into the dirt pile on the ground.");
                     Glow(_dirtPile);
                     break;
 
                 case Step.Growing:
-                    Consume(_seed);
-                    _panel.Show(string.Empty, $"Wait for the seed to turn into a carrot. Carrots take {Seconds(_carrot)} seconds to grow.");
+                    _seed.SetGrabbable(false);
+                    yield return Dissolve(Stage(_seed));
+                    Say("growing", string.Empty, $"Wait for the seed to turn into a carrot. Carrots take {Seconds(_carrot)} seconds to grow.");
                     _panel.Aside("Yes, I know it looks like an anus. But it's a free asset.", _asideSeconds);
-                    StartCoroutine(Grow(_run));
+                    yield return Grow(run);
+                    Next(Step.Harvest, run);
                     break;
 
                 case Step.Harvest:
                     _produce.SetGrabbable(true);
                     Notifier.Push("Something is ready to harvest");
-                    _panel.Show(string.Empty, "Grab the carrot out of the ground.");
+                    Say("harvest", string.Empty, "Grab the carrot out of the ground.");
                     Glow(_produce.gameObject);
                     break;
 
                 case Step.Sell:
-                    _plot.Vanish();
-                    _sellPoint.Appear();
-                    _panel.Show(string.Empty, "Bring the carrot to the sell point to sell it.");
+                    yield return Dissolve(_plot);
+                    yield return Build(_sellPoint);
+                    Say("sell", string.Empty, "Bring the carrot to the sell point to sell it.");
                     Glow(_sellPoint.gameObject);
                     break;
 
                 case Step.Tablet:
-                    Consume(_produce);
-                    StartCoroutine(After(0.6f, _run, () => _sellPoint.Vanish()));
-                    _panel.Show(string.Empty, "Open your tablet.");
+                    _produce.SetGrabbable(false);
+                    yield return Dissolve(Stage(_produce), _sellPoint);
+                    Say("tablet", string.Empty, "Open your tablet.");
                     _tablet = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
-                    if (_tablet == null) Logger.Warn($"Go() '{gameObject.name}' — no tablet found; the step waits until one is");
+                    if (_tablet == null) Logger.Warn($"Enter() '{gameObject.name}' — no tablet found yet; the step keeps looking");
                     enabled = true;
                     break;
 
                 case Step.Almanac:
-                    Read("You can use the almanac to see all the seeds available in the game. It shows how often they spawn, how many " +
-                         "there are in the world, and if you haven't found one yet, you will see a silhouette.", string.Empty, Step.SeedTypes);
+                    yield return Read("almanac", "You can use the almanac to see all the seeds available in the game. It shows how often they " +
+                                                 "spawn, how many there are in the world, and if you haven't found one yet, you will see a silhouette.");
+                    Next(Step.SeedTypes, run);
                     break;
 
                 case Step.SeedTypes:
                     _seedTypes.Play();
-                    Read("There are three types of seed in the world.\n" +
-                         "<b>Crops</b> grow into things you harvest and sell.\n" +
-                         "<b>Buffing seeds</b> give multipliers to the size and value of your crop, for example 3x its base value. " +
-                         "Buffs always run on a timer.\n" +
-                         "<b>Upgrade seeds</b> raise the base value of everything you grow, for example by 5%, without a multiplier. " +
-                         "They last for as long as you're in the world.", string.Empty, Step.SendOff);
+                    yield return Read("seedtypes", "There are three types of seed in the world.\n" +
+                                                   "<b>Crops</b> grow into things you harvest and sell.\n" +
+                                                   "<b>Buffing seeds</b> give multipliers to the size and value of your crop, for example 3x its " +
+                                                   "base value. Buffs always run on a timer.\n" +
+                                                   "<b>Upgrade seeds</b> raise the base value of everything you grow, for example by 5%, without " +
+                                                   "a multiplier. They last for as long as you're in the world.");
+                    Next(Step.SendOff, run);
                     break;
 
                 case Step.SendOff:
                     _seedTypes.Stop();
-                    _voidFloor.Vanish();
-                    _disc.Appear();
+                    yield return Dissolve(_voidFloor);
+                    yield return Build(_disc);
                     _posed = false;
                     _hinted = false;
                     TutorialManager.GetInstance()?.SetFlightLocked(false);
-                    _panel.Show("It is now time to spread your wings and fly.", "Make a T pose: hold both arms straight out to your sides.");
+                    Say("sendoff", "It is now time to spread your wings and fly.", TPOSE);
+                    _stepStartedAt = Time.time;
                     enabled = true;
                     break;
             }
         }
 
-        /// <summary>Shows a passage for as long as it takes to read, then goes on to <paramref name="next"/>.</summary>
-        private void Read(string body, string instruction, Step next)
+        private void Next(Step step, int run)
         {
-            _panel.Show(body, instruction);
-            int words = body.Split(new[] { ' ', '\n' }, System.StringSplitOptions.RemoveEmptyEntries).Length;
-            float seconds = Mathf.Max(_minimumReadSeconds, words * _secondsPerWord);
-            StartCoroutine(After(seconds, _run, () => Go(next)));
+            if (run == _run) Go(step);
         }
 
-        private IEnumerator After(float seconds, int run, System.Action then)
+        /// <summary>Shows a passage and plays its line; waits for the line to end, or for reading time without one.</summary>
+        private IEnumerator Read(string line, string body)
         {
+            Say(line, body, string.Empty);
+            float seconds;
+            if (_clips.TryGetValue("tutorial2_" + line, out AudioClip clip)) seconds = clip.length + _afterVoiceSeconds;
+            else
+            {
+                int words = body.Split(new[] { ' ', '\n' }, System.StringSplitOptions.RemoveEmptyEntries).Length;
+                seconds = Mathf.Max(_minimumReadSeconds, words * _secondsPerWord);
+            }
             yield return new WaitForSeconds(seconds);
-            if (run == _run) then();
+        }
+
+        /// <summary>Shows the text and plays the step's line (tutorial2_<paramref name="line"/>) if there is one.</summary>
+        private void Say(string line, string body, string instruction)
+        {
+            _panel.Show(body, instruction);
+            PlayVoice("tutorial2_" + line);
+        }
+
+        private void PlayVoice(string clipName)
+        {
+            if (_voice == null || !_clips.TryGetValue(clipName, out AudioClip clip)) return;
+            _voice.Stop();
+            _voice.clip = clip;
+            _voice.Play();
+        }
+
+        private void StopVoice()
+        {
+            if (_voice != null) _voice.Stop();
+        }
+
+        /// <summary>Dissolves every given piece at once and waits until they are gone.</summary>
+        private static IEnumerator Dissolve(params TutorialStage[] stages)
+        {
+            bool any = false;
+            foreach (TutorialStage stage in stages)
+                if (stage != null && stage.gameObject.activeInHierarchy) { stage.Vanish(); any = true; }
+            if (any) yield return new WaitForSeconds(TutorialStage.SECONDS);
+        }
+
+        /// <summary>Builds every given piece at once and waits until they are whole.</summary>
+        private static IEnumerator Build(params TutorialStage[] stages)
+        {
+            foreach (TutorialStage stage in stages) if (stage != null) stage.Appear();
+            yield return new WaitForSeconds(TutorialStage.SECONDS);
         }
 
         /// <summary>The planted carrot grows out of the dirt pile over the carrot's growing time.</summary>
@@ -334,7 +424,6 @@ namespace Vulps.GrowAGarden.Tutorial
                 yield return null;
             }
             carrot.localScale = full;
-            if (run == _run && _step == Step.Growing) Go(Step.Harvest);
         }
 
         /// <summary>The two steps that wait on the player's own body: the tablet coming out and the T pose.</summary>
@@ -352,12 +441,14 @@ namespace Vulps.GrowAGarden.Tutorial
             if (posed != _posed)
             {
                 _posed = posed;
-                _panel.Instruct(posed ? "Press jump." : "Make a T pose: hold both arms straight out to your sides.");
+                _panel.Instruct(posed ? "Press jump." : TPOSE);
+                if (posed) PlayVoice("tutorial2_jump");
             }
             if (!posed && !_hinted && Time.time - _stepStartedAt >= _tPoseHintAfter)
             {
                 _hinted = true;
                 _panel.Aside("If your avatar is too small, the game will not detect your T pose. Try scaling up your avatar.", 0f);
+                PlayVoice("tutorial2_tposehint");
             }
             if (posed && _hinted) { _hinted = false; _panel.Aside(string.Empty, 0f); _stepStartedAt = float.PositiveInfinity; }
         }
@@ -396,22 +487,28 @@ namespace Vulps.GrowAGarden.Tutorial
 
         // ── Helpers ───────────────────────────────────────────────────────────────
 
-        /// <summary>Puts an item in its starting place and brings it in from smoke.</summary>
+        /// <summary>Makes an item, already built by its stage, ready in the hand's reach.</summary>
         private static void Bring(TutorialItem item, bool grabbable)
         {
-            item.PutBack();
             item.gameObject.SetActive(true);
             item.SetGrabbable(grabbable);
-            item.GetComponent<TutorialStage>()?.Appear();
         }
 
-        /// <summary>Takes an item out of the hand and away in smoke.</summary>
-        private static void Consume(TutorialItem item)
+        /// <summary>The stage an item comes and goes by, put back at its start first if it is not out yet.</summary>
+        private static TutorialStage Stage(TutorialItem item)
         {
-            item.SetGrabbable(false);
-            TutorialStage stage = item.GetComponent<TutorialStage>();
-            if (stage != null) stage.Vanish();
-            else item.gameObject.SetActive(false);
+            if (item == null) return null;
+            if (!item.gameObject.activeSelf) item.PutBack();
+            return item.GetComponent<TutorialStage>();
+        }
+
+        private void FillBarrel()
+        {
+            if (_carrot == null) return;
+            if (_barrelName != null) _barrelName.text = _carrot.displayName;
+            if (_barrelTagline != null) _barrelTagline.text = _carrot.tagline ?? string.Empty;
+            if (_barrelBuy != null) _barrelBuy.text = $"B: {_carrot.buyPrice}";
+            if (_barrelSell != null) _barrelSell.text = _carrot.sellValue > 0 ? $"S: {_carrot.sellValue}" : "S: -";
         }
 
         private void Glow(GameObject target)
@@ -419,8 +516,6 @@ namespace Vulps.GrowAGarden.Tutorial
             if (_glow != null) _glow.Show(target);
         }
 
-        private static string Name(SeedDefinition seed) => seed != null && !string.IsNullOrEmpty(seed.displayName) ? seed.displayName : "Carrot";
-        private static int Price(SeedDefinition seed) => seed != null ? seed.buyPrice : 10;
         private static int Seconds(SeedDefinition seed) => seed != null ? Mathf.RoundToInt(seed.growthDuration) : 10;
     }
 }
