@@ -14,12 +14,16 @@ the Plot grows for as long as it stands; then it dies, lets go of the island and
 
 **Status (2026-11-06):** decided by Vulps; built, compiles clean, untested in-world.
 
-- **Not in the stalls yet** (Vulps, 2026-11-05): Developer Market only until Vulps has tried it ([[dev-tools]]). Then
-  about 1 island stall in 1,000 (Vulps, 2026-11-04). **Price 2,000 Thatch** for now, 5,000 once Thatch
+- **In the stalls** (Vulps, 2026-11-09: "it's ready"): `spawnWeight` 0.0008, about 1 island stall in 1,000 (Vulps,
+  2026-11-04), scaled from the Moonflower's 0.008 at about 1 in 100; `Buyable_Yggdrasil` is last in
+  `WorldManager._buyables`. Also in the Developer Market ([[dev-tools]]). A stall holding it plays its voiceover to a
+  player walking up ([[tutorial#Seed voiceovers]]). **Price 2,000 Thatch** for now, 5,000 once Thatch
   persists and the rest is rebalanced (Vulps, 2026-11-05): nobody plays long enough without a crash to save 5,000.
 - **A buff, not an upgrade** (Vulps, 2026-11-05): it stands **30 minutes** from fully formed, then dies. It never goes
   back to a warehouse ([[warehouse]]).
-- **One at a time, worldwide** (Vulps): while a Yggdrasil stands, no stall stocks its seed. At this rarity two in one
+- **One at a time, worldwide** (Vulps): while a Yggdrasil stands, no stall stocks its seed (`YggdrasilSeed.MayBeStocked`
+  reads `YggdrasilPlant.AnyStanding`; `ShopKeeper` gives a crop that may not be stocked no weight), and none can be
+  planted (`MayBePlanted`). At this rarity two in one
   session would be nigh on impossible anyway.
 - **The buff is crop scale** (Vulps): every crop growing in its Plot while it stands grows bigger and is worth more,
   in proportion to how much of its growing it spent under the tree. The fruit really is drawn that big: carrying a

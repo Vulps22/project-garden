@@ -59,6 +59,9 @@ namespace Vulps.GrowAGarden
         [Tooltip("For a buffing seed: how many times bigger, and more profitable, a crop grown wholly under it is (docs/economy.md → Crop scale). Set in Init().")]
         public float buffMultiplier = 1f;
 
+        /// <summary>Whether a stall may stock this crop right now. A crop that can only exist once in the world says no while it does.</summary>
+        public virtual bool MayBeStocked => true;
+
         /// <summary>One fruit's profit: what it sells for less its share of the seed's price, never below 0.</summary>
         public float ProfitPerFruit => Mathf.Max(0f, sellValue - (float)buyPrice / Mathf.Max(1, fruitPerPlant));
 

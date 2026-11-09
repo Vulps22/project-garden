@@ -219,7 +219,7 @@ meaningful.
 
 ## Future — Yggdrasil, the god seed
 
-**Status (2026-11-06):** built, Developer Market only, untested in-world: [[yggdrasil]].
+**Status (2026-11-09):** built, in the stalls (about 1 island stall in 1,000) and the Developer Market, untested in-world: [[yggdrasil]].
 
 ## Future — the portal seed
 

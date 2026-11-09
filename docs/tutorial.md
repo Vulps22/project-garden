@@ -94,8 +94,7 @@ follow. The recorded **tips** stay, under *Tips* below.
   growing itself, come from `Seed_Carrot`'s `CarrotSeed`.
 - **Step 9's seeds are found, not listed:** any seed in the stalls (`WorldManager.Buyables`) or the Developer Market
   with a `buffMultiplier` over 1 is a buffing seed, and any with an `upgradeBonus` is an upgrade seed. A new one joins
-  the loop with no change here. Crops get no visual (Vulps). Today that is Yggdrasil (buffing, Developer Market
-  only) and the Moonflower, Spotlight Tulip and popcorn (upgrades).
+  the loop with no change here. Crops get no visual (Vulps). Today that is Yggdrasil (buffing) and the Moonflower, Spotlight Tulip and popcorn (upgrades).
 - **Step 9's copy:** crops grow into things you harvest and sell; buffing seeds give you multipliers to the size and
   value of your crop, and always last for a limited time; upgrade seeds raise the base value of everything you grow,
   without applying a multiplier, for as long as you're in the world (Vulps's recorded wording).
@@ -228,7 +227,7 @@ runs, not with Voice Tips off. Nothing is sent: each player hears it on their ow
 > [!question] Open
 > - **Once ever** is mine, from it being a tip; every approach, or once per session, are the alternatives.
 > - **The zone's size** (4 × 3 × 4 m) is mine: check it in-world.
-> - **Yggdrasil never stocks a stall yet** (`spawnWeight` 0, Developer Market only; [[yggdrasil]]), so the line cannot be
->   heard until it does. Pinning a test stall to it (`BuyPoint._override`) would hear it.
+> - **Yggdrasil stocks about 1 island stall in 1,000** ([[yggdrasil]]), so hearing the line by chance is unlikely: pinning a
+>   test stall to it (`BuyPoint._override`) is the way to check it.
 
 Related: [[flight]] (the send-off), [[plot-ownership]] (the real deed the tutorial's scroll stands in for).

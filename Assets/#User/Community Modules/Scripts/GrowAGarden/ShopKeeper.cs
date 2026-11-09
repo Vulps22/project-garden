@@ -389,7 +389,7 @@ namespace Vulps.GrowAGarden
         /// <summary>A crop's chance at a stall: the multiplier lifts anything rarer than the staple's weight of 1.</summary>
         private static float WeightOf(SeedDefinition definition, float rarityMultiplier)
         {
-            if (definition == null || definition.seedPrefab == null) return 0f;
+            if (definition == null || definition.seedPrefab == null || !definition.MayBeStocked) return 0f;
             float weight = definition.spawnWeight;
             if (weight <= 0f) return 0f;
             if (weight >= 1f) return weight;
