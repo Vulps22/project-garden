@@ -38,8 +38,16 @@ follow. The recorded **tips** stay, under *Tips* below.
 
 **Status (2026-11-09):** built, compiles clean, untested in-world.
 
-- **5 km above the world's origin** (`TutorialPlatform` at y 5000), far past the furthest draw distance (2 km), so
-  nobody below sees it. Coordinates that far out still have sub-millimetre precision. The Gardens' bubbles use 3D
+- **5 km above the world** (`TutorialPlatform` at y 5000), far past the furthest draw distance (2 km), so
+  nobody below sees it.
+- **One sky per player** (Vulps: ten players in one spot would clash). When a tutorial starts, the whole platform moves
+  to a spot on a 600 m grid at its height, centred over the origin, where no other player within ±50 m of that height
+  (jumping or falling) is closer than 500 m across the ground (`StandClearOfOthers`; other players' heads from
+  `PlayerManager.OtherPlayerHeads`). It picks at random among the nearest free spots, so two players starting together
+  rarely pick the same one. A player stays inside the walls, 14 m from their spot, so neighbouring tutorials are always
+  over 570 m apart. With no free spot in 6 rings (169 spots) it takes the clearest and logs a warning. Sectors are
+  worked out across the ground only, so a tutorial player counts as being in the sector under their spot, 5 km down
+  ([[procgen-islands]]): watch whether that hands them anything to simulate there. Coordinates that far out still have sub-millimetre precision. The Gardens' bubbles use 3D
   distance, so the dome, night and level of detail leave the player alone up there ([[detail]]).
 - **The look** is Vulps's Animus (Assassin's Creed): a white void with glowing blue lines. A sky sphere 80 m across
   and the floor draw `GrowAGarden/TutorialVoid`, near-white with a world-space grid and lines that sweep along it.

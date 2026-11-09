@@ -91,6 +91,17 @@ namespace Vulps.GrowAGarden.Tutorial
         [Tooltip("Seconds flight stays off after the player lands back on the island.")]
         [SerializeField] private float _flightLockAfterLanding = 5f;
 
+        [Header("Away from everyone else")]
+        [Tooltip("How far, across the ground, the platform stands from any other player near its height (Vulps: 500 m).")]
+        [SerializeField] private float _clearance = 500f;
+        [Tooltip("How far above or below the platform another player still counts as near its height (Vulps: 50 m, for jumping or falling players).")]
+        [SerializeField] private float _heightBand = 50f;
+        [Tooltip("The platform's possible spots: a square grid this many metres apart, centred where the builder put it. " +
+                 "Over the clearance plus the walls' reach, so two tutorials on neighbouring spots are always far enough apart.")]
+        [SerializeField] private float _gridSpacing = 600f;
+        [Tooltip("How many rings of the grid out from the centre to look for a free spot.")]
+        [SerializeField] private int _gridRings = 6;
+
         [Header("Placement")]
         [Tooltip("How far from the void's centre a piece may stand: inside its walls, with room to walk round it.")]
         [SerializeField] private float _reachRadius = 12f;
@@ -107,6 +118,8 @@ namespace Vulps.GrowAGarden.Tutorial
         private Coroutine _speaking;
         private readonly Dictionary<int, AudioClip> _clips = new Dictionary<int, AudioClip>();
         private readonly Dictionary<Transform, Pose> _layout = new Dictionary<Transform, Pose>();
+        private Vector3 _home;
+        private readonly List<Vector3> _others = new List<Vector3>();
         private Vector3 _framePosition;
         private Quaternion _frameRotation = Quaternion.identity;
 
@@ -117,6 +130,7 @@ namespace Vulps.GrowAGarden.Tutorial
 
         private void Awake()
         {
+            _home = transform.position;
             HideEverything();
             enabled = false;   // Update runs only while a step watches the player's body
             foreach (AudioClip clip in _voiceClips) if (LineNumber(clip, out int line)) _clips[line] = clip;
@@ -164,7 +178,63 @@ namespace Vulps.GrowAGarden.Tutorial
             int dropped = HeldObjects.ReleaseAll(this);
             if (dropped > 0) Logger.Info($"OnStarted() '{gameObject.name}' — let go of {dropped} held object(s) before going up");
             _step = Step.Arriving;
-            StartCoroutine(TeleportWhenAble(_arrival, _run, () => Go(Step.Welcome)));
+            StartCoroutine(GoUp(_run));
+        }
+
+        /// <summary>Waits until the player can be moved, stands the platform clear of everyone else, then takes them up.</summary>
+        private IEnumerator GoUp(int run)
+        {
+            while (!PlayerManager.CanDriveLocalPlayer)
+            {
+                if (run != _run) yield break;
+                yield return new WaitForSeconds(0.5f);
+            }
+            StandClearOfOthers();
+            yield return TeleportWhenAble(_arrival, run, () => Go(Step.Welcome));
+        }
+
+        /// <summary>
+        /// Moves the whole platform to a spot on its grid with no other player within the clearance across the ground and the
+        /// height band up and down, so tutorials never share the sky. Picks at random among the nearest free spots, so two
+        /// players starting at once are unlikely to choose the same one.
+        /// </summary>
+        private void StandClearOfOthers()
+        {
+            PlayerManager.OtherPlayerHeads(_others);
+            var free = new List<Vector3>();
+            Vector3 best = _home;
+            float bestGap = -1f;
+            for (int ring = 0; ring <= _gridRings; ring++)
+            {
+                for (int x = -ring; x <= ring; x++)
+                    for (int z = -ring; z <= ring; z++)
+                    {
+                        if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(z)) != ring) continue;
+                        Vector3 spot = _home + new Vector3(x * _gridSpacing, 0f, z * _gridSpacing);
+                        float gap = NearestOther(spot);
+                        if (gap >= _clearance) free.Add(spot);
+                        if (gap > bestGap) { bestGap = gap; best = spot; }
+                    }
+                if (free.Count >= 6) break;
+            }
+
+            Vector3 chosen = free.Count > 0 ? free[UnityEngine.Random.Range(0, free.Count)] : best;
+            if (free.Count == 0) Logger.Warn($"StandClearOfOthers() '{gameObject.name}' — no spot {_clearance} m from everyone; using the clearest ({bestGap:F0} m)");
+            transform.position = chosen;
+            Physics.SyncTransforms();
+            Logger.Info($"StandClearOfOthers() '{gameObject.name}' — platform at {chosen}, {_others.Count} other player(s) in the world, {free.Count} free spot(s) looked at");
+        }
+
+        /// <summary>The nearest other player to a spot across the ground, counting only those near its height; infinite if none.</summary>
+        private float NearestOther(Vector3 spot)
+        {
+            float nearest = float.PositiveInfinity;
+            foreach (Vector3 other in _others)
+            {
+                if (Mathf.Abs(other.y - spot.y) > _heightBand) continue;
+                nearest = Mathf.Min(nearest, Vector2.Distance(new Vector2(other.x, other.z), new Vector2(spot.x, spot.z)));
+            }
+            return nearest;
         }
 
         private void OnSkipRequested()

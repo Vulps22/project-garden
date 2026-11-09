@@ -110,6 +110,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// </summary>
         public static Transform LocalPlayerHead => PlayerBridge.LocalHead;
 
+        /// <summary>Where every other player's head is now, into <paramref name="into"/> (cleared first).</summary>
+        public static void OtherPlayerHeads(System.Collections.Generic.List<Vector3> into) => PlayerBridge.OtherPlayerHeads(into);
+
         /// <summary>Whether a collider entering a trigger is the local player.</summary>
         public static bool IsLocalPlayer(Collider other) => PlayerBridge.IsLocalPlayer(other);
 

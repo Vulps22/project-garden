@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using SomniumSpace.Bridge.Components;
 using SomniumSpace.Bridge.Player;
@@ -74,6 +75,20 @@ namespace Vulps.GrowAGarden
         {
             if (_container == null || string.IsNullOrEmpty(somniumId)) return PlayerIdentity.None;
             return Identify(_container.GetPlayerByID(somniumId));
+        }
+
+        /// <summary>Where every other player's head is now, into <paramref name="into"/> (cleared first).</summary>
+        public static void OtherPlayerHeads(List<Vector3> into)
+        {
+            into.Clear();
+            if (_container == null || _container.AllPlayers == null) return;
+            foreach (ISomniumPlayer player in _container.AllPlayers)
+            {
+                if (player == null || player.Properties == null || player.Properties.IsLocal || player.References == null) continue;
+                var body = player.References.Body;
+                Transform head = body != null ? body.Head : null;
+                if (head != null) into.Add(head.position);
+            }
         }
 
         /// <summary>Whether a collider entering a trigger is the local player's own trigger (it sits at their head).</summary>
