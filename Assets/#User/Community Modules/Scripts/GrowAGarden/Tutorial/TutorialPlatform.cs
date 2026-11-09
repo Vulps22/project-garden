@@ -86,6 +86,12 @@ namespace Vulps.GrowAGarden.Tutorial
         [SerializeField] private float _tPoseHintAfter = 5f;
         [Tooltip("Seconds the planted aside shows.")]
         [SerializeField] private float _asideSeconds = 5f;
+        [Tooltip("Seconds flight stays off after the player lands back on the island.")]
+        [SerializeField] private float _flightLockAfterLanding = 5f;
+
+        [Header("Placement")]
+        [Tooltip("How far from the void's centre a piece may stand: inside its walls, with room to walk round it.")]
+        [SerializeField] private float _reachRadius = 12f;
 
         private const string TPOSE = "Make a T pose: hold both arms straight out to your sides.";
 
@@ -97,6 +103,9 @@ namespace Vulps.GrowAGarden.Tutorial
         private Transform _tablet;
         private Coroutine _entering;
         private readonly Dictionary<string, AudioClip> _clips = new Dictionary<string, AudioClip>();
+        private readonly Dictionary<Transform, Pose> _layout = new Dictionary<Transform, Pose>();
+        private Vector3 _framePosition;
+        private Quaternion _frameRotation = Quaternion.identity;
 
         private void OnValidate()
         {
@@ -108,6 +117,7 @@ namespace Vulps.GrowAGarden.Tutorial
             HideEverything();
             enabled = false;   // Update runs only while a step watches the player's body
             foreach (AudioClip clip in _voiceClips) if (clip != null) _clips[clip.name] = clip;
+            RememberLayout();
             PlayerManager.LocalPlayerJoined += OnLocalPlayerJoined;
             TutorialManager.Started += OnStarted;
             TutorialManager.SkipRequested += OnSkipRequested;
@@ -173,12 +183,13 @@ namespace Vulps.GrowAGarden.Tutorial
             StartCoroutine(TeleportWhenAble(_worldReturn, run, () => StartCoroutine(FinishOnLanding(run, skipped))));
         }
 
-        /// <summary>Flight stays locked until the player is down on the island, so arriving with arms out never flies.</summary>
+        /// <summary>Flight stays locked until the player has stood on the island a few seconds, so arriving never flies.</summary>
         private IEnumerator FinishOnLanding(int run, bool skipped)
         {
             HidePieces();
             float giveUpAt = Time.time + 10f;
             while (run == _run && _flight != null && !_flight.Grounded && Time.time < giveUpAt) yield return null;
+            yield return new WaitForSeconds(_flightLockAfterLanding);
             if (run != _run) yield break;
             _step = Step.None;
             TutorialManager.GetInstance()?.Complete(skipped);
@@ -329,6 +340,8 @@ namespace Vulps.GrowAGarden.Tutorial
                     break;
 
                 case Step.SeedTypes:
+                    FacePlayer(_seedTypes);
+                    Place(_seedTypes.transform);
                     _seedTypes.Play();
                     yield return Read("seedtypes", "There are three types of seed in the world.\n" +
                                                    "<b>Crops</b> grow into things you harvest and sell.\n" +
@@ -401,17 +414,67 @@ namespace Vulps.GrowAGarden.Tutorial
             if (any) yield return new WaitForSeconds(TutorialStage.SECONDS);
         }
 
-        /// <summary>Builds every given piece at once and waits until they are whole.</summary>
-        private static IEnumerator Build(params TutorialStage[] stages)
+        /// <summary>Builds every given piece at once in front of the player, and waits until they are whole.</summary>
+        private IEnumerator Build(params TutorialStage[] stages)
         {
-            foreach (TutorialStage stage in stages) if (stage != null) stage.Appear();
+            FacePlayer(stages);
+            foreach (TutorialStage stage in stages) if (stage != null) { Place(stage.transform); stage.Appear(); }
             yield return new WaitForSeconds(TutorialStage.SECONDS);
         }
+
+        // ── Placement ─────────────────────────────────────────────────────────────
+
+        /// <summary>Every piece's pose as the builder laid it out, relative to the arrival point.</summary>
+        private void RememberLayout()
+        {
+            if (_arrival == null) return;
+            Quaternion inverse = Quaternion.Inverse(_arrival.rotation);
+            foreach (Component piece in new Component[] { _plot, _hut, _barrel, _scoreboard, _sellPoint, _seedTypes, _disc, _scroll, _seed, _produce })
+                if (piece != null)
+                    _layout[piece.transform] = new Pose(inverse * (piece.transform.position - _arrival.position), inverse * piece.transform.rotation);
+            if (_disc != null)
+            {
+                Pose disc = _layout[_disc.transform];
+                _layout[_disc.transform] = new Pose(new Vector3(0f, disc.position.y, 0f), disc.rotation);   // under the player's feet
+            }
+        }
+
+        /// <summary>Takes where the player stands and looks as the frame the next pieces are laid out in, kept inside the void's walls.</summary>
+        private void FacePlayer(params Component[] pieces)
+        {
+            Transform head = PlayerManager.LocalPlayerHead;
+            if (head == null || _arrival == null) return;
+
+            Vector3 forward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
+            if (forward.sqrMagnitude < 0.01f) forward = Vector3.ProjectOnPlane(head.up, Vector3.up);
+            if (forward.sqrMagnitude < 0.01f) forward = _arrival.forward;
+            _frameRotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+            _framePosition = new Vector3(head.position.x, _arrival.position.y, head.position.z);
+
+            Vector3 centre = _arrival.parent != null ? _arrival.parent.position : _arrival.position;
+            float overshoot = 0f;
+            foreach (Component piece in pieces)
+            {
+                if (piece == null || !_layout.TryGetValue(piece.transform, out Pose pose)) continue;
+                Vector3 at = _framePosition + _frameRotation * pose.position - centre;
+                overshoot = Mathf.Max(overshoot, new Vector2(at.x, at.z).magnitude - _reachRadius);
+            }
+            if (overshoot > 0f) _framePosition -= _frameRotation * Vector3.forward * overshoot;
+        }
+
+        /// <summary>Puts a piece where the layout has it, in the frame <see cref="FacePlayer"/> last took.</summary>
+        private void Place(Transform piece)
+        {
+            if (piece == null || !_layout.TryGetValue(piece, out Pose pose)) return;
+            piece.SetPositionAndRotation(_framePosition + _frameRotation * pose.position, _frameRotation * pose.rotation);
+        }
+
 
         /// <summary>The planted carrot grows out of the dirt pile over the carrot's growing time.</summary>
         private IEnumerator Grow(int run)
         {
             _produce.PutBack();
+            Place(_produce.transform);   // in the dirt pile, in the frame the plot was built in
             _produce.gameObject.SetActive(true);
             _produce.SetGrabbable(false);
             Transform carrot = _produce.transform;

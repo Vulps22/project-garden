@@ -56,6 +56,11 @@ follow. The recorded **tips** stay, under *Tips* below.
   0.35 m up. The barrel keeps its own labels (name, tagline, buy and sell price, filled as `StallDisplay` fills
   them) and is turned so they face the player. The seed sits at the barrel's socket with its rotation, and the carrot
   grows at the dirt pile's anchor, half in the soil, as a real plant does.
+- **Pieces build in front of the player**, not at fixed spots (Vulps: the barrel built behind them on the second
+  run). Each build takes where the player stands and looks, and lays its pieces out as the builder laid them out from
+  the arrival point, turned to that facing. The carrot grows in the frame its plot was built in; the seed-types show
+  is placed the same way, and the send-off disc builds under the player's feet. A layout that would reach past 12 m
+  from the void's centre is pulled back towards the player, so nothing builds outside the walls.
 - **The highlight:** a pulsing blue shell on a copy of the target's meshes (`TutorialGlow`, `GrowAGarden/TutorialGlow`).
 - **The text:** `InstructionPanel`, a panel fixed below the middle of the view, drawn over everything. It shows what
   the thing is, what to do now (bold, blue), and a passing aside under it. The Notifier's toasts are separate
@@ -101,9 +106,9 @@ follow. The recorded **tips** stay, under *Tips* below.
   pose after 5 s, an aside stays up until there is one: "If your avatar is too small, the game will not detect your
   T pose. Try scaling up your avatar." Jumping with arms out takes off (`FlightController.Launched`). That is the
   send-off: flight locks again at once (ending the take-off), the player is teleported to the world spawn
-  (`GardenReturnPoint`, the same point `WorldFloor` uses), and flight stays locked until they are standing
-  (`FlightController.Grounded`, or 10 s at most). Only then does the tutorial end and save as done. Skipping lands the
-  same way.
+  (`GardenReturnPoint`, the same point `WorldFloor` uses), and flight stays locked until they have stood on the
+  island for 5 s (`FlightController.Grounded`, or 10 s waiting for it at most, then `_flightLockAfterLanding`; Vulps).
+  Only then does the tutorial end, save as done and unlock flight. Skipping lands the same way.
 
 ## Voice lines
 
