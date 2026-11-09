@@ -75,6 +75,7 @@ follow. The recorded **tips** stay, under *Tips* below.
 
 | # | Shows | Text | Waits for |
 |---|---|---|---|
+| 0 | the void, nothing in it yet | "Welcome! Before we can let you loose on the Fractured Isles, I want to give you a rundown of the basics of growing your garden." How to skip from Settings → World, and to come back to it there later. | the lines |
 | 1 | the plot, the scroll hovering over it (lit) | "This is a plot. You must claim a plot before you can plant in it." **Grab the highlighted scroll.** | the scroll grabbed |
 | 2 | the plot goes, the hut comes; its door lit | **Take the scroll into your hut to claim the plot.** | the scroll inside the hut's claim zone |
 | 2b | the scroll goes; the deed shows the player's name, the fire lights | "This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming." | reading time |
@@ -85,9 +86,9 @@ follow. The recorded **tips** stay, under *Tips* below.
 | 6 | the carrot lit; a "Something is ready to harvest" toast | **Grab the carrot out of the ground.** | the carrot grabbed |
 | 7 | the plot goes, the sell point comes (lit) | **Bring the carrot to the sell point to sell it.** | the carrot in the sell point |
 | 8 | the carrot and the sell point go | **Open your tablet.** | the tablet out |
-| 8b | | "You can use the almanac to see all the seeds available in the game. It shows how often they spawn, how many there are in the world, and if you haven't found one yet, you will see a silhouette." | reading time |
+| 8b | | "You can use the almanac to see all the seeds available in the game. It shows how often they spawn, and how many there are in the world. If you haven't found one yet, you will see a silhouette." | the lines |
 | 9 | every buffing and upgrade seed, in two labelled rows, in and out of smoke on a loop | "There are three types of seed in the world." Crops, buffing seeds, upgrade seeds (below) | reading time |
-| 10 | the void floor goes, a solid disc comes | "It is now time to spread your wings and fly." **Make a T pose…** then **Press jump.** | taking off from the disc |
+| 10 | the seeds go; then the void floor goes, a solid disc comes | "That's it! That's the basics, the rest you can find out for yourself! You're a grown-up (I hope), so I'm sure you're smart enough." Then "It is now time to spread your wings and fly." **Make a T pose…** then **Press jump.** | taking off from the disc |
 
 - **The carrot's numbers are the real carrot's:** its price on the barrel, and its growing time in step 5b and in the
   growing itself, come from `Seed_Carrot`'s `CarrotSeed`.
@@ -95,15 +96,14 @@ follow. The recorded **tips** stay, under *Tips* below.
   with a `buffMultiplier` over 1 is a buffing seed, and any with an `upgradeBonus` is an upgrade seed. A new one joins
   the loop with no change here. Crops get no visual (Vulps). Today that is Yggdrasil (buffing, Developer Market
   only) and the Moonflower, Spotlight Tulip and popcorn (upgrades).
-- **Step 9's copy:** crops grow into things you harvest and sell; buffing seeds give multipliers to the size and
-  value of your crop, for example 3× its base value, and always run on a timer; upgrade seeds raise the base value
-  of everything you grow, for example by 5%, without a multiplier, for as long as you're in the world. Both numbers
-  are examples (Vulps).
+- **Step 9's copy:** crops grow into things you harvest and sell; buffing seeds give you multipliers to the size and
+  value of your crop, and always last for a limited time; upgrade seeds raise the base value of everything you grow,
+  without applying a multiplier, for as long as you're in the world (Vulps's recorded wording).
 - **Step 8 watches the tablet** through `TabletManager.IsOut`: Somnium hides the tablet by fading its `Canvases`
   CanvasGroup to 0 ([[tablet]]).
 - **Step 10:** flight unlocks when the disc appears. The instruction reads *Press jump* while both arms are out
   (`FlightController.ArmsOutNow`, the pose flight itself needs) and goes back to the T pose when they drop. With no
-  pose after 5 s, an aside stays up until there is one: "If your avatar is too small, the game will not detect your
+  pose 5 s after the send-off lines (20, 21) finish, and never over a line still playing, an aside stays up until there is one: "If your avatar is too small, the game will not detect your
   T pose. Try scaling up your avatar." Jumping with arms out takes off (`FlightController.Launched`). That is the
   send-off: flight locks again at once (ending the take-off), the player is teleported to the world spawn
   (`GardenReturnPoint`, the same point `WorldFloor` uses), and flight stays locked until they have stood on the
@@ -112,34 +112,49 @@ follow. The recorded **tips** stay, under *Tips* below.
 
 ## Voice lines
 
-**Status (2026-11-09):** wired, nothing recorded. Asked for by Vulps after the first run: "that was a lot to try and
-read".
+**Status (2026-11-09):** all 27 recorded by Vulps (24 and 28 were empty takes, so there are none by those numbers), trimmed and wired; untested in-world. Asked for by Vulps after the
+first run: "that was a lot to try and read".
 
-Each step plays a recorded line if there is one, `sounds/tutorial2_<line>`, matched by name; the panel keeps the text
-as a caption. A passage with a line waits for it to finish plus a second; without one it waits for reading time. The
-builder wires every `tutorial2_*` clip it finds, so recording one is: drop the file in `sounds/`, rerun *Build
-Tutorial Platform*, save the scene. The lines to record, with the text each step shows:
+Each step plays its recorded line if there is one, `sounds/Tutorial/tutorial_<number>` (Vulps: it replaces the old tutorial, so
+no "2"), matched by the number in the table below; the panel keeps the text as a caption. A step with several lines says them
+one after another, 0.3 s apart (`_betweenLinesSeconds`). `tutorial-<number>`, as
+`~/Documents/record-tutorial.sh` names its takes, matches too. A passage with a line waits for it to finish plus a
+second; without one it waits for reading time. The builder wires every numbered clip it finds and skips the old
+narrator's named ones (`tutorial_Welcome`, `tutorial_hut`…), so recording one is: drop the file in `sounds/`, rerun
+*Build Tutorial Platform*, save the scene. The lines to record, with the text each step shows:
 
 | Clip | Step | Says |
 |---|---|---|
-| `tutorial2_plot` | 1 | This is a plot. You must claim a plot before you can plant in it. Grab the highlighted scroll. |
-| `tutorial2_hut` | 2 | Take the scroll into your hut to claim the plot. |
-| `tutorial2_claimed` | 2b | This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming. |
-| `tutorial2_barrel` | 3 | This is a buy point… Buy the seed. |
-| `tutorial2_scoreboard` | 4 | This is your scoreboard… Thatch is the currency we use in the Fractured Isles. |
-| `tutorial2_plant` | 5 | Plant the seed by pushing it into the dirt pile on the ground. |
-| `tutorial2_growing` | 5b | Wait for the seed to turn into a carrot. Carrots take 10 seconds to grow. (The anus line, if wanted.) |
-| `tutorial2_harvest` | 6 | Grab the carrot out of the ground. |
-| `tutorial2_sell` | 7 | Bring the carrot to the sell point to sell it. |
-| `tutorial2_tablet` | 8 | Open your tablet. |
-| `tutorial2_almanac` | 8b | You can use the almanac… you will see a silhouette. |
-| `tutorial2_seedtypes` | 9 | There are three types of seed… for as long as you're in the world. |
-| `tutorial2_sendoff` | 10 | It is now time to spread your wings and fly. Make a T pose. |
-| `tutorial2_jump` | 10 | Press jump. |
-| `tutorial2_tposehint` | 10 | If your avatar is too small, the game will not detect your T pose. Try scaling up your avatar. |
+| `tutorial_1` | 1 | This is a plot. You must claim a plot before you can plant in it. Grab the highlighted scroll. |
+| `tutorial_2` | 2 | Take the scroll into your hut to claim the plot. |
+| `tutorial_3` | 2b | This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming. |
+| `tutorial_4` | 3 | This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed inside it, you can buy the seed for the price listed on the barrel. |
+| `tutorial_5` | 3 | Buy the seed. |
+| `tutorial_6` | 4 | This is your scoreboard. This is how you see how much Thatch you currently own. Thatch is the currency we use in the Fractured Isles. |
+| `tutorial_7` | 5 | Plant the seed by pushing it into the dirt pile on the ground. |
+| `tutorial_8` | 5b | Yes, I know it looks like an anus. But it's a free asset. |
+| `tutorial_9` | 5b | Wait for the seed to turn into a carrot. Carrots take 10 seconds to grow. |
+| `tutorial_10` | 6 | Grab the carrot out of the ground. |
+| `tutorial_11` | 7 | Bring the carrot to the sell point to sell it. |
+| `tutorial_12` | 8 | Open your tablet. |
+| `tutorial_13` | 8b | You can use the almanac to see all the seeds available in the game. |
+| `tutorial_14` | 8b | It shows how often they spawn, and how many there are in the world. |
+| `tutorial_15` | 8b | If you haven't found one yet, you will see a silhouette. |
+| `tutorial_16` | 9 | There are three types of seed in the world. |
+| `tutorial_17` | 9 | Crops grow into things you harvest and sell. |
+| `tutorial_18` | 9 | Buffing seeds give you multipliers to the size and value of your crop. Buffs always last for a limited time. |
+| `tutorial_19` | 9 | Upgrade seeds raise the base value of everything you grow, without applying a multiplier. They last for as long as you're in the world. |
+| `tutorial_20` | 10 | It is now time to spread your wings and fly. |
+| `tutorial_21` | 10 | Make a T pose. |
+| `tutorial_22` | 10 | If your avatar is too small, the game will not detect your T pose. Try scaling up your avatar. (After 5 s with no T pose.) |
+| `tutorial_23` | 10 | Press jump. (Once the T pose is held.) |
+| `tutorial_25` | 0 | Welcome! Before we can let you loose on the Fractured Isles, I want to give you a rundown of the basics of growing your garden. |
+| `tutorial_26` | 0 | You can skip the tutorial at any time by opening the settings app on your tablet and choosing the “world” tab at the bottom. There’s a skip option in there. |
+| `tutorial_27` | 0 | You will also be able to use the Settings app to return to the tutorial at any time in the future. |
+| `tutorial_29` | 10 | That’s it! That’s the basics, the rest you can find out for yourself! You’re a grown-up (I hope), so I’m sure you’re smart enough. (Before line 20.) |
 
 > [!question] Open
-> - **Reading time** for passages with no recorded line yet (steps 2b, 4, 8b, 9) is 0.4 s a word, never under 4 s
+> - **Reading time** for a passage whose lines are missing (all are recorded now, so only a fallback) is 0.4 s a word, never under 4 s
 >   (`TutorialPlatform._secondsPerWord`, `_minimumReadSeconds`). That rule is mine, not Vulps's: check it in-world.
 > - **The hut's fire crackle** is on an AudioSource that is inactive at load and switched on at step 2b. Whether
 >   Somnium routes it through the player's volume like the Gardens' huts is untested ([[tablet#Settings|tablet → Settings]]).

@@ -199,14 +199,14 @@ namespace Vulps.GrowAGarden.EditorTools
         // The barrel's labels face the player at this turn (its data labels are turned half round on the prefab).
         private const float BARREL_YAW = 180f;
 
-        /// <summary>Every recorded step line: sounds/tutorial2_*.</summary>
+        /// <summary>Every recorded line: sounds/tutorial_N (or tutorial-N); the old narrator's named clips are skipped.</summary>
         private static List<AudioClip> VoiceLines()
         {
             var lines = new List<AudioClip>();
-            foreach (string guid in AssetDatabase.FindAssets("tutorial2_ t:AudioClip", new[] { ART + "sounds" }))
+            foreach (string guid in AssetDatabase.FindAssets("tutorial t:AudioClip", new[] { ART + "sounds" }))
             {
                 var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(guid));
-                if (clip != null && clip.name.StartsWith("tutorial2_")) lines.Add(clip);
+                if (TutorialPlatform.LineNumber(clip, out _)) lines.Add(clip);
             }
             return lines;
         }
