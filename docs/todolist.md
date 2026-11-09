@@ -66,7 +66,7 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Open the tutorial to everyone once it is refined and tested: drop the owner-only condition in `TutorialManager.Available`. [[tutorial]]
 - [ ] Record the tutorial's voice lines (`sounds/tutorial2_*`, list in tutorial → Voice lines), then rerun Build Tutorial Platform. [[tutorial]]
 - [ ] Flight rework (not yet): a jump to take off unless already falling, and thresholds that follow the player's size; log the size signals first. [[flight]]
-- [ ] 2D (desktop) players: a pass over controls and gameplay once the tutorial's first pass is done; the tutorial ignores them until then (Vulps). [[tutorial]]
+- [ ] 2D (desktop) players: a pass over controls and gameplay once the tutorial's first pass is done; the tutorial ignores them until then (Vulps). Plan and open questions in [[2d-players]]. [[tutorial]]
 
 ## Changelog
 
