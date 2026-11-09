@@ -170,8 +170,9 @@ Most severe first; every fix hooks an event.
 2. **A master that never received the balance table wipes everyone's balances** when it takes over (it broadcasts
    only its own row). **Built:** such a master does not broadcast on taking over; it asks everyone (message 22 with
    a flag), any client holding the table offers it (message 23), and the first offer replaces the master's blank
-   rows and goes out. Still exposed: a sale or join in the moment before an offer arrives broadcasts the partial
-   table.
+   rows and goes out. A master alone in the world has the whole table and broadcasts at once, or the
+   first player's board stays empty until a balance changes. Still exposed: a sale or join in the moment before an
+   offer arrives broadcasts the partial table.
 3. **A new master never hears harvests from plants the old master bore:** `BearingPlant` subscribes to
    `Produce.Harvested` only on the master that called `Bear()`. Those plants never re-bear or wither. **Built:** on
    `BecameWorldMaster` a bearing plant listens to every socket's produce, and one already taken counts as harvested.

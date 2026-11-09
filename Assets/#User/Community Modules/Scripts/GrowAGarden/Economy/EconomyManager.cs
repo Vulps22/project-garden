@@ -77,6 +77,7 @@ namespace Vulps.GrowAGarden.Economy
         private IEnumerator BroadcastNextFrame()
         {
             yield return null;
+            if (!_hasTable && PlayerManager.PlayerCount <= 1) _hasTable = true;   // alone: there is nobody else's balance to lose
             if (_hasTable) { BroadcastBalances(); yield break; }
             Logger.Warn($"BroadcastNextFrame() '{gameObject.name}' — master without the balance table; asking the others for it");
             if (_bridge != null && _bridge.CanSend) _bridge.SendToAll(TABLE_REQUEST_ID, new byte[] { 1 });
