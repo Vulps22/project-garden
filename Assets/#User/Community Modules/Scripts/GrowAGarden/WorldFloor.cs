@@ -39,10 +39,10 @@ namespace Vulps.GrowAGarden
                  "Stops a rescue that somehow lands low from catching itself in a loop.")]
         [SerializeField] private float _rearmMargin = 5f;
 
-        [Tooltip("Seconds between cleanup sweeps for grabbables that have fallen below the floor. " +
-                 "Master only. Not per-frame: the sweep enumerates the scene, and nothing down " +
-                 "there is going anywhere.")]
-        [SerializeField] private float _sweepInterval = 0.5f;
+        [Tooltip("Width of the trigger volume under the floor that catches falling grabbables, in metres.")]
+        [SerializeField] private float _catchWidth = 100000f;
+
+        private const float CATCH_DEPTH = 1000f;   // deep enough that nothing falls through it in one physics step
 
 
         /// <summary>
@@ -60,56 +60,63 @@ namespace Vulps.GrowAGarden
             if (_floorY <= -100f) _floorY = -75f;
         }
 
-        private float _nextSweepAt;
+        private FloorTrigger _catch;
 
-        private void Update()
+        // Event driven: the tracker says when the player's head crosses the floor or climbs back above the rearm height,
+        // and a trigger volume under the floor says when a grabbable falls into it.
+        private void Start()
         {
-            Sweep();
+            PlayerTracker.Watch(Band, OnBandChanged);
 
-            Transform head = PlayerManager.LocalPlayerHead;
-            if (head == null) return;
+            var volume = new GameObject("WorldFloor Catch", typeof(BoxCollider), typeof(FloorTrigger));
+            volume.layer = 2;   // Ignore Raycast: nothing aiming into the void should hit it
+            volume.transform.SetParent(transform, false);
+            volume.transform.position = new Vector3(0f, _floorY - CATCH_DEPTH * 0.5f, 0f);
+            var box = volume.GetComponent<BoxCollider>();
+            box.isTrigger = true;
+            box.size = new Vector3(_catchWidth, CATCH_DEPTH, _catchWidth);
+            _catch = volume.GetComponent<FloorTrigger>();
+            _catch.Entered += OnFellIn;
+        }
 
-            float y = head.position.y;
+        private void OnDestroy()
+        {
+            PlayerTracker.Unwatch(OnBandChanged);
+            if (_catch != null) _catch.Entered -= OnFellIn;
+        }
 
-            if (_caught)
-            {
-                if (y > _floorY + _rearmMargin) _caught = false;
-                return;
-            }
+        /// <summary>0 above the rearm height, 1 between it and the floor, 2 at or below the floor.</summary>
+        private Vector2Int Band(Vector3 head) =>
+            new Vector2Int(head.y <= _floorY ? 2 : head.y <= _floorY + _rearmMargin ? 1 : 0, 0);
 
-            if (y > _floorY) return;
-
+        private void OnBandChanged(Vector3 head)
+        {
+            int band = Band(head).x;
+            if (band == 0) { _caught = false; return; }
+            if (band < 2 || _caught) return;
             _caught = true;
-            Rescue(y);
+            Rescue(head.y);
         }
 
         /// <summary>
-        /// The trash can. Anything grabbable that has fallen past the floor is destroyed, which is
-        /// what procgen-islands.md means by the floor doubling as the cleanup mechanism for
-        /// everything dropped, thrown or abandoned.
+        /// The trash can. Anything grabbable that falls into the volume under the floor is destroyed, which is what
+        /// procgen-islands.md means by the floor doubling as the cleanup mechanism for everything dropped, thrown or
+        /// abandoned. Physics raises it on the master too, which moves other players' objects as kinematic bodies.
         ///
         /// Master only, because what exists is a fact the master decides — see CLAUDE.md's tier
         /// table. Every other client will see the despawn arrive.
         /// </summary>
-        private void Sweep()
+        private void OnFellIn(Collider other)
         {
             if (!PlayerManager.IsMaster) return;
-            if (Time.time < _nextSweepAt) return;
-            _nextSweepAt = Time.time + Mathf.Max(0.1f, _sweepInterval);
+            XRGrabInteractable grab = other.GetComponentInParent<XRGrabInteractable>();
+            if (grab == null) return;
 
-            var grabbables = FindObjectsByType<XRGrabInteractable>(FindObjectsSortMode.None);
-            for (int i = 0; i < grabbables.Length; i++)
-            {
-                XRGrabInteractable grab = grabbables[i];
-                if (grab == null) continue;
-                if (grab.transform.position.y > _floorY) continue;
+            var held = grab.GetComponent<IHeldObject>();
+            if (held == null) return;   // not ours: Somnium's tablet is grabbable too, and rides the player down
+            if (!string.IsNullOrEmpty(held.HolderId)) return;
 
-                var held = grab.GetComponent<IHeldObject>();
-                if (held == null) continue;   // not ours: Somnium's tablet is grabbable too, and rides the player down
-                if (!string.IsNullOrEmpty(held.HolderId)) continue;
-
-                StartCoroutine(Discard(grab.gameObject));
-            }
+            StartCoroutine(Discard(grab.gameObject));
         }
 
         /// <summary>

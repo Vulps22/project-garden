@@ -92,8 +92,8 @@ plant and point that asked. `PlayerManager` is the worked example — a row of f
 
 1. **Spawn.** Prefab-id lookup, `SharedModeStateAuthMasterClient`, the try/catch that stops a spawn
    throw blacking out the world through `ExceptionAlarm`, and the explicit pose write that Fusion's
-   local-only spawn position makes necessary — `Teleport()` on a `NetworkRigidbody3D`, since a
-   kinematic one ignores `transform.position`.
+   local-only spawn position makes necessary — `NetworkTransform.Teleport` on the state authority
+   ([[networking#Fusion 2.1|networking → Fusion 2.1]]).
 2. **Despawn.** The authority check, and it is **loud** when it cannot act. Fusion's own `Despawn`
    silently does nothing without state authority, and that silence cost real time. An abstraction
    that inherited the silence would be worse than no abstraction.
@@ -115,11 +115,9 @@ because a manager calling a manager is the sideways call.
 
 ## What has not
 
-**Messaging — the big one.** The `RPC_SendMessageToAll` / `ToProxies` / `ToController` triplet and
-its receive events are still raw `NetworkBridge`, and `NetworkBridge` is not merely called: it is a
-**serialized field on nine crop prefabs** plus several managers. No wrapper hides Inspector wiring.
-Removing that coupling means our own messaging component owning the reference and every class
-talking to *that* — it touches every class in the game and cannot be verified in a single upload.
+**Status (2026-11-04):** as built.
 
-**Not Unity itself.** `transform`, `Rigidbody` and XRI are not the unstable dependency here and have
-decades of stability behind them; hiding them buys nothing and costs readability.
+- **Messaging** goes through our own `NetworkMessenger`, not a bridge
+  ([[networking#Messaging|networking → Messaging]]). It is a serialized field on the crop prefabs and several managers; that wiring is listed in
+  [[layers#Where the tree does not match this yet|layers → Where the tree does not match this yet]].
+- **Unity itself** stays unbridged ([[layers#What a bridge is|layers → What a bridge is]]).

@@ -20,7 +20,7 @@ carries none of them except `AuthorityController`, because a plant does belong t
 | Component | Owns | Talks to |
 |---|---|---|
 | `KinematicController` | the *only* writer of `Rigidbody.isKinematic` / `useGravity` | `IKinematicSource` |
-| `AuthorityController` | returning state authority to the master for unheld world-owned objects | `IAuthoritySource` |
+| `AuthorityController` | moving state authority to whoever should simulate the object: the master, the holder, or a player in its sector ([[networking#Authority by sector\|networking → Authority by sector]]) | `IAuthoritySource` |
 | `SingleHolderFilter` | refusing a grab when someone else holds it (`IXRSelectFilter`) | `IHeldObject` |
 | `ReturnableEntity` | travelling back to a target position when recalled | `IHeldObject` |
 | `AlignableEntity` | turning back to a stored target rotation when realigned | `IHeldObject` |
@@ -31,8 +31,8 @@ They re-evaluate on `ILifecycleNotifier.LifecycleChanged`, which `Seed` and `Pro
 transition and on every `grabber` message. The event deliberately carries **no payload**: subscribers read what
 they need from the source, so a new behaviour needs no interface change.
 
-`Seed` and `Produce` supply the answers: `ShouldBeKinematic`, `ShouldUseGravity`, `ShouldMasterOwn`, `HolderId`,
-`IsHeld`. Each is *derived* rather than remembered.
+`Seed` and `Produce` supply the answers: `ShouldBeKinematic`, `ShouldUseGravity`, `Authority` (`Master`, `Sector`
+or `Holder`), `HolderId`, `IsHeld`. Each is *derived* rather than remembered.
 
 ## Design notes
 

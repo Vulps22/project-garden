@@ -24,6 +24,9 @@ namespace Vulps.GrowAGarden
         /// <summary>Called once by PlotStateManager.Awake() for every slot it finds.</summary>
         internal void AttachTo(PlotStateManager plot) => _plot = plot;
 
+        /// <summary>The Plot this slot belongs to.</summary>
+        public PlotStateManager Plot => _plot;
+
         /// <summary>
         /// Offers something to this PlantSlot. Called by the holder's own client, because only that
         /// machine knows its hand is on the thing being offered — see Seed.OnTriggerEnter.

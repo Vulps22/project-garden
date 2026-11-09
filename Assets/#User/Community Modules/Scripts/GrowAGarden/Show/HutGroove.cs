@@ -73,9 +73,33 @@ namespace Vulps.GrowAGarden.Show
             _flameRate = new float[_flames.Length];
             for (int i = 0; i < _flames.Length; i++) if (_flames[i] != null) _flameRate[i] = _flames[i].emission.rateOverTimeMultiplier;
             ShowManager.Kick += OnKick;
+            ShowManager.NightChanged += OnNightChanged;
+            _garden = GetComponentInParent<Detail.GardenDetail>();
+            if (_garden != null) _garden.BubbleChanged += OnBubbleChanged;
+            Wake();
         }
 
-        private void OnDestroy() => ShowManager.Kick -= OnKick;
+        private void OnDestroy()
+        {
+            ShowManager.Kick -= OnKick;
+            ShowManager.NightChanged -= OnNightChanged;
+            if (_garden != null) _garden.BubbleChanged -= OnBubbleChanged;
+        }
+
+        private Detail.GardenDetail _garden;
+
+        // Night is global, but only the hut of the Garden the player stands in dances: the others rest and do not update.
+        private bool Dancing => ShowManager.Night > 0f && (_garden == null || _garden.InBubble);
+        private void OnNightChanged(bool night) => Wake();
+        private void OnBubbleChanged(bool inside) => Wake();
+
+        private void Wake()
+        {
+            bool dancing = Dancing;
+            if (!dancing && _moving) Rest();
+            if (!dancing) _moving = false;
+            enabled = dancing;
+        }
 
         private void Update()
         {
@@ -165,7 +189,7 @@ namespace Vulps.GrowAGarden.Show
 
         private void OnKick()
         {
-            if (ShowManager.Night < 0.5f) return;
+            if (!enabled || ShowManager.Night < 0.5f) return;
             StartPulse();
             if (_rings == null) return;
             Color colour = Color.HSVToRGB(Random.value, 0.7f, 1f);

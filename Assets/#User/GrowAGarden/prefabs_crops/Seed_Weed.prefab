@@ -26,7 +26,8 @@ GameObject:
   - component: {fileID: 8218423619992580241}
   - component: {fileID: 2552965895356922273}
   - component: {fileID: 4527428399850031435}
-  m_Layer: 0
+  - component: {fileID: 4683387912413927482}
+  m_Layer: 7
   m_Name: Seed_Weed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -485,14 +486,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.WeedSeed
   seedId: weed
   displayName: Weed
+  tagline: sell the bloom, or eat it raw
+  description: Nine blooms to a plant. Sell one and the stall hands back a splif
+    to smoke; eat one raw for the full trip.
+  picture: {fileID: 0}
   seedPrefab: {fileID: 7457805046529267251}
-  spawnWeight: 0.15
-  buyPrice: 80
-  sellValue: 30
+  spawnWeight: 0.02
+  buyPrice: 200
+  sellValue: 140
   harvestCount: 1
+  fruitPerPlant: 9
+  upgradeBonus: 0
   growthDuration: 90
   ripenDuration: 60
   witherDuration: 30
+--- !u!114 &4683387912413927482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3517095199874354261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: seed.weed
 --- !u!1 &4947312102805068705
 GameObject:
   m_ObjectHideFlags: 0
@@ -504,7 +524,7 @@ GameObject:
   - component: {fileID: 6602785131848228342}
   - component: {fileID: 3437842560192155420}
   - component: {fileID: 4971360691822511025}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Weed_Seed
   m_TagString: Untagged
   m_Icon: {fileID: 0}

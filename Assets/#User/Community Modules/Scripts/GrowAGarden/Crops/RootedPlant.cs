@@ -30,7 +30,7 @@ namespace Vulps.GrowAGarden.Crops
                 return;
             }
 
-            produce.Init(_plot, _slotIndex, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            produce.Init(_plot, _slotIndex, RipenStart(), _plot, _plantedTimestamp);   // a rooted crop's growing began at planting
 
             // The slot passes to the produce rather than being freed — a carrot in the ground
             // occupies that ground until somebody pulls it, so nobody may sow over it. End() must

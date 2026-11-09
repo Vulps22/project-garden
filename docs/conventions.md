@@ -11,8 +11,9 @@ How code, commits and these docs are written.
 ## Code
 
 - **Namespaces follow folders.** Our code is `Assets/#User/Community Modules/Scripts/GrowAGarden/`. A script at its
-  root is `Vulps.GrowAGarden`; a script in a sub-folder is `Vulps.GrowAGarden.<Folder>` (`Crops`, `Economy`,
-  `Flight`, `Interaction`, `Modules`, `Motion`, `Orchestration`, `Ownership`, `Seeds`, `Settings`, `Tutorial`).
+  root is `Vulps.GrowAGarden`; a script in a sub-folder is `Vulps.GrowAGarden.<Folder>` (`Almanac`, `Climbing`,
+  `Crops`, `Detail`, `DevTools`, `Economy`, `Flight`, `Interaction`, `Islands`, `Map`, `Modules`, `Motion`,
+  `Notifications`, `Orchestration`, `Ownership`, `Seeds`, `Settings`, `Show`, `Trip`, `Tutorial`, `Video`).
   Folders are PascalCase. **Never name a folder after a type in it or after a Unity type**: a namespace
   `Vulps.GrowAGarden.Produce` would hide the class `Produce` from every caller, and `Vulps.GrowAGarden.Physics`
   would hide `UnityEngine.Physics`. That is why produce lives in `Crops/` and the physics components in `Motion/`.

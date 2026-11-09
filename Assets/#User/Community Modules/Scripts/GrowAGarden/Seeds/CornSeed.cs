@@ -9,12 +9,13 @@ namespace Vulps.GrowAGarden.Seeds
             displayName = "Corn";
             tagline = "three cobs a stalk";
             description = "A tall stalk bearing three cobs at once. Each cob sells on its own.";
-            buyPrice = 25;
-            sellValue = 13;          // per cob; 3 cobs, about what the single cob paid
+            buyPrice = 30;
+            sellValue = 55;          // per cob; 3 cobs
+            fruitPerPlant = 3;
             growthDuration = 20f;
             ripenDuration = 15f;
             witherDuration = 20f;
-            spawnWeight = 0.45f;      // mid-table, between turnip and eggplant
+            spawnWeight = 0.2f;       // uncommon
         }
     }
 }

@@ -35,25 +35,31 @@ in Settings, the master accepting their market requests). The owner's own row ca
 - **The app comes and goes with it.** The Dev Market's home button and page hide the moment access is taken, and the
   Developer panel in Settings follows within a frame.
 
+
+## Notify everyone
+
+**Status (2026-11-03):** built, compiles clean, untested in-world. Asked for by Vulps 2026-11-03.
+
+Settings → World → the **Developer** section (right-hand column, developers only) → **Notify Everyone**: a text field, a keyboard of our own (Settings has none: digits,
+letters, `, . ! ? '`, Space, Del, Clear, Aa for capitals) and **Send**, up to 120 characters. Everyone in the world sees it
+as a [[notifier]] toast, the sender included; a player with Show Notifications off does not.
+
+- **`DevTools/DeveloperBroadcast`** (on SceneManager, message ids 12–13 on its messenger): the sender asks with their
+  id and the text (12, to all); the master checks `Developer.Has(sender)` and sends the text to all (13), and every
+  client, the sender's included, shows it with `Notifier.Push`.
 ## Native flight
 
-**Status (2026-11-02):** built, compiles clean, untested in-world.
-
-Settings → World → **Developer** panel → *Enable Native Flight*, a panel only the developer's tablet gets
-([[tablet#World Settings|tablet → World Settings]]). On, Somnium's own fly mode is allowed again for the developer
-(the sidebar's Fly Mode toggle comes back); glide stays off. Stored, and re-applied each time our flight takes hold of
-the player. Ours is still running alongside it: switching Somnium's fly mode on while ours is in the air is untried.
+A developer switch in World Settings that gives Somnium's own fly mode back: [[world-settings#The switches|world-settings → The switches]].
 
 ## The Developer Market
 
-**Status (2026-11-02):** built, compiles clean, untested in-world.
+**Status (2026-11-02):** built; played in-world 2026-11-02: the app built, the page opened, a Weed Seed was asked for
+and spawned by the master. Taking an item by trigger is not yet seen in-world (below).
 
-An app on Vulps's tablet (Vulps, 2026-11-02): a searchable, scrolling grid of every seed, fruit and the splif, each
-with a picture. **Point a hand's ray at one and press grip**: it is pulled out of the tablet into that hand, free. A
-seed comes already bought, so it can be planted; a fruit comes ripe, and grabbing it harvests it as usual.
-
-**Played 2026-11-02** (first try): the app built, the page opened, a Weed Seed was asked for and spawned by the master.
-The pictures were missing (sprites, above) and grip also grabbed the tablet, so it is now the trigger.
+An app on the tablet of anyone with developer access (Vulps, 2026-11-02): a searchable, scrolling grid of every seed,
+fruit and the splif, each with a picture. **Point a hand's ray at one and pull the trigger**: it is pulled out of the
+tablet into that hand, free. A seed comes already bought, so it can be planted; a fruit comes ripe, and grabbing it
+harvests it as usual.
 
 **On the tablet** (`MarketApp`, on SceneManager): built in code onto Somnium's tablet through `TabletManager` →
 `TabletBridge` ([[tablet]]), only when `Developer.IsLocal`.
@@ -82,29 +88,42 @@ keeps it if grip is held and drops it if not.
 
 ```
 developer's client                         master
-  Request(item, place, hand)   ── 7 ──▶    is the asker Developer.ID? spawn it there,
-                                            a seed Purchase()d by the developer, a fruit Init()ed ripe,
-                                            state re-sent at 0.25 / 0.75 / 1 s
+  Request(item, place, hand)   ── 7 ──▶    Developer.Has(asker)? spawn it there,
+                                            a seed Purchase()d by the developer, a fruit Init()ed ripe
   PutInHand: wait for it here  ◀── 8 ──    which NetworkId, which hand
   (up to 3 s), then XRInteractionManager.SelectEnter with that hand's Near-Far Interactor
 ```
 
 > [!info] Networking
 > Spawning is a fact, so the master does it, as for every runtime spawn; the developer need not be master. The
-> master checks the asker's id against `Developer.ID` and refuses anyone else, logged. The id travels in the message
+> master checks `Developer.Has(asker)` and refuses anyone else, logged. The id travels in the message
 > and is not authenticated: a modified client could claim it, which is acceptable for a debug tool in a world where
 > every client runs our assembly. The hand grab is local: grabbing takes authority as any grab does.
 
 **The stock** is three matching arrays on `DeveloperMarket` (items, names, pictures), not an array of a custom class,
 because arrays of custom `[Serializable]` classes arrive empty from the bundle export ([[weed]]). Order: the eight
-seeds, the seven fruits, the splif, the SPS Receiver, then the Moonflower Seed and Spotlight Tulip Bulb. A new item is appended to all three, and its prefab appended to
-`SceneNetworking._networkPrefabs` together with a new GUID in `_networkPrefabsGuid` (both at once: if the lengths
-differ, `OnValidate` regenerates every GUID).
+seeds, the seven fruits, the splif, the SPS Receiver, the Moonflower Seed, the Spotlight Tulip Bulb, the Grow Wand, then the Yggdrasil Seed ([[yggdrasil]], not in the stalls yet).
+A new item is appended to all three, and its prefab appended to `SceneNetworking._networkPrefabs` together with a new
+GUID in `_networkPrefabsGuid` in one change (if the lengths differ for even one `OnValidate`, it regenerates every
+GUID; appending through two `SerializedProperty` writes does exactly that).
 
 **The SPS Receiver** (2026-11-02, for debugging SPS, Vulps): `prefab_items/SpsReceiver`, a pink ring (`Models/SpsReceiver/Ring`,
 10 cm across) built from the splif with its smoke taken off, so it is a plain grabbable. At the ring's centre is a child
 `SPS_Target` tagged `Player`, which the SPS plugin finds and fits with its receiver (a small visible sphere and a
 trigger), so an eggplant brought to it bends toward it ([[crops#The eggplant easter egg|crops → The eggplant easter egg]]). Market only, never in the shops.
+
+**The Grow Wand** (2026-11-03, Vulps): `prefab_items/GrowWand`, a 36 cm wooden stick with a glowing green tip, built
+from the SPS Receiver's prefab (`GrowWand_Stick`, `GrowWand_Tip` materials; Unity's built-in cylinder and sphere).
+**Status (2026-11-03):** built, compiles clean, untested in-world.
+
+- **Touch a planted slot, a plant or an unripe fruit with it** and it grows: a plant is fully grown at once and what it
+  bears comes out ripe; already grown, what hangs on it ripens; a fruit ripens. A rooted crop in the ground ripens.
+- **Event driven:** the tip's trigger (`OnTriggerEnter`, about 7 cm across) fires on the holder's client only, which
+  asks the master (`DeveloperMarket.RequestGrow`, message id 15 on SceneManager's messenger: the requester, the Plot's
+  network id and slot, or the plant's or produce's). A second touch of the same thing within a second is one ask.
+- **The master decides**: it checks `Developer.Has(requester)`, then `Plant.GrowNow()` moves the planted time back by
+  the growth duration and broadcasts the plant's state as usual, so every client and late joiner derives the rest;
+  `Produce.RipenNow()` does the same for ripening. A touched plant bears ripe (`Plant.RipenStart`).
 
 **Pictures** are textures, shown with `RawImage`, and the app icon is a texture made a sprite at runtime: the first
 upload's `Sprite` references all arrived empty ([[runtime-spawn]] §4m). They are `Textures/Market/*.png`, rendered in the Editor from each prefab in a preview scene (256 × 256,

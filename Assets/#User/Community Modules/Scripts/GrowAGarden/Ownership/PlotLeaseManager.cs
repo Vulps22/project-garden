@@ -9,11 +9,9 @@ namespace Vulps.GrowAGarden.Ownership
     /// <summary>
     /// A Plot's claim, and the deed that represents it while it is unclaimed.
     ///
-    /// The spawn rule is deliberately narrower than a shop or a dispenser's: spawn a fresh deed
-    /// only when there is no deed AND no owner. DispensingEntity's "restock whenever the socket is
-    /// empty" is wrong here — an empty socket is the *normal* state of a claimed Plot, since the
-    /// deed does not live on the Plot once claimed. Reusing that logic would print a duplicate deed
-    /// for a Plot that already has an owner, and let a second player claim the same Plot.
+    /// The deed is part of the Garden, not spawned: one per Plot, placed beside it in the BorderedPlot prefab and wired
+    /// here, so every client has it from the moment the scene loads. Claiming hides it and relinquishing shows it again,
+    /// each client acting on the replicated owner, so no master ever spawns a second and no despawn needs authority.
     ///
     /// OwnerId is a fact, broadcast the Plot's own scene-placed NetworkMessenger, SendToAll,
     /// no authority dance needed for a plain announcement — the same shared bridge PlotStateManager
@@ -29,8 +27,9 @@ namespace Vulps.GrowAGarden.Ownership
         [Tooltip("Where the deed sits, roughly a metre above the plot centre.")]
         [SerializeField] private Socket _deedSocket;
 
-        [Tooltip("The Deed prefab. Must also be listed on SceneNetworking.")]
-        [SerializeField] private NetworkObject _deedPrefab;
+        [Tooltip("This Plot's own deed, placed beside it in the BorderedPlot prefab: shown while the Plot is free, hidden " +
+                 "while it is claimed. Never spawned or despawned.")]
+        [SerializeField] private CollectibleEntity _deed;
 
         /// <summary>Whose Plot this is, or null when free. A fact, decided by the master and
         /// replicated — see PlantSlot.OwnerId, same shape.</summary>
@@ -58,11 +57,6 @@ namespace Vulps.GrowAGarden.Ownership
         /// as OwnerChanged — read TeammateIds from the sender.</summary>
         public event System.Action<PlotLeaseManager> TeammatesChanged;
 
-        private CollectibleEntity _currentDeed;
-
-        /// <summary>See DispensingEntity.RESTOCK_RETRY_SECONDS — same reasoning.</summary>
-        private const float SPAWN_RETRY_SECONDS = 0.5f;
-        private float _lastSpawnAttempt = float.NegativeInfinity;
 
         private void Start()
         {
@@ -73,6 +67,10 @@ namespace Vulps.GrowAGarden.Ownership
             }
             _networkBridge.MessageToAll += OnMessageToAll;
             PlayerBridge.OtherPlayerJoined += OnOtherPlayerJoined;
+
+            if (_deed == null) { Logger.Error($"Start() '{gameObject.name}' — no deed wired; this Plot can never be claimed"); return; }
+            _deed.TakeRequested += OnDeedTakeRequested;
+            ShowDeed();
         }
 
         /// <summary>A late joiner never saw any past OwnerChanged broadcast — Fusion does not
@@ -86,39 +84,25 @@ namespace Vulps.GrowAGarden.Ownership
             AnnounceTeammates();
         }
 
-        private void OnEnable()
-        {
-            if (_deedSocket == null) return;
-            _deedSocket.Entered += OnEntered;
-            _deedSocket.Left += OnLeft;
-        }
-
-        private void OnDisable()
-        {
-            if (_deedSocket == null) return;
-            _deedSocket.Entered -= OnEntered;
-            _deedSocket.Left -= OnLeft;
-        }
-
         private void OnDestroy()
         {
-            SetCurrentDeed(null);
+            if (_deed != null) _deed.TakeRequested -= OnDeedTakeRequested;
             if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
             PlayerBridge.OtherPlayerJoined -= OnOtherPlayerJoined;
         }
 
-        private void Update()
+        /// <summary>
+        /// The deed is shown exactly while the Plot is free, on every client, from the replicated owner. Hidden, it lets go
+        /// of any hand and is put straight back in its socket; shown, it is held there and called back if it is away.
+        /// </summary>
+        private void ShowDeed()
         {
-            if (!PlayerManager.IsMaster) return;
-
-            // Unity's overloaded null check catches a despawned deed here with no event needed —
-            // a destroyed UnityEngine.Object compares equal to null even though the C# reference
-            // itself is not, which is exactly the "did it go away" question this is asking.
-            if (_currentDeed != null || IsClaimed) return;
-
-            if (Time.time - _lastSpawnAttempt < SPAWN_RETRY_SECONDS) return;
-            _lastSpawnAttempt = Time.time;
-            SpawnDeed();
+            if (_deed == null) return;
+            _deed.SetHidden(IsClaimed);
+            if (_deedSocket == null) return;
+            _deedSocket.Hold(_deed.gameObject);
+            if (IsClaimed) _deedSocket.SnapHere();   // the client simulating it; others' auto-recall waits for it
+            else if (!_deed.IsHeld && _deedSocket.HasLeft(_deed.gameObject)) _deedSocket.RecallHere();
         }
 
         // ── Claiming ──────────────────────────────────────────────────────────────
@@ -145,7 +129,7 @@ namespace Vulps.GrowAGarden.Ownership
         private void OnDeedTakeRequested(CollectibleEntity deed)
         {
             if (!PlayerManager.IsMaster) return;
-            if (deed != _currentDeed) return;
+            if (deed != _deed || IsClaimed) return;
             if (deed.IsTaken || !deed.InDispenser) return;
             if (_resolvingClaim) return;   // already retrying this exact request
 
@@ -167,7 +151,7 @@ namespace Vulps.GrowAGarden.Ownership
             PlayerIdentity holder = PlayerIdentity.None;
             while (waited < DEED_RETRY_TIMEOUT_SECONDS)
             {
-                if (deed == null || deed != _currentDeed || deed.IsTaken || !deed.InDispenser)
+                if (deed == null || IsClaimed || deed.IsTaken || !deed.InDispenser)
                 {
                     _resolvingClaim = false;
                     yield break;
@@ -197,10 +181,8 @@ namespace Vulps.GrowAGarden.Ownership
             Claim(holder.Id);
         }
 
-        /// <summary>Master only. Records the owner, announces it to everyone, and removes the
-        /// deed — it does not go on living in the shed, per plot-ownership.md: the shed's
-        /// contents are a per-viewer derivation from this fact, not a real object on a real
-        /// shelf.</summary>
+        /// <summary>Master only. Records the owner and announces it; every client hides the deed on hearing it
+        /// (OnMessageToAll → ShowDeed), so nothing is despawned and nobody's authority matters.</summary>
         private void Claim(string ownerId)
         {
             if (IsClaimed)
@@ -221,11 +203,6 @@ namespace Vulps.GrowAGarden.Ownership
                 AnnounceTeammates();
             }
 
-            if (_currentDeed != null)
-            {
-                _currentDeed.Discard();
-                SetCurrentDeed(null);
-            }
         }
 
         /// <summary>Relinquishes the claim, master only. Reachable today from PlotCleanup when a
@@ -333,6 +310,7 @@ namespace Vulps.GrowAGarden.Ownership
                     if (!ownerReader.IsValid) return;
                     string owner = ownerReader.NextAutoString();
                     OwnerId = string.IsNullOrEmpty(owner) ? null : owner;
+                    ShowDeed();
                     OwnerChanged?.Invoke(this);
                     break;
 
@@ -354,79 +332,6 @@ namespace Vulps.GrowAGarden.Ownership
 
                 default:
                     break;   // SlotOccupancyChanged/PlantRequest/Planted/FullStateSync belong to PlotStateManager, on the same shared bridge
-            }
-        }
-
-        // ── The socket's facts ───────────────────────────────────────────────────
-
-        private void OnEntered(GameObject candidate)
-        {
-            if (_currentDeed != null) return;
-            if (candidate == null || !candidate.TryGetComponent(out CollectibleEntity deed)) return;
-            if (deed.IsTaken || !deed.InDispenser) return;
-
-            SetCurrentDeed(deed);
-            _deedSocket.Hold(deed.gameObject);
-        }
-
-        private void OnLeft(GameObject _) { }   // nothing to restock unless Update decides to
-
-        private void SetCurrentDeed(CollectibleEntity deed)
-        {
-            if (_currentDeed == deed) return;
-
-            if (_currentDeed != null)
-                _currentDeed.TakeRequested -= OnDeedTakeRequested;
-
-            _currentDeed = deed;
-
-            if (_currentDeed != null)
-                _currentDeed.TakeRequested += OnDeedTakeRequested;
-        }
-
-        // ── Spawning ──────────────────────────────────────────────────────────────
-
-        /// <summary>Mirrors DispensingEntity.SpawnStock/SpawnFreshItem — see those for the Fusion
-        /// readiness and orphan-avoidance reasoning, identical here.</summary>
-        private void SpawnDeed()
-        {
-            if (!WorldBridge.CanSpawn) return;
-
-            CollectibleEntity spawned = SpawnFreshDeed();
-            if (spawned == null) return;
-
-            Logger.Info($"SpawnDeed() '{gameObject.name}' — spawned deed authority={spawned.HasLocalAuthority}");
-
-            SetCurrentDeed(spawned);
-            spawned.PlaceInDispenser(_deedSocket.transform.position, _deedSocket.transform.rotation);
-            _deedSocket.Hold(spawned.gameObject);
-            StartCoroutine(AnnounceStock(spawned));
-        }
-
-        private CollectibleEntity SpawnFreshDeed()
-        {
-            NetworkObject spawned = WorldBridge.Spawn(_deedPrefab, _deedSocket.transform.position, _deedSocket.transform.rotation,
-                                                      $"SpawnFreshDeed() '{gameObject.name}'");
-            if (spawned == null) return null;
-
-            CollectibleEntity deed = spawned.GetComponent<CollectibleEntity>();
-            if (deed == null)
-                Logger.Error($"SpawnFreshDeed() '{gameObject.name}' — spawned '{spawned.name}' has no CollectibleEntity component");
-
-            return deed;
-        }
-
-        /// <summary>See ShopKeeper.AnnounceStock — same late-registration problem, same crude fix.</summary>
-        private IEnumerator AnnounceStock(CollectibleEntity deed)
-        {
-            float[] gaps = { 0.25f, 0.75f, 1f };
-            foreach (float gap in gaps)
-            {
-                yield return new WaitForSeconds(gap);
-
-                if (deed == null || deed != _currentDeed || !deed.InDispenser) yield break;
-
-                deed.broadcastState();
             }
         }
 

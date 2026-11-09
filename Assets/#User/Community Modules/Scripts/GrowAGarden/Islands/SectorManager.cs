@@ -8,8 +8,9 @@ namespace Vulps.GrowAGarden.Islands
     public class SectorManager : MonoBehaviour
     {
         private const byte MESSAGE_ID = 2;
+        private const byte OBJECT_MOVED_ID = 14;
 
-        [Tooltip("SceneManager's messenger. Message id 2 on it; EconomyManager uses 0, WorldSeed 1, ShopKeeper 3-6.")]
+        [Tooltip("SceneManager's messenger. Message ids 2 and 14 on it; EconomyManager uses 0, WorldSeed 1, ShopKeeper 3-6.")]
         [SerializeField] private NetworkMessenger _bridge;
 
         [Tooltip("The IslandField's transform. Sector 0 is centred here.")]
@@ -18,19 +19,15 @@ namespace Vulps.GrowAGarden.Islands
         [Tooltip("Width of a sector, in metres.")]
         [SerializeField] private float _sectorSize = 1000f;
 
-        [Tooltip("Outside the local sector, how far from the player islands are certain to be loaded. Keep well inside IslandField's view radius.")]
-        [SerializeField] private float _groundRadius = 600f;
-
-        [Tooltip("Seconds between checks of the local player's sector.")]
-        [SerializeField] private float _checkInterval = 0.25f;
-
         private static SectorManager _instance;
         private static readonly Dictionary<int, Vector2Int> _sectors = new Dictionary<int, Vector2Int>();
-        private float _nextCheck;
-        private int _announcedPeer = -1;
+        private static readonly Dictionary<uint, Action<Vector2Int>> _objects = new Dictionary<uint, Action<Vector2Int>>();
 
         /// <summary>Raised on every client when any player's sector changes, or a player arrives or leaves.</summary>
         public static event Action SectorsChanged;
+
+        /// <summary>Raised when the local player moves into another sector.</summary>
+        public static event Action LocalSectorChanged;
 
         /// <summary>Whether sector maths can be done yet: the manager and its origin exist.</summary>
         public static bool IsReady => _instance != null && _instance._origin != null;
@@ -57,15 +54,25 @@ namespace Vulps.GrowAGarden.Islands
         /// <summary>A sector's centre, in world space, at the origin's height.</summary>
         public static Vector3 SectorCentre(Vector2Int sector) => Origin + new Vector3(sector.x * SectorSize, 0f, sector.y * SectorSize);
 
-        /// <summary>Whether this client certainly has the islands loaded at a world point: in its own sector, or close to the player.</summary>
-        public static bool HasGroundAt(Vector3 world)
+        /// <summary>Whether this client has the ground at a world point loaded: an island cell it has placed, or a Garden.</summary>
+        public static bool HasGroundAt(Vector3 world) => IslandField.HasGroundAt(world);
+
+        /// <summary>An object hears, on every client, the sector it was reported in (<see cref="ReportObjectSector"/>).</summary>
+        public static void RegisterObject(uint networkId, Action<Vector2Int> moved) { if (networkId != 0) _objects[networkId] = moved; }
+        public static void UnregisterObject(uint networkId) => _objects.Remove(networkId);
+
+        /// <summary>
+        /// The client simulating an object says which sector it has come to rest in, so the right player can take it over.
+        /// Sent only when that sector changes, from the object's own events (released, landed, recalled).
+        /// </summary>
+        public static void ReportObjectSector(uint networkId, Vector2Int sector)
         {
-            if (!HasLocalSector) return false;
-            if (SectorOf(world) == LocalSector) return true;
-            Vector3? me = LocalPosition();
-            if (me == null || _instance == null) return false;
-            float x = world.x - me.Value.x, z = world.z - me.Value.z;
-            return x * x + z * z <= _instance._groundRadius * _instance._groundRadius;
+            if (_instance == null || _instance._bridge == null || !_instance._bridge.CanSend || networkId == 0) return;
+            var writer = new BytesWriter(BytesWriter.IntSize * 3);
+            writer.AddInt((int)networkId);
+            writer.AddInt(sector.x);
+            writer.AddInt(sector.y);
+            _instance._bridge.SendToAll(OBJECT_MOVED_ID, writer.Data);
         }
 
         /// <summary>The peer that should simulate things in a sector: the lowest peer id there, or -1 when nobody is.</summary>
@@ -77,6 +84,9 @@ namespace Vulps.GrowAGarden.Islands
             return pick;
         }
 
+        /// <summary>Whether the table knows where a peer is at all. A peer that has not announced yet is unknown, not absent.</summary>
+        public static bool IsKnownPeer(int peerId) => _sectors.ContainsKey(peerId);
+
         /// <summary>Whether a peer is known to be in a sector.</summary>
         public static bool IsPeerIn(int peerId, Vector2Int sector) =>
             _sectors.TryGetValue(peerId, out Vector2Int at) && at == sector;
@@ -84,19 +94,11 @@ namespace Vulps.GrowAGarden.Islands
         /// <summary>This client's peer id, or -1 before it has one.</summary>
         public static int LocalPeerId => WorldBridge.LocalPeerId;
 
-        /// <summary>The local player's position: head, else a camera; null before either exists.</summary>
-        public static Vector3? LocalPosition()
-        {
-            Transform head = PlayerBridge.LocalHead;
-            if (head != null) return head.position;
-            if (Camera.main != null) return Camera.main.transform.position;
-            return null;
-        }
-
         private void Awake()
         {
             _instance = this;
             _sectors.Clear();
+            _objects.Clear();
             HasLocalSector = false;
         }
 
@@ -105,53 +107,68 @@ namespace Vulps.GrowAGarden.Islands
             _bridge.MessageToAll += OnMessageToAll;
             PlayerBridge.OtherPlayerJoined += Announce;
             PlayerBridge.PeerLeft += OnPeerLeft;
+            if (WorldBridge.IsNetworkReady) OnNetworkReady();
+            else WorldBridge.NetworkReady += OnNetworkReady;
+            PlayerTracker.Watch(SectorOf, OnPlayerMoved);
         }
 
         private void OnDestroy()
         {
-            if (_bridge != null) _bridge.MessageToAll -= OnMessageToAll;
+            if (_bridge != null) { _bridge.MessageToAll -= OnMessageToAll; _bridge.OnSpawned -= OnBridgeSpawned; }
             PlayerBridge.OtherPlayerJoined -= Announce;
             PlayerBridge.PeerLeft -= OnPeerLeft;
+            WorldBridge.NetworkReady -= OnNetworkReady;
+            PlayerTracker.Unwatch(OnPlayerMoved);
             if (_instance == this) _instance = null;
             _sectors.Clear();
+            _objects.Clear();
             HasLocalSector = false;
             SectorsChanged = null;
+            LocalSectorChanged = null;
         }
 
-        private void Update()
+        /// <summary>The player crossed into another sector (the tracker calls only then).</summary>
+        private void OnPlayerMoved(Vector3 at)
         {
-            if (Time.time < _nextCheck) return;
-            _nextCheck = Time.time + _checkInterval;
-
-            Vector3? me = LocalPosition();
-            if (me == null) return;
-
-            Vector2Int sector = SectorOf(me.Value);
-            int peer = LocalPeerId;
-            bool moved = !HasLocalSector || sector != LocalSector;
-            if (!moved && peer == _announcedPeer) return;
-
-            LocalSector = sector;
+            LocalSector = SectorOf(at);
             HasLocalSector = true;
-            if (moved) Logger.Info($"Update() '{gameObject.name}' — now in sector {sector.x},{sector.y}");
+            Logger.Info($"OnPlayerMoved() '{gameObject.name}' — now in sector {LocalSector.x},{LocalSector.y}");
+            int peer = LocalPeerId;
+            if (peer >= 0) { _sectors[peer] = LocalSector; Announce(); }
+            LocalSectorChanged?.Invoke();
+            SectorsChanged?.Invoke();
+        }
 
-            if (peer < 0)
-            {
-                SectorsChanged?.Invoke();
-                return;
-            }
-            _sectors[peer] = sector;
+        /// <summary>This client has a peer id now: put itself in the table and tell everyone.</summary>
+        private void OnNetworkReady()
+        {
+            int peer = LocalPeerId;
+            if (peer < 0 || !HasLocalSector) return;
+            _sectors[peer] = LocalSector;
             Announce();
-            if (moved) SectorsChanged?.Invoke();
+            SectorsChanged?.Invoke();
+        }
+
+        private void OnBridgeSpawned()
+        {
+            _bridge.OnSpawned -= OnBridgeSpawned;
+            Logger.Info($"OnBridgeSpawned() '{gameObject.name}' — messenger attached; announcing sector {LocalSector.x},{LocalSector.y}");
+            Announce();
         }
 
         /// <summary>Tells everyone which sector the local player is in.</summary>
         private void Announce()
         {
             int peer = LocalPeerId;
-            if (peer < 0 || !HasLocalSector || _bridge == null || !_bridge.CanSend) return;
+            if (peer < 0 || !HasLocalSector || _bridge == null) return;
+            if (!_bridge.CanSend)
+            {
+                // Still attaching (a late joiner): announce when the messenger spawns.
+                _bridge.OnSpawned -= OnBridgeSpawned;
+                _bridge.OnSpawned += OnBridgeSpawned;
+                return;
+            }
 
-            _announcedPeer = peer;
             var writer = new BytesWriter(BytesWriter.IntSize * 3);
             writer.AddInt(peer);
             writer.AddInt(LocalSector.x);
@@ -161,6 +178,14 @@ namespace Vulps.GrowAGarden.Islands
 
         private void OnMessageToAll(byte id, byte[] data)
         {
+            if (id == OBJECT_MOVED_ID)
+            {
+                var moved = new BytesReader(data);
+                uint objectId = (uint)moved.NextInt();
+                var at = new Vector2Int(moved.NextInt(), moved.NextInt());
+                if (_objects.TryGetValue(objectId, out Action<Vector2Int> heard)) heard(at);
+                return;
+            }
             if (id != MESSAGE_ID) return;
 
             var reader = new BytesReader(data);
@@ -183,8 +208,6 @@ namespace Vulps.GrowAGarden.Islands
         {
             if (_bridge == null) _bridge = GetComponent<NetworkMessenger>();
             if (_sectorSize < 10f) _sectorSize = 10f;
-            if (_groundRadius < 0f) _groundRadius = 0f;
-            if (_checkInterval < 0.05f) _checkInterval = 0.05f;
         }
     }
 }

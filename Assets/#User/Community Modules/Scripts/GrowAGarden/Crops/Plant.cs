@@ -53,9 +53,13 @@ namespace Vulps.GrowAGarden.Crops
         protected int _slotIndex = -1;
 
         private bool _hasBorne;
+        private bool _ripeAtOnce;   // the grow wand touched it: whatever it bears comes out ripe
 
         public bool HasLocalAuthority =>
             networkBridge != null && networkBridge.Object != null && networkBridge.Object.HasStateAuthority;
+
+        /// <summary>Asked of the prefab before planting, on the master: whether one may be planted now. Yggdrasil stands alone.</summary>
+        public virtual bool MayBePlanted => true;
 
         /// <summary>Growth completion [0,1], derived from the clock on every client.</summary>
         public float GetGrowthCompletion()
@@ -123,6 +127,7 @@ namespace Vulps.GrowAGarden.Crops
             _plot = plot;
             _slotIndex = slotIndex;
             _plantedTimestamp = plantedTimestamp;
+            if (_plot != null) OnPlotKnown(_plot);
             ApplyBodyScale();
             broadcastState();
         }
@@ -160,6 +165,32 @@ namespace Vulps.GrowAGarden.Crops
 
         /// <summary>The body has finished growing. Master only. Bear, or become the crop.</summary>
         protected abstract void OnFullyGrown();
+
+        /// <summary>
+        /// The Developer Market's grow wand touched it. Master only: moves the planted time back so it is grown now, and
+        /// what it bears comes out ripe; already grown, it ripens what hangs on it. The clock does the rest everywhere.
+        /// </summary>
+        public void GrowNow()
+        {
+            if (!PlayerManager.IsMaster || !HasLocalAuthority) return;
+            _ripeAtOnce = true;
+            if (_hasBorne) { OnGrownTouched(); return; }
+            long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            _plantedTimestamp = now - (long)Mathf.Ceil(Mathf.Max(0.01f, seedDefinition.growthDuration)) - 1;
+            ApplyBodyScale();
+            broadcastState();
+        }
+
+        /// <summary>The wand touched a plant that has already grown. Bearing plants ripen what they hold.</summary>
+        protected virtual void OnGrownTouched() { }
+
+        /// <summary>When the produce this plant gives starts ripening: now, or already done if the wand touched it.</summary>
+        protected long RipenStart()
+        {
+            long now = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (!_ripeAtOnce || seedDefinition == null) return now;
+            return now - (long)Mathf.Ceil(Mathf.Max(0.01f, seedDefinition.ripenDuration)) - 1;
+        }
 
         /// <summary>Starts the plant dying. Master only; the clock does the rest on every client.</summary>
         protected void BeginWithering()
@@ -250,6 +281,8 @@ namespace Vulps.GrowAGarden.Crops
 
             _plot = WorldManager.Find<PlotStateManager>(plotRawId);
             if (_plot == null) return;
+            _plot.SetOccupant(slotIndex, this);   // every client knows the occupant, so a new master can uproot it
+            OnPlotKnown(_plot);
 
             _slotIndex = slotIndex;
             Transform anchor = _plot.AnchorFor(slotIndex);
@@ -258,6 +291,9 @@ namespace Vulps.GrowAGarden.Crops
             transform.position = anchor.position;
             transform.rotation = anchor.rotation;
         }
+
+        /// <summary>This client has learned which Plot the plant stands in: from Init on the master, from the state elsewhere.</summary>
+        protected virtual void OnPlotKnown(PlotStateManager plot) { }
 
         protected virtual int GetExtraBroadcastStateSize() => 0;
         protected virtual void OnWriteBroadcastState(BytesWriter writer) { }

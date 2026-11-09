@@ -47,6 +47,7 @@ namespace Vulps.GrowAGarden.DevTools
         private readonly List<MarketCell> _cells = new List<MarketCell>();
         private string _search = string.Empty;
         private float _nextLookup;
+        private float _nextTabletCheck;
         private bool _built;
 
         private readonly MarketCell[] _hover = new MarketCell[2];   // 0 left, 1 right
@@ -72,7 +73,7 @@ namespace Vulps.GrowAGarden.DevTools
             LetGo(false);
             LetGo(true);
             if (!_built) { TryBuild(); return; }
-            if (_tablet == null || _page == null) { _built = false; return; }
+            if (_tablet == null || _page == null || TabletReplaced()) { _built = false; return; }
 
             // Access can be given and taken mid-session: the app comes and goes with it.
             bool allowed = Developer.IsLocal;
@@ -105,8 +106,8 @@ namespace Vulps.GrowAGarden.DevTools
             _page = TabletManager.AddPage(_tablet, PAGE_NAME);
             if (open == null || _page == null)
             {
-                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's home screen is not where docs/tablet.md says; no Developer Market");
-                enabled = false;
+                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's home screen is not where docs/tablet.md says (or not built yet); trying again");
+                _nextLookup = Time.time + 5f;
                 return;
             }
 
@@ -474,6 +475,17 @@ namespace Vulps.GrowAGarden.DevTools
             r.anchorMax = Vector2.one;
             r.offsetMin = new Vector2(left, bottom);
             r.offsetMax = new Vector2(-right, -top);
+        }
+
+        /// <summary>Somnium made a new tablet (an instance change can): the old one's build is no longer what the player holds.</summary>
+        private bool TabletReplaced()
+        {
+            if (Time.time < _nextTabletCheck) return false;
+            _nextTabletCheck = Time.time + 2f;
+            Transform now = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
+            if (now == null || now == _tablet) return false;
+            Logger.Info($"TabletReplaced() '{gameObject.name}' — a new tablet; building again");
+            return true;
         }
     }
 }

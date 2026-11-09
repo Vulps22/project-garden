@@ -57,6 +57,9 @@ namespace Vulps.GrowAGarden
         /// </summary>
         public static bool IsPresent => _container != null;
 
+        /// <summary>How many players Somnium has in the world, this one included; 0 without a player list.</summary>
+        public static int PlayerCount => _container == null ? 0 : _container.PlayersCount;
+
         /// <summary>
         /// Whether the local player is the one who decides things for the world.
         ///

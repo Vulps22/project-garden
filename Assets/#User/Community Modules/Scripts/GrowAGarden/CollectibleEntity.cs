@@ -33,6 +33,17 @@ namespace Vulps.GrowAGarden
         [SerializeField] public NetworkMessenger networkBridge;
         [SerializeField] protected XRGrabInteractable _grabInteractable;
 
+        [Tooltip("Placed in the scene as dispenser stock (a Plot's deed): every client loads it in its dispenser, so no " +
+                 "message is needed to say so.")]
+        [SerializeField] private bool _startsInDispenser;
+
+        /// <summary>Out of the game but still in the world: a claimed Plot's deed. Unseen, ungrabbable, colliderless and
+        /// held still, put straight back in its socket.</summary>
+        public bool IsHidden { get; private set; }
+        private Renderer[] _renderers;
+        private Collider[] _colliders;
+        private bool[] _wasEnabled;
+
         public bool InDispenser { get; private set; }
         public bool IsTaken { get; private set; }
 
@@ -47,11 +58,15 @@ namespace Vulps.GrowAGarden
 
         public event System.Action LifecycleChanged;
 
+        /// <summary>Raised on every client whenever one learns a collectible is dispenser stock: its socket's owner adopts it.
+        /// The socket's own trigger fires as the item spawns, before that state arrives, so it cannot be relied on.</summary>
+        public static event System.Action<CollectibleEntity> AnyInDispenser;
+
         /// <summary>Raised on every client when the holder asks to take it. Only the master acts.</summary>
         public event System.Action<CollectibleEntity> TakeRequested;
 
-        /// <summary>A collectible is a physical object wherever it is; nothing about it is anchored.</summary>
-        public bool ShouldBeKinematic => false;
+        /// <summary>A collectible is a physical object wherever it is, unless hidden: then nothing should move it.</summary>
+        public bool ShouldBeKinematic => IsHidden;
 
         /// <summary>Dispenser stock hangs at its socket, so the tether holds position instead of
         /// fighting a constant downward pull. A taken one loose in the world has weight.</summary>
@@ -87,7 +102,11 @@ namespace Vulps.GrowAGarden
         /// for a runtime-spawned networked prefab).</summary>
         private void Awake()
         {
+            if (_startsInDispenser) { InDispenser = true; _stateKnown = true; }   // the scene is the same on every client
             _hovering = GetComponent<HoveringEntity>();
+            // A recall that suspended the grab hands it back on arrival: not to a hidden one.
+            var returnable = GetComponent<ReturnableEntity>();
+            if (returnable != null) returnable.Arrived += () => { if (IsHidden && _grabInteractable != null) _grabInteractable.enabled = false; };
             LifecycleChanged += UpdateHovering;
 
             networkBridge.OnSpawned += OnSpawned;
@@ -143,9 +162,12 @@ namespace Vulps.GrowAGarden
             if (hasAuthority && PlayerManager.IsMaster) broadcastState();
         }
 
+        // This client holds the real state: it spawned this, or a state sync has arrived. A blank copy is never broadcast.
+        private bool _stateKnown;
+
         private void OnSpawned()
         {
-            if (networkBridge.Object.HasStateAuthority) LifecycleChanged?.Invoke();
+            if (networkBridge.Object.HasStateAuthority) { _stateKnown = true; LifecycleChanged?.Invoke(); }
         }
 
         private void OnOtherPlayerJoined() => broadcastState();
@@ -175,6 +197,7 @@ namespace Vulps.GrowAGarden
 
         private void ApplyRestoreToDispenser()
         {
+            _stateKnown = true;   // this message sets the whole state
             InDispenser = true;
             IsTaken = false;
             TakenBy = null;
@@ -182,11 +205,12 @@ namespace Vulps.GrowAGarden
             _grabInteractable.enabled = false;
 
             var ret = GetComponent<ReturnableEntity>();
-            if (ret == null || !ret.KeepGrabUntilArrival()) _grabInteractable.enabled = true;
+            if (!IsHidden && (ret == null || !ret.KeepGrabUntilArrival())) _grabInteractable.enabled = true;
 
             Logger.Info($"ApplyRestoreToDispenser() '{gameObject.name}' — InDispenser={InDispenser} grab={_grabInteractable.enabled} authority={HasLocalAuthority}");
 
             LifecycleChanged?.Invoke();
+            AnyInDispenser?.Invoke(this);
             broadcastState();
         }
 
@@ -203,6 +227,7 @@ namespace Vulps.GrowAGarden
         private void ApplyTaken(byte[] data)
         {
             var reader = new BytesReader(data);
+            _stateKnown = true;   // this message sets the whole state
             TakenBy = reader.IsValid ? reader.NextAutoString() : null;
             InDispenser = false;
             IsTaken = true;
@@ -231,18 +256,34 @@ namespace Vulps.GrowAGarden
             }
         }
 
-        /// <summary>Master only — see Seed.Discard, same Fusion-authority caveat.</summary>
+        /// <summary>
+        /// Master only: ends this wherever it is. Announced, because despawning needs state authority and the player
+        /// holding it (a deed being claimed, a scroll being accepted) has it; the same shape as Seed.RequestDiscard.
+        /// </summary>
         public bool Discard()
         {
-            if (!PlayerManager.IsMaster) return false;
+            if (!PlayerManager.IsMaster || !CanSendRpc) return false;
+            ForceRelease();
+            networkBridge.SendToAll((byte)CollectibleMessageType.discard, new byte[0]);
+            return true;
+        }
 
+        private void ApplyDiscard()
+        {
+            ForceRelease();
             NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
-            if (obj == null)
-            {
-                Logger.Warn($"Discard() '{gameObject.name}' — no NetworkObject; nothing despawned");
-                return false;
-            }
-            return WorldManager.Despawn(obj, $"Discard() '{gameObject.name}' (authority known={HasKnownAuthority})");
+            if (WorldManager.DespawnIfStateAuthority(obj)) return;
+            if (PlayerManager.IsMaster && !HasKnownAuthority) StartCoroutine(TakeAuthorityAndDiscard());
+        }
+
+        /// <summary>Nobody simulates this, so nobody would despawn it: the master takes it and does.</summary>
+        private System.Collections.IEnumerator TakeAuthorityAndDiscard()
+        {
+            NetworkObject obj = networkBridge == null ? null : networkBridge.Object;
+            bool granted = false;
+            yield return WorldManager.TakeAuthority(obj, r => granted = r);
+            if (granted) WorldManager.DespawnIfStateAuthority(obj);
+            else Logger.Warn($"TakeAuthorityAndDiscard() '{gameObject.name}' — no authority within {WorldManager.AuthorityTimeout}s; left standing");
         }
 
         // ── State ─────────────────────────────────────────────────────────────────
@@ -250,7 +291,7 @@ namespace Vulps.GrowAGarden
         public void broadcastState()
         {
             if (networkBridge.Object == null) return;
-            if (!networkBridge.Object.HasStateAuthority) return;
+            if (!networkBridge.Object.HasStateAuthority || !_stateKnown) return;
 
             string takenBy = TakenBy ?? string.Empty;
             int size = BytesWriter.ByteSize * 2 + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(takenBy);
@@ -288,6 +329,9 @@ namespace Vulps.GrowAGarden
                 case CollectibleMessageType.restoredToDispenser:
                     ApplyRestoreToDispenser();
                     break;
+                case CollectibleMessageType.discard:
+                    ApplyDiscard();
+                    break;
                 default:
                     break;   // associateRequest/associated/acceptRequest are PlotApplication's and puff is SmokeableEntity's, on the same bridge
             }
@@ -296,6 +340,7 @@ namespace Vulps.GrowAGarden
         private void OnMessageToProxies(byte id, byte[] data)
         {
             if ((CollectibleMessageType)id != CollectibleMessageType.stateSync) return;
+            _stateKnown = true;
 
             BytesReader reader = new BytesReader(data);
             InDispenser = reader.NextByte() == 1;
@@ -303,7 +348,26 @@ namespace Vulps.GrowAGarden
             string takenBy = reader.NextAutoString();
             TakenBy = string.IsNullOrEmpty(takenBy) ? null : takenBy;
 
-            _grabInteractable.enabled = true;
+            _grabInteractable.enabled = !IsHidden;
+            LifecycleChanged?.Invoke();
+            if (InDispenser) AnyInDispenser?.Invoke(this);
+        }
+
+        /// <summary>Hides or shows this on this client only: each client calls it from the same replicated fact.</summary>
+        public void SetHidden(bool hidden)
+        {
+            if (IsHidden == hidden) return;
+            IsHidden = hidden;
+            if (_grabInteractable != null) _grabInteractable.enabled = !hidden;   // first: a hand holding it lets go
+            _renderers ??= GetComponentsInChildren<Renderer>(true);
+            if (_colliders == null)
+            {
+                _colliders = GetComponentsInChildren<Collider>(true);
+                _wasEnabled = new bool[_colliders.Length];
+                for (int i = 0; i < _colliders.Length; i++) _wasEnabled[i] = _colliders[i].enabled;
+            }
+            foreach (Renderer r in _renderers) if (r != null) r.enabled = !hidden;
+            for (int i = 0; i < _colliders.Length; i++) if (_colliders[i] != null) _colliders[i].enabled = !hidden && _wasEnabled[i];
             LifecycleChanged?.Invoke();
         }
 
@@ -369,6 +433,7 @@ namespace Vulps.GrowAGarden
         associateRequest = 5,
         associated = 6,
         acceptRequest = 7,
-        puff = 8               // SmokeableEntity's, on the same bridge
+        puff = 8,              // SmokeableEntity's, on the same bridge
+        discard = 9            // the master ends it; whoever has authority despawns it
     }
 }

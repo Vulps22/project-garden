@@ -7,9 +7,9 @@ tags:
 ---
 # Towns
 
-Four Plots in a game for ten or more players at once left most of them nothing to do. The world now holds
-**14 Gardens, 56 Plots**, in three towns. Decided by Vulps 2026-11-03, replacing [[procgen-islands#Phase 1b: Gardens at the sites|Phase 1b]]
-(Gardens appearing as players explore).
+Four Plots in a game for ten or more players at once left most of them nothing to do. The world holds
+**14 Gardens, 56 Plots**, in three towns, placed in the scene rather than appearing as players explore. Decided by
+Vulps 2026-11-03.
 
 ## The design
 
@@ -22,7 +22,8 @@ Four Plots in a game for ten or more players at once left most of them nothing t
 - **Every Garden is identical** (Vulps): its own deed hut, screen and dome, besides its four Plots, sell point, three
   stalls and scoreboard. A town is only a layout.
 - **40–60 Plots is plenty** for the foreseeable future. Plots only have to cover the players in one instance at once:
-  a Plot is freed 180 s after its owner leaves, and worlds do not persist across instances.
+  a Plot is freed soon after its owner leaves ([[plot-ownership#Departures|plot-ownership → Departures]]), and Plots
+  and crops do not persist between sessions ([[persistence]]).
 
 - **Not a lattice, not rolled.** Islands clear only around Gardens that exist; a lattice of possible Garden sites
   kept most of the sky empty for Gardens that were never there.
@@ -39,8 +40,8 @@ Four Plots in a game for ten or more players at once left most of them nothing t
 
 - **120 m between Gardens in a town**: a dome's radius is 45 m, so two domes never touch (that needs 90 m), and a
   neighbour is a short hop.
-- **Towns are 700–800 m apart**, inside the islands' 1.2 km view radius, so every town is in sight of the next and
-  islands fill the sky between them.
+- **Towns are 700–800 m apart**, inside the default 1.2 km draw distance, so every town is in sight of the next and
+  islands fill the sky between them ([[detail]]).
 - **A town is a plain group** (`Town_*` in the scene) with no component: nothing in the game asks which town it is in.
 
 ## How it is built
@@ -75,13 +76,15 @@ Town_Capital
   ([[light-show]]).
 - **The dome**: a Moonflower raises its own Garden's dome, and a Spotlight Tulip pans about it ([[moonflower]],
   [[spotlight-tulip]]).
-- **Falling out of the world** puts you back at the return point of the Garden nearest where you fell (`WorldFloor`).
+- **Falling out of the world** puts you back at the return point of the Garden nearest where you fell (`WorldFloor`,
+  told by `PlayerTracker` when your head crosses the floor). Grabbables that fall are caught by a trigger volume under
+  the floor (100 km wide, 1 km deep, on the Ignore Raycast layer) and the master destroys them.
 - **Stall ids** name a Garden's stalls by where the Garden stands ([[shop#Stall ids|shop → Stall ids]]).
 
 ### What stays one
 
 - **The scoreboard's top ten.** The economy still sends the list on one board's bridge (Garden 0's), and every board
-  shows what arrives (`BalanceDisplayManager.Shown`).
+  shows what arrives (`BalanceDisplayManager.Shown`, [[scoreboard]]).
 - **The spawn and the tutorial** are Garden 0's: everyone arrives there.
 
 > [!info] Networking
@@ -102,6 +105,4 @@ Town_Capital
   or sunk screens locally is the plan, but Pause and Stop are synced and not to be touched: Vulps is asking Dene how
   Base Reality does it (2026-11-03).
 
-- **Hiding distant Gardens.** Every town lies inside the islands' 1.2 km view radius, so a distance cut would never
-  fire, and Unity already culls what is out of view. Worth revisiting only if towns move further apart.
 - **Spawning at another Garden.** Everyone arrives at Garden 0; choosing where to arrive may follow.

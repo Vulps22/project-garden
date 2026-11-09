@@ -40,6 +40,9 @@ namespace Vulps.GrowAGarden
         // rejected second item wipe the first sale's seller, which then paid nobody.
         private readonly System.Collections.Generic.HashSet<SellableEntity> _selling = new System.Collections.Generic.HashSet<SellableEntity>();
 
+        // Every client: offers heard and not yet accepted or rejected (item id → seller), so a new master can decide what the old one left open.
+        private readonly System.Collections.Generic.Dictionary<uint, string> _offered = new System.Collections.Generic.Dictionary<uint, string>();
+
         /// <summary>
         /// A sale completed: who made it and what they earned. Raised on every client, because the
         /// master announces it to everyone.
@@ -66,11 +69,13 @@ namespace Vulps.GrowAGarden
                 return;
             }
             _networkBridge.MessageToAll += OnMessageToAll;
+            PlayerManager.BecameWorldMaster += DecideOpenSales;
         }
 
         private void OnDestroy()
         {
             if (_networkBridge != null) _networkBridge.MessageToAll -= OnMessageToAll;
+            PlayerManager.BecameWorldMaster -= DecideOpenSales;
 
             // Statics outlive a scene when domain reload is off, and a subscriber from the last
             // session is a destroyed object waiting to be called.
@@ -137,9 +142,11 @@ namespace Vulps.GrowAGarden
                     SetPendingFromPayload(data, true);
                     break;
                 case SellMessageType.SaleRejected:
+                    _offered.Remove(ReadId(data));
                     SetPendingFromPayload(data, false);
                     break;
                 case SellMessageType.SaleAccepted:
+                    _offered.Remove(ReadId(data));
                     ApplySaleAccepted(data);
                     break;
                 default:
@@ -148,21 +155,39 @@ namespace Vulps.GrowAGarden
             }
         }
 
-        /// <summary>Master client only — the shop is the only one who accepts a sale.</summary>
+        /// <summary>Every client remembers the offer; the master decides it.</summary>
         private void OnSellRequested(byte[] data)
         {
-            if (!PlayerManager.IsMaster) return;
-
             var reader = new BytesReader(data);
             if (!reader.IsValid) return;
             uint itemId = (uint)reader.NextInt();
             string sellerId = reader.NextAutoString();
+            _offered[itemId] = sellerId;
+            DecideSale(itemId, sellerId);
+        }
+
+        /// <summary>A new master decides the offers the old one left open, whatever stage it had reached.</summary>
+        private void DecideOpenSales()
+        {
+            var open = new System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<uint, string>>(_offered);
+            foreach (var offer in open)
+            {
+                Logger.Info($"DecideOpenSales() '{gameObject.name}' — deciding item={offer.Key} from '{offer.Value}', left open by the last master");
+                DecideSale(offer.Key, offer.Value);
+            }
+        }
+
+        /// <summary>Master client only — the shop is the only one who accepts a sale.</summary>
+        private void DecideSale(uint itemId, string sellerId)
+        {
+            if (!PlayerManager.IsMaster) return;
 
             SellableEntity sellable = FindSellable(itemId);
             if (sellable == null)
             {
                 // Nothing to hand back to — the named object cannot be resolved on this client.
-                Logger.Warn($"OnSellRequested() '{gameObject.name}' — nothing sellable with NetworkId={itemId}");
+                Logger.Warn($"DecideSale() '{gameObject.name}' — nothing sellable with NetworkId={itemId}");
+                _offered.Remove(itemId);
                 return;
             }
 

@@ -24,7 +24,8 @@ GameObject:
   - component: {fileID: 7960585365031774276}
   - component: {fileID: 8680884562149606297}
   - component: {fileID: 1904810602212056260}
-  m_Layer: 0
+  - component: {fileID: 7815624906845790971}
+  m_Layer: 7
   m_Name: Produce_Carrot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -330,12 +331,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
   seedId: carrot
   displayName: Carrot
+  tagline: quick to grow, quick to sell
+  description: 'The staple. Ready in seconds and always wanted at the sell point:
+    plant a row and keep the Thatch coming.'
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4360997998222114339, guid: 17da2c2486b0ce26894a3e906bc69759,
     type: 3}
   spawnWeight: 1
   buyPrice: 10
   sellValue: 15
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -448,6 +455,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
+--- !u!114 &7815624906845790971
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969558867835806848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: crop.carrot
 --- !u!1001 &7291801216778589806
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -459,6 +479,10 @@ PrefabInstance:
     - target: {fileID: 1000014111768446, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
       propertyPath: m_Name
       value: Carrot_Fruit
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000014111768446, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000010382424806, guid: 2cf13a738fc434c46bda5ebf7ca44756, type: 3}
       propertyPath: m_LocalScale.x

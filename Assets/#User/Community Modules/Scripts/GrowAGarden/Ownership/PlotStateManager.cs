@@ -32,6 +32,53 @@ namespace Vulps.GrowAGarden.Ownership
 
         public uint NetworkId => _networkBridge?.Object == null ? 0u : _networkBridge.Object.Id.Raw;
 
+        // Upgrades standing here, on every client: each registers itself once it knows its Plot.
+        private readonly HashSet<IPlotUpgrade> _upgrades = new HashSet<IPlotUpgrade>();
+
+        // Buffs that have stood here, on every client, kept after their source is gone: a crop grown under one still knows.
+        private readonly Dictionary<object, (float multiplier, long start, long end)> _buffs = new Dictionary<object, (float, long, long)>();
+
+        /// <summary>A buff stands here from start until end (Unix seconds; end 0 while it is open). Its source calls this again as either changes.</summary>
+        public void SetBuff(object source, float multiplier, long start, long end) => _buffs[source] = (multiplier, start, end);
+
+        /// <summary>
+        /// The crop scale of a crop growing from `from` to `to`, counting its growing up to `until`: 1, plus each buff's
+        /// multiplier less 1 for the share of the whole growing it overlapped (docs/economy.md → Crop scale). Unfloored.
+        /// </summary>
+        public float BuffScale(long from, long to, long until)
+        {
+            float total = Mathf.Max(1f, to - from);
+            long last = System.Math.Min(to, until);
+            float scale = 1f;
+            foreach ((float multiplier, long start, long end) in _buffs.Values)
+            {
+                long stop = end == 0 ? last : System.Math.Min(end, last);
+                long overlap = stop - System.Math.Max(from, start);
+                if (overlap > 0) scale += (multiplier - 1f) * overlap / total;
+            }
+            return scale;
+        }
+
+        public void AddUpgrade(IPlotUpgrade upgrade) => _upgrades.Add(upgrade);
+        public void RemoveUpgrade(IPlotUpgrade upgrade) => _upgrades.Remove(upgrade);
+
+        /// <summary>The share of profit this Plot's grown upgrades add, each kind counted once.</summary>
+        public float UpgradeBonus
+        {
+            get
+            {
+                var best = new Dictionary<string, float>();
+                foreach (IPlotUpgrade u in _upgrades)
+                {
+                    float b = u.ActiveBonus;
+                    if (b > 0f && (!best.TryGetValue(u.Kind, out float had) || b > had)) best[u.Kind] = b;
+                }
+                float total = 0f;
+                foreach (float b in best.Values) total += b;
+                return total;
+            }
+        }
+
         private void Awake()
         {
             PlantSlot[] slots = GetComponentsInChildren<PlantSlot>(true);
@@ -75,6 +122,14 @@ namespace Vulps.GrowAGarden.Ownership
             if (PlayerManager.IsMaster) BroadcastFullState();
         }
 
+        /// <summary>Which of this Plot's slots a PlantSlot is, or -1.</summary>
+        public int IndexOf(PlantSlot slot) =>
+            _slotIndices != null && slot != null && _slotIndices.TryGetValue(slot, out int index) ? index : -1;
+
+        /// <summary>What stands in a slot, as the master knows it: a plant, a rooted produce, or null.</summary>
+        public IPlantSlotOccupant OccupantOf(int slotIndex) =>
+            slotIndex >= 0 && slotIndex < _slots.Length ? _slots[slotIndex].Occupant : null;
+
         public Transform AnchorFor(int slotIndex) =>
             (slotIndex >= 0 && slotIndex < _slots.Length) ? _slots[slotIndex].Anchor : null;
 
@@ -88,12 +143,13 @@ namespace Vulps.GrowAGarden.Ownership
             if (plantable == null || plantable.NetworkId == 0) return;
             if (_slotIndices == null || !_slotIndices.TryGetValue(slot, out int slotIndex)) return;
 
-            string owner = plantable.OwnerId ?? string.Empty;
-            int size = BytesWriter.ByteSize + BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(owner);
+            // The plot asks whether the planter may use it, not the seed's buyer: a seed handed to someone is theirs to plant.
+            string planter = PlayerManager.LocalPlayerId ?? string.Empty;
+            int size = BytesWriter.ByteSize + BytesWriter.IntSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(planter);
             var writer = new BytesWriter(size);
             writer.AddByte((byte)slotIndex);
             writer.AddInt((int)plantable.NetworkId);
-            writer.AddAutoString(owner);
+            writer.AddAutoString(planter);
             _networkBridge.SendToAll((byte)PlotMessageType.PlantRequest, writer.Data);
         }
 
@@ -110,6 +166,9 @@ namespace Vulps.GrowAGarden.Ownership
 
         /// <summary>Master client only — moved verbatim from PlantSlot.OnPlantRequested, now
         /// addressed by slot index instead of being the slot itself.</summary>
+        // Seeds this master has planted and not yet despawned: a seed brushing two slots asks twice before it hears "planted".
+        private static readonly HashSet<uint> _sown = new HashSet<uint>();
+
         private void OnPlantRequested(byte[] data)
         {
             if (!PlayerManager.IsMaster) return;
@@ -118,7 +177,7 @@ namespace Vulps.GrowAGarden.Ownership
             if (!reader.IsValid) return;
             int slotIndex = reader.NextByte();
             uint plantableId = (uint)reader.NextInt();
-            string ownerId = reader.NextAutoString();
+            string planterId = reader.NextAutoString();
 
             if (slotIndex < 0 || slotIndex >= _slots.Length)
             {
@@ -133,7 +192,7 @@ namespace Vulps.GrowAGarden.Ownership
                 return;
             }
 
-            if (!plantable.CanBePlanted)
+            if (!plantable.CanBePlanted || _sown.Contains(plantableId))
             {
                 Logger.Warn($"OnPlantRequested() '{gameObject.name}' — '{plantableId}' is not in a plantable state; refused");
                 return;
@@ -145,15 +204,23 @@ namespace Vulps.GrowAGarden.Ownership
                 return;
             }
 
-            if (!CanBeUsedBy(ownerId))
+            Plant kind = plantable.PlantPrefab == null ? null : plantable.PlantPrefab.GetComponent<Plant>();
+            if (kind != null && !kind.MayBePlanted)
             {
-                Logger.Warn($"OnPlantRequested() '{gameObject.name}' — claimed={_lease != null && _lease.IsClaimed} owner='{(_lease == null ? "<no lease>" : _lease.OwnerId)}' refuses '{ownerId}'");
+                Logger.Warn($"OnPlantRequested() '{gameObject.name}' — '{kind.name}' may not be planted now (one at a time); refused");
+                return;
+            }
+
+            if (!CanBeUsedBy(planterId))
+            {
+                Logger.Warn($"OnPlantRequested() '{gameObject.name}' — claimed={_lease != null && _lease.IsClaimed} owner='{(_lease == null ? "<no lease>" : _lease.OwnerId)}' refuses planter '{planterId}'");
                 return;
             }
 
             Plant plant = SpawnPlant(plantable.PlantPrefab, _slots[slotIndex].Anchor);
             if (plant == null) return;
 
+            _sown.Add(plantableId);
             _slots[slotIndex].IsOccupied = true;
             _slots[slotIndex].Occupant = plant;
             plant.Init(this, slotIndex, System.DateTimeOffset.UtcNow.ToUnixTimeSeconds());
@@ -166,13 +233,19 @@ namespace Vulps.GrowAGarden.Ownership
             writer.AddInt((int)plantableId);
             _networkBridge.SendToAll((byte)PlotMessageType.Planted, writer.Data);
 
-            Logger.Info($"OnPlantRequested() '{gameObject.name}' — planted '{plant.name}' at slot {slotIndex} for '{ownerId}'");
+            Logger.Info($"OnPlantRequested() '{gameObject.name}' — planted '{plant.name}' at slot {slotIndex} for planter '{planterId}'");
             StartCoroutine(TakeOwnershipAndDespawn(plantableId));
         }
 
         /// <summary>Moved verbatim from PlantSlot — see there for why the plot has to ask for the
         /// seed rather than assume it already owns it.</summary>
         private IEnumerator TakeOwnershipAndDespawn(uint plantableId)
+        {
+            try { yield return Despawn(plantableId); }
+            finally { _sown.Remove(plantableId); }
+        }
+
+        private IEnumerator Despawn(uint plantableId)
         {
             NetworkObject obj = FindObject(plantableId);
             if (obj == null) yield break;
@@ -229,7 +302,7 @@ namespace Vulps.GrowAGarden.Ownership
             for (int i = 0; i < _slots.Length; i++)
             {
                 if (!_slots[i].IsOccupied) continue;
-                _slots[i].Occupant?.Uproot();
+                if (_slots[i].Occupant is Object occupant && occupant != null) _slots[i].Occupant.Uproot();   // not one already destroyed
                 _slots[i].IsOccupied = false;
                 _slots[i].Occupant = null;
                 AnnounceOccupancy(i);
@@ -283,7 +356,11 @@ namespace Vulps.GrowAGarden.Ownership
                     var occReader = new BytesReader(data);
                     int occIndex = occReader.NextByte();
                     bool occupied = occReader.NextByte() == 1;
-                    if (occIndex >= 0 && occIndex < _slots.Length) _slots[occIndex].IsOccupied = occupied;
+                    if (occIndex >= 0 && occIndex < _slots.Length)
+                    {
+                        _slots[occIndex].IsOccupied = occupied;
+                        if (!occupied) _slots[occIndex].Occupant = null;
+                    }
                     break;
 
                 case PlotMessageType.PlantRequest:
@@ -307,6 +384,7 @@ namespace Vulps.GrowAGarden.Ownership
                         int bit = i % 8;
                         byte b = i / 8 == 0 ? fb0 : i / 8 == 1 ? fb1 : fb2;
                         _slots[i].IsOccupied = (b & (1 << bit)) != 0;
+                        if (!_slots[i].IsOccupied) _slots[i].Occupant = null;
                     }
                     break;
 

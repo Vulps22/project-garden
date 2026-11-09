@@ -108,15 +108,21 @@ namespace Vulps.GrowAGarden.Show
         public static void ReportNight(float night)
         {
             if (_instance == null) return;
+            bool wasNight = _instance._night > 0f;
             _instance._night = night;
+            if (wasNight != night > 0f) NightChanged?.Invoke(night > 0f);
             for (int i = 0; i < _instance._quietAtNight.Length; i++)
                 if (_instance._quietAtNight[i] != null) _instance._quietAtNight[i].volume = _instance._dayVolume[i] * (1f - night);
         }
+
+        /// <summary>Night fell (true) or lifted completely (false) for this client.</summary>
+        public static event Action<bool> NightChanged;
 
         private void OnDestroy()
         {
             if (_instance == this) _instance = null;
             Kick = null;
+            NightChanged = null;
         }
 
         private void Update()

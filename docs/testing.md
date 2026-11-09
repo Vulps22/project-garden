@@ -44,7 +44,9 @@ Nothing in the Unity Editor console sees in-world behaviour. The client log is:
 
 > [!warning] Find the session banner first. Never read the log without it.
 > `Logger.BeginSession()` prints one line from `WorldManager.Awake()` at the start of every run:
-> `[GrowAGarden] Logging Session Started 2026-09-05 00:31:07`.
+> `[GrowAGarden] Logging Session Started 2026-11-05 00:31:07 build 1`.
+> **The build number is `Logger.BUILD`**, raised by one each time Vulps says a build was uploaded (from 2026-11-05).
+> A banner with the old number, or none, means the client is not running the upload being judged.
 > The client log is **append-only across runs**, so a histogram or a `grep -c` over the whole file counts every
 > session it remembers, including the build before the fix being judged. Read only from the last banner:
 > ```bash
@@ -65,6 +67,33 @@ instant.
 
 **A session with a per-frame throw cannot be used to judge feel.** An exception plus a log write per object per
 frame destroys frame time; anything "tested" in such a session has to be re-tested.
+
+## Frame time benchmark
+
+**Status (2026-11-03):** built, compiles clean, untested in-world. Asked for by Vulps.
+
+`DevTools/FrameTimeLog` (on SceneManager) writes one line a minute to every client's log:
+
+```
+Report() 'SceneManager' — PERF 5400 frames: avg=11.2 p95=12.0 p99=16.5 max=40.2 ms, over=3.1% of 11.1 ms @90Hz cpu=8.3 gpu=9.1 | night=no bubble=Town_Capital@2,7 players=3 draw=1200m tripping=no at=(4,1,9)
+```
+
+- **Over budget** is the share of frames slower than the headset's frame (5% slack). It is the first number to read:
+  in VR the frame rate is locked to the refresh rate, so the average sits at the budget until frames start missing.
+  `p95`/`p99` are the slowest 5% and 1%; `max` the worst single frame (load hitches land here).
+- **`cpu`/`gpu`** are Unity's own frame times (`FrameTimingManager`), present only if the client has frame timing
+  stats on; the first PERF report says whether it does. They show headroom shrinking before any frame is missed.
+- **The context after `|`** is what makes two lines comparable: day or night, which Garden's bubble, players in the
+  world, draw distance, tripping, where. Compare like with like only.
+- **The benchmark:** a change that raises `over`, `p99` or `cpu`/`gpu` in the same context is a regression. Stand in the
+  same spot for a few minutes before and after.
+
+Read it from the last session banner:
+
+```bash
+START=$(grep -n "Logging Session Started" "$L" | tail -1 | cut -d: -f1)
+tail -n +"$START" "$L" | grep -o "PERF .*"
+```
 
 ## Debug aids
 

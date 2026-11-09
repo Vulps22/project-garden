@@ -27,6 +27,30 @@ namespace Vulps.GrowAGarden.Show
             _restPosition = new Vector3[_rows.Length];
             for (int i = 0; i < _rows.Length; i++) if (_rows[i] != null) _restPosition[i] = _rows[i].localPosition;
             if (_rows.Length > 0 && _rows[0] != null) _leaderScale = _rows[0].localScale;
+            ShowManager.NightChanged += OnNightChanged;
+            _garden = GetComponentInParent<Detail.GardenDetail>();
+            if (_garden != null) _garden.BubbleChanged += OnBubbleChanged;
+            Wake();
+        }
+
+        private void OnDestroy()
+        {
+            ShowManager.NightChanged -= OnNightChanged;
+            if (_garden != null) _garden.BubbleChanged -= OnBubbleChanged;
+        }
+
+        private Detail.GardenDetail _garden;
+
+        // Night is global, but only the board of the Garden the player stands in dances: the others rest and do not update.
+        private void OnNightChanged(bool night) => Wake();
+        private void OnBubbleChanged(bool inside) => Wake();
+
+        private void Wake()
+        {
+            bool dancing = ShowManager.Night > 0f && (_garden == null || _garden.InBubble);
+            if (!dancing && _moving) Rest();
+            if (!dancing) _moving = false;
+            enabled = dancing;
         }
 
         private void Update()

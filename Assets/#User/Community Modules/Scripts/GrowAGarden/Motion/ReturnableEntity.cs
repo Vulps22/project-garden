@@ -52,6 +52,9 @@ namespace Vulps.GrowAGarden.Motion
         /// <summary>Where this will go when recalled, or null if it has nowhere to be.</summary>
         public Transform ReturnTarget => _returnTo;
 
+        /// <summary>A recall has ended: the object is where it was sent, or was let go where it stood.</summary>
+        public event System.Action Arrived;
+
         /// <summary>True while travelling. Collisions are disabled for the duration.</summary>
         public bool IsReturning => _returning;
 
@@ -132,6 +135,18 @@ namespace Vulps.GrowAGarden.Motion
             }
         }
 
+        /// <summary>Puts it on its target at once, for something nobody can see travel. Only the state authority can move it.</summary>
+        public void SnapHome()
+        {
+            if (_returnTo == null || _rigidbody == null || !HasStateAuthority) return;
+            _rigidbody.linearVelocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            _rigidbody.position = _returnTo.position;
+            _rigidbody.rotation = _returnTo.rotation;
+            transform.SetPositionAndRotation(_returnTo.position, _returnTo.rotation);
+            StopReturning();
+        }
+
         /// <summary>Keeps the grab off until an enforced recall in progress arrives. False when no enforced recall is under way.</summary>
         public bool KeepGrabUntilArrival()
         {
@@ -162,6 +177,7 @@ namespace Vulps.GrowAGarden.Motion
 
             _rigidbody.linearVelocity = Vector3.zero;
             _rigidbody.angularVelocity = Vector3.zero;
+            Arrived?.Invoke();
         }
 
         private void FixedUpdate()

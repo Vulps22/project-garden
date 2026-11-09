@@ -61,7 +61,7 @@ namespace Vulps.GrowAGarden.Almanac
 
         /// <summary>A named tier for a share of the stall rolls.</summary>
         public static string Tier(float share) =>
-            share >= 0.15f ? "Common" : share >= 0.075f ? "Uncommon" : share >= 0.03f ? "Rare" : "Very Rare";
+            share >= 0.15f ? "Common" : share >= 0.05f ? "Uncommon" : share >= 0.01f ? "Rare" : "Very Rare";
 
         /// <summary>Whether this player has bought the crop's seed from a stall (the Developer Market does not count).</summary>
         public static bool Collected(string seedId) => _instance != null && _instance.RowOf(seedId, false)?.collected == true;

@@ -12,12 +12,13 @@ namespace Vulps.GrowAGarden.Seeds
             displayName = "Weed";
             tagline = "sell the bloom, or eat it raw";
             description = "Nine blooms to a plant. Sell one and the stall hands back a splif to smoke; eat one raw for the full trip.";
-            buyPrice = 80;
-            sellValue = 30;          // per bloom; nine to a plant
+            buyPrice = 200;
+            sellValue = 140;         // per bloom; nine to a plant
+            fruitPerPlant = 9;
             growthDuration = 90f;
             ripenDuration = 60f;
             witherDuration = 30f;
-            spawnWeight = 0.15f;     // a find, not a staple
+            spawnWeight = 0.02f;     // very rare: about one island stall in 45, and a windfall
         }
     }
 }

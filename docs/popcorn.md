@@ -11,7 +11,7 @@ screen plays whatever a player links. The screen's sound is what the light show 
 
 ## The design
 
-**Status (2026-11-03):** built; played in-world. In the Developer Market only, not the stalls.
+**Status (2026-11-04):** built; played in-world. In the stalls (untested there) and the Developer Market.
 
 Vulps's design:
 
@@ -26,6 +26,16 @@ Vulps's design:
   the Garden holds the screen. When that one goes, the next takes over and rebuilds the screen from nothing.
 - **Who sets the link is Somnium's rule**: the native controls let anyone take or release control.
 
+
+## Every screen but world spawn's, hidden for now
+
+**Status (2026-11-03):** temporary, for one session (Vulps); compiles clean, untested in-world.
+
+`Video/ScreenStandIn` (on SceneManager) hides what every Garden's screen draws except world spawn's (`Town_Capital`'s
+first Garden) and puts a notice in its place, readable from both sides: "Multi-screen support coming soon / in the mean
+time join the party at world spawn / (you will need another popcorn seed)". The players keep running and syncing, so
+popcorn planted at another Garden still builds its screen, hidden behind the notice. Remove it once screens play only
+near their players ([[towns]]).
 ## The screen
 
 **Status (2026-11-03):** built; played in-world.
@@ -51,8 +61,8 @@ Vulps's design:
 
 **Status (2026-11-03):** built; played in-world.
 
-- **`PopcornSeed`**: buy 120, nothing to sell, grows in 60 s, `spawnWeight` 0.12. `Buyable_Popcorn` sits under
-  SceneManager, out of `WorldManager._buyables`: listing it puts it in the stalls.
+- **`PopcornSeed`**: nothing to sell; its price, grow time and rarity are in [[crops#Balance|crops → Balance]].
+  `Buyable_Popcorn` sits under SceneManager and is in `WorldManager._buyables`, so the stalls sell it.
 - **`StandingPlant`** (`Crops/`): grows, then stands, bearing nothing and never withering; the plant shape for
   upgrades ([[crops]]).
 - **`ScreenManager`** (`Video/`, one per screen, on its video player): which grown popcorn plant in the Garden holds

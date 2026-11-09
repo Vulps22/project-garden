@@ -33,6 +33,9 @@ namespace Vulps.GrowAGarden
 
         private static bool _sessionAnnounced;
 
+        /// <summary>Raised by one every time Vulps says a build was uploaded, so the log says which build is running.</summary>
+        public const int BUILD = 2;
+
         /// <summary>
         /// Prints one banner at the top of this run's log, once.
         ///
@@ -49,7 +52,7 @@ namespace Vulps.GrowAGarden
             if (_sessionAnnounced) return;
             _sessionAnnounced = true;
 
-            Debug.Log($"[GrowAGarden] Logging Session Started {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            Debug.Log($"[GrowAGarden] Logging Session Started {System.DateTime.Now:yyyy-MM-dd HH:mm:ss} build {BUILD}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

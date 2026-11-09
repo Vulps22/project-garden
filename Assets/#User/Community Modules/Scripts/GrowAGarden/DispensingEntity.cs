@@ -42,6 +42,7 @@ namespace Vulps.GrowAGarden
             _socket.Entered += OnEntered;
             _socket.Leaving += OnLeaving;
             _socket.Left    += OnLeft;
+            CollectibleEntity.AnyInDispenser += OnAnyInDispenser;
         }
 
         private void OnDisable()
@@ -50,6 +51,7 @@ namespace Vulps.GrowAGarden
             _socket.Entered -= OnEntered;
             _socket.Leaving -= OnLeaving;
             _socket.Left    -= OnLeft;
+            CollectibleEntity.AnyInDispenser -= OnAnyInDispenser;
         }
 
         private void OnDestroy() => SetCurrentItem(null);   // drops the subscriptions
@@ -99,6 +101,18 @@ namespace Vulps.GrowAGarden
         }
 
         private void OnLeft(GameObject _) => _wantsStock = true;
+
+        /// <summary>An item at this socket became stock: every client adopts it, so a new master does not stock a second.
+        /// The socket's trigger fires before that state arrives, so OnEntered alone misses it on most clients.</summary>
+        private void OnAnyInDispenser(CollectibleEntity item)
+        {
+            if (_currentItem != null || _socket == null) return;
+            if (item.IsTaken || (item.transform.position - _socket.transform.position).sqrMagnitude > ADOPT_RANGE * ADOPT_RANGE) return;
+            SetCurrentItem(item);
+            _socket.Hold(item.gameObject);
+        }
+
+        private const float ADOPT_RANGE = 0.5f;
 
         // ── Deciding a take ───────────────────────────────────────────────────────
 

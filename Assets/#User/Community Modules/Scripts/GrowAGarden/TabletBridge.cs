@@ -326,6 +326,43 @@ namespace Vulps.GrowAGarden
             return toggle;
         }
 
+        private const string SLIDER_TEMPLATE = "Option_MainVolume";
+
+        /// <summary>
+        /// Adds one of Settings' slider rows (828 × 112, full width), cloned from Audio's Main volume with Somnium's option
+        /// logic stripped. The caller drives the returned Slider and its Previous/Next arrows (<paramref name="less"/>,
+        /// <paramref name="more"/>) and writes the value with <see cref="SetSliderValueText"/>. Null if Settings has moved.
+        /// </summary>
+        public static Slider AddSettingsSlider(Transform tablet, Transform parent, string name, string label, out Button less, out Button more)
+        {
+            less = more = null;
+            Transform options = tablet == null ? null : tablet.Find(OPTIONS);
+            Transform template = options == null ? null : FindDeep(options, SLIDER_TEMPLATE);
+            if (template == null || parent == null) return null;
+
+            GameObject clone = CloneStripped(template.gameObject, name, "OptionViewBase", "FloatSlider", "LocalizeStringEvent");
+            Slider slider = clone.GetComponentInChildren<Slider>(true);
+            if (slider == null) { Object.Destroy(clone); return null; }
+            slider.onValueChanged = new Slider.SliderEvent();
+
+            less = clone.transform.Find("Previous")?.GetComponent<Button>();
+            more = clone.transform.Find("Next")?.GetComponent<Button>();
+            if (less != null) less.onClick = new Button.ButtonClickedEvent();
+            if (more != null) more.onClick = new Button.ButtonClickedEvent();
+            SetText(clone.transform.Find("Name Label"), label);
+
+            clone.transform.SetParent(parent, false);
+            clone.SetActive(true);
+            return slider;
+        }
+
+        /// <summary>Writes a slider row's value, top right, where Settings shows "100%".</summary>
+        public static void SetSliderValueText(Slider slider, string text)
+        {
+            Transform row = slider == null ? null : slider.transform.parent;
+            SetText(row == null ? null : row.Find("Value Label"), text);
+        }
+
         /// <summary>Draws an on/off row the way Somnium's own does: the handle slides, the fill lights.</summary>
         public static void ShowToggle(Toggle toggle, bool on, bool usable)
         {

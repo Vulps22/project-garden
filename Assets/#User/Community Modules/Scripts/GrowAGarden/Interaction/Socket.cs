@@ -109,6 +109,14 @@ namespace Vulps.GrowAGarden.Interaction
             if (align != null) align.Realign();
         }
 
+        /// <summary>Puts the held object straight back on the shelf, on the client simulating it; for one nobody can see.</summary>
+        public void SnapHere()
+        {
+            if (Held == null) return;
+            var ret = Held.GetComponent<ReturnableEntity>();
+            if (ret != null) ret.SnapHome();
+        }
+
         private IEnumerator TakeOwnershipAndRecall(GameObject held, ReturnableEntity ret)
         {
             NetworkObject obj = held.GetComponent<NetworkObject>();

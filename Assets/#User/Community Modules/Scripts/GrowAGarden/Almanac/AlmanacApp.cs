@@ -21,8 +21,6 @@ namespace Vulps.GrowAGarden.Almanac
         [Tooltip("Home-screen icon for the app. A texture, made a sprite at runtime: sprite references arrive empty in-world.")]
         [SerializeField] private Texture2D _icon;
 
-        [Tooltip("Seconds between refreshes of an open page's stall count.")]
-        [SerializeField] private float _refreshSeconds = 2f;
 
         private static readonly Color PANEL = new Color(0.1f, 0.09f, 0.07f, 0.97f);
         private static readonly Color CELL = new Color(0.17f, 0.15f, 0.11f, 1f);
@@ -42,15 +40,21 @@ namespace Vulps.GrowAGarden.Almanac
         private RawImage _detailPicture;
         private TMP_Text _detailTitle, _detailKind, _detailText, _detailRecord;
         private float _nextLookup;
-        private float _nextRefresh;
+        private float _nextTabletCheck;
         private bool _built;
         private bool _dirty;
 
-        private void Awake() => AlmanacBook.Changed += OnChanged;
+        // Redrawn when the record or any stall's stock changes, not on a timer.
+        private void Awake()
+        {
+            AlmanacBook.Changed += OnChanged;
+            ShopKeeper.StockChanged += OnChanged;
+        }
 
         private void OnDestroy()
         {
             AlmanacBook.Changed -= OnChanged;
+            ShopKeeper.StockChanged -= OnChanged;
             if (_page != null) Destroy(_page.gameObject);
         }
 
@@ -59,12 +63,12 @@ namespace Vulps.GrowAGarden.Almanac
         private void Update()
         {
             if (!_built) { TryBuild(); return; }
-            if (_tablet == null || _page == null) { _built = false; return; }
+            if (_tablet == null || _page == null || TabletReplaced()) { _built = false; return; }
             if (!_page.gameObject.activeSelf) return;
 
             // Somnium opened something of its own (the frame's buttons, a notification): step aside.
             if (TabletManager.SomniumPageOpen(_tablet, _page)) { _page.gameObject.SetActive(false); return; }
-            if (_dirty || Time.time >= _nextRefresh) Refresh();
+            if (_dirty) Refresh();
         }
 
         // ── Building ──────────────────────────────────────────────────────────────
@@ -83,8 +87,8 @@ namespace Vulps.GrowAGarden.Almanac
             _page = TabletManager.AddPage(_tablet, PAGE_NAME);
             if (open == null || _page == null)
             {
-                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's home screen is not where docs/tablet.md says; no Almanac");
-                enabled = false;
+                Logger.Warn($"TryBuild() '{gameObject.name}' — the tablet's home screen is not where docs/tablet.md says (or not built yet); trying again");
+                _nextLookup = Time.time + 5f;
                 return;
             }
 
@@ -241,7 +245,6 @@ namespace Vulps.GrowAGarden.Almanac
         private void Refresh()
         {
             _dirty = false;
-            _nextRefresh = Time.time + _refreshSeconds;
             foreach ((AlmanacBook.Entry entry, RawImage picture, TMP_Text _) in _cells)
                 picture.color = AlmanacBook.Collected(entry.Crop.seedId) ? Color.white : Color.black;
             if (_showing != null) FillDetail(_showing);
@@ -341,6 +344,17 @@ namespace Vulps.GrowAGarden.Almanac
             r.anchorMax = Vector2.one;
             r.offsetMin = new Vector2(left, bottom);
             r.offsetMax = new Vector2(-right, -top);
+        }
+
+        /// <summary>Somnium made a new tablet (an instance change can): the old one's build is no longer what the player holds.</summary>
+        private bool TabletReplaced()
+        {
+            if (Time.time < _nextTabletCheck) return false;
+            _nextTabletCheck = Time.time + 2f;
+            Transform now = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
+            if (now == null || now == _tablet) return false;
+            Logger.Info($"TabletReplaced() '{gameObject.name}' — a new tablet; building again");
+            return true;
         }
     }
 }

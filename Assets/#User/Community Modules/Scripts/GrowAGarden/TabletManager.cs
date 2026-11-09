@@ -24,6 +24,8 @@ namespace Vulps.GrowAGarden
         public static Toggle AddSettingsToggle(Transform tablet, Transform parent, string name, string label) => TabletBridge.AddSettingsToggle(tablet, parent, name, label);
         public static Button AddQuickAction(Transform tablet, string name, Sprite icon, string label) => TabletBridge.AddQuickAction(tablet, name, icon, label);
         public static void SetQuickActionLabel(Button button, string label) => TabletBridge.SetQuickActionLabel(button, label);
+        public static Slider AddSettingsSlider(Transform tablet, Transform parent, string name, string label, out Button less, out Button more) => TabletBridge.AddSettingsSlider(tablet, parent, name, label, out less, out more);
+        public static void SetSliderValueText(Slider slider, string text) => TabletBridge.SetSliderValueText(slider, text);
         public static void ShowToggle(Toggle toggle, bool on, bool usable) => TabletBridge.ShowToggle(toggle, on, usable);
     }
 }

@@ -68,6 +68,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// <summary>Whether the local player is the one who decides things for the world.</summary>
         public static bool IsMaster => PlayerBridge.IsMaster;
 
+        /// <summary>How many players Somnium has in the world, this one included.</summary>
+        public static int PlayerCount => PlayerBridge.PlayerCount;
+
         /// <summary>A remote peer entered the room and can now receive RPCs. Push it state.</summary>
         public static event System.Action OtherPlayerJoined
         {
@@ -158,8 +161,23 @@ namespace Vulps.GrowAGarden.Ownership
         /// <summary>Departed ids, and the time each stops being reprievable.</summary>
         private readonly Dictionary<string, float> _pending = new Dictionary<string, float>();
 
+        private static PlayerManager _instance;
+
+        /// <summary>
+        /// Starts the grace period for a player this client never saw leave: a master that joined after they went.
+        /// Already pending, or present, and nothing changes.
+        /// </summary>
+        public static void HoldDeparted(string playerId)
+        {
+            if (_instance == null || string.IsNullOrEmpty(playerId) || GetPlayer(playerId).Exists) return;
+            if (_instance._pending.ContainsKey(playerId)) return;
+            _instance._pending[playerId] = Time.time + _instance._graceSeconds;
+            Logger.Info($"HoldDeparted() '{_instance.gameObject.name}' — '{playerId}' left before this master saw them; held for {_instance._graceSeconds}s");
+        }
+
         private void Awake()
         {
+            _instance = this;
             PlayerBridge.PlayerAdded += OnPlayerAdded;
             PlayerBridge.PlayerRemoved += OnPlayerRemoved;
             PlayerBridge.LocalPlayerAdded += OnLocalPlayerAdded;
@@ -184,6 +202,7 @@ namespace Vulps.GrowAGarden.Ownership
             // Statics outlive a scene when domain reload is off, and an id from the last session is
             // worse than none.
             LocalPlayerId = null;
+            if (_instance == this) _instance = null;
         }
 
         private void OnPlayerAdded(PlayerIdentity player)

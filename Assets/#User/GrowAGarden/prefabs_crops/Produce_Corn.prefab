@@ -25,7 +25,8 @@ GameObject:
   - component: {fileID: 1904810602212056260}
   - component: {fileID: 6375846277293799979}
   - component: {fileID: 6769623580119517544}
-  m_Layer: 0
+  - component: {fileID: 563918620672179132}
+  m_Layer: 7
   m_Name: Produce_Corn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -440,12 +441,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.CornSeed
   seedId: corn
   displayName: Corn
+  tagline: three cobs a stalk
+  description: A tall stalk bearing three cobs at once. Each cob sells on its own.
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4360997998222114339, guid: a86d10e2c8f4c55c8b34192c4a0aca82,
     type: 3}
-  spawnWeight: 0.45
-  buyPrice: 25
-  sellValue: 13
+  spawnWeight: 0.2
+  buyPrice: 30
+  sellValue: 55
   harvestCount: 1
+  fruitPerPlant: 3
+  upgradeBonus: 0
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -470,6 +476,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.048193157, y: 0.13500887, z: 0.038262147}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &563918620672179132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 969558867835806848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: crop.corn
 --- !u!1001 &3870581374204517727
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -481,6 +500,10 @@ PrefabInstance:
     - target: {fileID: 1000012087161104, guid: 8490d29919917de4ca0c5297d93090d7, type: 3}
       propertyPath: m_Name
       value: Corn_Fruit
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000012087161104, guid: 8490d29919917de4ca0c5297d93090d7, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000010845709248, guid: 8490d29919917de4ca0c5297d93090d7, type: 3}
       propertyPath: m_LocalScale.x

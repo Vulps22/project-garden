@@ -224,8 +224,11 @@ MonoBehaviour:
     type: 3}
   spawnWeight: 0.6
   buyPrice: 18
-  sellValue: 25
+  sellValue: 26
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 15
   ripenDuration: 1
   witherDuration: 0
@@ -265,10 +268,13 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: a1c91ca03235e59968ab65cd32060183, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: a86d10e2c8f4c55c8b34192c4a0aca82,
     type: 3}
-  spawnWeight: 0.45
-  buyPrice: 25
-  sellValue: 13
+  spawnWeight: 0.2
+  buyPrice: 30
+  sellValue: 55
   harvestCount: 1
+  fruitPerPlant: 3
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -324,6 +330,11 @@ GameObject:
   - component: {fileID: 163550792}
   - component: {fileID: 163550791}
   - component: {fileID: 163550794}
+  - component: {fileID: 163550795}
+  - component: {fileID: 163550796}
+  - component: {fileID: 163550797}
+  - component: {fileID: 163550798}
+  - component: {fileID: 163550799}
   m_Layer: 0
   m_Name: SceneManager
   m_TagString: Untagged
@@ -377,6 +388,9 @@ MonoBehaviour:
   - {fileID: 8889210848319893590, guid: 7ac933df7ffed3a14856dd6d563bddb7, type: 3}
   - {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
   - {fileID: 8889210848319893590, guid: d0e99dffa9d3c57cc92d16db0f9bc3d3, type: 3}
+  - {fileID: 4360997998222114339, guid: 1caf9dca9d1f22efc82f1d8685036499, type: 3}
+  - {fileID: 4360997998222114339, guid: ac800d80bfbf8633ea284928b298b69f, type: 3}
+  - {fileID: 8889210848319893590, guid: 357086be97ac89ea380b41fb34918e25, type: 3}
   _networkPrefabsGuid:
   - af7676cb-2b49-4631-8c42-e30d07cc671d
   - ec31026d-adfa-4ef0-bacc-67b6300fc846
@@ -409,6 +423,9 @@ MonoBehaviour:
   - fe8392e5-f97c-4f8b-a50a-386f0b78b500
   - 1d9c6c6b-eac8-4a0c-bf6f-9bac33be0065
   - 63aa7d63-b96e-4bd5-a2e1-d223e838c5a1
+  - e4657d78-6230-4446-a30c-949733dfa557
+  - 01f7d820-ee0e-4430-bbdf-97fe2dc32354
+  - b3326895-2618-4a8e-98d4-20516e0d4eff
 --- !u!4 &163550764
 Transform:
   m_ObjectHideFlags: 0
@@ -433,6 +450,8 @@ Transform:
   - {fileID: 1401735100}
   - {fileID: 1927546515}
   - {fileID: 295937777}
+  - {fileID: 260359766}
+  - {fileID: 924002265}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &163550766
@@ -482,7 +501,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.EconomyManager
   _bridge: {fileID: 163550767}
   _balanceDisplayManager: {fileID: 181789820}
-  _startingBalance: 100
+  _startingBalance: 10
 --- !u!114 &163550769
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -549,6 +568,9 @@ MonoBehaviour:
   - {fileID: 1395363819}
   - {fileID: 157794067}
   - {fileID: 1401735099}
+  - {fileID: 260359765}
+  - {fileID: 924002264}
+  - {fileID: 1927546514}
   _recycleSeconds: 300
   _bridge: {fileID: 163550767}
 --- !u!114 &163550773
@@ -616,7 +638,7 @@ MonoBehaviour:
     TroughMaxBonus: 15
   _terrainMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 1475593079
   _contactRadius: 1
   _contactHeight: 1
   _armExtension: 0.55
@@ -711,8 +733,6 @@ MonoBehaviour:
   _bridge: {fileID: 163550767}
   _origin: {fileID: 1067852682}
   _sectorSize: 1000
-  _groundRadius: 600
-  _checkInterval: 0.25
 --- !u!114 &163550781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -936,6 +956,8 @@ MonoBehaviour:
   - {fileID: 4360997998222114339, guid: 07b80d914650af4d3acf2b81e9fb0491, type: 3}
   - {fileID: 4360997998222114339, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9, type: 3}
   - {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
+  - {fileID: 4360997998222114339, guid: 1caf9dca9d1f22efc82f1d8685036499, type: 3}
+  - {fileID: 4360997998222114339, guid: ac800d80bfbf8633ea284928b298b69f, type: 3}
   _names:
   - Carrot Seed
   - Turnip Seed
@@ -956,6 +978,8 @@ MonoBehaviour:
   - SPS Receiver
   - Moonflower Seed
   - Spotlight Tulip Bulb
+  - Grow Wand
+  - Yggdrasil Seed
   _previews:
   - {fileID: 2800000, guid: 2f81a9c7857c961ee91f9d2ac2d8f09a, type: 3}
   - {fileID: 2800000, guid: aa803682eee570a759288467a4561796, type: 3}
@@ -976,6 +1000,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 0b76a8654ac413a20bc13074e97c0338, type: 3}
   - {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
   - {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
+  - {fileID: 2800000, guid: a929d18e18deadc2dbb304a3246f0505, type: 3}
+  - {fileID: 2800000, guid: 1a059e1f3e5c0f2ae888ff5bd9697626, type: 3}
 --- !u!114 &163550789
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1010,7 +1036,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e56fa5df6712c1b194b6d087402af56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.ArsBridge
-  _checkSeconds: 1
+  _step: 10
 --- !u!114 &163550791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1024,7 +1050,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Almanac.AlmanacApp
   _icon: {fileID: 2800000, guid: 8aee5406b46ab633bb0953dcd58c99bc, type: 3}
-  _refreshSeconds: 2
 --- !u!114 &163550792
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1037,10 +1062,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36de348d2947119119084433fcd3bfb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Almanac.AlmanacBook
-  _comingSoon:
-  - {fileID: 1927546514}
-  - {fileID: 526411421684782548, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9, type: 3}
-  - {fileID: 123417048594079647, guid: 461aaefbcc81a5d03b7e27a423f8f4a0, type: 3}
+  _comingSoon: []
 --- !u!114 &163550793
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1067,6 +1089,77 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.RestockTimer
   _icon: {fileID: 2800000, guid: 5ba402de9fefe0ce695e8b3bbe034f9e, type: 3}
+--- !u!114 &163550795
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56bcc695c8cb95314abeb49698a27522, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.DevTools.DeveloperBroadcast
+  _bridge: {fileID: 163550767}
+--- !u!114 &163550796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afc5e70163ed3e7269c95c523242fdef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Detail.DetailManager
+  _hysteresis: 10
+  _step: 5
+--- !u!114 &163550797
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8336e4fe8df5caae3b16e67e603fc953, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Video.ScreenStandIn
+  _spawnGarden: {fileID: 1316739912}
+  _font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  _text: 'Multi-screen support coming soon
+
+    in the mean time join the party at
+    world spawn
+
+    (you will need another popcorn seed)'
+--- !u!114 &163550798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ecea475fa237e55eb2d963fcf16ada0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.PlayerTracker
+--- !u!114 &163550799
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163550761}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21b363d48ddd1ba6d82ee04f9b490f27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.DevTools.FrameTimeLog
 --- !u!114 &181789820 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8805463397901991551, guid: 352c2db0c163b0c6689750a609a2de4e,
@@ -1142,6 +1235,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 183862449
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -1162,15 +1260,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 2821297021
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3853714359
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 201123135
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2806569618
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 2376464976
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2369958218
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1388,8 +1501,11 @@ MonoBehaviour:
     type: 3}
   spawnWeight: 0.25
   buyPrice: 60
-  sellValue: 110
+  sellValue: 75
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 60
   ripenDuration: 60
   witherDuration: 30
@@ -1400,6 +1516,68 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 258327364}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &260359764
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 260359766}
+  - component: {fileID: 260359765}
+  m_Layer: 0
+  m_Name: Buyable_Moonflower
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &260359765
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 260359764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 241f4dbc83efc0a649fb94f5224550be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.MoonflowerSeed
+  seedId: moonflower
+  displayName: Moonflower
+  tagline: brings the night
+  description: Grown, it beams into the sky and closes a black dome over the Garden,
+    a light show to the screen's music. Grow two and the beams meet overhead.
+  picture: {fileID: 2800000, guid: 71c4274f50719aeda8806b6382e17205, type: 3}
+  seedPrefab: {fileID: 4360997998222114339, guid: 21c5ebd52175d9c0a97ce49e9d3ff5f9,
+    type: 3}
+  spawnWeight: 0.008
+  buyPrice: 600
+  sellValue: 0
+  harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0.3
+  buffMultiplier: 1
+  growthDuration: 60
+  ripenDuration: 0
+  witherDuration: 0
+--- !u!4 &260359766
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 260359764}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1747,7 +1925,7 @@ MonoBehaviour:
   _floorY: -75
   _returnTo: {fileID: 4844959713083103934}
   _rearmMargin: 5
-  _sweepInterval: 0.5
+  _catchWidth: 100000
 --- !u!114 &311160986
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1815,7 +1993,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: c578d2cd28dafead0a5adb6811f61db1, type: 3}
-  LastBuildSizeBytes: 87482520
+  LastBuildSizeBytes: 91474009
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -1843,7 +2021,7 @@ MonoBehaviour:
     Free:
       Count: 4
       MaxCount: 10
-      AvailableSize: 211280760
+      AvailableSize: 207289271
     Paid:
       Entries: []
   OwnedTokens: []
@@ -2144,6 +2322,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1927739539
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -2164,15 +2347,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 270206815
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1302624153
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1945000225
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 255479412
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 4120342066
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 4113835308
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2373,6 +2571,9 @@ MonoBehaviour:
   buyPrice: 10
   sellValue: 15
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -2439,6 +2640,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2882008832
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -2459,15 +2665,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 1224476108
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2256893446
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 2899269518
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1209748705
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 779644063
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 773137305
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2649,10 +2870,13 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 9a36ef1a61593acd19d8ce46a5762306, type: 3}
   seedPrefab: {fileID: 7457805046529267251, guid: 8ddeee09c3e16693f8596a9c3899fd60,
     type: 3}
-  spawnWeight: 0.15
-  buyPrice: 80
-  sellValue: 30
+  spawnWeight: 0.02
+  buyPrice: 200
+  sellValue: 140
   harvestCount: 1
+  fruitPerPlant: 9
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 90
   ripenDuration: 60
   witherDuration: 30
@@ -2995,7 +3219,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeY:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -3048,7 +3272,7 @@ ParticleSystem:
         m_RotationOrder: 4
     startSizeZ:
       serializedVersion: 2
-      minMaxState: 0
+      minMaxState: 3
       scalar: 1
       minScalar: 1
       maxCurve:
@@ -7677,6 +7901,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2747503325
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -7697,15 +7926,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 1089970601
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2122387939
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 2764764011
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1075243198
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 645138556
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 638631798
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7913,6 +8157,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3964206829
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -7933,15 +8182,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 2306674105
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3339091443
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 3981467515
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2291946702
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1861842060
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1855335302
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8306,6 +8570,68 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &924002263
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 924002265}
+  - component: {fileID: 924002264}
+  m_Layer: 0
+  m_Name: Buyable_SpotlightTulip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &924002264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 924002263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e6f737810527ca829e906898bd65095, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Seeds.SpotlightTulipSeed
+  seedId: spotlight_tulip
+  displayName: Spotlight Tulip
+  tagline: a stage light for the Garden
+  description: A stage light on a stem. It rises over the Garden and sweeps it in
+    time with the music.
+  picture: {fileID: 2800000, guid: a570fbd867ab81ea5bc06bd174b78a87, type: 3}
+  seedPrefab: {fileID: 4360997998222114339, guid: 461aaefbcc81a5d03b7e27a423f8f4a0,
+    type: 3}
+  spawnWeight: 0.04
+  buyPrice: 250
+  sellValue: 0
+  harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0.07
+  buffMultiplier: 1
+  growthDuration: 40
+  ripenDuration: 0
+  witherDuration: 0
+--- !u!4 &924002265
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 924002263}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 163550764}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1054586915
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8369,6 +8695,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 4078110748
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -8389,15 +8720,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 2420578024
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3452995362
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 4095371434
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2405850621
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1975745979
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1969239221
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8583,7 +8929,6 @@ MonoBehaviour:
   _buyPoint: {fileID: 4084342172881817567, guid: c568183c125f81381a21a0f9f290c819,
     type: 3}
   _viewRadius: 1200
-  _refreshInterval: 1
 --- !u!4 &1067852682
 Transform:
   m_ObjectHideFlags: 0
@@ -8688,6 +9033,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1317900475
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -8708,15 +9058,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 3955335047
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 692785089
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1335161161
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3940607644
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 3510503002
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3503996244
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -8930,6 +9295,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1117546167
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -8950,15 +9320,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 3754980739
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 492430781
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1134806853
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3740253336
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 3310148694
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3303641936
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9140,10 +9525,13 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 022a2abc670dcd679801f31dfc803a58, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 20e6e5ec57a63b703aaa19524962ab34,
     type: 3}
-  spawnWeight: 0.85
+  spawnWeight: 0.5
   buyPrice: 20
-  sellValue: 6
+  sellValue: 22
   harvestCount: 3
+  fruitPerPlant: 12
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 20
   ripenDuration: 15
   witherDuration: 20
@@ -9225,6 +9613,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2376126675
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -9245,15 +9638,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 718593951
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1751011289
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 2393387361
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 703866548
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 273761906
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 267255148
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9565,10 +9973,13 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: ee2e574a4e4668158bb94f7416a04aeb, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 0f77a5bed1989f67aad91925e003cf70,
     type: 3}
-  spawnWeight: 0.3
-  buyPrice: 45
-  sellValue: 14
+  spawnWeight: 0.08
+  buyPrice: 90
+  sellValue: 50
   harvestCount: 3
+  fruitPerPlant: 9
+  upgradeBonus: 0
+  buffMultiplier: 1
   growthDuration: 40
   ripenDuration: 25
   witherDuration: 20
@@ -9718,6 +10129,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1731818840
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -9748,15 +10164,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 74286116
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1106703454
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1749079526
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 59558713
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 3924421367
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3917914609
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9964,6 +10395,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1772702193
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -9984,15 +10420,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 115169469
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1147586807
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1789962879
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 100442066
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 3965304720
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3958797962
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10200,6 +10651,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1044818398
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -10220,15 +10676,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 3682252970
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 419703012
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 1062079084
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3667525567
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 3237420925
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 3230914167
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10485,6 +10956,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 367030443
+      objectReference: {fileID: 0}
     - target: {fileID: 2849830958728461122, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
@@ -10505,15 +10981,30 @@ PrefabInstance:
       propertyPath: SortKey
       value: 3004465015
       objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 4036882353
+      objectReference: {fileID: 0}
     - target: {fileID: 6120256467633646885, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 384291129
       objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2989737612
+      objectReference: {fileID: 0}
     - target: {fileID: 7770024526734365502, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: SortKey
       value: 2559632970
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2553126212
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10695,10 +11186,13 @@ MonoBehaviour:
   picture: {fileID: 2800000, guid: 7ed404b126f863c95b335d48c176984f, type: 3}
   seedPrefab: {fileID: 4360997998222114339, guid: 9272b2d1257d8fccf873eaf266c9bf67,
     type: 3}
-  spawnWeight: 0.12
-  buyPrice: 120
+  spawnWeight: 0.045
+  buyPrice: 400
   sellValue: 0
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0.05
+  buffMultiplier: 1
   growthDuration: 60
   ripenDuration: 0
   witherDuration: 0
@@ -10910,10 +11404,30 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: -90
       objectReference: {fileID: 0}
+    - target: {fileID: 1806930468178881452, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 2005488621
+      objectReference: {fileID: 0}
     - target: {fileID: 3712009029925051582, guid: 352c2db0c163b0c6689750a609a2de4e,
         type: 3}
       propertyPath: m_Name
       value: GardenIsland
+      objectReference: {fileID: 0}
+    - target: {fileID: 5153948063168362472, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 1380373235
+      objectReference: {fileID: 0}
+    - target: {fileID: 6146164052513604560, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 333228494
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470670311126982445, guid: 352c2db0c163b0c6689750a609a2de4e,
+        type: 3}
+      propertyPath: SortKey
+      value: 4191584390
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

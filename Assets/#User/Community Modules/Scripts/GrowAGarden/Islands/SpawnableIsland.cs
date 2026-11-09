@@ -60,7 +60,8 @@ namespace Vulps.GrowAGarden.Islands
             for (int i = 0; i < count; i++)
             {
                 int socket = order[i];
-                int rarity = 1 + Mathf.Min(99, (int)(IslandField.Unit(hash, (uint)(1000 + socket)) * 100f));
+                // Most stalls lean common and a few lean rare: x1 to x100, half of them x7 or below.
+                int rarity = 1 + Mathf.Min(99, (int)(Mathf.Pow(IslandField.Unit(hash, (uint)(1000 + socket)), 4f) * 100f));
                 sockets[socket].Open(prefab, rarity);
             }
         }

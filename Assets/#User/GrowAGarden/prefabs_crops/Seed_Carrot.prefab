@@ -26,7 +26,8 @@ GameObject:
   - component: {fileID: 270004820687563866}
   - component: {fileID: 1030967210836959154}
   - component: {fileID: 6429525132429869011}
-  m_Layer: 0
+  - component: {fileID: 5580081220172321212}
+  m_Layer: 7
   m_Name: Seed_Carrot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -332,11 +333,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.CarrotSeed
   seedId: carrot
   displayName: Carrot
+  tagline: quick to grow, quick to sell
+  description: 'The staple. Ready in seconds and always wanted at the sell point:
+    plant a row and keep the Thatch coming.'
+  picture: {fileID: 0}
   seedPrefab: {fileID: 4360997998222114339}
   spawnWeight: 1
   buyPrice: 10
   sellValue: 15
   harvestCount: 1
+  fruitPerPlant: 1
+  upgradeBonus: 0
   growthDuration: 10
   ripenDuration: 1
   witherDuration: 0
@@ -493,6 +500,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ba26196d4959fb45a90fa1113c622e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: SomniumSpace.Network::SomniumSpace.Network.Bridge.NetworkBridgeEvents
+--- !u!114 &5580081220172321212
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865445560042903941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a288d0ff3b5a0e91b027ef737aa7e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Interaction.ItemIdentity
+  _id: seed.carrot
 --- !u!1001 &3316487622308164166
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -504,6 +524,10 @@ PrefabInstance:
     - target: {fileID: 1000013410243764, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_Name
       value: Carrot_Plant
+      objectReference: {fileID: 0}
+    - target: {fileID: 1000013410243764, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4000010095355520, guid: 56b36da289d9a9e4cb37c5f588e23748, type: 3}
       propertyPath: m_LocalScale.x

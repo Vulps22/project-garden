@@ -15,7 +15,7 @@ namespace Vulps.GrowAGarden.Seeds
             tagline = "a little slower, a little richer";
             description = "The carrot's patient cousin: a few seconds longer in the ground, a few more Thatch when you sell it.";
             buyPrice = 18;
-            sellValue = 25;
+            sellValue = 26;
             growthDuration = 15f;
             ripenDuration = 1f;
             witherDuration = 0f;
