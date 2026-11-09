@@ -87,8 +87,11 @@ namespace Vulps.GrowAGarden.Settings
             _stoned = TabletManager.AddSettingsToggle(_tablet, world, "Option_AllowStonedEffects", "Allow Stoned Effects");
             _forceFeeding = TabletManager.AddSettingsToggle(_tablet, world, "Option_AllowForceFeeding", "Allow Force Feeding (soon)");
             _notifications = TabletManager.AddSettingsToggle(_tablet, world, "Option_ShowNotifications", "Show Notifications");
-            _tutorialButton = ActionRow(world, "Option_Tutorial", "Tutorial", "Repeat", SkipOrRepeatTutorial);
-            ShowTutorialButton();
+            if (TutorialManager.Available)
+            {
+                _tutorialButton = ActionRow(world, "Option_Tutorial", "Tutorial", "Repeat", SkipOrRepeatTutorial);
+                ShowTutorialButton();
+            }
             if (_stoned != null) _stoned.onValueChanged.AddListener(on => GameSettings.GetInstance()?.SetAllowStonedEffects(on));
             if (_notifications != null) _notifications.onValueChanged.AddListener(on => GameSettings.GetInstance()?.SetShowNotifications(on));
             FitRows(world);

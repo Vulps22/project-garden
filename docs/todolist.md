@@ -63,6 +63,7 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Frame time benchmark: does a PERF line appear every minute, does the first say whether CPU/GPU timing is available, and record a day and a night baseline in the same spot. [[testing]]
 - [ ] Grow Wand: touch a seedling's soil, a grown bearing plant, a carrot in the ground; does a second player see it grow? [[dev-tools]]
 - [ ] Tutorial: join as a new player and walk all ten steps (smoke, glow, panel, the carrot growing, the tablet step, the seed loop, T pose then jump to the spawn); Skip and Repeat from Settings → World; does the hut's fire crackle follow your volume? [[tutorial]]
+- [ ] Open the tutorial to everyone once it is refined and tested: drop the owner-only condition in `TutorialManager.Available`. [[tutorial]]
 - [ ] 2D (desktop) players: a pass over controls and gameplay once the tutorial's first pass is done; the tutorial ignores them until then (Vulps). [[tutorial]]
 
 ## Changelog

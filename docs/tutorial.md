@@ -20,6 +20,11 @@ follow. The recorded **tips** stay, under *Tips* below.
 
 **Status (2026-11-09):** built, compiles clean, untested in-world. Designed by Vulps 2026-11-09.
 
+> [!warning] Pinned
+> **Only Vulps gets it for now** (`TutorialManager.Available`: `Developer.IsLocalOwner`, Vulps's Somnium id), so nobody
+> else knows it exists until it is refined and tested. For everyone else nothing starts, flight is never locked and
+> Settings → World has no Tutorial row. Opening it to everyone is deleting that one condition.
+
 - **Everyone does it once,** regulars included (Vulps): on joining, a player whose `tutorial_mk2` save does not say
   *done* is taken up to it. Finishing or skipping saves *done*.
 - **Settings → World → Tutorial** is **Skip** while it runs (straight to the world spawn, saved as done) and

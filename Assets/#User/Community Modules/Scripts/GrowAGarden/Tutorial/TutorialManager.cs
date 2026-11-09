@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Vulps.GrowAGarden.DevTools;
 
 namespace Vulps.GrowAGarden.Tutorial
 {
@@ -27,6 +28,9 @@ namespace Vulps.GrowAGarden.Tutorial
         public bool IsDone { get; private set; }
         /// <summary>The player is on the platform now.</summary>
         public bool IsRunning { get; private set; }
+        /// <summary>Whether this player gets the tutorial at all: only Vulps's Somnium id until it is refined and tested.</summary>
+        public static bool Available => Developer.IsLocalOwner;
+
         /// <summary>Flight is off while the tutorial runs, until its send-off.</summary>
         public static bool FlightLocked => _instance != null && _instance._flightLocked;
 
@@ -59,7 +63,7 @@ namespace Vulps.GrowAGarden.Tutorial
         /// <summary>Starts the tutorial unless it is already running.</summary>
         public void Begin()
         {
-            if (IsRunning) return;
+            if (IsRunning || !Available) return;
             IsRunning = true;
             SetFlightLocked(true);
             Logger.Info($"Begin() '{gameObject.name}' — tutorial starting (done before: {IsDone})");
