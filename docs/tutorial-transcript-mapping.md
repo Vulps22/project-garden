@@ -57,7 +57,7 @@ If a player somehow bypasses a step (e.g., debug warp to 100 Thatch), they don't
 - Skipped steps are an edge case, not a design path
 
 ### File Locations
-All audio files live in: `Assets/#User/GrowAGarden/sounds/`
+All audio files live in: `Assets/#User/GrowAGarden/sounds/Tutorial/Old narrator/` (the teams line is now the tip `sounds/Tips/tip_teams`)
 
 ### Audio Properties
 - **Format:** MP3 (stereo, 44.1 kHz)

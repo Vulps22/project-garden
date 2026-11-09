@@ -24,7 +24,7 @@ namespace Vulps.GrowAGarden.Tutorial
             { Tips.Climbing, "tip_climbing"   },
             { Tips.Upgrades, "tip_upgrades"   },
             { Tips.Buffing,  "tip_buffing"    },
-            { Tips.Teams,    "tutorial_teams" },
+            { Tips.Teams,    "tip_teams"      },
         };
 
         private const string StorageKey = "tutorial_progress";

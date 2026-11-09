@@ -186,10 +186,14 @@ saved under the narrator's old key, `tutorial_progress`. **Voice Tips** off sile
 | `Climbing` | `tip_climbing` | parked: needs a "player is climbing" signal that nothing announces yet |
 | `Upgrades` | `tip_upgrades` | parked |
 | `Buffing` | `tip_buffing` | parked |
-| `Teams` | `tutorial_teams` | parked: teammates exist on the plot, but nothing announces joining one |
+| `Teams` | `tip_teams` | parked: teammates exist on the plot, but nothing announces joining one |
 
 Wiring one is a fact announced by whatever system owns it and one `TipNarrator.Play` call. Do it as part of building
-that feature. The narrator's own lines (`tutorial_*.mp3`) are no longer played; their script and timings are kept in
-[[fractured-isles-tutorial-script]] and [[tutorial-transcript-mapping]].
+that feature. The narrator's own lines (`sounds/Tutorial/Old narrator/`) are no longer played; their script and timings
+are kept in [[fractured-isles-tutorial-script]] and [[tutorial-transcript-mapping]].
+
+**Where the clips are** (Vulps, 2026-11-09): tips in `sounds/Tips/` (`tip_<name>`), the tutorial's lines in
+`sounds/Tutorial/` (`tutorial_<number>`), the old narrator's in `sounds/Tutorial/Old narrator/`.
+
 
 Related: [[flight]] (the send-off), [[plot-ownership]] (the real deed the tutorial's scroll stands in for).
