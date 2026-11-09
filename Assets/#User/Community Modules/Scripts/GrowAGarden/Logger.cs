@@ -33,8 +33,8 @@ namespace Vulps.GrowAGarden
 
         private static bool _sessionAnnounced;
 
-        /// <summary>Raised by one every time Vulps says a build was uploaded, so the log says which build is running.</summary>
-        public const int BUILD = 3;
+        /// <summary>Raised by one after every upload by BuildNumberBump (Editor), so the log says which build is running.</summary>
+        public const int BUILD = 6;
 
         /// <summary>
         /// Prints one banner at the top of this run's log, once.
