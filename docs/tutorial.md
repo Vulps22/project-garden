@@ -1,131 +1,147 @@
 ---
 aliases:
-  - "The tutorial — a narrator, not a UI"
+  - "Tutorial"
 tags:
   - game
   - interaction
 ---
-# The tutorial — a narrator, not a UI
+# Tutorial
 
-Started 2026-09-09, first pass wired 2026-09-10. A recorded voice that plays one line the first
-time the player reaches the thing it describes, remembers what it has said between sessions, and
-never says it twice. There is no tutorial UI, no arrows, no checklist — a headset is a bad place
-to read.
+A guided tutorial in a white void above the world. Each step shows text, highlights the next thing to touch and
+waits for the player to do it. It replaces the voice narrator, whose instructions nothing in the world helped anyone
+follow. The recorded **tips** stay, under *Tips* below.
 
-**Entirely local.** No RPCs, no master decisions, nothing replicated: every client hears its own
-tutorial on its own schedule, which is why none of the networking rules in [[principles]] apply to any
-of it. Two players in the same world can be at different points in the script and neither is wrong.
+> [!info] Networking
+> Entirely local. The tutorial's seed, scroll, carrot, hut, barrel and sell point are copies that only draw: no
+> NetworkObject, no RPC, no master. Buying and selling are pretend, and the player's real balance never changes.
+> Two players can be in the tutorial at once: they see each other's avatars, as anywhere, but not each other's pieces.
 
-Three files, all under `Assets/#User/Community Modules/Scripts/GrowAGarden/Tutorial/`:
+## Who does it, and leaving it
+
+**Status (2026-11-09):** built, compiles clean, untested in-world. Designed by Vulps 2026-11-09.
+
+- **Everyone does it once,** regulars included (Vulps): on joining, a player whose `tutorial_mk2` save does not say
+  *done* is taken up to it. Finishing or skipping saves *done*.
+- **Settings → World → Tutorial** is **Skip** while it runs (straight to the world spawn, saved as done) and
+  **Repeat** after ([[world-settings]]).
+- **Flight is locked** from the moment it starts until its send-off (`TutorialManager.FlightLocked`), so nobody flies
+  off around the void. Skipping unlocks it too.
+- **2D players are not supported** (Vulps): the send-off needs a T pose. A pass over controls and gameplay for 2D
+  players follows the tutorial's first pass.
+
+## The platform
+
+**Status (2026-11-09):** built, compiles clean, untested in-world.
+
+- **5 km above the world's origin** (`TutorialPlatform` at y 5000), far past the furthest draw distance (2 km), so
+  nobody below sees it. Coordinates that far out still have sub-millimetre precision. The Gardens' bubbles use 3D
+  distance, so the dome, night and level of detail leave the player alone up there ([[detail]]).
+- **The look** is Vulps's Animus (Assassin's Creed): a white void with glowing blue lines. A sky sphere 80 m across
+  and the floor draw `GrowAGarden/TutorialVoid`, near-white with a world-space grid and lines that sweep along it.
+- **The game's own pieces, standing out against it:** each is a copy of the real prefab with everything but its meshes,
+  text, fire and (on carryables) its grab stripped off. The hut's show materials are swapped for their `_Plain`
+  versions so nothing dances.
+- **An invisible floor and a ring of 24 invisible walls** 14 m out keep the player on it.
+- **Smoke:** every stage comes in from a puff of white smoke and goes out in one (`SmokePuff`, `TutorialStage`).
+- **The highlight:** a pulsing blue shell on a copy of the target's meshes (`TutorialGlow`, `GrowAGarden/TutorialGlow`).
+- **The text:** `InstructionPanel`, a panel fixed below the middle of the view, drawn over everything. It shows what
+  the thing is, what to do now (bold, blue), and a passing aside under it. The Notifier's toasts are separate
+  ([[notifier]]).
+- **Built by a menu, not by hand:** *Grow A Garden → Build Tutorial Platform* (`TutorialPlatformBuilder`, Editor
+  only) deletes the platform and builds it again from the current prefabs, wiring every reference. Rerun it after the
+  hut, barrel, plot, scoreboard, sell point, scroll, carrot seed or carrot changes. Then save the scene.
+
+## The steps
+
+**Status (2026-11-09):** built, compiles clean, untested in-world.
+
+| # | Shows | Text | Waits for |
+|---|---|---|---|
+| 1 | the plot, the scroll hovering over it (lit) | "This is a plot. You must claim a plot before you can plant in it." **Grab the highlighted scroll.** | the scroll grabbed |
+| 2 | the plot goes, the hut comes; its door lit | **Take the scroll into your hut to claim the plot.** | the scroll inside the hut's claim zone |
+| 2b | the scroll goes; the deed shows the player's name, the fire lights | "This is your hut. This is where you manage your plot. It's a bit bare right now, but more features are coming." | reading time |
+| 3 | the hut goes, the barrel comes with its price; the seed lit | "This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed inside it, you can buy the seed for the price listed on the barrel." **Buy the seed.** | the seed grabbed |
+| 4 | the barrel goes, the scoreboard comes: the player's name and 0 | "This is your scoreboard. This is how you see how much Thatch you currently own. Thatch is the currency we use in the Fractured Isles." | reading time |
+| 5 | the scoreboard goes, the plot comes; the dirt pile lit | **Plant the seed by pushing it into the dirt pile on the ground.** | the seed in the dirt pile |
+| 5b | the seed goes; a carrot grows out of the pile | **Wait for the seed to turn into a carrot. Carrots take 10 seconds to grow.** Aside, 5 s: "Yes, I know it looks like an anus. But it's a free asset." | the carrot's growing time |
+| 6 | the carrot lit; a "Something is ready to harvest" toast | **Grab the carrot out of the ground.** | the carrot grabbed |
+| 7 | the plot goes, the sell point comes (lit) | **Bring the carrot to the sell point to sell it.** | the carrot in the sell point |
+| 8 | the carrot and the sell point go | **Open your tablet.** | the tablet out |
+| 8b | | "You can use the almanac to see all the seeds available in the game. It shows how often they spawn, how many there are in the world, and if you haven't found one yet, you will see a silhouette." | reading time |
+| 9 | every buffing and upgrade seed, in two labelled rows, in and out of smoke on a loop | "There are three types of seed in the world." Crops, buffing seeds, upgrade seeds (below) | reading time |
+| 10 | the void floor goes, a solid disc comes | "It is now time to spread your wings and fly." **Make a T pose…** then **Press jump.** | taking off from the disc |
+
+- **The carrot's numbers are the real carrot's:** its price on the barrel, and its growing time in step 5b and in the
+  growing itself, come from `Seed_Carrot`'s `CarrotSeed`.
+- **Step 9's seeds are found, not listed:** any seed in the stalls (`WorldManager.Buyables`) or the Developer Market
+  with a `buffMultiplier` over 1 is a buffing seed, and any with an `upgradeBonus` is an upgrade seed. A new one joins
+  the loop with no change here. Crops get no visual (Vulps). Today that is Yggdrasil (buffing, Developer Market
+  only) and the Moonflower, Spotlight Tulip and popcorn (upgrades).
+- **Step 9's copy:** crops grow into things you harvest and sell; buffing seeds give multipliers to the size and
+  value of your crop, for example 3× its base value, and always run on a timer; upgrade seeds raise the base value
+  of everything you grow, for example by 5%, without a multiplier, for as long as you're in the world. Both numbers
+  are examples (Vulps).
+- **Step 8 watches the tablet** through `TabletManager.IsOut`: Somnium hides the tablet by fading its `Canvases`
+  CanvasGroup to 0 ([[tablet]]).
+- **Step 10:** flight unlocks when the disc appears. The instruction reads *Press jump* while both arms are out
+  (`FlightController.ArmsOutNow`, the pose flight itself needs) and goes back to the T pose when they drop. With no
+  pose after 5 s, an aside stays up until there is one: "If your avatar is too small, the game will not detect your
+  T pose. Try scaling up your avatar." Jumping with arms out takes off (`FlightController.Launched`). That is the
+  send-off: the player is teleported, still flying, to the world spawn (`GardenReturnPoint`, the same point
+  `WorldFloor` uses), and the tutorial saves as done.
+
+> [!question] Open
+> - **Reading time** for the passages with nothing to do (steps 2b, 4, 8b, 9) is 0.4 s a word, never under 4 s
+>   (`TutorialPlatform._secondsPerWord`, `_minimumReadSeconds`). That rule is mine, not Vulps's: check it in-world.
+> - **The hut's fire crackle** is on an AudioSource that is inactive at load and switched on at step 2b. Whether
+>   Somnium routes it through the player's volume like the Gardens' huts is untested ([[tablet#Settings|tablet → Settings]]).
+
+## How it is built
+
+**Status (2026-11-09):** built, compiles clean, untested in-world.
+
+All under `Assets/#User/Community Modules/Scripts/GrowAGarden/Tutorial/`:
 
 | File | Owns |
 |---|---|
-| `TutorialManager` | the script, the order, the queue, persistence, suppression |
-| `TutorialTriggers` | **all** the coupling — listens to the game and says "this just happened" |
-| `LocalPlayerMotionProbe` | the one signal the game does not already announce: the player moved |
+| `TutorialManager` | done or not (`tutorial_mk2` in local storage), running or not, the flight lock; `Started`, `SkipRequested`, `Ended` |
+| `TutorialPlatform` | the steps: starts the tutorial on join, teleports up and down, shows and hides the pieces, listens to the items and zones |
+| `TutorialStage` | one piece coming in from smoke and going out in it |
+| `TutorialItem` | a carryable copy: grabbed with XRI, hovers where it is let go |
+| `TutorialZone` | a trigger saying which item came into it (the hut's claim zone, the dirt pile, the sell point) |
+| `InstructionPanel` | the text in the player's view |
+| `TutorialGlow` | the highlight |
+| `SmokePuff` | the one smoke particle system, burst to the size of what it covers |
+| `SeedTypesShow`, `VisualCopy` | step 9's seeds, copied at runtime from their prefabs' meshes |
+| `TipNarrator` | the tips (below) |
 
-`TutorialTriggers` exists so the narrator is not a dependency of the economy. Each system announces
-a fact named for itself — `DeedClaimZone.DeedCarriedIn`, `SellPoint.SaleCompleted`,
-`Produce.AnyLifecycleChanged`, `FlightController.Launched` — and knows nothing about narration.
-Deleting the tutorial later means deleting these three files, not editing six unrelated classes.
+- **Starting:** `TutorialPlatform` hears `PlayerManager.LocalPlayerJoined` and calls `TutorialManager.Begin` unless
+  done. The teleport waits until Somnium lets us drive the player (`PlayerManager.CanDriveLocalPlayer`), checking
+  every half second. A **Repeat** first lets go of anything real the player is holding (`HeldObjects.ReleaseAll`, shared with `WorldFloor`), so no
+  real seed rides up with them.
+- **Every step is an event:** a grab, an item entering a zone, `FlightController.Launched`, or a timer. Only steps 8 and
+  10 check every frame, the tablet and the T pose, because nothing announces either. The component's `Update` is off
+  at every other step.
+- **Skip mid-step:** each run has a number, and a timer or teleport from an earlier run does nothing when it lands.
 
----
+## Tips
 
-## Pass 1 — the linear script
+**Status (2026-11-09):** the falling tip is wired; the rest are parked. Kept from the narrator (Vulps).
 
-Ten lines, in order, each gated on the player having reached it.
-
-| # | Id | Clip | What fires it |
-|---|---|---|---|
-| 0 | `BetaNotice` | `tutorial_beta` | 1 m of horizontal movement from the spawn anchor |
-| 1 | `Welcome` | `tutorial_Welcome` | follow-up, 1 s after §0 finishes |
-| 2 | `Hut` | `tutorial_hut` | the deed carried through the hut door |
-| 3 | `Planting` | `tutorial_planting` | follow-up, 3 s after §2 finishes |
-| 4 | `Selling` | `tutorial_selling` | the local player harvests a produce |
-| 5 | `SellingBasics` | `tutorial_first_100` | the local player completes a sale |
-| 6 | `ExplorationIntro` | `tutorial_first_flight` | balance reaches 100 Thatch |
-| 7 | `FlightControls` | `tutorial_flight_1` | launch |
-| 8 | `TroughShotTechnique` | `tutorial_flight_2` | 5 s continuously airborne |
-| 9 | `FlyingWrapUp` | `tutorial_final` | landing after a flight of 10 s or more |
-
-Four decisions in there that were each arrived at the hard way, and should not be undone casually:
-
-- **Ids are strings, not an enum.** They are persisted by name; a reordered enum would silently
-  replay everything the player has already heard — the same class of mistake as renumbering a wire
-  id.
-- **Clips are matched by asset name, not array position.** A mis-drag in the Inspector would
-  otherwise give the wrong narration with nothing to notice, and the order is invisible once the
-  scene is saved.
-- **Skipped steps stay skipped.** Triggering §5 while the player is on §3 plays §5 and leaves §3
-  and §4 unheard forever. A line delivered out of its context is worse than no line.
-- **Two lines hang off another line, not off an event** (§1 and §3). Their natural trigger is the
-  same instant as the line before them, so timing them from that clip *finishing* is the only way
-  they do not talk over each other.
-
-**Suppressed entirely when the world has no plot for this player.** Every line assumes the player is
-getting a Plot, and flight is gated behind §6, so a player with none would be talked at about a garden
-they cannot have and then locked out of flying for the session. Silent by design — there is no "sorry,
-the world is full" line. It checks every Plot in the scene (`FindObjectsByType<PlotLeaseManager>`), all 56 of
-[[towns]]. **The script itself still assumes Garden 0** and is wrong for 14 Gardens; reworking it is on
-[[todolist#Before any non-test upload|the pre-upload list]].
-
-### Status
-
-Written, wired into the scene, and **walked as far as §3 in-world** (client session 2026-09-10
-02:25). That run ended in the `_handPitchOffset: 55` plummet, which is fixed but was fixed *after*
-the session — so **§4 through §9 have never been heard**. That walk is the next thing the tutorial
-needs, and it needs an upload rather than any more code.
-
----
-
-## Parked for pass 2
-
-### The tips
-
-Five short lines that are **not** part of the linear script and are not gated on it — a tip
-describes a thing the player has just met, whenever they meet it. Only one is wired:
+`TipNarrator` plays a recorded line once ever, the first time the player meets what it describes. Heard tips are
+saved under the narrator's old key, `tutorial_progress`. **Voice Tips** off silences them (hut panel,
+[[world-settings#The hut panel|world-settings → The hut panel]]). A tip waits while the tutorial is running.
 
 | Tip | Clip | State |
 |---|---|---|
-| `Falling` | `tip_falling` | **wired** — `WorldFloor` plays it after a rescue |
+| `Falling` | `tip_falling` | **wired**: `WorldFloor` plays it after a rescue |
 | `Climbing` | `tip_climbing` | parked: needs a "player is climbing" signal that nothing announces yet |
-| `Upgrades` | `tip_upgrades` | parked: upgrades do not exist (roadmap step 2) |
-| `Buffing` | `tip_buffing` | parked: buffs do not exist |
+| `Upgrades` | `tip_upgrades` | parked |
+| `Buffing` | `tip_buffing` | parked |
 | `Teams` | `tutorial_teams` | parked: teammates exist on the plot, but nothing announces joining one |
 
-Three of the four are parked because **the thing they describe is not built**, and a tip for a
-feature the player cannot reach is a line that will never play. `Climbing` is the only real gap:
-the mechanic is there, the signal is not.
+Wiring one is a fact announced by whatever system owns it and one `TipNarrator.Play` call. Do it as part of building
+that feature. The narrator's own lines (`tutorial_*.mp3`) are no longer played; their script and timings are kept in
+[[fractured-isles-tutorial-script]] and [[tutorial-transcript-mapping]].
 
-Wiring one is small — a fact announced by whatever system gains the feature, and one handler in
-`TutorialTriggers`. Do it as part of building that feature, not as a tutorial task.
-
-`TipsAfterTutorial` holds `Falling` and `Climbing` back until the linear script has finished,
-because both describe falling and falling is exactly what happens while the flight lesson is still
-being delivered. One session had the 20.6-second falling tip queued between the flight controls and
-the trough-shot line. Any new tip that only makes sense once the player can fly belongs in that set;
-an upgrade or a buff can be found at any point and reads fine on its own.
-
-**Reset from Settings** (2026-11-02): Settings → World → Voice Tutorial → *Reset* (`TutorialManager.ResetProgress`) forgets every line heard and starts again from the first ([[world-settings#The switches|world-settings → The switches]]).
-
-### Other pass-2 debt
-
-- **The player cannot switch the narrator off**: its two switches (`SkipTutorial`, `DisableVoiceTips`) are on the
-  hut's settings panel, which is out of the scene ([[world-settings#The hut panel|world-settings → The hut panel]]).
-- **The script is a first cut.** Nothing has been re-recorded since the walk, and §4–§9 have not
-  been heard in context at all. Expect line-level edits once they have.
-
----
-
-Related: [[flight]] — §6 unlocks flight, and §7–§9 teach it.
-[[plot-ownership]] — the deed §2 describes.
-
-## Remembering progress
-
-**Status (2026-09-10):** on.
-
-`TutorialManager._rememberProgress` makes the narrator remember what it has said between sessions. It was off while
-the tutorial was being built, because the loop cannot be walked twice otherwise. If it is turned off again for
-testing, it is one serialized bool on `TutorialManager` in the scene (code default `true`), and the manager logs
-`_rememberProgress is OFF` as a WARN at startup, so the client log says so on every run. Turning it back on is part
-of [[todolist#Before any non-test upload|the pre-upload check]].
+Related: [[flight]] (the send-off), [[plot-ownership]] (the real deed the tutorial's scroll stands in for).

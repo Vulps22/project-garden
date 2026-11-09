@@ -199,7 +199,7 @@ namespace Vulps.GrowAGarden
             PlayerManager.TeleportLocalPlayer(target, direction, () =>
             {
                 Logger.Info($"Rescue() '{gameObject.name}' — teleport complete, playing the falling tip");
-                TutorialManager.GetInstance()?.TriggerTooltip(TutorialManager.Tooltips.Tips.Falling);
+                TipNarrator.Play(TipNarrator.Tips.Falling);
             });
         }
     }

@@ -51,8 +51,8 @@ it is built again on a new tablet ([[tablet#Keeping our additions on the tablet|
 - **Allow Force Feeding (soon)**: shown off and greyed, since the feature does not exist yet.
 - **Show Notifications**, on by default. Off, the Notifier shows nothing ([[notifier]]).
 - **Draw Distance**, a slider row cloned from Audio's Main volume, 300 m to 2 km ([[detail]]).
-- **Voice Tutorial → Reset**: a row with a button rather than a switch. `TutorialManager.ResetProgress` forgets
-  every line heard, saves that, stops the line playing and starts again from the first line ([[tutorial]]).
+- **Tutorial → Skip / Repeat**: a row with a button rather than a switch. While the tutorial runs it reads **Skip**
+  (`TutorialManager.Skip`: straight down to the world, saved as done); after, **Repeat** runs it again ([[tutorial]]).
 
 **Developer**, in the right-hand column at x 890 as Somnium's own pages have one, shown only to anyone with developer
 access (`Developer.IsLocal`):
@@ -75,7 +75,7 @@ It raises `GameSettings.Changed` after any change.
 | Field | Setting |
 |---|---|
 | `trim` | flight trim, in degrees ([[flight]]) |
-| `skipTutorial`, `disableVoiceTips` | the narrator's two switches ([[tutorial]]) |
+| `disableVoiceTips` | the tips' switch ([[tutorial#Tips\|tutorial → Tips]]) |
 | `noStonedEffects` | Allow Stoned Effects, stored inverted so a save from before it reads as allowed |
 | `allowForceFeeding` | Allow Force Feeding |
 | `devNativeFlight` | Enable Native Flight; only a developer's client acts on it |
@@ -88,6 +88,7 @@ It raises `GameSettings.Changed` after any change.
 
 `SettingsPanel` (`Prefabs_world/SettingsPanel.prefab`) is a wall panel of `SettingsButton`s: **Set trim** (hold your
 arms out the way you fly and press it; whatever your wrists are doing becomes level), **Reset trim**, and the
-narrator's **Skip tutorial** and **Voice tips** switches. It is not in the scene: with it in the hut, Somnium's own
-tablet would not open, which is not understood. So nobody can set a trim, skip the tutorial or silence the tips in
+**Voice tips** switch. Its old **Skip tutorial** button still stands on the prefab but does nothing: the narrator it
+silenced is gone ([[tutorial]]). It is not in the scene: with it in the hut, Somnium's own
+tablet would not open, which is not understood. So nobody can set a trim or silence the tips in
 the world today; a trim stored before the panel went still applies to flight.

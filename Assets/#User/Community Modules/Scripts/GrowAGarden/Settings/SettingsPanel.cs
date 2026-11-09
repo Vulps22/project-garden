@@ -25,11 +25,9 @@ namespace Vulps.GrowAGarden.Settings
     {
         [SerializeField] private SettingsButton _setTrimButton;
         [SerializeField] private SettingsButton _resetTrimButton;
-        [SerializeField] private SettingsButton _skipTutorialButton;
         [SerializeField] private SettingsButton _voiceTipsButton;
 
         [SerializeField] private TMP_Text _trimLabel;
-        [SerializeField] private TMP_Text _skipTutorialLabel;
         [SerializeField] private TMP_Text _voiceTipsLabel;
 
         [SerializeField] private FlightController _flight;
@@ -58,7 +56,6 @@ namespace Vulps.GrowAGarden.Settings
         {
             if (_setTrimButton != null)      _setTrimButton.Pressed += OnSetTrim;
             if (_resetTrimButton != null)    _resetTrimButton.Pressed += OnResetTrim;
-            if (_skipTutorialButton != null) _skipTutorialButton.Pressed += OnToggleSkipTutorial;
             if (_voiceTipsButton != null)    _voiceTipsButton.Pressed += OnToggleVoiceTips;
 
             GameSettings.Changed += Refresh;
@@ -69,7 +66,6 @@ namespace Vulps.GrowAGarden.Settings
         {
             if (_setTrimButton != null)      _setTrimButton.Pressed -= OnSetTrim;
             if (_resetTrimButton != null)    _resetTrimButton.Pressed -= OnResetTrim;
-            if (_skipTutorialButton != null) _skipTutorialButton.Pressed -= OnToggleSkipTutorial;
             if (_voiceTipsButton != null)    _voiceTipsButton.Pressed -= OnToggleVoiceTips;
 
             GameSettings.Changed -= Refresh;
@@ -173,13 +169,6 @@ namespace Vulps.GrowAGarden.Settings
             GameSettings.GetInstance()?.SetTrim(0f);
         }
 
-        private void OnToggleSkipTutorial()
-        {
-            GameSettings s = GameSettings.GetInstance();
-            if (s == null) return;
-            s.SetSkipTutorial(!s.SkipTutorial);
-        }
-
         private void OnToggleVoiceTips()
         {
             GameSettings s = GameSettings.GetInstance();
@@ -196,9 +185,6 @@ namespace Vulps.GrowAGarden.Settings
             // how their arms feel learns something a bare "12" does not tell them.
             if (_trimLabel != null)
                 _trimLabel.text = $"Trim  {s.TrimDegrees:+0.0;-0.0;0.0}°";
-
-            if (_skipTutorialLabel != null)
-                _skipTutorialLabel.text = s.SkipTutorial ? "Tutorial  OFF" : "Tutorial  ON";
 
             if (_voiceTipsLabel != null)
                 _voiceTipsLabel.text = s.DisableVoiceTips ? "Voice Tips  OFF" : "Voice Tips  ON";

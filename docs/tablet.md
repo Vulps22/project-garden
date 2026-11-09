@@ -27,7 +27,8 @@ client log; snapshot #1 is the whole tree, later numbers are what switched on an
 - **Scale:** the root is about 1.09; `Canvases` holds world-space canvases at a world scale of 0.0005, so one UI
   unit is half a millimetre and a 960 × 1080 page is about 48 × 54 cm.
 - **Hidden, not destroyed:** while the tablet is put away, `Canvases` has a `CanvasGroup` at alpha 0, not
-  interactable, not blocking. Everything under it stays active and keeps its state.
+  interactable, not blocking. Everything under it stays active and keeps its state. `TabletManager.IsOut` reads that
+  alpha for the tutorial's "Open your tablet" ([[tutorial]]).
 
 ## The tree
 

@@ -11,12 +11,11 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 
 ## Before any non-test upload
 
-- [ ] **Tutorial rework, soon:** correct it for 14 Gardens (it assumes the one at Garden 0); learn from SpaceScape's tutorial. [[tutorial]] [[towns]]
 - [ ] **Remove `ScreenStandIn`** once screens near you only works: it hides every screen but world spawn's behind a notice. [[popcorn]]
 - [ ] **Screens near you only:** ask Dene how Base Reality keeps far video players from playing locally, then close far and sunk screens' media. [[towns]]
 - [ ] **Towns:** fly the three towns and claim, plant and sell in an outer Garden; 14 video players; popcorn screen and Moonflower dome there; music switching between screens. [[towns]]
 - [ ] `EconomyManager._startingBalance` is 10. [[economy]]
-- [ ] `TutorialManager._rememberProgress` is on (it logs a WARN at startup when off). [[tutorial]]
+- [ ] `TutorialManager._rememberProgress` and `TipNarrator._rememberProgress` are on (each logs a WARN at startup when off). [[tutorial]]
 
 ## Cleanup
 - [ ] **Event driven, phase 1 (built, untested):** `PlayerTracker` samples position once and raises events; sectors, islands, the Gardens' bubbles (drawing is now Unity's LODGroups, rescaled by Draw Distance), the screen ARS listens to, earshot, the dome's night, the world floor, authority by sector (message id 14) and the stranded check now run on events. Test: move items between sectors with two players, fall out of the world, drop something into the void, walk in and out of a dome. [[principles]] [[networking]]
@@ -63,6 +62,8 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Notify Everyone from Settings → World → Developer: reaches another player and yourself; the keyboard fits the panel. [[dev-tools]]
 - [ ] Frame time benchmark: does a PERF line appear every minute, does the first say whether CPU/GPU timing is available, and record a day and a night baseline in the same spot. [[testing]]
 - [ ] Grow Wand: touch a seedling's soil, a grown bearing plant, a carrot in the ground; does a second player see it grow? [[dev-tools]]
+- [ ] Tutorial: join as a new player and walk all ten steps (smoke, glow, panel, the carrot growing, the tablet step, the seed loop, T pose then jump to the spawn); Skip and Repeat from Settings → World; does the hut's fire crackle follow your volume? [[tutorial]]
+- [ ] 2D (desktop) players: a pass over controls and gameplay once the tutorial's first pass is done; the tutorial ignores them until then (Vulps). [[tutorial]]
 
 ## Changelog
 

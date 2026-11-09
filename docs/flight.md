@@ -14,9 +14,8 @@ Written 2026-09-09 on `add-advanced-flight`. **This is [[procgen-islands]]'s
 blocker** — the world's usable radius is a function of how a player moves through it, so the map
 cannot be sized until this exists. Links back to [[roadmap]]'s exploration steps.
 
-**Flight is locked until the narrator's exploration line has played**, and the three lines after
-it are what teaches flying at all — see [[tutorial]]. It fails open: no narrator,
-or the tutorial switched off, and flight behaves as it always did.
+**Flight is locked while the tutorial runs**, until its send-off, where the player takes off from a T pose and is
+sent down to the world ([[tutorial]]).
 
 ---
 

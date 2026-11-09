@@ -2,7 +2,8 @@
     "name": "GrowAGarden.Editor",
     "rootNamespace": "Vulps.GrowAGarden.EditorTools",
     "references": [
-        "Vulps.GrowAGarden"
+        "Vulps.GrowAGarden",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

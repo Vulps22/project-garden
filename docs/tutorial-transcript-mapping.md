@@ -6,6 +6,9 @@ tags:
 ---
 # Tutorial Script → MP3 File Mapping
 
+**Status (2026-11-09):** retired. The narrator these lines belonged to is replaced by the guided [[tutorial]]; only the
+tips still play.
+
 ## Tutorials (linear progression)
 
 | Step | Script Section | MP3 File | Duration | Trigger |
