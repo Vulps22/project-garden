@@ -8894,7 +8894,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: c578d2cd28dafead0a5adb6811f61db1, type: 3}
-  LastBuildSizeBytes: 90900205
+  LastBuildSizeBytes: 91276878
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -8922,7 +8922,7 @@ MonoBehaviour:
     Free:
       Count: 4
       MaxCount: 10
-      AvailableSize: 207863075
+      AvailableSize: 207486402
     Paid:
       Entries: []
   OwnedTokens: []
@@ -42125,6 +42125,10 @@ MonoBehaviour:
   _tPoseHintAfter: 5
   _asideSeconds: 5
   _flightLockAfterLanding: 5
+  _clearance: 500
+  _heightBand: 50
+  _gridSpacing: 600
+  _gridRings: 6
   _reachRadius: 12
 --- !u!4 &1891930078
 Transform:
