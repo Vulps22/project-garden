@@ -27,9 +27,7 @@ follow. The recorded **tips** stay, under *Tips* below.
 - **Flight is locked** from the moment it starts until its send-off (`TutorialManager.FlightLocked`), so nobody flies
   off around the void. Skipping unlocks it too.
 - **Open to everyone** (Vulps, 2026-11-10), after Vulps alone had it while it was refined.
-- **2D players are not supported** (Vulps): they are taken up like everyone else, but the send-off needs a T pose, so
-  Skip (which the welcome tells them about) is their way out. A pass over controls and gameplay for 2D
-  players follows the tutorial's first pass.
+- **2D players do it too,** with their own instructions where what they do differs ([[#2D players]]).
 
 ## The platform
 
@@ -162,6 +160,31 @@ narrator's named ones (`tutorial_Welcome`, `tutorial_hut`…), so recording one 
 >   (`TutorialPlatform._secondsPerWord`, `_minimumReadSeconds`). That rule is mine, not Vulps's: check it in-world.
 > - **The hut's fire crackle** is on an AudioSource that is inactive at load and switched on at step 2b. Whether
 >   Somnium routes it through the player's volume like the Gardens' huts is untested ([[tablet#Settings|tablet → Settings]]).
+
+## 2D players
+
+**Status (2026-11-11):** built; compiles clean, untested in-world. None of the lines below is recorded yet.
+
+The same steps, with the same pieces, played with K ([[2d-players]]). Where what a 2D player does differs, the step
+shows its own instruction and plays its own line instead of the VR one; a line not recorded yet is simply not
+played, and the text stays. The tutorial's scroll, seed and carrot and its claim, plant and sell zones carry the
+words the prompt uses (Grab, Buy, Harvest, Claim, Plant, Sell). The tablet step also moves on when Tab is pressed
+while the 2D tablet has not been found. The send-off has no T pose: a double jump takes off, and taking off is the
+send-off.
+
+| Clip | Step | Says (instead of) |
+|---|---|---|
+| `tutorial_30` | 1 | Look at the highlighted scroll and press K to grab it. (1) |
+| `tutorial_31` | 2 | Walk into your hut with the scroll and press K to claim the plot. (2) |
+| `tutorial_32` | 3 | Look at the seed and press K to buy it. (5) |
+| `tutorial_33` | 5 | Look at the dirt pile and press K to plant the seed. (7) |
+| `tutorial_34` | 6 | Look at the carrot and press K to harvest it. (10) |
+| `tutorial_35` | 7 | Walk up to the sell point and press K to sell the carrot. (11) |
+| `tutorial_36` | 8 | Press Tab to open your tablet. (12) |
+| `tutorial_37` | 10 | Double jump to take off. (21, 22, 23) |
+
+Line 1's first sentence ("This is a plot…") is in line 1's recording, so a 2D player hears it only once 30 is
+recorded with it.
 
 ## How it is built
 

@@ -108,6 +108,9 @@ namespace Vulps.GrowAGarden.Tutorial
 
         private const string TPOSE = "Make a T pose: hold both arms straight out to your sides.";
 
+        /// <summary>A 2D player: the steps where what they do differs say so, with their own lines (30-37). See docs/2d-players.md.</summary>
+        private static bool Flat => !PlayerManager.LocalIsVR;
+
         private Step _step;
         private int _run;
         private float _stepStartedAt;
@@ -145,6 +148,13 @@ namespace Vulps.GrowAGarden.Tutorial
             if (_claimZone != null) _claimZone.Entered += OnClaimZone;
             if (_plantZone != null) _plantZone.Entered += OnPlantZone;
             if (_sellZone != null) _sellZone.Entered += OnSellZone;
+
+            // What a 2D player's prompt says for each piece.
+            if (_seed != null) _seed.Verb = "Buy";
+            if (_produce != null) _produce.Verb = "Harvest";
+            if (_claimZone != null) _claimZone.Verb = "Claim";
+            if (_plantZone != null) _plantZone.Verb = "Plant";
+            if (_sellZone != null) _sellZone.Verb = "Sell";
         }
 
         private void OnDestroy()
@@ -336,14 +346,16 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Plot:
                     yield return Build(_plot, Stage(_scroll));
                     Bring(_scroll, true);
-                    Say("This is a plot. You must claim a plot before you can plant in it.", "Grab the highlighted scroll.", 1);
+                    if (Flat) Say("This is a plot. You must claim a plot before you can plant in it.", "Look at the highlighted scroll and press K to grab it.", 30);
+                    else Say("This is a plot. You must claim a plot before you can plant in it.", "Grab the highlighted scroll.", 1);
                     Glow(_scroll.gameObject);
                     break;
 
                 case Step.Hut:
                     yield return Dissolve(_plot);
                     yield return Build(_hut);
-                    Say(string.Empty, "Take the scroll into your hut to claim the plot.", 2);
+                    if (Flat) Say(string.Empty, "Walk into your hut with the scroll and press K to claim the plot.", 31);
+                    else Say(string.Empty, "Take the scroll into your hut to claim the plot.", 2);
                     Glow(_hutDoor);
                     break;
 
@@ -363,7 +375,8 @@ namespace Vulps.GrowAGarden.Tutorial
                     yield return Build(_barrel, Stage(_seed));
                     Bring(_seed, true);
                     Say("This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed " +
-                        "inside it, you can buy the seed for the price listed on the barrel.", "Buy the seed.", 4, 5);
+                        "inside it, you can buy the seed for the price listed on the barrel.",
+                        Flat ? "Look at the seed and press K to buy it." : "Buy the seed.", 4, Flat ? 32 : 5);
                     Glow(_seed.gameObject);
                     break;
 
@@ -379,7 +392,8 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Plant:
                     yield return Dissolve(_scoreboard);
                     yield return Build(_plot);
-                    Say(string.Empty, "Plant the seed by pushing it into the dirt pile on the ground.", 7);
+                    if (Flat) Say(string.Empty, "Look at the dirt pile and press K to plant the seed.", 33);
+                    else Say(string.Empty, "Plant the seed by pushing it into the dirt pile on the ground.", 7);
                     Glow(_dirtPile);
                     break;
 
@@ -395,21 +409,24 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Harvest:
                     _produce.SetGrabbable(true);
                     Notifier.Push("Something is ready to harvest");
-                    Say(string.Empty, "Grab the carrot out of the ground.", 10);
+                    if (Flat) Say(string.Empty, "Look at the carrot and press K to harvest it.", 34);
+                    else Say(string.Empty, "Grab the carrot out of the ground.", 10);
                     Glow(_produce.gameObject);
                     break;
 
                 case Step.Sell:
                     yield return Dissolve(_plot);
                     yield return Build(_sellPoint);
-                    Say(string.Empty, "Bring the carrot to the sell point to sell it.", 11);
+                    if (Flat) Say(string.Empty, "Walk up to the sell point and press K to sell the carrot.", 35);
+                    else Say(string.Empty, "Bring the carrot to the sell point to sell it.", 11);
                     Glow(_sellPoint.gameObject);
                     break;
 
                 case Step.Tablet:
                     _produce.SetGrabbable(false);
                     yield return Dissolve(Stage(_produce), _sellPoint);
-                    Say(string.Empty, "Open your tablet.", 12);
+                    if (Flat) Say(string.Empty, "Press Tab to open your tablet.", 36);
+                    else Say(string.Empty, "Open your tablet.", 12);
                     _tablet = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
                     if (_tablet == null) Logger.Warn($"Enter() '{gameObject.name}' — no tablet found yet; the step keeps looking");
                     enabled = true;
@@ -443,6 +460,11 @@ namespace Vulps.GrowAGarden.Tutorial
                     _posed = false;
                     _hinted = false;
                     TutorialManager.GetInstance()?.SetFlightLocked(false);
+                    if (Flat)
+                    {
+                        Say("It is now time to spread your wings and fly.", "Double jump to take off.", 20, 37);
+                        break;   // taking off is the send-off; there is no pose to watch
+                    }
                     Say("It is now time to spread your wings and fly.", TPOSE, 20, 21);
                     _stepStartedAt = Time.time + Speaking(new[] { 20, 21 });   // the hint waits for the send-off lines to finish
                     enabled = true;
@@ -611,11 +633,12 @@ namespace Vulps.GrowAGarden.Tutorial
             if (_step == Step.Tablet)
             {
                 if (_tablet == null) _tablet = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
-                if (TabletManager.IsOut(_tablet)) Go(Step.Almanac);
+                // A 2D player whose tablet has not been found yet: the key that opens it is enough.
+                if (TabletManager.IsOut(_tablet) || (Flat && _tablet == null && DesktopControls.TabletPressed)) Go(Step.Almanac);
                 return;
             }
 
-            if (_step != Step.SendOff || _flight == null) return;
+            if (_step != Step.SendOff || _flight == null || Flat) return;
             bool posed = _flight.ArmsOutNow;
             if (posed != _posed)
             {
