@@ -440,6 +440,10 @@ namespace Vulps.GrowAGarden.Flight
 
             if (!PlayerManager.CanDriveLocalPlayer) return;
 
+            // 2D: the body's CharacterController puts itself back where it last moved itself, undoing every placement,
+            // so it is off while flying, as climbing does. Landing is our own contact test, not the capsule's.
+            if (!_vr) PlayerManager.SetLocalBodyCollision(!flying);
+
             if (flying)
             {
                 if (_takeGravity) PlayerManager.SetLocalGravityScale(0f);

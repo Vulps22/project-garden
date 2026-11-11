@@ -448,11 +448,12 @@ hears them.
 - **Landing** is the same contact as in VR, after the same `_launchGrace`.
 - **The jump that lets go of a wall is not the second jump**: flight ignores a jump in the frame a climb ended
   ([[climbing#2D players]]).
-- **Placing the body:** in PC mode, writing `Root`'s transform alone does not hold. Build 9's first 2D flight took
-  off and the model flew at 19–34 m/s, but the body stayed where it took off, put back every frame (drift equal to
-  one frame's travel). The likeliest cause is the body's kinematic Rigidbody, so 2D flight and climbing place the
-  body through `PlayerManager.PlaceLocalBody`, which moves the Rigidbody with the transform. It logs the body's
-  parents, components and Rigidbody settings once, for when it does not hold. Untested in-world.
+- **Placing the body:** in PC mode, writing `Root`'s position does not hold while the body's `CharacterController`
+  is on: it puts itself back where it last moved itself. Builds 9 and 10 flew the model at 18–34 m/s with the body
+  hanging where it took off (Vulps: "stuck in air brake"), while 2D climbing, which switches the capsule off, moved
+  fine. So 2D flight switches the capsule off while flying and back on when it lands
+  (`PlayerManager.SetLocalBodyCollision`), and places the body through `PlayerManager.PlaceLocalBody` (transform and
+  Rigidbody). **Status (2026-11-11):** compiles clean, untested in-world.
 
 ## The rework
 
