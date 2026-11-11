@@ -1781,6 +1781,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aff70bfc7c28d7dcfaa4afd444cfd82c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrowAGarden::GrowAGarden.FlightController
+  _desktopGroundCheck: 0.3
   _enabled: 1
   _settings:
     BestGlideSpeed: 18
@@ -1910,6 +1911,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7717630fb1f7dbd2aa150377da7282de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Vulps.GrowAGarden::Vulps.GrowAGarden.Climbing.ClimbController
+  _desktopReach: 0.35
+  _desktopPushDot: 0.7
+  _desktopPushSeconds: 0.15
+  _desktopClimbSpeed: 2
+  _desktopHoldGap: 0.05
+  _desktopRegrabDelay: 0.5
   _enabled: 1
   _climbableMask:
     serializedVersion: 2
@@ -8894,7 +8901,7 @@ MonoBehaviour:
     =)
   PreviewPicturePath: 
   PreviewTexture: {fileID: 2800000, guid: c578d2cd28dafead0a5adb6811f61db1, type: 3}
-  LastBuildSizeBytes: 91276878
+  LastBuildSizeBytes: 91276882
   BoundsIsDisplay: 0
   IsOpen360Preview: 0
   IsEditSpawnPos: 0
@@ -8922,7 +8929,7 @@ MonoBehaviour:
     Free:
       Count: 4
       MaxCount: 10
-      AvailableSize: 207486402
+      AvailableSize: 207486398
     Paid:
       Entries: []
   OwnedTokens: []
