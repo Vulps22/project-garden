@@ -82,7 +82,9 @@ script) does all of it, and does nothing for a VR player.
 - **The tablet** is the client's own, point and click. In PC mode it is not under the body, so `TabletBridge`
   looks for it across the scene by name (the same `Tablet.XR(Clone)`, else any `Tablet.*(Clone)` with `Canvases`)
   and the apps, map and settings page use whatever it finds. `TabletProbe.Search()` still logs, for Vulps only,
-  every object named like a tablet, so a 2D tablet built differently inside shows up in the log.
+  every object named like a tablet, so a 2D tablet built differently inside shows up in the log. Build 11 found it
+  (`Tablet.NonXR(Clone)` under `NonXR.Body`, laid out inside like the VR one) and the apps were built on it, so the probe
+  is no longer called: it walked the whole tablet every second, a suspect for the freezes in that session.
 - **The Developer Market** in 2D: a mouse click on a cell puts the item on the ground in front of the player
   ([[dev-tools]]).
 
