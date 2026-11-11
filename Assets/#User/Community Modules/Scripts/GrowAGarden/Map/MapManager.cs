@@ -33,6 +33,9 @@ namespace Vulps.GrowAGarden.Map
         /// <summary>Temporary: logs the tablet's structure and what changes in it, given the map's content panel.</summary>
         public static void ProbeTablet(RectTransform content) => TabletProbe.Probe(content);
 
+        /// <summary>Looks everywhere for a tablet, for the 2D one. Developer only.</summary>
+        public static void SearchForTablet() => TabletProbe.Search();
+
         /// <summary>What Somnium has in its other-players list, for the log.</summary>
         public static string DescribePlayersContainer(RectTransform content) => TabletMapBridge.DescribePlayersContainer(content);
     }

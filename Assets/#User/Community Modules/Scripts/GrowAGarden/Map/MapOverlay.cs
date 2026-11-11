@@ -77,6 +77,11 @@ namespace Vulps.GrowAGarden.Map
         {
             if (_content == null)
             {
+                if (Time.time >= _nextProbe)
+                {
+                    _nextProbe = Time.time + 3f;
+                    MapManager.SearchForTablet();
+                }
                 FindMap();
                 return;
             }
