@@ -108,7 +108,7 @@ namespace Vulps.GrowAGarden.Tutorial
 
         private const string TPOSE = "Make a T pose: hold both arms straight out to your sides.";
 
-        /// <summary>A 2D player: the steps where what they do differs say so, with their own lines (30-37). See docs/2d-players.md.</summary>
+        /// <summary>A 2D player: the steps where what they do differs show their own instruction; the voice lines are the same. See docs/2d-players.md.</summary>
         private static bool Flat => !PlayerManager.LocalIsVR;
 
         private Step _step;
@@ -346,7 +346,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Plot:
                     yield return Build(_plot, Stage(_scroll));
                     Bring(_scroll, true);
-                    if (Flat) Say("This is a plot. You must claim a plot before you can plant in it.", "Look at the highlighted scroll and press F to grab it.", 30);
+                    if (Flat) Say("This is a plot. You must claim a plot before you can plant in it.", "Look at the highlighted scroll and press F to grab it.", 1);
                     else Say("This is a plot. You must claim a plot before you can plant in it.", "Grab the highlighted scroll.", 1);
                     Glow(_scroll.gameObject);
                     break;
@@ -354,7 +354,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Hut:
                     yield return Dissolve(_plot);
                     yield return Build(_hut);
-                    if (Flat) Say(string.Empty, "Walk into your hut with the scroll and press F to claim the plot.", 31);
+                    if (Flat) Say(string.Empty, "Walk into your hut with the scroll and press F to claim the plot.", 2);
                     else Say(string.Empty, "Take the scroll into your hut to claim the plot.", 2);
                     Glow(_hutDoor);
                     break;
@@ -376,7 +376,7 @@ namespace Vulps.GrowAGarden.Tutorial
                     Bring(_seed, true);
                     Say("This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed " +
                         "inside it, you can buy the seed for the price listed on the barrel.",
-                        Flat ? "Look at the seed and press F to buy it." : "Buy the seed.", 4, Flat ? 32 : 5);
+                        Flat ? "Look at the seed and press F to buy it." : "Buy the seed.", 4, 5);
                     Glow(_seed.gameObject);
                     break;
 
@@ -392,7 +392,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Plant:
                     yield return Dissolve(_scoreboard);
                     yield return Build(_plot);
-                    if (Flat) Say(string.Empty, "Look at the dirt pile and press F to plant the seed.", 33);
+                    if (Flat) Say(string.Empty, "Look at the dirt pile and press F to plant the seed.", 7);
                     else Say(string.Empty, "Plant the seed by pushing it into the dirt pile on the ground.", 7);
                     Glow(_dirtPile);
                     break;
@@ -409,7 +409,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Harvest:
                     _produce.SetGrabbable(true);
                     Notifier.Push("Something is ready to harvest");
-                    if (Flat) Say(string.Empty, "Look at the carrot and press F to harvest it.", 34);
+                    if (Flat) Say(string.Empty, "Look at the carrot and press F to harvest it.", 10);
                     else Say(string.Empty, "Grab the carrot out of the ground.", 10);
                     Glow(_produce.gameObject);
                     break;
@@ -417,7 +417,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Sell:
                     yield return Dissolve(_plot);
                     yield return Build(_sellPoint);
-                    if (Flat) Say(string.Empty, "Walk up to the sell point and press F to sell the carrot.", 35);
+                    if (Flat) Say(string.Empty, "Walk up to the sell point and press F to sell the carrot.", 11);
                     else Say(string.Empty, "Bring the carrot to the sell point to sell it.", 11);
                     Glow(_sellPoint.gameObject);
                     break;
@@ -425,7 +425,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Tablet:
                     _produce.SetGrabbable(false);
                     yield return Dissolve(Stage(_produce), _sellPoint);
-                    if (Flat) Say(string.Empty, "Press Tab to open your tablet.", 36);
+                    if (Flat) Say(string.Empty, "Press Tab to open your tablet.", 12);
                     else Say(string.Empty, "Open your tablet.", 12);
                     _tablet = TabletManager.FindTablet(PlayerManager.LocalPlayerRig.Root);
                     if (_tablet == null) Logger.Warn($"Enter() '{gameObject.name}' — no tablet found yet; the step keeps looking");
@@ -462,7 +462,7 @@ namespace Vulps.GrowAGarden.Tutorial
                     TutorialManager.GetInstance()?.SetFlightLocked(false);
                     if (Flat)
                     {
-                        Say("It is now time to spread your wings and fly.", "Double jump to take off.", 20, 37);
+                        Say("It is now time to spread your wings and fly.", "Double jump to take off.", 20);   // 21 asks for a T pose, which a 2D player has no way to make
                         break;   // taking off is the send-off; there is no pose to watch
                     }
                     Say("It is now time to spread your wings and fly.", TPOSE, 20, 21);

@@ -76,7 +76,7 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
   "Use"; the Dev Market's click puts the item in front. [[2d-players]]
 - [ ] Planting beam in VR: a held seed over dirt shows a beam to the nearest free slot; letting go plants there; none
   over the path. [[planting-beam]]
-- [ ] 2D tutorial: every step completes with F, Tab and a double jump; record `tutorial_30`–`37`. [[tutorial#2D players]]
+- [ ] 2D tutorial: every step completes with F, Tab and a double jump, with the recorded lines playing. [[tutorial#2D players]]
 
 ## Changelog
 

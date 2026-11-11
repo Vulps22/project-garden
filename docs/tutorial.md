@@ -163,28 +163,23 @@ narrator's named ones (`tutorial_Welcome`, `tutorial_hut`…), so recording one 
 
 ## 2D players
 
-**Status (2026-11-11):** built; compiles clean, untested in-world. None of the lines below is recorded yet.
+**Status (2026-11-11):** built; compiles clean, untested in-world.
 
-The same steps, with the same pieces, played with F ([[2d-players]]). Where what a 2D player does differs, the step
-shows its own instruction and plays its own line instead of the VR one; a line not recorded yet is simply not
-played, and the text stays. The tutorial's scroll, seed and carrot and its claim, plant and sell zones carry the
-words the prompt uses (Grab, Buy, Harvest, Claim, Plant, Sell). The tablet step also moves on when Tab is pressed
-while the 2D tablet has not been found. The send-off has no T pose: a double jump takes off, and taking off is the
-send-off.
+The same steps, with the same pieces and the same recorded lines, played with F ([[2d-players]]). Where what a 2D
+player does differs, the panel shows their own instruction instead of the VR one; the voice is unchanged, since the
+"Press F to …" prompt on what they look at says how (Vulps). The tutorial's scroll, seed and carrot and its claim,
+plant and sell zones carry the words that prompt uses (Grab, Buy, Harvest, Claim, Plant, Sell).
 
-| Clip | Step | Says (instead of) |
-|---|---|---|
-| `tutorial_30` | 1 | Look at the highlighted scroll and press F to grab it. (1) |
-| `tutorial_31` | 2 | Walk into your hut with the scroll and press F to claim the plot. (2) |
-| `tutorial_32` | 3 | Look at the seed and press F to buy it. (5) |
-| `tutorial_33` | 5 | Look at the dirt pile and press F to plant the seed. (7) |
-| `tutorial_34` | 6 | Look at the carrot and press F to harvest it. (10) |
-| `tutorial_35` | 7 | Walk up to the sell point and press F to sell the carrot. (11) |
-| `tutorial_36` | 8 | Press Tab to open your tablet. (12) |
-| `tutorial_37` | 10 | Double jump to take off. (21, 22, 23) |
-
-Line 1's first sentence ("This is a plot…") is in line 1's recording, so a 2D player hears it only once 30 is
-recorded with it.
+| Step | Panel says (VR's instead) |
+|---|---|
+| 1 | Look at the highlighted scroll and press F to grab it. |
+| 2 | Walk into your hut with the scroll and press F to claim the plot. |
+| 3 | Look at the seed and press F to buy it. |
+| 5 | Look at the dirt pile and press F to plant the seed. |
+| 6 | Look at the carrot and press F to harvest it. |
+| 7 | Walk up to the sell point and press F to sell the carrot. |
+| 8 | Press Tab to open your tablet. Tab also moves the step on while the 2D tablet has not been found. |
+| 10 | Double jump to take off. Line 20 plays; 21 to 23 are about the T pose, so they do not, and taking off is the send-off. |
 
 ## How it is built
 
