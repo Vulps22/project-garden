@@ -27,7 +27,7 @@ namespace Vulps.GrowAGarden.Trip
         [Tooltip("Seconds to come down once the trip runs out.")]
         [SerializeField] private float _easeOutSeconds = 20f;
 
-        [Tooltip("Seconds to come down when ended early.")]
+        [Tooltip("Seconds to come down when stoned effects are turned off mid-trip.")]
         [SerializeField] private float _endEarlySeconds = 4f;
 
         [Tooltip("Seconds for one full cycle of the colours.")]
@@ -58,21 +58,12 @@ namespace Vulps.GrowAGarden.Trip
         [Tooltip("Seconds between flips, from and to.")]
         [SerializeField] private Vector2 _flipGap = new Vector2(6f, 15f);
 
-        [Header("Ending early")]
-
-        [Tooltip("Covering both eyes with both hands for this long ends the trip early.")]
-        [SerializeField] private float _coverSeconds = 2f;
-
-        [Tooltip("How close each hand must be to the head to count as covering the eyes, in metres.")]
-        [SerializeField] private float _coverDistance = 0.18f;
-
         private static TripManager _instance;
         private ColorAdjustments _colour;
         private float _strength;
         private float _until;
         private float _level;
         private float _comeDown;
-        private float _coveredFor;
         private bool _active;
         private float _nextSwap;
         private readonly Dictionary<Material, Material> _twins = new Dictionary<Material, Material>();
@@ -211,26 +202,7 @@ namespace Vulps.GrowAGarden.Trip
 
             Flip();
             if (!active) return;
-            WatchForCoveredEyes();
             if (Time.time >= _nextSwap) Melt();
-        }
-
-        /// <summary>Both hands over the eyes for a moment ends it: the obvious way out, at either strength.</summary>
-        private void WatchForCoveredEyes()
-        {
-            PlayerRig rig = PlayerManager.LocalPlayerRig;
-            Transform head = PlayerManager.LocalPlayerHead;
-            if (!rig.HasHands || head == null) { _coveredFor = 0f; return; }
-
-            bool covered = Vector3.Distance(rig.LeftHand.position, head.position) <= _coverDistance
-                        && Vector3.Distance(rig.RightHand.position, head.position) <= _coverDistance;
-            _coveredFor = covered ? _coveredFor + Time.deltaTime : 0f;
-            if (_coveredFor < _coverSeconds || !Running) return;
-
-            _until = Time.time;
-            _comeDown = _endEarlySeconds;
-            _coveredFor = 0f;
-            Logger.Info($"WatchForCoveredEyes() '{gameObject.name}' — eyes covered; ending the trip early");
         }
 
         /// <summary>
