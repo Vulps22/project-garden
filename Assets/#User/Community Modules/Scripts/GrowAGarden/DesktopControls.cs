@@ -5,23 +5,14 @@ namespace Vulps.GrowAGarden
 {
     /// <summary>
     /// A 2D player's jump and walking keys, listened to rather than bound: the client still jumps
-    /// and walks on them, and we only hear the same presses. Keyboard and gamepad.
+    /// and walks on them, and we only hear the same presses. Keyboard only; a gamepad is out of scope.
     /// </summary>
     public static class DesktopControls
     {
-        /// <summary>Jump went down this frame: Space, or the gamepad's south button.</summary>
-        public static bool JumpPressed
-        {
-            get
-            {
-                Keyboard keys = Keyboard.current;
-                Gamepad pad = Gamepad.current;
-                return (keys != null && keys.spaceKey.wasPressedThisFrame)
-                    || (pad != null && pad.buttonSouth.wasPressedThisFrame);
-            }
-        }
+        /// <summary>Jump (Space) went down this frame.</summary>
+        public static bool JumpPressed => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
 
-        /// <summary>The walking direction held now: x right, y forward, at most length 1. WASD, the arrows, or the left stick.</summary>
+        /// <summary>The walking direction held now: x right, y forward, at most length 1. WASD or the arrows.</summary>
         public static Vector2 Move
         {
             get
@@ -35,9 +26,6 @@ namespace Vulps.GrowAGarden
                     if (keys.dKey.isPressed || keys.rightArrowKey.isPressed) move.x += 1f;
                     if (keys.aKey.isPressed || keys.leftArrowKey.isPressed) move.x -= 1f;
                 }
-
-                Gamepad pad = Gamepad.current;
-                if (pad != null) move += pad.leftStick.ReadValue();
 
                 return Vector2.ClampMagnitude(move, 1f);
             }

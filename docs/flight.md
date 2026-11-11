@@ -429,35 +429,30 @@ walking away from a player who was no longer flying, who then hung in the air un
 
 ## 2D players
 
-**Status (2026-11-11):** built; the first in-world run took off but did not move (below). Decided by Vulps 2026-11-09.
+**Status (2026-11-11):** built, compiles clean, untested in-world. Controls by Vulps 2026-11-11.
 
-A 2D player (keyboard and mouse, or a gamepad; no hands) flies as in established games, not by translating the arms
+A 2D player (keyboard and mouse; no hands) flies as in established games, not by translating the arms
 (`FlightController.Desktop.cs`). Which kind of player it is comes from `PlayerRig.IsVR`, read once from
-`XRSettings.enabled` ([[2d-players]]).
+`XRSettings.enabled` ([[2d-players]]). Space and W/S are listened to, not bound (`DesktopControls`): the client still
+hears them.
 
-- **A double jump takes off.** The first jump is Somnium's own. A jump pressed with no ground within
-  `_desktopGroundCheck` (0.3 m) under the body capsule is the second, and takes off, so a player falling off an edge
-  takes off on one press. Jump is Space or the gamepad's south button, listened to rather than bound
-  (`DesktopControls`): the client still hears it.
-- **The take-off is the flap.** It throws the player up `FlapHeight` (20 m), so flight starts from flat ground, and
-  the flap is spent until landing, as VR's boost is once per time in the air. Another jump in flight does nothing.
-  My choice, for Vulps to confirm.
-- **Pitch is where the camera looks**, through the same model and the same stall as the wrists. **The way flown is
-  where the camera faces**, flattened, so turning the view turns the flight. There is no coast: arms down has no 2D
-  equivalent.
+- **A double jump takes off.** The first jump is Somnium's own. A jump with no ground within `_desktopGroundCheck`
+  (0.3 m) under the body capsule is the second, and takes off into a **hover**: the model's park, sinking at
+  `ParkSink`. A player falling takes off on one press.
+- **Forward (W) flies**, starting at `BestGlideSpeed` if the brake had slowed it. **Back (S) is an air brake**: it
+  parks the model, a hover, without ending flight. Each holds until the other is pressed.
+- **A jump boosts height**: the flap, `FlapHeight` (20 m), on every jump. **A double jump ends flight**: a second jump
+  within `_doubleJumpSeconds` (0.35 s) hands the player back to Somnium, and they fall.
+- **Flying, pitch is where the camera looks**, through the same model and the same stall as the wrists, and **the way
+  flown is where the camera faces**, flattened. There is no coast.
 - **Landing** is the same contact as in VR, after the same `_launchGrace`.
-- **Placing the body** (2026-11-11, compiles clean, untested in-world): in PC mode, writing `Root`'s transform alone
-  does not hold. Build 9's first 2D flight took off, the model flew at 19–34 m/s, and the body stayed where it took
-  off, put back every frame (drift equal to one frame's travel). The likeliest cause is the body's kinematic
-  Rigidbody, so 2D flight and climbing now place the body through `PlayerManager.PlaceLocalBody`, which moves the
-  Rigidbody with the transform. It logs the body's parents, components and Rigidbody settings once, for when it
-  does not hold.
 - **The jump that lets go of a wall is not the second jump**: flight ignores a jump in the frame a climb ended
   ([[climbing#2D players]]).
-
-To watch for in-world:
-- Third person: the camera looks down at the player from behind, so level flight may need the view raised.
-- No way to end a flight mid-air but landing: open, for Vulps.
+- **Placing the body:** in PC mode, writing `Root`'s transform alone does not hold. Build 9's first 2D flight took
+  off and the model flew at 19–34 m/s, but the body stayed where it took off, put back every frame (drift equal to
+  one frame's travel). The likeliest cause is the body's kinematic Rigidbody, so 2D flight and climbing place the
+  body through `PlayerManager.PlaceLocalBody`, which moves the Rigidbody with the transform. It logs the body's
+  parents, components and Rigidbody settings once, for when it does not hold. Untested in-world.
 
 ## The rework
 

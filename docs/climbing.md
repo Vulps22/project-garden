@@ -78,8 +78,8 @@ player's own `Root`, and Somnium replicates the avatar.
 As in established games: **walking into climbable rock grabs on by itself**, with no key
 (`ClimbController.Desktop.cs`). The rest is my design, for Vulps to confirm.
 
-- **Grabbing:** a ray from the body capsule's centre along the walking keys (WASD, the arrows or the left stick,
-  relative to the camera; listened to, not bound) finds climbable rock within `_desktopReach` (0.35 m) past the
+- **Grabbing:** a ray from the body capsule's centre along the walking keys (WASD or the arrows, relative to the camera;
+  listened to, not bound) finds climbable rock within `_desktopReach` (0.35 m) past the
   capsule. It must be steep (normal under `_standMinNormalY`), faced squarely (`_desktopPushDot`, 0.7), and pressed
   into for `_desktopPushSeconds` (0.15 s), so brushing past or walking up a slope does not grab. In the air too, so a
   fall or a flight into a cliff catches it.
