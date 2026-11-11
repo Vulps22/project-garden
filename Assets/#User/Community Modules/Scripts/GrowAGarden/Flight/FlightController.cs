@@ -317,7 +317,7 @@ namespace Vulps.GrowAGarden.Flight
 
         private void Write(Vector3 target)
         {
-            _root.position = target;
+            Place(target);
             _lastWrite = target;
             _wroteLastFrame = true;
         }
@@ -604,7 +604,14 @@ namespace Vulps.GrowAGarden.Flight
             _driftCount++;
             if (drift > _driftMax) _driftMax = drift;
 
-            if (_flying && drift < _driftCancelLimit) _root.position = _lastWrite;
+            if (_flying && drift < _driftCancelLimit) Place(_lastWrite);
+        }
+
+        /// <summary>Puts Root at a position. In VR the transform holds it; a 2D body's Rigidbody puts the transform back unless it moves too.</summary>
+        private void Place(Vector3 position)
+        {
+            if (_vr) _root.position = position;
+            else PlayerManager.PlaceLocalBody(position);
         }
 
         private void Report(float pitch, float difference, Vector3 local, bool grounded)

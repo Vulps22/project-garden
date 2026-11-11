@@ -385,8 +385,15 @@ namespace Vulps.GrowAGarden.Climbing
             if (hit.point.y <= _root.position.y) return $"feet already above '{hit.collider.name}'";
 
             Vector3 p = _root.position;
-            _root.position = new Vector3(p.x, hit.point.y, p.z);
+            Place(new Vector3(p.x, hit.point.y, p.z));
             return $"stood on '{hit.collider.name}' at y={hit.point.y:F2} (feet were {hit.point.y - p.y:F2}m under it)";
+        }
+
+        /// <summary>Puts Root at a position. In VR the transform holds it; a 2D body's Rigidbody puts the transform back unless it moves too.</summary>
+        private void Place(Vector3 position)
+        {
+            if (_vr) _root.position = position;
+            else PlayerManager.PlaceLocalBody(position);
         }
 
         private void OnValidate()

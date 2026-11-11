@@ -160,6 +160,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// away. False if there is no motion to set.</summary>
         public static bool SetLocalMovementScale(float scale) => PlayerBridge.SetLocalMovementScale(scale);
 
+        /// <summary>Puts the local player's body at a Root position this frame, Rigidbody and all. False with no body.</summary>
+        public static bool PlaceLocalBody(Vector3 rootPosition) => PlayerBridge.PlaceLocalBody(rootPosition);
+
         /// <summary>Switches the local player's body capsule on or off. False if there is no body.</summary>
         public static bool SetLocalBodyCollision(bool enabled) => PlayerBridge.SetLocalBodyCollision(enabled);
 

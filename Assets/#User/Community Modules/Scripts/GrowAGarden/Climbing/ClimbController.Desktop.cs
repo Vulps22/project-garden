@@ -93,13 +93,13 @@ namespace Vulps.GrowAGarden.Climbing
 
             Vector3 held = hit.point + face * (radius + _desktopHoldGap);
             held.y = centre.y;
-            _root.position += held - centre + along;
+            Place(_root.position + held - centre + along);
         }
 
         /// <summary>Climbed past the lip: step forward over it, and letting go stands the feet on top.</summary>
         private void TopOut(Vector3 towards, float radius)
         {
-            _root.position += towards * (radius * 2f + 0.2f);
+            Place(_root.position + towards * (radius * 2f + 0.2f));
             LetGo("topped out");
         }
 

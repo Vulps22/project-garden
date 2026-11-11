@@ -429,7 +429,7 @@ walking away from a player who was no longer flying, who then hung in the air un
 
 ## 2D players
 
-**Status (2026-11-11):** built, compiles clean, untested in-world. Decided by Vulps 2026-11-09.
+**Status (2026-11-11):** built; the first in-world run took off but did not move (below). Decided by Vulps 2026-11-09.
 
 A 2D player (keyboard and mouse, or a gamepad; no hands) flies as in established games, not by translating the arms
 (`FlightController.Desktop.cs`). Which kind of player it is comes from `PlayerRig.IsVR`, read once from
@@ -446,6 +446,12 @@ A 2D player (keyboard and mouse, or a gamepad; no hands) flies as in established
   where the camera faces**, flattened, so turning the view turns the flight. There is no coast: arms down has no 2D
   equivalent.
 - **Landing** is the same contact as in VR, after the same `_launchGrace`.
+- **Placing the body** (2026-11-11, compiles clean, untested in-world): in PC mode, writing `Root`'s transform alone
+  does not hold. Build 9's first 2D flight took off, the model flew at 19–34 m/s, and the body stayed where it took
+  off, put back every frame (drift equal to one frame's travel). The likeliest cause is the body's kinematic
+  Rigidbody, so 2D flight and climbing now place the body through `PlayerManager.PlaceLocalBody`, which moves the
+  Rigidbody with the transform. It logs the body's parents, components and Rigidbody settings once, for when it
+  does not hold.
 - **The jump that lets go of a wall is not the second jump**: flight ignores a jump in the frame a climb ended
   ([[climbing#2D players]]).
 

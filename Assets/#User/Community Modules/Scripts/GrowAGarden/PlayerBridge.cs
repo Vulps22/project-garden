@@ -236,6 +236,35 @@ namespace Vulps.GrowAGarden
         }
 
         /// <summary>
+        /// Puts the local player's body at <paramref name="rootPosition"/> this frame: the transform, and its
+        /// Rigidbody, which in PC mode puts the transform back each frame when only that is written. False with no body.
+        /// </summary>
+        public static bool PlaceLocalBody(Vector3 rootPosition)
+        {
+            Transform root = LocalRig.Root;
+            if (root == null) return false;
+
+            root.position = rootPosition;
+            if (root.TryGetComponent(out Rigidbody body)) body.position = rootPosition;
+            if (!_bodyDescribed) DescribeBody(root, body);
+            return true;
+        }
+
+        private static bool _bodyDescribed;
+
+        /// <summary>Logs once what drives the body: its parents, its components and its Rigidbody, for when placing it does not hold.</summary>
+        private static void DescribeBody(Transform root, Rigidbody body)
+        {
+            _bodyDescribed = true;
+            var parents = new System.Text.StringBuilder();
+            for (Transform t = root.parent; t != null; t = t.parent) parents.Append($" < '{t.name}'");
+            var parts = new System.Text.StringBuilder();
+            foreach (Component c in root.GetComponents<Component>()) parts.Append($" {c.GetType().Name}");
+            string rb = body == null ? "none" : $"kinematic={body.isKinematic} interpolation={body.interpolation}";
+            Logger.Info($"PlaceLocalBody() — '{root.name}'{parents} | components:{parts} | rigidbody: {rb}");
+        }
+
+        /// <summary>
         /// Moves the local player. Asynchronous — <paramref name="arrived"/> is the moment they are
         /// actually there, which is what anything following a teleport should wait for. Returns
         /// false, without calling back, if there is no motion to drive.
@@ -295,6 +324,7 @@ namespace Vulps.GrowAGarden
             // is worse than none: it is a live-looking transform belonging to a world that is gone.
             _localHead = null;
             _isVR = null;
+            _bodyDescribed = false;
 
             if (_players == null) return;
             _players.PlayerAdded.RemoveListener(OnSdkPlayerAdded);
