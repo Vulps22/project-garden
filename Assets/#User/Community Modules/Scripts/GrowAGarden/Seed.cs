@@ -83,6 +83,10 @@ namespace Vulps.GrowAGarden
         /// <summary>Any seed was planted, on every client, as the master's yes arrives; OwnerId is still its buyer.</summary>
         public static event System.Action<Seed> AnyPlanted;
 
+        /// <summary>This client's own hand (or a 2D player's) took a seed, or let one go. Local only; the planting beam follows these.</summary>
+        public static event System.Action<Seed> LocalGrabbed;
+        public static event System.Action<Seed> LocalReleased;
+
         /// <summary>A seed is a physical object wherever it is; nothing about it is anchored.</summary>
         public bool ShouldBeKinematic => false;
 
@@ -101,6 +105,9 @@ namespace Vulps.GrowAGarden
             !string.IsNullOrEmpty(HolderId) ? AuthorityRule.Holder : AuthorityRule.Sector;
 
         private bool _planted;
+
+        /// <summary>The master has said it is planted; it is on its way out.</summary>
+        public bool IsPlanted => _planted;
 
         private HoveringEntity _hovering;
         private PlayerIdentity _grabber;
@@ -527,6 +534,7 @@ namespace Vulps.GrowAGarden
             }
 
             if (!CanSendRpc) return;
+            LocalGrabbed?.Invoke(this);
 
             string id = _grabber.Id;
             int size = BytesWriter.ByteSize + sizeof(short) + System.Text.Encoding.UTF8.GetByteCount(id);
@@ -541,6 +549,7 @@ namespace Vulps.GrowAGarden
             // A teardown deselect is not a player letting go, and there is nothing to announce:
             // the despawn already tells every peer this seed is gone. See CanSendRpc.
             if (!CanSendRpc) return;
+            LocalReleased?.Invoke(this);
 
             var writer = new BytesWriter(BytesWriter.ByteSize);
             writer.AddByte(0);

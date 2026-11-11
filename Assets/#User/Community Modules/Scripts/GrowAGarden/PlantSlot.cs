@@ -32,5 +32,8 @@ namespace Vulps.GrowAGarden
         /// machine knows its hand is on the thing being offered — see Seed.OnTriggerEnter.
         /// </summary>
         public void RequestPlant(IPlantable plantable) => _plot?.RequestPlant(this, plantable);
+
+        /// <summary>Something stands here already, as far as this client has heard.</summary>
+        public bool IsTaken => _plot != null && _plot.OccupantOf(_plot.IndexOf(this)) != null;
     }
 }
