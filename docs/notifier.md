@@ -17,6 +17,9 @@ code can raise one with `Notifier.Push("…")`, or `Notifier.Push("…", seconds
   - **Where:** a world-space canvas fixed to the eyes (`Camera.main`), 0.6 m in front and 6 cm below the middle
     (`_distance`, `_below`), 900 × 0.0002 m wide (18 cm). It draws over everything, the tablet and walls included
     (`ZTest Always`, render queue 4000).
+  - **A 2D player** gets them as HUD toasts instead: a screen-space canvas, the column at the top centre of the
+    screen, 60% of the size, the same boxes, fades and stacking (**Status (2026-11-11):** compiles clean, untested
+    in-world; [[2d-players]]).
   - **The box:** dark, 88% opaque, white text 48 pt, wrapping. It fades in and out over 0.25 s and is gone after its
     duration, 3 s unless the caller says otherwise (2 s was too quick to read, Vulps). Up to four stack downwards; a
     fifth pushes the oldest out. The Notifier does not update at all while no toast is up.
