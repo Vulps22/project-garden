@@ -220,7 +220,7 @@ namespace Vulps.GrowAGarden.Trip
         {
             PlayerRig rig = PlayerManager.LocalPlayerRig;
             Transform head = PlayerManager.LocalPlayerHead;
-            if (!rig.IsUsable || head == null) { _coveredFor = 0f; return; }
+            if (!rig.HasHands || head == null) { _coveredFor = 0f; return; }
 
             bool covered = Vector3.Distance(rig.LeftHand.position, head.position) <= _coverDistance
                         && Vector3.Distance(rig.RightHand.position, head.position) <= _coverDistance;

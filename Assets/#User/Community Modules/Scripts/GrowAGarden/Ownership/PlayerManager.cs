@@ -133,6 +133,13 @@ namespace Vulps.GrowAGarden.Ownership
         /// </summary>
         public static PlayerRig LocalPlayerRig => PlayerBridge.LocalRig;
 
+        /// <summary>Whether the local player is in VR rather than 2D (keyboard and mouse, or a gamepad).</summary>
+        public static bool LocalIsVR => PlayerBridge.IsVR;
+
+        /// <summary>The local player's body capsule in world space: centre, radius, height. False with no body.</summary>
+        public static bool TryGetLocalBody(out Vector3 centre, out float radius, out float height)
+            => PlayerBridge.TryGetLocalBody(out centre, out radius, out height);
+
         /// <summary>Whether Somnium will accept locomotion instructions for the local player.</summary>
         public static bool CanDriveLocalPlayer => PlayerBridge.HasLocalMotion;
 

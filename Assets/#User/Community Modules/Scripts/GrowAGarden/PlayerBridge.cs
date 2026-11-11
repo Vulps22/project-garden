@@ -4,6 +4,7 @@ using Fusion;
 using SomniumSpace.Bridge.Components;
 using SomniumSpace.Bridge.Player;
 using UnityEngine;
+using UnityEngine.XR;
 
 namespace Vulps.GrowAGarden
 {
@@ -110,8 +111,40 @@ namespace Vulps.GrowAGarden
             {
                 var body = LocalSdkPlayer()?.References?.Body;
                 if (body == null) return default;
-                return new PlayerRig(body.Root, body.Head, body.LeftHand, body.RightHand);
+                return new PlayerRig(body.Root, body.Head, body.LeftHand, body.RightHand, IsVR);
             }
+        }
+
+        /// <summary>
+        /// Whether the local player is in VR rather than 2D. Read once: XR is started with the client,
+        /// before any world loads. Not the hands, which a VR rig also lacks while it is being built.
+        /// </summary>
+        public static bool IsVR
+        {
+            get
+            {
+                if (_isVR.HasValue) return _isVR.Value;
+                _isVR = XRSettings.enabled;
+                Logger.Info($"IsVR — {(_isVR.Value ? "VR" : "2D")} (XRSettings.enabled={XRSettings.enabled}, device active={XRSettings.isDeviceActive}, body='{LocalSdkPlayer()?.References?.Body?.Root?.name ?? "<none yet>"}')");
+                return _isVR.Value;
+            }
+        }
+
+        /// <summary>
+        /// The local player's body capsule, in world space: its centre, radius and height. False with
+        /// no body. Root is the play-space origin, not where the player stands; this is.
+        /// </summary>
+        public static bool TryGetLocalBody(out Vector3 centre, out float radius, out float height)
+        {
+            centre = default;
+            radius = height = 0f;
+            Transform root = LocalRig.Root;
+            if (root == null || !root.TryGetComponent(out CharacterController body)) return false;
+
+            centre = root.TransformPoint(body.center);
+            radius = body.radius * Mathf.Max(root.lossyScale.x, root.lossyScale.z);
+            height = body.height * root.lossyScale.y;
+            return true;
         }
 
         /// <summary>
@@ -233,6 +266,8 @@ namespace Vulps.GrowAGarden
 
         private static Transform _localHead;
 
+        private static bool? _isVR;
+
         private void Awake()
         {
             SceneNetworking.OnOtherPlayerJoined += OnOtherPlayerJoined;
@@ -259,6 +294,7 @@ namespace Vulps.GrowAGarden
             // Statics outlive a scene when domain reload is off, and a head from the last session
             // is worse than none: it is a live-looking transform belonging to a world that is gone.
             _localHead = null;
+            _isVR = null;
 
             if (_players == null) return;
             _players.PlayerAdded.RemoveListener(OnSdkPlayerAdded);
