@@ -7,7 +7,7 @@ using UnityEngine.XR.Interaction.Toolkit.UI;
 namespace Vulps.GrowAGarden.DevTools
 {
     /// <summary>One item in the Developer Market's grid. Tells the app which hand's ray is on it, and lights up while one is.</summary>
-    public class MarketCell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class MarketCell : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
     {
         public int Index;
         public MarketApp App;
@@ -31,6 +31,13 @@ namespace Vulps.GrowAGarden.DevTools
             _rays = Mathf.Max(0, _rays - 1);
             if (_rays == 0) Background.color = Normal;
             App.Unhover(right, this);
+        }
+
+        /// <summary>A 2D player's mouse click: the item is asked for, and put down in front of them.</summary>
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (eventData is TrackedDeviceEventData) return;   // a VR ray pulls the trigger instead
+            App.Click(this);
         }
 
         private void OnDisable()

@@ -7,7 +7,7 @@ namespace Vulps.GrowAGarden.Map
     public static class MapManager
     {
         /// <summary>The map's content panel under the local player's rig, or null.</summary>
-        public static RectTransform FindMapContent(Transform rigRoot) => TabletMapBridge.FindMapContent(rigRoot);
+        public static RectTransform FindMapContent(Transform rigRoot) => TabletMapBridge.FindMapContent(rigRoot, TabletBridge.FindTablet(rigRoot));
 
         /// <summary>The font Somnium's map labels use.</summary>
         public static TMP_FontAsset MapFont(RectTransform content) => TabletMapBridge.MapFont(content);

@@ -61,6 +61,10 @@ fruit and the splif, each with a picture. **Point a hand's ray at one and pull t
 tablet into that hand, free. A seed comes already bought, so it can be planted; a fruit comes ripe, and grabbing it
 harvests it as usual.
 
+**A 2D player clicks a cell** with the mouse instead: the item is put on the ground 1 m in front of them, not in a
+hand (Vulps, 2026-11-11), and they take it with K ([[2d-players]]). **Status (2026-11-11):** compiles clean, untested
+in-world.
+
 **On the tablet** (`MarketApp`, on SceneManager): built in code onto Somnium's tablet through `TabletManager` →
 `TabletBridge` ([[tablet]]), only when `Developer.IsLocal`.
 

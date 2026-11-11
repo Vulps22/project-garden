@@ -16,12 +16,17 @@ namespace Vulps.GrowAGarden
         private static RectTransform _resized;
         private static Vector2 _originalSize;
 
-        /// <summary>The map's scrolling, zooming content panel under the local player's rig, or null when it is not there.</summary>
-        public static RectTransform FindMapContent(Transform rigRoot)
+        /// <summary>The map's scrolling, zooming content panel under the local player's rig, or in the tablet given; null when it is not there.</summary>
+        public static RectTransform FindMapContent(Transform rigRoot, Transform tablet)
         {
             if (rigRoot == null) return null;
             Transform content = rigRoot.Find(CONTENT_PATH);
             if (content == null && rigRoot.parent != null) content = rigRoot.parent.Find("XR.Body/" + CONTENT_PATH);
+            if (content == null)
+            {
+                // PC mode: the tablet is elsewhere in the scene; the map is at the same place inside it.
+                if (tablet != null) content = tablet.Find(CONTENT_PATH.Substring(CONTENT_PATH.IndexOf('/') + 1));
+            }
             return content as RectTransform;
         }
 
