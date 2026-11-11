@@ -23,7 +23,7 @@ namespace Vulps.GrowAGarden.Flight
     /// SDK's world-testing stand-in; in-world you get Somnium's own networked player. Nothing here
     /// can be judged in the Editor, so the logging is not an afterthought.
     /// </summary>
-    public class FlightController : MonoBehaviour
+    public partial class FlightController : MonoBehaviour
     {
         [Tooltip("Master switch. Off leaves Somnium's own flight and glide alone entirely.")]
         [SerializeField] private bool _enabled = true;
@@ -127,6 +127,7 @@ namespace Vulps.GrowAGarden.Flight
 
         private FlightModel _model;
         private Transform _root, _head, _leftHand, _rightHand;
+        private bool _vr;
 
         private bool _flying;
         private bool _coasting;
@@ -147,7 +148,7 @@ namespace Vulps.GrowAGarden.Flight
         public bool IsFlying => _flying;
 
         /// <summary>Both arms are held out now, as they must be to take off: the tutorial's T pose.</summary>
-        public bool ArmsOutNow => Resolve() && ArmsOut(_armExtension);
+        public bool ArmsOutNow => Resolve() && _vr && ArmsOut(_armExtension);
 
         /// <summary>The player is touching the world: standing, not falling.</summary>
         public bool Grounded => Resolve() && Touching();
@@ -203,7 +204,13 @@ namespace Vulps.GrowAGarden.Flight
             if (_flying) SetFlying(false);
         }
 
-        private void OnClimbEnded() => _climbing = false;
+        private void OnClimbEnded()
+        {
+            _climbing = false;
+            _climbEndedFrame = Time.frameCount;
+        }
+
+        private int _climbEndedFrame = -1;
 
         private void OnValidate()
         {
@@ -216,6 +223,12 @@ namespace Vulps.GrowAGarden.Flight
             if (!_enabled || _climbing || TutorialManager.FlightLocked) return;
             MeasurePreviousWrite();
             if (!Resolve()) return;
+
+            if (!_vr)
+            {
+                UpdateDesktop();
+                return;
+            }
 
             PollBoostButton();
 
@@ -448,7 +461,7 @@ namespace Vulps.GrowAGarden.Flight
 
         private bool Resolve()
         {
-            if (_root != null && _leftHand != null && _rightHand != null) return true;
+            if (_root != null && (!_vr || (_leftHand != null && _rightHand != null))) return true;
 
             PlayerRig rig = PlayerManager.LocalPlayerRig;
             if (!rig.IsUsable) return false;
@@ -457,6 +470,7 @@ namespace Vulps.GrowAGarden.Flight
             _head = rig.Head;
             _leftHand = rig.LeftHand;
             _rightHand = rig.RightHand;
+            _vr = rig.IsVR;
 
             if (!PlayerManager.SuppressSomniumLocomotion())
                 Logger.Error($"Resolve() '{gameObject.name}' — no Motion feature; Somnium's flight stays on and will fight this");
@@ -470,7 +484,7 @@ namespace Vulps.GrowAGarden.Flight
 
             Logger.Info($"Resolve() '{gameObject.name}' — took the player: root='{_root.name}' " +
                         $"ownColliders={_ownColliders.Length} " +
-                        $"head='{(_head == null ? "<none>" : _head.name)}' left='{_leftHand.name}' right='{_rightHand.name}'");
+                        $"head='{(_head == null ? "<none>" : _head.name)}' {(_vr ? $"left='{_leftHand.name}' right='{_rightHand.name}'" : "2D: no hands; double jump takes off")}");
             return true;
         }
 
@@ -613,11 +627,17 @@ namespace Vulps.GrowAGarden.Flight
                 $"speed={_model.Speed:F1} path={_model.PathAngleDeg:F1} stall={_model.Stall:F2} auth={_model.Authority:F2} " +
                 $"vert={local.y:F2} fwd={local.z:F2} y={_root.position.y:F1} " +
                 $"trough={_model.TroughDescent:F1}m lastBonus={_model.LastTroughBonus:F1} " +
-                $"flapSpent={_flapSpent} coast={_coasting} trim={_handPitchOffset:F1} " +
-                $"reach L={Reach(Origin(), _leftHand):F2} R={Reach(Origin(), _rightHand):F2} " +
-                $"drop L={(Origin().y - _leftHand.position.y):F2} R={(Origin().y - _rightHand.position.y):F2} | {drift} | " +
-                $"axes L fwd={Elevation(_leftHand, HandAxis.Forward):F0} up={Elevation(_leftHand, HandAxis.Up):F0} right={Elevation(_leftHand, HandAxis.Right):F0} " +
-                $"R fwd={Elevation(_rightHand, HandAxis.Forward):F0} up={Elevation(_rightHand, HandAxis.Up):F0} right={Elevation(_rightHand, HandAxis.Right):F0}");
+                $"flapSpent={_flapSpent} coast={_coasting} trim={_handPitchOffset:F1} | {drift} | {Arms()}");
+        }
+
+        /// <summary>The hands' reach, drop and axes for the log; a 2D player has none.</summary>
+        private string Arms()
+        {
+            if (!_vr) return "2D: pitch from the camera";
+            return $"reach L={Reach(Origin(), _leftHand):F2} R={Reach(Origin(), _rightHand):F2} " +
+                   $"drop L={(Origin().y - _leftHand.position.y):F2} R={(Origin().y - _rightHand.position.y):F2} | " +
+                   $"axes L fwd={Elevation(_leftHand, HandAxis.Forward):F0} up={Elevation(_leftHand, HandAxis.Up):F0} right={Elevation(_leftHand, HandAxis.Right):F0} " +
+                   $"R fwd={Elevation(_rightHand, HandAxis.Forward):F0} up={Elevation(_rightHand, HandAxis.Up):F0} right={Elevation(_rightHand, HandAxis.Right):F0}";
         }
     }
 }

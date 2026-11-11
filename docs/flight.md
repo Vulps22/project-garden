@@ -427,6 +427,32 @@ inside `Launched`: `SetFlying` checks after raising `Launched` or `Landed` wheth
 so leaves locomotion as that listener's landing set it. Without the check, the take-off went on to take gravity and
 walking away from a player who was no longer flying, who then hung in the air unable to move ([[tutorial]]).
 
+## 2D players
+
+**Status (2026-11-11):** built, compiles clean, untested in-world. Decided by Vulps 2026-11-09.
+
+A 2D player (keyboard and mouse, or a gamepad; no hands) flies as in established games, not by translating the arms
+(`FlightController.Desktop.cs`). Which kind of player it is comes from `PlayerRig.IsVR`, read once from
+`XRSettings.enabled` ([[2d-players]]).
+
+- **A double jump takes off.** The first jump is Somnium's own. A jump pressed with no ground within
+  `_desktopGroundCheck` (0.3 m) under the body capsule is the second, and takes off, so a player falling off an edge
+  takes off on one press. Jump is Space or the gamepad's south button, listened to rather than bound
+  (`DesktopControls`): the client still hears it.
+- **The take-off is the flap.** It throws the player up `FlapHeight` (20 m), so flight starts from flat ground, and
+  the flap is spent until landing, as VR's boost is once per time in the air. Another jump in flight does nothing.
+  My choice, for Vulps to confirm.
+- **Pitch is where the camera looks**, through the same model and the same stall as the wrists. **The way flown is
+  where the camera faces**, flattened, so turning the view turns the flight. There is no coast: arms down has no 2D
+  equivalent.
+- **Landing** is the same contact as in VR, after the same `_launchGrace`.
+- **The jump that lets go of a wall is not the second jump**: flight ignores a jump in the frame a climb ended
+  ([[climbing#2D players]]).
+
+To watch for in-world:
+- Third person: the camera looks down at the player from behind, so level flight may need the view raised.
+- No way to end a flight mid-air but landing: open, for Vulps.
+
 ## The rework
 
 **Status (2026-11-09):** proposed, not built (Vulps: "don't build the flight rework yet").
