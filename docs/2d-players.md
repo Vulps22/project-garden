@@ -11,8 +11,10 @@ Players on a desktop: keyboard and mouse, or a gamepad. Somnium calls it **PC mo
 **NonXR**. Every VR interaction in the game needs a 2D equivalent (Vulps, 2026-11-09). Somnium requires the same:
 "every world must work in VR and PC mode" (`WorldCreatorContext.md` §0).
 
-**Status (2026-11-11):** phase 1 (flight and climbing) built, compiles clean, untested in-world; the rest planned. The
-tutorial ignores 2D players until this pass is done ([[tutorial]]).
+**Status (2026-11-11):** nothing but flight and climbing works in 2D (Vulps, in-world), so the 2D interface is built
+from scratch, to the design below (Vulps, 2026-11-11). Flight and climbing are built and untested since their fixes.
+Keyboard and mouse only: **a gamepad is out of scope** (Vulps). The tutorial ignores 2D players until this pass is
+done ([[tutorial]]).
 
 ## What Somnium gives a 2D player
 
@@ -31,77 +33,68 @@ From `WorldCreatorContext.md`. These are the platform's own statements, not test
   more than about 0.75 m from it (§9).
 - **The client's keys:** W A S D, the arrows, Space, Shift, Tab (tablet), Q/E, M, I, F (interact), R, X, Esc, the
   mouse buttons and the wheel. **Keys found free:** Z, Y, U, O, P, K, L, N and the digits. Our own Input Actions
-  asset is allowed, bound for both modes (§9).
+  asset is allowed, bound for both modes (§9). We read keys straight off the keyboard instead (`DesktopControls`),
+  which listens without binding, so the client still hears its own.
 - `SetHeight` ignores its PC height, so the 2D body is a fixed size (§6).
 
-## Every VR interaction, and its 2D equivalent
+## The controls
 
-**Status (2026-11-09):** proposed. "Unknown" rows wait on the probe. Each proposed control is a question for
-Vulps, not a decision.
+**Status (2026-11-11):** decided (Vulps); flight and climbing built, the rest not.
 
-| Feature | In VR | In 2D today | Proposed 2D equivalent |
-|---|---|---|---|
-| Pick up, carry, drop (seeds, produce, deed, application, splif) | XRI grab, near or far | Unknown: XRI grab should work, but where the item sits is not known | Somnium's own grab if the probe says it works |
-| Buy from a stall, take from a dispenser | Grab the seed out of its socket | Unknown: the same grab | Nothing new, if grabbing works |
-| Plant | Carry the seed into a slot's trigger (`Seed.OnTriggerEnter`) | Probably broken: the held item may never reach the soil | Holding a seed, click a free slot to plant it: the same `PlantSlot.RequestPlant` |
-| Harvest | Grab the produce off the plant | Unknown: the same grab | Nothing new, if grabbing works |
-| Sell | Carry the produce into the barrels' trigger (`SellPoint.OnTriggerEnter`) | Unknown: depends where the held item sits | Holding produce, click the sell point: the same sell request |
-| Claim a plot | Carry the deed into the hut (`DeedClaimZone`) | Probably works: the player walks in | Click the hut while holding the deed, if walking in does not reach the zone |
-| Teammate application, accept, revoke | Carry the scroll into a zone (`PlotApplicationZone`, `ApplicationAcceptZone`, `PlotTeammateRevokeZone`) | As for the deed | As for the deed |
-| Eat a bloom | Hold it at the mouth 0.12 m for a moment (`EdibleModule`) | Broken: there is no hand to raise | Hold a key while holding it, for the same dwell |
-| Smoke a splif | Hold it at the mouth, a puff each dwell (`SmokeableEntity`) | Broken, as eating | The same key, a puff each dwell |
-| End a trip early | Both hands over the eyes (`TripManager`) | No way out: the check needs both hands, so a trip runs its full length | Hold a key for the same moment |
-| Trip's flipped controls | Walking speed made negative | Should work: it is the speed | Nothing new |
-| Fly | Arms out to take off, wrist pitch, hands in opposition to yaw, a flap, a boost button ([[flight]]) | Built, untested: a double jump ([[flight#2D players]]) | Done |
-| Climb | Grip near rock, pull down to rise ([[climbing]]) | Built, untested: walking into rock grabs it ([[climbing#2D players]]) | Done |
-| Tablet apps: Almanac, World Settings, Developer Market, map overlay | The tablet, pointed at with a hand ray | Unknown: we find the tablet as `Tablet.XR(Clone)`, which may not exist in PC mode | Wherever PC mode's tablet is, if it has one; otherwise a panel of our own |
-| Developer Market delivery | Trigger on an item puts it in that hand (`MarketApp.PutInHand`) | Broken: no hand interactor to put it in | Drop it in front of the player, or into PC mode's grab if it has one |
-| In-world buttons (`SettingsButton`) | XRI select | Unknown | `IPointerClickHandler` as well, if XRI select does not reach them |
-| Toasts, instruction panel | Head-locked in front of the headset | Unknown: third person puts the camera away from the head | Anchor to `Camera.main` in PC mode |
-| Grow Wand (developer only) | Touch a plant with the wand | Unknown: the same grab, then a touch that may not reach | Click a plant while holding it; low priority |
-| Haptics (climbing, flight) | Controller buzz | Nothing | Nothing |
-| Tutorial | Every step above, the tablet step, and a T pose to fly off | Taken up like everyone; Skip is the only way out ([[tutorial]]) | Each step's own 2D line and check; the send-off is the double jump |
+| Key | Does |
+|---|---|
+| **K** | The interact key: whatever the prompt says (below) |
+| **1**, **2** | Select the item in that hand |
+| **Z** | Eat the selected item if it is edible; put a selected splif in your mouth |
+| Space | Jump; a double jump takes off; in flight a jump boosts height and a double jump ends flight ([[flight#2D players]]) |
+| W / S in flight | Forward flies; back brakes to a hover without ending flight ([[flight#2D players]]) |
+| Walking into rock | Climbs it ([[climbing#2D players]]) |
+| The mouse on the tablet | The tablet's own point and click, as it is |
+
+## Interacting
+
+**Status (2026-11-11):** decided (Vulps), not built.
+
+- **The prompt.** Walking up to something the player can act on highlights it blue and puts up "Press K to …":
+  **Grab**, **Buy**, **Harvest**, **Plant**, **Sell**, **Claim**, or **Drop** with nothing in front of them. The
+  target is what they are looking at within reach. The highlight's shader is referenced by the script driving the 2D
+  controls, so the upload keeps it.
+- **Carrying: two hands.** A 2D-only HUD in the bottom left: two translucent white squares, one per hand, showing
+  what each holds with the same tiles as the Almanac and the Developer Market. What a 2D player grabs or buys is
+  locked to one of **two sockets above their head**, so everyone can see what they carry. Each client puts a carried
+  item on its holder's socket itself, from the holder already recorded on the item, so nothing more is sent.
+- **Selecting and dropping.** 1 and 2 select a hand; K with nothing to act on drops the selected item.
+- **Hands full.** Grabbing or buying with both hands full sends the player a notification that their hands are
+  full. In 2D, notifications show as HUD toasts ([[notifier]]).
+- **Plant:** the slot looked at, which the planting beam marks ([[planting-beam]]). K plants the selected seed there.
+- **Sell:** K at the sell point sells the selected item only; the selection then moves to the remaining item.
+- **Claim a plot:** K at the hut with the deed selected.
+- **Eat:** Z on a selected edible item. **Smoke:** Z puts the selected splif in the mouth, and the smoking's own 5 s
+  dwell then drives the puffs as in VR ([[weed#Eating and smoking]]).
+- **The tablet** keeps its own design language, point and click. The apps did not exist when 2D was tried, so where
+  the 2D tablet is and what it is called is found by probe first: `TabletProbe.Search()` logs, for Vulps only, every
+  object anywhere named like a tablet, every 3 s until the map is found (compiles clean, not yet read in-world).
+- **The Developer Market** drops what it delivers in front of a 2D player.
+- **In-world buttons** (`SettingsButton`) take the same prompt.
+
+**Out of the plan** (Vulps, 2026-11-11): teammates (the system is dead), the Grow Wand (it does not work), and
+ending a trip early (it did not work, and is gone from the game: [[trip]]).
 
 ## The plan
 
-**Status (2026-11-11):** order set by Vulps; phase 1 built, untested in-world. One phase per upload ([[testing]]).
+**Status (2026-11-11):** order Vulps's; one phase per upload ([[testing]]).
 
-1. **2D flight and climbing** (built): [[flight#2D players]] and [[climbing#2D players]]. With them, the parts of the
-   foundation they use:
-   - `PlayerBridge.IsVR`, read once from `XRSettings.enabled`, and logged with the body's name the first time.
-   - `PlayerRig.IsUsable` split: a 2D rig is usable without hands, and `HasHands` is what hand readers ask
-     (the trip's covered eyes).
-   - `DesktopControls`: the jump and walking keys, read straight off the keyboard and gamepad without binding them.
-   - `PlayerBridge.TryGetLocalBody`: the body capsule's centre, radius and height.
+1. **Flight and climbing** (built): [[flight#2D players]] and [[climbing#2D players]], on the foundation:
+   - `PlayerBridge.IsVR`, read once from `XRSettings.enabled`; `PlayerRig.IsUsable` true for a 2D rig without hands.
+   - `DesktopControls`: the keys, listened to.
+   - `PlayerBridge.TryGetLocalBody` and `PlaceLocalBody` (the body is placed through its Rigidbody in 2D).
 
-   The VR flight rework's jump to take off ([[flight#The rework]]) is still not built.
-2. **Look at the state of 2D as it stands** (Vulps): play in PC mode with flight and climbing in, and log what the
-   rest does:
-   - which XRI interactors the PC rig has, and their interaction layers
-   - where a held seed sits, relative to `Camera.main` and `Body.Head`
-   - whether walking with a held item reaches a plant slot, the sell point and the hut
-   - whether the tablet exists and what it is called
-   - whether `SettingsButton` and our tablet canvases take the mouse
-   - the camera's distance from the head, in first and third person.
-
-   The logging is gated to Vulps, as the tablet probe was. What it shows decides the phases after it.
-3. **The rest of the foundation:**
-   - an Input Actions asset of our own on the free keys, if any action still needs one
-   - an aim helper: one ray from `Camera.main`, saying what is aimed at. It fires an event when that changes; it
-     does not poll each consumer.
-4. **The core loop in 2D:** buy, plant, harvest, sell, claim, teammates. Only the paths phase 2 shows broken.
-5. **Eat, smoke, end a trip.**
-6. **The tablet apps** and the Market's delivery.
-7. **The tutorial for 2D players.** Each step gets its own 2D instruction and voice line where the action differs.
-   The send-off is the double jump. Then mark "2D players are not supported" gone from [[tutorial]].
+   With it, the tablet search above.
+2. **Interacting:** the prompt and highlight, the two hands and their HUD, the head sockets, K, 1 and 2. Grab, buy,
+   drop, harvest, plant, sell, claim; hands full; notifications as HUD toasts.
+3. **Eat and smoke** on Z; the Developer Market's drop in front.
+4. **The tablet apps**, wherever the probe finds the 2D tablet.
+5. **The tutorial for 2D players.** Each step gets its own 2D instruction and voice line where the action differs.
+   Then mark "2D players are not supported" gone from [[tutorial]].
 
 Each feature's own doc takes its 2D half as that phase lands, and this doc keeps only what is still to do.
-
-## Open questions
-
-**Status (2026-11-09):** open, Vulps's to answer, after phase 2.
-
-- Which keys, where a key is still needed: the free ones are Z, Y, U, O, P, K, L, N and the digits.
-- Whether a gamepad is in scope now, or keyboard and mouse only.
-- Whether a click on a slot, the sell point or the hut is right for 2D, or whether walking the held item in must
-  work as in VR.

@@ -23,7 +23,7 @@ Every doc is tagged by the kinds of thing it defines; `Docs.base` lists them by 
 - **Rules:** [[principles]], [[layers]], [[conventions]].
 - **Crops:** [[crops]] (Seed, Plant, Produce, definitions, balance), [[weed]] (and the [[trip]] it starts), [[fun-seeds]] (the upgrade seeds: [[popcorn]], [[moonflower]], [[spotlight-tulip]]), [[yggdrasil]] (the god seed, a buff; Developer Market only), [[light-show]] (ARS and the Garden dancing), [[almanac]] (every crop's page on the tablet).
 - **Mechanics:** [[shop]], [[economy]], [[thatch-sinks]] (ways to spend Thatch, not chosen), [[scoreboard]], [[persistence]], [[warehouse]] (designed, not built), [[plot-ownership]], [[flight]], [[climbing]].
-- **Interaction:** [[entity-components]], [[tutorial]], [[2d-players]] (every VR interaction's desktop equivalent), [[notifier]] (toasts in the player's view), [[world-settings]] (our section in the tablet's Settings).
+- **Interaction:** [[entity-components]], [[tutorial]], [[2d-players]] (the controls and interface for desktop players), [[planting-beam]] (a held seed shows the slot it will plant in), [[notifier]] (toasts in the player's view), [[world-settings]] (our section in the tablet's Settings).
 - **Game:** [[procgen-islands]], [[towns]] (the Gardens, in three towns).
 - **Tech:** [[networking]], [[community-modules]], [[runtime-spawn]], [[world-bridge]], [[tablet]] (Somnium's tablet, as Unity sees it), [[dev-tools]] (the Developer Market), [[detail]] (level of detail and draw distance), [[testing]], [[tooling]].
 - **Reference:** [[terminology]], [[packaging]], [[fractured-isles-tutorial-script]], [[tutorial-transcript-mapping]].

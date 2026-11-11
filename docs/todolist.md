@@ -64,9 +64,11 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Grow Wand: touch a seedling's soil, a grown bearing plant, a carrot in the ground; does a second player see it grow? [[dev-tools]]
 - [ ] Tutorial: join as a new player and walk all ten steps (smoke, glow, panel, the carrot growing, the tablet step, the seed loop, T pose then jump to the spawn); Skip and Repeat from Settings → World; does the hut's fire crackle follow your volume? [[tutorial]]
 - [ ] Flight rework (not yet): a jump to take off unless already falling, and thresholds that follow the player's size; log the size signals first. [[flight]]
-- [ ] 2D flight in PC mode: does the log say 2D once (`IsVR`), does a double jump take off (and a single press while falling), does the camera pitch climb and dive, does the flight follow the view, does touching ground land? [[flight]]
+- [ ] 2D flight in PC mode: does the body move now (or does the `PlaceLocalBody()` line say what holds it)? Double jump takes off into a hover; W flies, S brakes to a hover; a jump boosts, a double jump ends flight; the camera pitches and steers; touching ground lands. [[flight]]
 - [ ] 2D climbing in PC mode: walk into island rock (grabs after a moment, not when brushing past or on a slope), climb up, across and down, top out onto a ledge, jump off; does the jump off start a flight (it should not)? [[climbing]]
-- [ ] 2D (desktop) players: after flight and climbing are tested, phase 2 (play in PC mode and log the rest). Plan and open questions in [[2d-players]]. [[tutorial]]
+- [ ] 2D tablet: in PC mode, open the tablet and send the log: `Probe() 'TabletProbe' — #n` search lines say where the 2D tablet is. [[2d-players]]
+- [ ] 2D interface: phases 2–5 of [[2d-players#The plan]], after flight, climbing and the tablet probe are read. [[2d-players]]
+- [ ] Planting beam: build it ([[planting-beam]]).
 
 ## Changelog
 
