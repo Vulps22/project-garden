@@ -12,7 +12,7 @@ Players on a desktop, with keyboard and mouse. Somnium calls it **PC mode**, and
 "every world must work in VR and PC mode" (`WorldCreatorContext.md` §0).
 
 **Status (2026-11-11):** the whole 2D interface is built to Vulps's design (Vulps, 2026-11-11), for one upload:
-flight, climbing, the hands, K, 1, 2, Z, the HUD, toasts, the tablet and the tutorial. Compiles clean, untested
+flight, climbing, the hands, F, 1, 2, Z, the HUD, toasts, the tablet and the tutorial. Compiles clean, untested
 in-world. Keyboard and mouse only: **a gamepad is out of scope** (Vulps).
 
 ## What Somnium gives a 2D player
@@ -42,7 +42,7 @@ From `WorldCreatorContext.md`. These are the platform's own statements, not test
 
 | Key | Does |
 |---|---|
-| **K** | The interact key: whatever the prompt says (below) |
+| **F** | The interact key: whatever the prompt says (below). It is the client's interact key too; we only listen to it, so the client's own F still works (Vulps, 2026-11-11, replacing K) |
 | **1**, **2** | Select the item in that hand |
 | **Z** | Eat the selected item if it is edible; put a selected splif to the mouth, or back up |
 | Space | Jump; a double jump takes off; in flight a jump boosts height and a double jump ends flight ([[flight#2D players]]) |
@@ -55,8 +55,8 @@ From `WorldCreatorContext.md`. These are the platform's own statements, not test
 **Status (2026-11-11):** built; compiles clean, untested in-world. `Desktop/DesktopInteraction` (the 2D controls
 script) does all of it, and does nothing for a VR player.
 
-- **The prompt.** The first thing on the line of sight, within 3 m of the head, that K would act on is highlighted
-  blue and "Press K to …" shows at the bottom of the screen: **Grab**, **Buy** (a seed in a stall), **Harvest** (a
+- **The prompt.** The first thing on the line of sight, within 3 m of the head, that F would act on is highlighted
+  blue and "Press F to …" shows at the bottom of the screen: **Grab**, **Buy** (a seed in a stall), **Harvest** (a
   produce still on its plant), **Plant**, **Sell**, **Claim**, **Use** (an in-world `SettingsButton`), or **Drop**
   with nothing else to act on. Solid things hide what is behind them; triggers do not. A sell point or a hut the
   player stands inside counts too, so they need not look at it. The highlight is a shell with the tutorial glow's
@@ -68,13 +68,13 @@ script) does all of it, and does nothing for a VR player.
 - **The HUD.** Bottom left, two translucent white squares, the selected one brighter, each showing its item with
   the Developer Market's tile for it, else its crop's Almanac picture, else its name.
 - **Selecting and dropping.** 1 and 2 select a hand. Taking goes into the selected hand, else the other; with both
-  full, a notification says "Your hands are full". K with nothing to act on puts the selected item down in front of
+  full, a notification says "Your hands are full". F with nothing to act on puts the selected item down in front of
   the player.
-- **Putting things in.** Sell, Claim and the tutorial's zones are `IItemReceiver`s: K carries the selected item there
+- **Putting things in.** Sell, Claim and the tutorial's zones are `IItemReceiver`s: F carries the selected item there
   and hands it over exactly as a hand carrying it into the trigger would. A sell sells the selected item only; when a
   selected hand empties, the selection moves to the other.
 - **Plant:** the free slot of the dirt block looked at, nearest where the look lands, which the planting beam marks
-  ([[planting-beam]]). K carries the seed there and asks the slot, as touching it does.
+  ([[planting-beam]]). F carries the seed there and asks the slot, as touching it does.
 - **Eat and smoke:** Z takes a selected edible to the mouth, where the edible's own dwell eats it. Z takes a splif to
   the mouth, where the smoking's own 5 s dwell drives the puffs as in VR ([[weed#Eating and smoking]]); Z again puts
   it back up.

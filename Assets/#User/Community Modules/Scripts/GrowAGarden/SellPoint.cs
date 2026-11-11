@@ -103,7 +103,7 @@ namespace Vulps.GrowAGarden
             Offer(other.GetComponentInParent<SellableEntity>());
         }
 
-        /// <summary>A 2D player's item, handed over with K: sold only if it can be.</summary>
+        /// <summary>A 2D player's item, handed over with F: sold only if it can be.</summary>
         public string VerbFor(GameObject item)
         {
             SellableEntity sellable = item == null ? null : item.GetComponentInParent<SellableEntity>();
@@ -114,7 +114,7 @@ namespace Vulps.GrowAGarden
 
         public Vector3 ReceivePoint => TryGetComponent(out Collider zone) ? zone.bounds.center : transform.position;
 
-        /// <summary>The holder puts this into the shop, by hand or by K.</summary>
+        /// <summary>The holder puts this into the shop, by hand or by F.</summary>
         private void Offer(SellableEntity sellable)
         {
             if (sellable == null) return;

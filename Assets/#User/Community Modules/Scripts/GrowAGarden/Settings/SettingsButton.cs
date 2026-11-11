@@ -70,7 +70,7 @@ namespace Vulps.GrowAGarden.Settings
 
         private void OnSelectEntered(UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs _) => Press();
 
-        /// <summary>Presses the button: a hand selecting it, or a 2D player's K.</summary>
+        /// <summary>Presses the button: a hand selecting it, or a 2D player's F.</summary>
         public void Press()
         {
             if (Time.time < _nextPressAt) return;

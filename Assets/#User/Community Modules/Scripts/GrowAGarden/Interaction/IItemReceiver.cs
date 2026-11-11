@@ -4,7 +4,7 @@ namespace Vulps.GrowAGarden.Interaction
 {
     /// <summary>
     /// A place a held item is put into: the sell point, the hut's claim zone, a tutorial zone. A VR hand carries the item
-    /// into its trigger; a 2D player presses K at it, and the item is handed over the same way (docs/2d-players.md).
+    /// into its trigger; a 2D player presses F at it, and the item is handed over the same way (docs/2d-players.md).
     /// </summary>
     public interface IItemReceiver
     {

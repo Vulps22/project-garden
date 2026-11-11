@@ -39,7 +39,7 @@ namespace Vulps.GrowAGarden.Ownership
             DeedCarriedIn?.Invoke();
         }
 
-        /// <summary>A 2D player's deed, handed in with K.</summary>
+        /// <summary>A 2D player's deed, handed in with F.</summary>
         public string VerbFor(GameObject item) =>
             item != null && item.TryGetComponent(out CollectibleEntity deed) && deed.collectibleId == "deed" ? "Claim" : null;
 

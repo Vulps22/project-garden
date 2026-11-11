@@ -165,7 +165,7 @@ narrator's named ones (`tutorial_Welcome`, `tutorial_hut`…), so recording one 
 
 **Status (2026-11-11):** built; compiles clean, untested in-world. None of the lines below is recorded yet.
 
-The same steps, with the same pieces, played with K ([[2d-players]]). Where what a 2D player does differs, the step
+The same steps, with the same pieces, played with F ([[2d-players]]). Where what a 2D player does differs, the step
 shows its own instruction and plays its own line instead of the VR one; a line not recorded yet is simply not
 played, and the text stays. The tutorial's scroll, seed and carrot and its claim, plant and sell zones carry the
 words the prompt uses (Grab, Buy, Harvest, Claim, Plant, Sell). The tablet step also moves on when Tab is pressed
@@ -174,12 +174,12 @@ send-off.
 
 | Clip | Step | Says (instead of) |
 |---|---|---|
-| `tutorial_30` | 1 | Look at the highlighted scroll and press K to grab it. (1) |
-| `tutorial_31` | 2 | Walk into your hut with the scroll and press K to claim the plot. (2) |
-| `tutorial_32` | 3 | Look at the seed and press K to buy it. (5) |
-| `tutorial_33` | 5 | Look at the dirt pile and press K to plant the seed. (7) |
-| `tutorial_34` | 6 | Look at the carrot and press K to harvest it. (10) |
-| `tutorial_35` | 7 | Walk up to the sell point and press K to sell the carrot. (11) |
+| `tutorial_30` | 1 | Look at the highlighted scroll and press F to grab it. (1) |
+| `tutorial_31` | 2 | Walk into your hut with the scroll and press F to claim the plot. (2) |
+| `tutorial_32` | 3 | Look at the seed and press F to buy it. (5) |
+| `tutorial_33` | 5 | Look at the dirt pile and press F to plant the seed. (7) |
+| `tutorial_34` | 6 | Look at the carrot and press F to harvest it. (10) |
+| `tutorial_35` | 7 | Walk up to the sell point and press F to sell the carrot. (11) |
 | `tutorial_36` | 8 | Press Tab to open your tablet. (12) |
 | `tutorial_37` | 10 | Double jump to take off. (21, 22, 23) |
 

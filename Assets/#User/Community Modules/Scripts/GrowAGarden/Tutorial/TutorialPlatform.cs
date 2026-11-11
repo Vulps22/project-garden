@@ -346,7 +346,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Plot:
                     yield return Build(_plot, Stage(_scroll));
                     Bring(_scroll, true);
-                    if (Flat) Say("This is a plot. You must claim a plot before you can plant in it.", "Look at the highlighted scroll and press K to grab it.", 30);
+                    if (Flat) Say("This is a plot. You must claim a plot before you can plant in it.", "Look at the highlighted scroll and press F to grab it.", 30);
                     else Say("This is a plot. You must claim a plot before you can plant in it.", "Grab the highlighted scroll.", 1);
                     Glow(_scroll.gameObject);
                     break;
@@ -354,7 +354,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Hut:
                     yield return Dissolve(_plot);
                     yield return Build(_hut);
-                    if (Flat) Say(string.Empty, "Walk into your hut with the scroll and press K to claim the plot.", 31);
+                    if (Flat) Say(string.Empty, "Walk into your hut with the scroll and press F to claim the plot.", 31);
                     else Say(string.Empty, "Take the scroll into your hut to claim the plot.", 2);
                     Glow(_hutDoor);
                     break;
@@ -376,7 +376,7 @@ namespace Vulps.GrowAGarden.Tutorial
                     Bring(_seed, true);
                     Say("This is a buy point. You will find these dotted throughout the Fractured Isles. If there is a seed " +
                         "inside it, you can buy the seed for the price listed on the barrel.",
-                        Flat ? "Look at the seed and press K to buy it." : "Buy the seed.", 4, Flat ? 32 : 5);
+                        Flat ? "Look at the seed and press F to buy it." : "Buy the seed.", 4, Flat ? 32 : 5);
                     Glow(_seed.gameObject);
                     break;
 
@@ -392,7 +392,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Plant:
                     yield return Dissolve(_scoreboard);
                     yield return Build(_plot);
-                    if (Flat) Say(string.Empty, "Look at the dirt pile and press K to plant the seed.", 33);
+                    if (Flat) Say(string.Empty, "Look at the dirt pile and press F to plant the seed.", 33);
                     else Say(string.Empty, "Plant the seed by pushing it into the dirt pile on the ground.", 7);
                     Glow(_dirtPile);
                     break;
@@ -409,7 +409,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Harvest:
                     _produce.SetGrabbable(true);
                     Notifier.Push("Something is ready to harvest");
-                    if (Flat) Say(string.Empty, "Look at the carrot and press K to harvest it.", 34);
+                    if (Flat) Say(string.Empty, "Look at the carrot and press F to harvest it.", 34);
                     else Say(string.Empty, "Grab the carrot out of the ground.", 10);
                     Glow(_produce.gameObject);
                     break;
@@ -417,7 +417,7 @@ namespace Vulps.GrowAGarden.Tutorial
                 case Step.Sell:
                     yield return Dissolve(_plot);
                     yield return Build(_sellPoint);
-                    if (Flat) Say(string.Empty, "Walk up to the sell point and press K to sell the carrot.", 35);
+                    if (Flat) Say(string.Empty, "Walk up to the sell point and press F to sell the carrot.", 35);
                     else Say(string.Empty, "Bring the carrot to the sell point to sell it.", 11);
                     Glow(_sellPoint.gameObject);
                     break;

@@ -5,7 +5,8 @@ namespace Vulps.GrowAGarden
 {
     /// <summary>
     /// A 2D player's keys, listened to rather than bound: the client still jumps and walks on its own, and we only
-    /// hear the same presses. Ours are on keys the client leaves free (K, Z, 1, 2). Keyboard only; a gamepad is out of
+    /// hear the same presses. F is the client's interact key too: we hear it without taking it from the client
+    /// (Vulps, 2026-11-11). Z, 1 and 2 are keys the client leaves free. Keyboard only; a gamepad is out of
     /// scope. See docs/2d-players.md.
     /// </summary>
     public static class DesktopControls
@@ -13,8 +14,8 @@ namespace Vulps.GrowAGarden
         /// <summary>Jump (Space) went down this frame.</summary>
         public static bool JumpPressed => Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
 
-        /// <summary>K (interact) went down this frame.</summary>
-        public static bool InteractPressed => Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame;
+        /// <summary>F (interact) went down this frame. Somnium's own F still fires: this only listens.</summary>
+        public static bool InteractPressed => Keyboard.current != null && Keyboard.current.fKey.wasPressedThisFrame;
 
         /// <summary>Z (eat, or a splif to the mouth) went down this frame.</summary>
         public static bool EatPressed => Keyboard.current != null && Keyboard.current.zKey.wasPressedThisFrame;

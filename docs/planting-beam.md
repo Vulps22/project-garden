@@ -22,7 +22,7 @@ to reach the slot's trigger, and the floor they feel is not the floor they see.
   seed and locks onto the nearest plant slot. Letting go of the seed plants it in that slot.
 - **Not over dirt, no beam:** the path down the middle of the Plot does not trigger it, and letting go there is an
   ordinary drop.
-- **2D players:** the slot is the one they are looking at, and K plants the selected seed there
+- **2D players:** the slot is the one they are looking at, and F plants the selected seed there
   ([[2d-players#Interacting]]).
 
 The plant goes through the same `PlantSlot.RequestPlant` as today ([[crops]]). Touching a slot with a held seed

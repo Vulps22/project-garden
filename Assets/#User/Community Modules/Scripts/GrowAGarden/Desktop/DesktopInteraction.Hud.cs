@@ -10,9 +10,9 @@ using Vulps.GrowAGarden.Interaction;
 namespace Vulps.GrowAGarden.Desktop
 {
     /// <summary>
-    /// What a 2D player sees of their hands and of K: two translucent white squares in the bottom left, each showing
-    /// its item with the Almanac's and the Developer Market's tile, the selected one brighter; the "Press K to …"
-    /// prompt; and the blue highlight on what K would act on.
+    /// What a 2D player sees of their hands and of F: two translucent white squares in the bottom left, each showing
+    /// its item with the Almanac's and the Developer Market's tile, the selected one brighter; the "Press F to …"
+    /// prompt; and the blue highlight on what F would act on.
     /// </summary>
     public partial class DesktopInteraction
     {
@@ -113,7 +113,7 @@ namespace Vulps.GrowAGarden.Desktop
             }
         }
 
-        /// <summary>The prompt, the highlight and, for planting, the beam, for what K would act on.</summary>
+        /// <summary>The prompt, the highlight and, for planting, the beam, for what F would act on.</summary>
         private void ShowTarget(Target target, Transform head)
         {
             string verb = target.IsSome ? target.Verb : null;
@@ -121,7 +121,7 @@ namespace Vulps.GrowAGarden.Desktop
             {
                 _shownVerb = verb;
                 _promptBox.SetActive(verb != null);
-                if (verb != null) _prompt.text = $"Press <b>K</b> to {verb}";
+                if (verb != null) _prompt.text = $"Press <b>F</b> to {verb}";
             }
 
             if (target.Shown != _lit)

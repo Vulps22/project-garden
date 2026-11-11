@@ -15,13 +15,13 @@ using Vulps.GrowAGarden.Tutorial;
 namespace Vulps.GrowAGarden.Desktop
 {
     /// <summary>
-    /// A 2D player's hands and the K key. What they look at within reach is highlighted blue with "Press K to …";
-    /// what they take sits on one of two sockets above their head, where everyone sees it; 1 and 2 pick a hand, K
+    /// A 2D player's hands and the F key. What they look at within reach is highlighted blue with "Press F to …";
+    /// what they take sits on one of two sockets above their head, where everyone sees it; 1 and 2 pick a hand, F
     /// drops it, Z eats it or puts a splif in the mouth. A VR player never sees any of it. See docs/2d-players.md.
     /// </summary>
     public partial class DesktopInteraction : MonoBehaviour
     {
-        [Tooltip("The highlight drawn over what K would act on: a shell with the GrowAGarden/TutorialGlow shader, in blue.")]
+        [Tooltip("The highlight drawn over what F would act on: a shell with the GrowAGarden/TutorialGlow shader, in blue.")]
         [SerializeField] private Material _highlight;
 
         [Tooltip("The HUD's and the prompt's font.")]
@@ -50,7 +50,7 @@ namespace Vulps.GrowAGarden.Desktop
 
         private enum Place { Overhead, Mouth, Moving }
 
-        /// <summary>What K would act on now.</summary>
+        /// <summary>What F would act on now.</summary>
         private struct Target
         {
             public string Verb;
@@ -320,7 +320,7 @@ namespace Vulps.GrowAGarden.Desktop
             return body != null && (IsInMyHands(body.GetComponent<XRGrabInteractable>()));
         }
 
-        /// <summary>The first thing on the line of sight, within reach of the head, that K would act on; else a zone the body stands in.</summary>
+        /// <summary>The first thing on the line of sight, within reach of the head, that F would act on; else a zone the body stands in.</summary>
         private Target FindTarget(Transform head)
         {
             XRGrabInteractable held = HeldIn(_selected);
