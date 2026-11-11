@@ -64,7 +64,9 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Grow Wand: touch a seedling's soil, a grown bearing plant, a carrot in the ground; does a second player see it grow? [[dev-tools]]
 - [ ] Tutorial: join as a new player and walk all ten steps (smoke, glow, panel, the carrot growing, the tablet step, the seed loop, T pose then jump to the spawn); Skip and Repeat from Settings → World; does the hut's fire crackle follow your volume? [[tutorial]]
 - [ ] Flight rework (not yet): a jump to take off unless already falling, and thresholds that follow the player's size; log the size signals first. [[flight]]
-- [ ] 2D (desktop) players: a pass over controls and gameplay once the tutorial's first pass is done; the tutorial ignores them until then (Vulps). Plan and open questions in [[2d-players]]. [[tutorial]]
+- [ ] 2D flight in PC mode: does the log say 2D once (`IsVR`), does a double jump take off (and a single press while falling), does the camera pitch climb and dive, does the flight follow the view, does touching ground land? [[flight]]
+- [ ] 2D climbing in PC mode: walk into island rock (grabs after a moment, not when brushing past or on a slope), climb up, across and down, top out onto a ledge, jump off; does the jump off start a flight (it should not)? [[climbing]]
+- [ ] 2D (desktop) players: after flight and climbing are tested, phase 2 (play in PC mode and log the rest). Plan and open questions in [[2d-players]]. [[tutorial]]
 
 ## Changelog
 

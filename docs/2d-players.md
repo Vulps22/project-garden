@@ -11,8 +11,8 @@ Players on a desktop: keyboard and mouse, or a gamepad. Somnium calls it **PC mo
 **NonXR**. Every VR interaction in the game needs a 2D equivalent (Vulps, 2026-11-09). Somnium requires the same:
 "every world must work in VR and PC mode" (`WorldCreatorContext.md` §0).
 
-**Status (2026-11-09):** planned, nothing built. The tutorial ignores 2D players until this pass is done
-([[tutorial]]).
+**Status (2026-11-11):** phase 1 (flight and climbing) built, compiles clean, untested in-world; the rest planned. The
+tutorial ignores 2D players until this pass is done ([[tutorial]]).
 
 ## What Somnium gives a 2D player
 
@@ -52,58 +52,29 @@ Vulps, not a decision.
 | Smoke a splif | Hold it at the mouth, a puff each dwell (`SmokeableEntity`) | Broken, as eating | The same key, a puff each dwell |
 | End a trip early | Both hands over the eyes (`TripManager`) | No way out: the check needs both hands, so a trip runs its full length | Hold a key for the same moment |
 | Trip's flipped controls | Walking speed made negative | Should work: it is the speed | Nothing new |
-| Fly | Arms out to take off, wrist pitch, hands in opposition to yaw, a flap, a boost button ([[flight]]) | Broken: `PlayerRig.IsUsable` needs both hands, so flight never starts | A double jump, as in established games: see Flight below |
-| Climb | Grip near rock, pull down to rise ([[climbing]]) | Broken: `IsUsable` needs both hands | Grabs on by itself when the player presses up against climbable rock: see Climbing below |
+| Fly | Arms out to take off, wrist pitch, hands in opposition to yaw, a flap, a boost button ([[flight]]) | Built, untested: a double jump ([[flight#2D players]]) | Done |
+| Climb | Grip near rock, pull down to rise ([[climbing]]) | Built, untested: walking into rock grabs it ([[climbing#2D players]]) | Done |
 | Tablet apps: Almanac, World Settings, Developer Market, map overlay | The tablet, pointed at with a hand ray | Unknown: we find the tablet as `Tablet.XR(Clone)`, which may not exist in PC mode | Wherever PC mode's tablet is, if it has one; otherwise a panel of our own |
 | Developer Market delivery | Trigger on an item puts it in that hand (`MarketApp.PutInHand`) | Broken: no hand interactor to put it in | Drop it in front of the player, or into PC mode's grab if it has one |
 | In-world buttons (`SettingsButton`) | XRI select | Unknown | `IPointerClickHandler` as well, if XRI select does not reach them |
 | Toasts, instruction panel | Head-locked in front of the headset | Unknown: third person puts the camera away from the head | Anchor to `Camera.main` in PC mode |
 | Grow Wand (developer only) | Touch a plant with the wand | Unknown: the same grab, then a touch that may not reach | Click a plant while holding it; low priority |
 | Haptics (climbing, flight) | Controller buzz | Nothing | Nothing |
-| Tutorial | Every step above, the tablet step, and a T pose to fly off | Not offered | Each step's own 2D line and check; the send-off is the double jump |
-
-### Flight
-
-**Status (2026-11-09):** decided (Vulps), not built.
-
-2D flight follows established video games rather than translating the arms (Vulps). **A double jump takes off**: jump,
-then jump again in the air. Once flying, the conventions of those games apply:
-- **Pitch:** where the camera looks, standing in for wrist pitch, through the same model and the same stall.
-- **Yaw:** turning with the mouse turns the body, which the model already flies along.
-
-Open, for the build:
-- **Hearing the jump.** Somnium raises no jump event, so we listen to the key ourselves: Space, and the gamepad's
-  jump button. Listening takes nothing from the client, which still jumps; the guide's "do not bind" is about two
-  things answering one key, and here both answering is the point. `FlightController.PollBoostButton` already
-  listens to a VR button this way. Untested in-world for the keyboard.
-- **The flap and landing.** A jump in the air while flying is the obvious flap, but that is my guess, not Vulps's.
-
-### Climbing
-
-**Status (2026-11-09):** decided (Vulps), not built.
-
-2D climbing follows established video games too. **It grabs on by itself when the player presses up against a
-surface that can be climbed** (Vulps): walking into rock under a `Climbable` holds on, with no key.
-
-Open, for the build:
-- **What counts as pressing up against it.** The body moving into the rock, seen by a short ray ahead of the body
-  capsule, is one way; it has to ignore merely brushing past.
-- **Moving and letting go.** Up and down the face is the walking keys, which are the client's. Either we read them
-  ourselves, or we turn Somnium's walking off while climbing and read the direction the body is pushed. Letting go is
-  most likely a jump, or walking away from the face.
+| Tutorial | Every step above, the tablet step, and a T pose to fly off | Taken up like everyone; Skip is the only way out ([[tutorial]]) | Each step's own 2D line and check; the send-off is the double jump |
 
 ## The plan
 
-**Status (2026-11-09):** order set by Vulps; nothing built. One phase per upload ([[testing]]).
+**Status (2026-11-11):** order set by Vulps; phase 1 built, untested in-world. One phase per upload ([[testing]]).
 
-Nothing starts until the tutorial's first pass is done ([[tutorial]]).
+1. **2D flight and climbing** (built): [[flight#2D players]] and [[climbing#2D players]]. With them, the parts of the
+   foundation they use:
+   - `PlayerBridge.IsVR`, read once from `XRSettings.enabled`, and logged with the body's name the first time.
+   - `PlayerRig.IsUsable` split: a 2D rig is usable without hands, and `HasHands` is what hand readers ask
+     (the trip's covered eyes).
+   - `DesktopControls`: the jump and walking keys, read straight off the keyboard and gamepad without binding them.
+   - `PlayerBridge.TryGetLocalBody`: the body capsule's centre, radius and height.
 
-1. **2D flight and climbing**, as above. They need the parts of the foundation they use:
-   - `PlayerBridge.IsVR`, read once.
-   - `PlayerRig.IsUsable` split, so a rig without hands is still a rig.
-
-   2D flight is built alongside the flight rework's jump to take off ([[flight#The rework]]), since both turn on
-   hearing a jump.
+   The VR flight rework's jump to take off ([[flight#The rework]]) is still not built.
 2. **Look at the state of 2D as it stands** (Vulps): play in PC mode with flight and climbing in, and log what the
    rest does:
    - which XRI interactors the PC rig has, and their interaction layers
