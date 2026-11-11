@@ -7,14 +7,13 @@ tags:
 ---
 # 2D players
 
-Players on a desktop: keyboard and mouse, or a gamepad. Somnium calls it **PC mode**, and its API calls it
+Players on a desktop, with keyboard and mouse. Somnium calls it **PC mode**, and its API calls it
 **NonXR**. Every VR interaction in the game needs a 2D equivalent (Vulps, 2026-11-09). Somnium requires the same:
 "every world must work in VR and PC mode" (`WorldCreatorContext.md` §0).
 
-**Status (2026-11-11):** nothing but flight and climbing works in 2D (Vulps, in-world), so the 2D interface is built
-from scratch, to the design below (Vulps, 2026-11-11). Flight and climbing are built and untested since their fixes.
-Keyboard and mouse only: **a gamepad is out of scope** (Vulps). The tutorial ignores 2D players until this pass is
-done ([[tutorial]]).
+**Status (2026-11-11):** the whole 2D interface is built to Vulps's design (Vulps, 2026-11-11), for one upload:
+flight, climbing, the hands, K, 1, 2, Z, the HUD, toasts, the tablet and the tutorial. Compiles clean, untested
+in-world. Keyboard and mouse only: **a gamepad is out of scope** (Vulps).
 
 ## What Somnium gives a 2D player
 
@@ -39,62 +38,66 @@ From `WorldCreatorContext.md`. These are the platform's own statements, not test
 
 ## The controls
 
-**Status (2026-11-11):** decided (Vulps); flight and climbing built, the rest not.
+**Status (2026-11-11):** built (Vulps's design); compiles clean, untested in-world.
 
 | Key | Does |
 |---|---|
 | **K** | The interact key: whatever the prompt says (below) |
 | **1**, **2** | Select the item in that hand |
-| **Z** | Eat the selected item if it is edible; put a selected splif in your mouth |
+| **Z** | Eat the selected item if it is edible; put a selected splif to the mouth, or back up |
 | Space | Jump; a double jump takes off; in flight a jump boosts height and a double jump ends flight ([[flight#2D players]]) |
 | W / S in flight | Forward flies; back brakes to a hover without ending flight ([[flight#2D players]]) |
 | Walking into rock | Climbs it ([[climbing#2D players]]) |
-| The mouse on the tablet | The tablet's own point and click, as it is |
+| Tab, then the mouse | The tablet, the client's own, point and click |
 
 ## Interacting
 
-**Status (2026-11-11):** decided (Vulps), not built.
+**Status (2026-11-11):** built; compiles clean, untested in-world. `Desktop/DesktopInteraction` (the 2D controls
+script) does all of it, and does nothing for a VR player.
 
-- **The prompt.** Walking up to something the player can act on highlights it blue and puts up "Press K to …":
-  **Grab**, **Buy**, **Harvest**, **Plant**, **Sell**, **Claim**, or **Drop** with nothing in front of them. The
-  target is what they are looking at within reach. The highlight's shader is referenced by the script driving the 2D
-  controls, so the upload keeps it.
-- **Carrying: two hands.** A 2D-only HUD in the bottom left: two translucent white squares, one per hand, showing
-  what each holds with the same tiles as the Almanac and the Developer Market. What a 2D player grabs or buys is
-  locked to one of **two sockets above their head**, so everyone can see what they carry. Each client puts a carried
-  item on its holder's socket itself, from the holder already recorded on the item, so nothing more is sent.
-- **Selecting and dropping.** 1 and 2 select a hand; K with nothing to act on drops the selected item.
-- **Hands full.** Grabbing or buying with both hands full sends the player a notification that their hands are
-  full. In 2D, notifications show as HUD toasts ([[notifier]]).
-- **Plant:** the slot looked at, which the planting beam marks ([[planting-beam]]). K plants the selected seed there.
-- **Sell:** K at the sell point sells the selected item only; the selection then moves to the remaining item.
-- **Claim a plot:** K at the hut with the deed selected.
-- **Eat:** Z on a selected edible item. **Smoke:** Z puts the selected splif in the mouth, and the smoking's own 5 s
-  dwell then drives the puffs as in VR ([[weed#Eating and smoking]]).
-- **The tablet** keeps its own design language, point and click. The apps did not exist when 2D was tried, so where
-  the 2D tablet is and what it is called is found by probe first: `TabletProbe.Search()` logs, for Vulps only, every
-  object anywhere named like a tablet, every 3 s until the map is found (compiles clean, not yet read in-world).
-- **The Developer Market** drops what it delivers in front of a 2D player.
-- **In-world buttons** (`SettingsButton`) take the same prompt.
+- **The prompt.** The first thing on the line of sight, within 3 m of the head, that K would act on is highlighted
+  blue and "Press K to …" shows at the bottom of the screen: **Grab**, **Buy** (a seed in a stall), **Harvest** (a
+  produce still on its plant), **Plant**, **Sell**, **Claim**, **Use** (an in-world `SettingsButton`), or **Drop**
+  with nothing else to act on. Solid things hide what is behind them; triggers do not. A sell point or a hut the
+  player stands inside counts too, so they need not look at it. The highlight is a shell with the tutorial glow's
+  shader, in blue (`Materials/Desktop/DesktopHighlight`), referenced by the script so the upload keeps it.
+- **Two hands, above the head.** Each hand is an XRI interactor of our own (`HandSocket`) on a socket above the
+  head, left and right. Taking something is a real XRI select by it, so everything that hears a grab works
+  unchanged: the holder, a stall's purchase as the seed leaves it, a harvest, `NetworkGrabbable` taking authority.
+  The holder simulates what it holds, so everyone sees it over their head, as they see a VR player's hands.
+- **The HUD.** Bottom left, two translucent white squares, the selected one brighter, each showing its item with
+  the Developer Market's tile for it, else its crop's Almanac picture, else its name.
+- **Selecting and dropping.** 1 and 2 select a hand. Taking goes into the selected hand, else the other; with both
+  full, a notification says "Your hands are full". K with nothing to act on puts the selected item down in front of
+  the player.
+- **Putting things in.** Sell, Claim and the tutorial's zones are `IItemReceiver`s: K carries the selected item there
+  and hands it over exactly as a hand carrying it into the trigger would. A sell sells the selected item only; when a
+  selected hand empties, the selection moves to the other.
+- **Plant:** the free slot of the dirt block looked at, nearest where the look lands, which the planting beam marks
+  ([[planting-beam]]). K carries the seed there and asks the slot, as touching it does.
+- **Eat and smoke:** Z takes a selected edible to the mouth, where the edible's own dwell eats it. Z takes a splif to
+  the mouth, where the smoking's own 5 s dwell drives the puffs as in VR ([[weed#Eating and smoking]]); Z again puts
+  it back up.
+- **Notifications** show as HUD toasts at the top of the screen ([[notifier]]).
+- **The tablet** is the client's own, point and click. In PC mode it is not under the body, so `TabletBridge`
+  looks for it across the scene by name (the same `Tablet.XR(Clone)`, else any `Tablet.*(Clone)` with `Canvases`)
+  and the apps, map and settings page use whatever it finds. `TabletProbe.Search()` still logs, for Vulps only,
+  every object named like a tablet, so a 2D tablet built differently inside shows up in the log.
+- **The Developer Market** in 2D: a mouse click on a cell puts the item on the ground in front of the player
+  ([[dev-tools]]).
 
 **Out of the plan** (Vulps, 2026-11-11): teammates (the system is dead), the Grow Wand (it does not work), and
 ending a trip early (it did not work, and is gone from the game: [[trip]]).
 
 ## The plan
 
-**Status (2026-11-11):** order Vulps's; one phase per upload ([[testing]]).
+**Status (2026-11-11):** all five phases built for one upload (Vulps: "ONE UPLOAD"); compiles clean, untested
+in-world.
 
-1. **Flight and climbing** (built): [[flight#2D players]] and [[climbing#2D players]], on the foundation:
-   - `PlayerBridge.IsVR`, read once from `XRSettings.enabled`; `PlayerRig.IsUsable` true for a 2D rig without hands.
-   - `DesktopControls`: the keys, listened to.
-   - `PlayerBridge.TryGetLocalBody` and `PlaceLocalBody` (the body is placed through its Rigidbody in 2D).
-
-   With it, the tablet search above.
-2. **Interacting:** the prompt and highlight, the two hands and their HUD, the head sockets, K, 1 and 2. Grab, buy,
-   drop, harvest, plant, sell, claim; hands full; notifications as HUD toasts.
+1. **Flight and climbing:** [[flight#2D players]] and [[climbing#2D players]], on `PlayerBridge.IsVR`,
+   `PlayerRig.IsUsable`, `DesktopControls` (the keys, listened to) and `PlaceLocalBody` (the body is placed through its
+   Rigidbody in 2D).
+2. **Interacting:** above.
 3. **Eat and smoke** on Z; the Developer Market's drop in front.
-4. **The tablet apps**, wherever the probe finds the 2D tablet.
-5. **The tutorial for 2D players.** Each step gets its own 2D instruction and voice line where the action differs.
-   Then mark "2D players are not supported" gone from [[tutorial]].
-
-Each feature's own doc takes its 2D half as that phase lands, and this doc keeps only what is still to do.
+4. **The tablet apps**, through the scene-wide tablet search.
+5. **The tutorial for 2D players:** [[tutorial#2D players]].

@@ -66,9 +66,17 @@ docs, never here; an item is removed once it is done. Milestones are in [[roadma
 - [ ] Flight rework (not yet): a jump to take off unless already falling, and thresholds that follow the player's size; log the size signals first. [[flight]]
 - [ ] 2D flight in PC mode: does the body move now (or does the `PlaceLocalBody()` line say what holds it)? Double jump takes off into a hover; W flies, S brakes to a hover; a jump boosts, a double jump ends flight; the camera pitches and steers; touching ground lands. [[flight]]
 - [ ] 2D climbing in PC mode: walk into island rock (grabs after a moment, not when brushing past or on a slope), climb up, across and down, top out onto a ledge, jump off; does the jump off start a flight (it should not)? [[climbing]]
-- [ ] 2D tablet: in PC mode, open the tablet and send the log: `Probe() 'TabletProbe' — #n` search lines say where the 2D tablet is. [[2d-players]]
-- [ ] 2D interface: phases 2–5 of [[2d-players#The plan]], after flight, climbing and the tablet probe are read. [[2d-players]]
-- [ ] Planting beam: build it ([[planting-beam]]).
+- [ ] 2D tablet: in PC mode, press Tab: do the Almanac, Settings → World and (Vulps) Dev Market show? Send the log:
+  `FindAnywhere() 'TabletBridge'` says where the tablet was found; `Probe() 'TabletProbe' — #n` lines say what is in it. [[2d-players]]
+- [ ] 2D interface in PC mode: look at things in reach: blue highlight and "Press K to …"; Grab, Buy (seed leaves the stall and
+  is paid for), Harvest, Drop; items sit above the head (and another player sees them there); the two HUD squares show
+  their tiles; 1 and 2 select; both hands full says so as a toast at the top of the screen; Sell sells the selected one only
+  and selects the other; Claim at the hut with the deed; Plant on the dirt looked at (the beam marks the slot); Z eats a
+  bloom, Z puts a splif to the mouth (a puff every 5 s) and Z again puts it back; an in-world settings button says
+  "Use"; the Dev Market's click puts the item in front. [[2d-players]]
+- [ ] Planting beam in VR: a held seed over dirt shows a beam to the nearest free slot; letting go plants there; none
+  over the path. [[planting-beam]]
+- [ ] 2D tutorial: every step completes with K, Tab and a double jump; record `tutorial_30`–`37`. [[tutorial#2D players]]
 
 ## Changelog
 
