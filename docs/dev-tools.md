@@ -71,7 +71,7 @@ in-world.
 - A **"Dev Market" button** at the end of the home grid, cloned from Somnium's Map button with Somnium's tab switch,
   localisation and tooltip stripped off (cloned under an inactive holder, so none of them ever wakes).
 - A **page of our own** beside Somnium's apps (`Tablet.XR.DeveloperMarketTab`): a canvas set up like the home
-  screen's, with XRI's `TrackedDeviceGraphicRaycaster` so the rays can point at it. Opening it hides the home grid,
+  screen's, with XRI's `TrackedDeviceGraphicRaycaster` so the rays can point at it, and a `GraphicRaycaster` so a 2D player's mouse can click in it (build 11 opened the apps in PC mode but nothing inside them clicked). Opening it hides the home grid,
   as Somnium's own apps do.
 - **Search** by an on-page keyboard (QWERTY, delete, clear) rather than Somnium's virtual keyboard: `SomniumKeyboard`
   is one of Somnium's built-in components, which must be in the scene from load, and docking it to a page made at

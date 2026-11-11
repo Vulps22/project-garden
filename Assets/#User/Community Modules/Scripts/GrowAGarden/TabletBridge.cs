@@ -132,7 +132,8 @@ namespace Vulps.GrowAGarden
             CanvasScaler scaler = page.AddComponent<CanvasScaler>();
             if (homeScaler != null) scaler.dynamicPixelsPerUnit = homeScaler.dynamicPixelsPerUnit;
 
-            page.AddComponent<TrackedDeviceGraphicRaycaster>();
+            page.AddComponent<TrackedDeviceGraphicRaycaster>();   // VR rays
+            page.AddComponent<GraphicRaycaster>();                // the PC mouse: without it a 2D player cannot click inside an app
             page.SetActive(false);
             return rect;
         }
