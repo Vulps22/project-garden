@@ -427,6 +427,34 @@ inside `Launched`: `SetFlying` checks after raising `Launched` or `Landed` wheth
 so leaves locomotion as that listener's landing set it. Without the check, the take-off went on to take gravity and
 walking away from a player who was no longer flying, who then hung in the air unable to move ([[tutorial]]).
 
+## 2D players
+
+**Status (2026-11-11):** built, compiles clean, untested in-world. Controls by Vulps 2026-11-11.
+
+A 2D player (keyboard and mouse; no hands) flies as in established games, not by translating the arms
+(`FlightController.Desktop.cs`). Which kind of player it is comes from `PlayerRig.IsVR`, read once from
+`XRSettings.enabled` ([[2d-players]]). Space and W/S are listened to, not bound (`DesktopControls`): the client still
+hears them.
+
+- **A double jump takes off.** The first jump is Somnium's own. A jump with no ground within `_desktopGroundCheck`
+  (0.3 m) under the body capsule is the second, and takes off into a **hover**: the model's park, sinking at
+  `ParkSink`. A player falling takes off on one press.
+- **Forward (W) flies**, starting at `BestGlideSpeed` if the brake had slowed it. **Back (S) is an air brake**: it
+  parks the model, a hover, without ending flight. Each holds until the other is pressed.
+- **A jump boosts height**: the flap, `FlapHeight` (20 m), on every jump. **A double jump ends flight**: a second jump
+  within `_doubleJumpSeconds` (0.35 s) hands the player back to Somnium, and they fall.
+- **Flying, pitch is where the camera looks**, through the same model and the same stall as the wrists, and **the way
+  flown is where the camera faces**, flattened. There is no coast.
+- **Landing** is the same contact as in VR, after the same `_launchGrace`.
+- **The jump that lets go of a wall is not the second jump**: flight ignores a jump in the frame a climb ended
+  ([[climbing#2D players]]).
+- **Placing the body:** in PC mode, writing `Root`'s position does not hold while the body's `CharacterController`
+  is on: it puts itself back where it last moved itself. Builds 9 and 10 flew the model at 18–34 m/s with the body
+  hanging where it took off (Vulps: "stuck in air brake"), while 2D climbing, which switches the capsule off, moved
+  fine. So 2D flight switches the capsule off while flying and back on when it lands
+  (`PlayerManager.SetLocalBodyCollision`), and places the body through `PlayerManager.PlaceLocalBody` (transform and
+  Rigidbody). **Status (2026-11-11):** compiles clean, untested in-world.
+
 ## The rework
 
 **Status (2026-11-09):** proposed, not built (Vulps: "don't build the flight rework yet").

@@ -41,6 +41,16 @@ namespace Vulps.GrowAGarden.DevTools
         public static SeedDefinition SeedOf(int i) => _instance != null && i >= 0 && i < _instance._items.Length && _instance._items[i] != null ? _instance._items[i].GetComponent<SeedDefinition>() : null;
         public static Texture2D PreviewOf(int i) => _instance != null && i >= 0 && i < _instance._previews.Length ? _instance._previews[i] : null;
 
+        /// <summary>The market's item an object in the world is a copy of ("X(Clone)" is X), or -1.</summary>
+        public static int IndexOf(GameObject thing)
+        {
+            if (_instance == null || thing == null) return -1;
+            string name = thing.name.Replace("(Clone)", string.Empty).Trim();
+            for (int i = 0; i < _instance._items.Length; i++)
+                if (_instance._items[i] != null && _instance._items[i].name == name) return i;
+            return -1;
+        }
+
         /// <summary>Asks the master for an item, free, at a place. Only the developer's client asks.</summary>
         public static void Request(int index, Vector3 position, Quaternion rotation, bool rightHand)
         {

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Vulps.GrowAGarden.Interaction;
 
 namespace Vulps.GrowAGarden.Ownership
 {
@@ -10,7 +11,7 @@ namespace Vulps.GrowAGarden.Ownership
     /// every other client's trigger correctly does nothing. The master's PlotLeaseManager decides
     /// the rest from there — see PlotLeaseManager.OnDeedTakeRequested.
     /// </summary>
-    public class DeedClaimZone : MonoBehaviour
+    public class DeedClaimZone : MonoBehaviour, IItemReceiver
     {
         /// <summary>
         /// This player has just carried their deed through the door. Local by construction: the
@@ -26,12 +27,27 @@ namespace Vulps.GrowAGarden.Ownership
 
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.TryGetComponent(out CollectibleEntity deed)) return;
-            if (deed.collectibleId != "deed") return;
+            if (other.TryGetComponent(out CollectibleEntity deed)) Claim(deed);
+        }
+
+        private void Claim(CollectibleEntity deed)
+        {
+            if (deed == null || deed.collectibleId != "deed") return;
             if (!deed.IsHeld) return;
 
             deed.RequestTake();
             DeedCarriedIn?.Invoke();
         }
+
+        /// <summary>A 2D player's deed, handed in with F.</summary>
+        public string VerbFor(GameObject item) =>
+            item != null && item.TryGetComponent(out CollectibleEntity deed) && deed.collectibleId == "deed" ? "Claim" : null;
+
+        public void Receive(GameObject item)
+        {
+            if (item != null && item.TryGetComponent(out CollectibleEntity deed)) Claim(deed);
+        }
+
+        public Vector3 ReceivePoint => TryGetComponent(out Collider zone) ? zone.bounds.center : transform.position;
     }
 }

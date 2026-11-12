@@ -27,7 +27,7 @@ namespace Vulps.GrowAGarden
     /// addressing the shop, not the plant. The plant is named by its NetworkId inside the
     /// payload, so the message survives whatever is happening to the plant itself.
     /// </summary>
-    public class SellPoint : MonoBehaviour
+    public class SellPoint : MonoBehaviour, IItemReceiver
     {
         [SerializeField] private NetworkMessenger _networkBridge;
 
@@ -100,7 +100,23 @@ namespace Vulps.GrowAGarden
         {
             // InParent, because the collider that enters the trigger may be a child mesh rather
             // than the root that carries the trait.
-            SellableEntity sellable = other.GetComponentInParent<SellableEntity>();
+            Offer(other.GetComponentInParent<SellableEntity>());
+        }
+
+        /// <summary>A 2D player's item, handed over with F: sold only if it can be.</summary>
+        public string VerbFor(GameObject item)
+        {
+            SellableEntity sellable = item == null ? null : item.GetComponentInParent<SellableEntity>();
+            return sellable != null && sellable.CanBeSold && !sellable.IsPending ? "Sell" : null;
+        }
+
+        public void Receive(GameObject item) => Offer(item == null ? null : item.GetComponentInParent<SellableEntity>());
+
+        public Vector3 ReceivePoint => TryGetComponent(out Collider zone) ? zone.bounds.center : transform.position;
+
+        /// <summary>The holder puts this into the shop, by hand or by F.</summary>
+        private void Offer(SellableEntity sellable)
+        {
             if (sellable == null) return;
             if (!sellable.CanBeSold || sellable.IsPending) return;
             if (!sellable.IsHeld) return;

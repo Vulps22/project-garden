@@ -21,6 +21,9 @@ namespace Vulps.GrowAGarden.Tutorial
 
         public bool IsHeld => _grab != null && _grab.isSelected;
 
+        /// <summary>What a 2D player's prompt says to take this ("Grab", "Buy", "Harvest"); the platform sets it.</summary>
+        public string Verb { get; set; } = "Grab";
+
         private void OnValidate()
         {
             if (_grab == null) _grab = GetComponent<XRGrabInteractable>();

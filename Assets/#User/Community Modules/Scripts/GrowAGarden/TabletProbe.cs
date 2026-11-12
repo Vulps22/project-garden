@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using Vulps.GrowAGarden.DevTools;
+using Vulps.GrowAGarden.Ownership;
 
 namespace Vulps.GrowAGarden
 {
@@ -23,6 +24,43 @@ namespace Vulps.GrowAGarden
         private static HashSet<Transform> _active = new HashSet<Transform>();
         private static int _dumps;
         private static int _snapshot;
+
+        private static readonly HashSet<Transform> _found = new HashSet<Transform>();
+
+        /// <summary>
+        /// Call every few seconds while the map has not been found: every object anywhere named like a tablet, and a
+        /// snapshot of each new one. For the 2D tablet, whose name and place are not known. Developer only.
+        /// </summary>
+        public static void Search()
+        {
+            if (_dumps >= MAX_DUMPS || !Developer.IsLocal) return;
+
+            var now = new List<Transform>();
+            foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (t.name.IndexOf("tablet", System.StringComparison.OrdinalIgnoreCase) >= 0 && !t.name.StartsWith("GAG_") && !UnderTablet(t))
+                    now.Add(t);
+
+            foreach (Transform t in now)
+            {
+                if (!_found.Add(t)) continue;
+                _tablet = t;
+                _snapshot++;
+                _dumps++;
+                var chain = new StringBuilder();
+                for (Transform up = t.parent; up != null; up = up.parent) chain.Insert(0, up.name + "/");
+                var lines = new List<string> { $"search #{_snapshot}: '{t.name}' under '{chain}' active={t.gameObject.activeInHierarchy} scene='{t.gameObject.scene.name}' world pos={t.position:F3} layer={LayerMask.LayerToName(t.gameObject.layer)} (2D={!PlayerManager.LocalIsVR})" };
+                Describe(t, 0, lines);
+                Emit(lines);
+            }
+        }
+
+        /// <summary>Whether a parent is itself named like a tablet, so only the topmost of a tablet's parts is reported.</summary>
+        private static bool UnderTablet(Transform t)
+        {
+            for (Transform p = t.parent; p != null; p = p.parent)
+                if (p.name.IndexOf("tablet", System.StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            return false;
+        }
 
         /// <summary>Call about once a second with the map's content panel, which lives inside the tablet.</summary>
         public static void Probe(RectTransform content)

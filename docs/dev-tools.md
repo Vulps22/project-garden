@@ -61,13 +61,17 @@ fruit and the splif, each with a picture. **Point a hand's ray at one and pull t
 tablet into that hand, free. A seed comes already bought, so it can be planted; a fruit comes ripe, and grabbing it
 harvests it as usual.
 
+**A 2D player clicks a cell** with the mouse instead: the item is put on the ground 1 m in front of them, not in a
+hand (Vulps, 2026-11-11), and they take it with F ([[2d-players]]). **Status (2026-11-11):** compiles clean, untested
+in-world.
+
 **On the tablet** (`MarketApp`, on SceneManager): built in code onto Somnium's tablet through `TabletManager` →
 `TabletBridge` ([[tablet]]), only when `Developer.IsLocal`.
 
 - A **"Dev Market" button** at the end of the home grid, cloned from Somnium's Map button with Somnium's tab switch,
   localisation and tooltip stripped off (cloned under an inactive holder, so none of them ever wakes).
 - A **page of our own** beside Somnium's apps (`Tablet.XR.DeveloperMarketTab`): a canvas set up like the home
-  screen's, with XRI's `TrackedDeviceGraphicRaycaster` so the rays can point at it. Opening it hides the home grid,
+  screen's, with XRI's `TrackedDeviceGraphicRaycaster` so the rays can point at it, and a `GraphicRaycaster` so a 2D player's mouse can click in it (build 11 opened the apps in PC mode but nothing inside them clicked). Opening it hides the home grid,
   as Somnium's own apps do.
 - **Search** by an on-page keyboard (QWERTY, delete, clear) rather than Somnium's virtual keyboard: `SomniumKeyboard`
   is one of Somnium's built-in components, which must be in the scene from load, and docking it to a page made at

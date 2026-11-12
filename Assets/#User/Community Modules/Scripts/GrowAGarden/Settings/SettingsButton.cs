@@ -68,12 +68,15 @@ namespace Vulps.GrowAGarden.Settings
 
         private float _nextHoverLogAt;
 
-        private void OnSelectEntered(UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs _)
+        private void OnSelectEntered(UnityEngine.XR.Interaction.Toolkit.SelectEnterEventArgs _) => Press();
+
+        /// <summary>Presses the button: a hand selecting it, or a 2D player's F.</summary>
+        public void Press()
         {
             if (Time.time < _nextPressAt) return;
             _nextPressAt = Time.time + Mathf.Max(0.05f, _repeatDelay);
 
-            Logger.Log($"OnSelectEntered() '{gameObject.name}' — pressed");
+            Logger.Log($"Press() '{gameObject.name}' — pressed");
             Pressed?.Invoke();
         }
     }

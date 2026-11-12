@@ -17,7 +17,7 @@ namespace Vulps.GrowAGarden.Climbing
     /// Lives on SceneManager beside FlightController, for the same reason: the player does not
     /// exist at scene load. Entirely local; Somnium replicates the avatar.
     /// </summary>
-    public class ClimbController : MonoBehaviour
+    public partial class ClimbController : MonoBehaviour
     {
         [Tooltip("Master switch.")]
         [SerializeField] private bool _enabled = true;
@@ -85,6 +85,7 @@ namespace Vulps.GrowAGarden.Climbing
         private Transform _head;
         private Hand _active;
         private bool _climbing;
+        private bool _vr;
         private float _nextScanAt;
 
         private void OnDisable()
@@ -101,6 +102,11 @@ namespace Vulps.GrowAGarden.Climbing
         private void Update()
         {
             if (!_enabled || !Resolve()) return;
+            if (!_vr)
+            {
+                UpdateDesktop();
+                return;
+            }
             ScanDevices();
 
             bool airborne = !_climbing && !Grounded();
@@ -136,9 +142,10 @@ namespace Vulps.GrowAGarden.Climbing
 
             _root = rig.Root;
             _head = rig.Head;
+            _vr = rig.IsVR;
             _left.Anchor = rig.LeftHand;
             _right.Anchor = rig.RightHand;
-            if (_interactorsOf != rig.Root) FindInteractors(rig.Root);
+            if (_vr && _interactorsOf != rig.Root) FindInteractors(rig.Root);
             return true;
         }
 
@@ -330,14 +337,19 @@ namespace Vulps.GrowAGarden.Climbing
 
         private void StartClimb(Hand hand, Collider surface, string how)
         {
+            bool body = TakeBody();
+            Logger.Info($"StartClimb() '{gameObject.name}' — {hand.Name} hand took hold of '{surface.name}' at {hand.Anchor.position} ({how}); body off={body}");
+        }
+
+        /// <summary>The climb takes the body: flight lands, Somnium's gravity and walking stop, and the capsule goes off. False if there was no capsule.</summary>
+        private bool TakeBody()
+        {
             _climbing = true;
             ClimbStarted?.Invoke();
 
             PlayerManager.SetLocalGravityScale(0f);
             PlayerManager.SetLocalMovementScale(0f);
-            bool body = PlayerManager.SetLocalBodyCollision(false);
-
-            Logger.Info($"StartClimb() '{gameObject.name}' — {hand.Name} hand took hold of '{surface.name}' at {hand.Anchor.position} ({how}); body off={body}");
+            return PlayerManager.SetLocalBodyCollision(false);
         }
 
         private void EndClimb()
@@ -345,6 +357,7 @@ namespace Vulps.GrowAGarden.Climbing
             _climbing = false;
             _active = null;
             _left.Holding = _right.Holding = false;
+            _wall = null;
 
             string stood = StandOnLedge();
 
@@ -372,8 +385,15 @@ namespace Vulps.GrowAGarden.Climbing
             if (hit.point.y <= _root.position.y) return $"feet already above '{hit.collider.name}'";
 
             Vector3 p = _root.position;
-            _root.position = new Vector3(p.x, hit.point.y, p.z);
+            Place(new Vector3(p.x, hit.point.y, p.z));
             return $"stood on '{hit.collider.name}' at y={hit.point.y:F2} (feet were {hit.point.y - p.y:F2}m under it)";
+        }
+
+        /// <summary>Puts Root at a position. In VR the transform holds it; a 2D body's Rigidbody puts the transform back unless it moves too.</summary>
+        private void Place(Vector3 position)
+        {
+            if (_vr) _root.position = position;
+            else PlayerManager.PlaceLocalBody(position);
         }
 
         private void OnValidate()

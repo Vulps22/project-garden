@@ -23,7 +23,31 @@ namespace Vulps.GrowAGarden
             if (rigRoot == null) return null;
             Transform tablet = rigRoot.Find(TABLET);
             if (tablet == null && rigRoot.parent != null) tablet = rigRoot.parent.Find("XR.Body/" + TABLET);
-            return tablet;
+            return tablet != null ? tablet : FindAnywhere();
+        }
+
+        private static Transform _found;
+        private static float _nextSearch;
+
+        /// <summary>
+        /// In PC mode the tablet is not under the body. Searched for across the scene by name, at most every few seconds,
+        /// the same tablet or Somnium's other build of it ("Tablet.*(Clone)" with Canvases). Null if there is none.
+        /// </summary>
+        private static Transform FindAnywhere()
+        {
+            if (_found != null) return _found;
+            if (Time.time < _nextSearch) return null;
+            _nextSearch = Time.time + 5f;
+
+            Transform other = null;
+            foreach (Transform t in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (t.name == TABLET && t.Find("Canvases") != null) { other = t; break; }
+                if (other == null && t.name.StartsWith("Tablet.") && t.name.EndsWith("(Clone)") && t.Find("Canvases") != null) other = t;
+            }
+            if (other != null) Logger.Info($"FindAnywhere() 'TabletBridge' — tablet found away from the body: '{other.name}' under '{(other.parent != null ? other.parent.name : "the scene")}'");
+            _found = other;
+            return other;
         }
 
         /// <summary>Whether the tablet is out: Somnium hides it by fading its Canvases' CanvasGroup to 0. False if it cannot tell.</summary>
@@ -108,7 +132,8 @@ namespace Vulps.GrowAGarden
             CanvasScaler scaler = page.AddComponent<CanvasScaler>();
             if (homeScaler != null) scaler.dynamicPixelsPerUnit = homeScaler.dynamicPixelsPerUnit;
 
-            page.AddComponent<TrackedDeviceGraphicRaycaster>();
+            page.AddComponent<TrackedDeviceGraphicRaycaster>();   // VR rays
+            page.AddComponent<GraphicRaycaster>();                // the PC mouse: without it a 2D player cannot click inside an app
             page.SetActive(false);
             return rect;
         }

@@ -23,6 +23,11 @@ client log; snapshot #1 is the whole tree, later numbers are what switched on an
   `TabletMapBridge.FindMapContent` reaches it from the rig root (`rigRoot.Find("Tablet.XR(Clone)/…")`, falling back
   to `XR.Body/…` from the root's parent). Only the local player's tablet is there to find; other players' tablets
   are not ours to touch.
+- **In PC mode it is not under the body** (the map was not found under `NonXR.Body`, build 9). `TabletBridge.FindTablet`
+  then searches the scene by name, at most every 5 s: `Tablet.XR(Clone)`, else any `Tablet.*(Clone)` with `Canvases`,
+  and logs where it found it. Whether the paths inside are the same is untested: if not, the apps log that the home
+  screen is not where this doc says, and `TabletProbe.Search()` (Vulps only) logs what is there ([[2d-players]]).
+  **Status (2026-11-11):** compiles clean, untested in-world.
 - **It is one object for the whole session**, built when the player is, and kept while they are in the world.
 - **Scale:** the root is about 1.09; `Canvases` holds world-space canvases at a world scale of 0.0005, so one UI
   unit is half a millimetre and a 960 × 1080 page is about 48 × 54 cm.

@@ -356,7 +356,26 @@ namespace Vulps.GrowAGarden.DevTools
         }
 
         /// <summary>The master spawned what this hand asked for: put it in the hand once it exists here and can be held.</summary>
-        private void OnDelivered(uint id, bool right) => StartCoroutine(PutInHand(id, right));
+        [Tooltip("How far in front of a 2D player an item is put down, in metres.")]
+        [SerializeField] private float _inFront = 1f;
+
+        /// <summary>A 2D player clicked a cell: the item appears on the ground in front of them, not in a hand.</summary>
+        public void Click(MarketCell cell)
+        {
+            if (PlayerManager.LocalIsVR || cell == null || !cell.isActiveAndEnabled) return;
+            Transform head = PlayerManager.LocalPlayerHead;
+            if (head == null) return;
+            Vector3 forward = Vector3.ProjectOnPlane(head.forward, Vector3.up);
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            Vector3 at = head.position + forward.normalized * _inFront + Vector3.down * 0.8f;
+            DeveloperMarket.Request(cell.Index, at, Quaternion.LookRotation(forward.normalized, Vector3.up), false);
+        }
+
+        private void OnDelivered(uint id, bool right)
+        {
+            if (!PlayerManager.LocalIsVR) return;   // a 2D player's item stays where it was put down
+            StartCoroutine(PutInHand(id, right));
+        }
 
         private IEnumerator PutInHand(uint id, bool right)
         {

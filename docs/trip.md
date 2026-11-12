@@ -26,20 +26,20 @@ here is on the tripping player's client only. Code: `Trip/`.
   and UI do not.
 - **Things in the corner of your eye:** no eye-tracking API, so head direction stands in for gaze. Things spawn
   locally 40–60° off head-forward; when one comes within about 15° of centre it dissolves into a swirl of colour.
-- **Comfort:** eased in and out, with an obvious way to end it early at either strength. Whole-view warping is the
+- **Comfort:** eased in and out, and *Allow Stoned Effects* turns it off. There is no way to end one early (Vulps,
+  2026-11-11: covering the eyes did not work, and it was dropped). Whole-view warping is the
   quickest route to VR sickness, which is what the intense trip is for and the mellow one must avoid.
 - **Somnium's content rules do not object** (Vulps, 2026-11-01). Players are all ID-verified adults.
 
 ## How it is built
 
 **Status (2026-11-01):** built and played in-world. The logs show the colour trip, the world melting and coming back,
-and control flips (28 on foot, 7 flying). The visions and ending early by covering the eyes log nothing and are not
-confirmed by the log.
+and control flips (28 on foot, 7 flying). The visions log nothing and are not confirmed by the log.
 
 - **`TripManager`** (on SceneManager): one local trip with a strength. A global `TripVolume` (priority 10, weight 0
   at rest) whose profile `Models/Weed/Trip.asset` is the trip at full strength: `ColorAdjustments` (hue cycling ±180°
   over 40 s, saturation +45, contrast +15), `ChromaticAberration` 0.6, `Vignette` 0.3. The trip eases in over 12 s and
-  out over 20 s, and its strength is the volume's weight. Both hands over the eyes for 2 s ends it early (out over 4 s).
+  out over 20 s, and its strength is the volume's weight.
   Needs `Unity.RenderPipelines.Core.Runtime`, which is on Somnium's allowed list.
 - **Melting** (`Vulps/TripLit`, `Shaders/TripLit.shader` + `TripWobble.hlsl`): URP Lit, copied, with every vertex
   pass that draws the world wrapped to sag and wobble by the global `_GAG_Trip`, which only the tripping player's
@@ -64,7 +64,7 @@ confirmed by the log.
   since.
 - **A player can turn it all off**: World Settings → *Allow Stoned Effects*
   ([[world-settings#The switches|world-settings → The switches]]). Off, no trip starts and one running ends (over
-  4 s, as covering the eyes does); eating and smoking still happen, they just do nothing to this player.
+  4 s); eating and smoking still happen, they just do nothing to this player.
 
 > [!info] Networking
 > The trip is local and sends nothing. What starts it (eating, a puff) is the weed's ([[weed]]).

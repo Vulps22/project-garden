@@ -27,9 +27,7 @@ follow. The recorded **tips** stay, under *Tips* below.
 - **Flight is locked** from the moment it starts until its send-off (`TutorialManager.FlightLocked`), so nobody flies
   off around the void. Skipping unlocks it too.
 - **Open to everyone** (Vulps, 2026-11-10), after Vulps alone had it while it was refined.
-- **2D players are not supported** (Vulps): they are taken up like everyone else, but the send-off needs a T pose, so
-  Skip (which the welcome tells them about) is their way out. A pass over controls and gameplay for 2D
-  players follows the tutorial's first pass.
+- **2D players do it too,** with their own instructions where what they do differs ([[#2D players]]).
 
 ## The platform
 
@@ -162,6 +160,26 @@ narrator's named ones (`tutorial_Welcome`, `tutorial_hut`…), so recording one 
 >   (`TutorialPlatform._secondsPerWord`, `_minimumReadSeconds`). That rule is mine, not Vulps's: check it in-world.
 > - **The hut's fire crackle** is on an AudioSource that is inactive at load and switched on at step 2b. Whether
 >   Somnium routes it through the player's volume like the Gardens' huts is untested ([[tablet#Settings|tablet → Settings]]).
+
+## 2D players
+
+**Status (2026-11-11):** built; compiles clean, untested in-world.
+
+The same steps, with the same pieces and the same recorded lines, played with F ([[2d-players]]). Where what a 2D
+player does differs, the panel shows their own instruction instead of the VR one; the voice is unchanged, since the
+"Press F to …" prompt on what they look at says how (Vulps). The tutorial's scroll, seed and carrot and its claim,
+plant and sell zones carry the words that prompt uses (Grab, Buy, Harvest, Claim, Plant, Sell).
+
+| Step | Panel says (VR's instead) |
+|---|---|
+| 1 | Look at the highlighted scroll and press F to grab it. |
+| 2 | Walk into your hut with the scroll and press F to claim the plot. |
+| 3 | Look at the seed and press F to buy it. |
+| 5 | Look at the dirt pile and press F to plant the seed. |
+| 6 | Look at the carrot and press F to harvest it. |
+| 7 | Walk up to the sell point and press F to sell the carrot. |
+| 8 | Press Tab to open your tablet. Tab also moves the step on while the 2D tablet has not been found. |
+| 10 | Double jump to take off. Line 20 plays; 21 to 23 are about the T pose, so they do not, and taking off is the send-off. |
 
 ## How it is built
 

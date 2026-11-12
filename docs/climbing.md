@@ -69,4 +69,26 @@ player's own `Root`, and Somnium replicates the avatar.
   a warning per frame while climbing. If so, the capsule needs another way out of the way.
 - **Grip is also Somnium's grab.** The seed check covers our own grabbables; anything else of theirs in reach of
   a rock is untested.
-- **PC players cannot climb.** There are no tracked hands; flight's PC story is the same.
+- **2D players climb without hands**, below.
+
+## 2D players
+
+**Status (2026-11-11):** built, compiles clean, untested in-world. Decided by Vulps 2026-11-09.
+
+As in established games: **walking into climbable rock grabs on by itself**, with no key
+(`ClimbController.Desktop.cs`). The rest is my design, for Vulps to confirm.
+
+- **Grabbing:** a ray from the body capsule's centre along the walking keys (WASD or the arrows, relative to the camera;
+  listened to, not bound) finds climbable rock within `_desktopReach` (0.35 m) past the
+  capsule. It must be steep (normal under `_standMinNormalY`), faced squarely (`_desktopPushDot`, 0.7), and pressed
+  into for `_desktopPushSeconds` (0.15 s), so brushing past or walking up a slope does not grab. In the air too, so a
+  fall or a flight into a cliff catches it.
+- **On the face:** the same handover as VR (flight lands, gravity, walking and the capsule off). Forward and back on
+  the keys climb up and down, left and right go across, at `_desktopClimbSpeed` (2 m/s). Each frame a ray finds the
+  face again and the body is held `_desktopHoldGap` (5 cm) off it, following it round as it curves.
+- **Getting off:**
+  - **Topping out:** climbing up past the lip, where the ray finds no rock, steps the body forward over it and lets
+    go, and the ledge stand puts the feet on top.
+  - **Climbing down** to flat ground stands.
+  - **Jump** lets go and falls; so does going off the side of the face.
+  - After letting go, the rock cannot be grabbed again for `_desktopRegrabDelay` (0.5 s).

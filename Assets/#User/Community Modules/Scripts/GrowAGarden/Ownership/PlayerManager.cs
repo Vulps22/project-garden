@@ -133,6 +133,13 @@ namespace Vulps.GrowAGarden.Ownership
         /// </summary>
         public static PlayerRig LocalPlayerRig => PlayerBridge.LocalRig;
 
+        /// <summary>Whether the local player is in VR rather than 2D (keyboard and mouse, or a gamepad).</summary>
+        public static bool LocalIsVR => PlayerBridge.IsVR;
+
+        /// <summary>The local player's body capsule in world space: centre, radius, height. False with no body.</summary>
+        public static bool TryGetLocalBody(out Vector3 centre, out float radius, out float height)
+            => PlayerBridge.TryGetLocalBody(out centre, out radius, out height);
+
         /// <summary>Whether Somnium will accept locomotion instructions for the local player.</summary>
         public static bool CanDriveLocalPlayer => PlayerBridge.HasLocalMotion;
 
@@ -152,6 +159,9 @@ namespace Vulps.GrowAGarden.Ownership
         /// <summary>Scales Somnium's walking speed for the local player: 1 normal, 0 to take it
         /// away. False if there is no motion to set.</summary>
         public static bool SetLocalMovementScale(float scale) => PlayerBridge.SetLocalMovementScale(scale);
+
+        /// <summary>Puts the local player's body at a Root position this frame, Rigidbody and all. False with no body.</summary>
+        public static bool PlaceLocalBody(Vector3 rootPosition) => PlayerBridge.PlaceLocalBody(rootPosition);
 
         /// <summary>Switches the local player's body capsule on or off. False if there is no body.</summary>
         public static bool SetLocalBodyCollision(bool enabled) => PlayerBridge.SetLocalBodyCollision(enabled);

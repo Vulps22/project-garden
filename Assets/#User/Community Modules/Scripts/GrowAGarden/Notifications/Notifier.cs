@@ -42,6 +42,8 @@ namespace Vulps.GrowAGarden.Notifications
         private readonly List<(CanvasGroup group, float shownAt, float seconds)> _shown = new List<(CanvasGroup, float, float)>();
         private readonly Dictionary<PlotLeaseManager, float> _lastHarvestNotice = new Dictionary<PlotLeaseManager, float>();
         private bool _wasDeveloper;
+        private bool _onScreen;
+        private GameObject _screenRoot;   // the 2D toasts' own canvas; never the camera, which is Somnium's
 
         /// <summary>Shows a toast to this player for <paramref name="seconds"/>, unless they have turned notifications off.</summary>
         public static void Push(string text, float seconds = DEFAULT_SECONDS)
@@ -68,6 +70,7 @@ namespace Vulps.GrowAGarden.Notifications
             DevTools.DeveloperAccess.Changed -= OnDeveloperAccessChanged;
             if (_instance == this) _instance = null;
             if (_column != null) Destroy(_column.gameObject);
+            if (_screenRoot != null) Destroy(_screenRoot);
             if (_boxMaterial != null) Destroy(_boxMaterial);
         }
 
@@ -165,6 +168,9 @@ namespace Vulps.GrowAGarden.Notifications
         /// <summary>A world-space column fixed to the eyes, drawn over everything; rebuilt if the camera changes.</summary>
         private bool EnsureColumn()
         {
+            if (!PlayerManager.LocalIsVR) return EnsureScreenColumn();
+            if (_onScreen) { if (_screenRoot != null) Destroy(_screenRoot); _screenRoot = null; _column = null; }
+            _onScreen = false;
             Camera camera = Camera.main;
             if (camera == null) return false;
             if (_column != null && camera == _camera) return true;
@@ -199,6 +205,44 @@ namespace Vulps.GrowAGarden.Notifications
                 _boxMaterial = new Material(Canvas.GetDefaultCanvasMaterial());
                 OnTop(_boxMaterial);
             }
+            return true;
+        }
+
+        /// <summary>A 2D player's toasts: a HUD column at the top of the screen rather than a panel in front of the eyes.</summary>
+        private bool EnsureScreenColumn()
+        {
+            if (_onScreen && _column != null) return true;
+            if (_column != null) Destroy(_column.gameObject);
+            _shown.Clear();
+            _onScreen = true;
+
+            var root = new GameObject("Notifier (Grow A Garden, 2D)", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+            _screenRoot = root;
+            Canvas canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 32000;
+            CanvasScaler scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var go = new GameObject("Column", typeof(RectTransform), typeof(VerticalLayoutGroup));
+            _column = (RectTransform)go.transform;
+            _column.SetParent(root.transform, false);
+            _column.anchorMin = _column.anchorMax = _column.pivot = new Vector2(0.5f, 1f);
+            _column.anchoredPosition = new Vector2(0f, -40f);
+            _column.sizeDelta = new Vector2(900f, 600f);
+            _column.localScale = Vector3.one * 0.6f;
+
+            var layout = go.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 12;
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
+
+            if (_boxMaterial == null) _boxMaterial = new Material(Canvas.GetDefaultCanvasMaterial());
             return true;
         }
 
