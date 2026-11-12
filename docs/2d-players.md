@@ -65,6 +65,9 @@ script) does all of it, and does nothing for a VR player.
   head, left and right. Taking something is a real XRI select by it, so everything that hears a grab works
   unchanged: the holder, a stall's purchase as the seed leaves it, a harvest, `NetworkGrabbable` taking authority.
   The holder simulates what it holds, so everyone sees it over their head, as they see a VR player's hands.
+  What a hand holds has its colliders off until it is let go, on the holder's client only: overhead or at the mouth
+  they would otherwise shove the player's own body into the air (Vulps, 2026-11-12). Eating, smoking and putting
+  things in go by distance or by F, never by the item's collider, so nothing needs them while held.
 - **The HUD.** Bottom left, two translucent white squares, the selected one brighter, each showing its item with
   the Developer Market's tile for it, else its crop's Almanac picture, else its name.
 - **Selecting and dropping.** 1 and 2 select a hand. Taking goes into the selected hand, else the other; with both
