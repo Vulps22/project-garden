@@ -91,14 +91,21 @@ namespace Vulps.GrowAGarden.Flight
                  "it the surface just stepped off re-grounds the player before they clear it.")]
         [SerializeField] private float _launchGrace = 0.5f;
 
-        [Header("Boost")]
+        [Header("Jump and boost")]
 
-        [Tooltip("Which hand fires the vertical boost. The primary button is A on the right " +
-                 "controller and X on the left — Unity abstracts both to the same usage and tells " +
-                 "the hands apart by device characteristics. Somnium binds jump to A, and that is " +
-                 "deliberate rather than a clash: on the ground A jumps and the boost no-ops, in " +
-                 "the air there is nothing to jump from and A boosts.")]
+        [Tooltip("Which hand's primary button is the jump that takes off and, in flight, the boost. " +
+                 "The primary button is A on the right controller and X on the left — Unity abstracts " +
+                 "both to the same usage and tells the hands apart by device characteristics. Somnium " +
+                 "binds jump to A, and that is deliberate rather than a clash: on the ground A is " +
+                 "Somnium's jump and ours to take off, in the air there is nothing to jump from and A boosts.")]
         [SerializeField] private bool _boostOnRightHand = true;
+
+        [Tooltip("Seconds after a jump during which leaving the ground with both arms out takes off.")]
+        [SerializeField] private float _jumpTakeOffWindow = 1.0f;
+
+        [Tooltip("Seconds off the ground with no jump before the player counts as falling, and arms out takes off. " +
+                 "Stepping down a ledge or arriving by teleport is over well inside this, so it walks on.")]
+        [SerializeField] private float _fallTakeOffSeconds = 0.6f;
 
         [Tooltip("Seconds between re-finding the controller. They connect late and drop out when " +
                  "they sleep.")]
@@ -175,6 +182,9 @@ namespace Vulps.GrowAGarden.Flight
 
         private bool _climbing;
 
+        private float _jumpPressedAt = float.NegativeInfinity;
+        private float _offGroundSince = -1f;
+
         private void Awake() => _model = new FlightModel(_settings);
 
         private void OnEnable()
@@ -230,7 +240,7 @@ namespace Vulps.GrowAGarden.Flight
                 return;
             }
 
-            PollBoostButton();
+            PollJumpButton();
 
             // ── Contact and pose gate flight ──────────────────────────────────────
             //
@@ -239,19 +249,12 @@ namespace Vulps.GrowAGarden.Flight
             // me" — a player can be hanging off the underside of an island, or buried head-first
             // in one from above, and in both cases flying is the wrong answer.
             //
-            // ⚠ UNRESOLVED: there is no specified way to leave the ground.
-            //
-            // Contact suspends flight and hands the player back to Somnium. But standing on an
-            // island *is* contact, so the only route back into flight is to stop touching — which
-            // needs flight. The first in-world run deadlocked on exactly this: one landing and the
-            // player was grounded for the rest of the session, 34 grounded reports and not one
-            // flying frame.
-            //
-            // Walking off an edge is the intended route, and arms have to be out for flight to
-            // engage at all — which also settles an on/off flicker seen while simply walking near
-            // an edge, where the contact sphere alternated frame to frame and took flight with it.
-            // Arms at your sides now means walking, whatever the geometry says.
+            // Taking off needs both arms out, off the ground, and either a jump or a fall already
+            // under way (MayTakeOff): arms out while stepping off a ledge, or arriving somewhere by
+            // teleport, walks on rather than flying.
             bool touching = Touching();
+            if (touching) _offGroundSince = -1f;
+            else if (_offGroundSince < 0f) _offGroundSince = Time.time;
 
             if (_flying)
             {
@@ -266,9 +269,9 @@ namespace Vulps.GrowAGarden.Flight
                 else if (_coasting) { if (ArmsOut(_armExtension)) StopCoasting(); }
                 else if (!ArmsOut(_armRetract)) StartCoasting();
             }
-            else if (!touching && ArmsOut(_armExtension))
+            else if (!touching && ArmsOut(_armExtension) && MayTakeOff(out string cause))
             {
-                SetFlying(true);
+                TakeOffOn(cause);
             }
 
             if (!_flying)
@@ -313,6 +316,22 @@ namespace Vulps.GrowAGarden.Flight
             Write(_root.position + _velocity * Time.deltaTime);
 
             Report(pitch, difference, local, false);
+        }
+
+        /// <summary>A jump within the window, or a fall that has lasted, lets arms out take off.</summary>
+        private bool MayTakeOff(out string cause)
+        {
+            if (Time.time - _jumpPressedAt <= _jumpTakeOffWindow) { cause = "a jump"; return true; }
+            if (_offGroundSince >= 0f && Time.time - _offGroundSince >= _fallTakeOffSeconds) { cause = "a fall"; return true; }
+            cause = null;
+            return false;
+        }
+
+        private void TakeOffOn(string cause)
+        {
+            _jumpPressedAt = float.NegativeInfinity;
+            Logger.Info($"TakeOffOn() '{gameObject.name}' — arms out after {cause} at {_root.position} | {Body()}");
+            SetFlying(true);
         }
 
         private void Write(Vector3 target)
@@ -539,14 +558,9 @@ namespace Vulps.GrowAGarden.Flight
         }
 
         /// <summary>
-        /// Throws the player upward, once between leaving the ground and touching it again.
-        ///
-        /// **Nothing calls this yet.** It was driven by a gesture — both hands sweeping down
-        /// through a distance — and that gesture is the same movement as drawing the arms in to
-        /// end flight, so exiting a glide threw the player 20m into the air instead. The boost
-        /// itself is fine and is left intact; it is waiting on a button, which the bridge does not
-        /// expose (SomniumPlayerAction.DoAction triggers actions, it cannot listen for one). See
-        /// ButtonProbe for what is being done about that.
+        /// Throws the player upward, once between leaving the ground and touching it again. Fired by
+        /// the jump button in flight (PollJumpButton); a gesture used to drive it, and that gesture was
+        /// the same movement as drawing the arms in to end flight.
         /// </summary>
         public void Boost()
         {
@@ -565,6 +579,7 @@ namespace Vulps.GrowAGarden.Flight
         private bool _boostWasDown;
 
         /// <summary>
+        /// The jump button: on the ground or falling it opens the take-off window, in flight it boosts.
         /// Reads the controller directly rather than through any action map.
         ///
         /// Somnium's own input bindings are not on the bridge — SomniumPlayerAction.DoAction can
@@ -572,7 +587,7 @@ namespace Vulps.GrowAGarden.Flight
         /// to. Reading the device sits below whatever Somnium consumes, which is why the same
         /// button can drive their jump and our boost without either noticing the other.
         /// </summary>
-        private void PollBoostButton()
+        private void PollJumpButton()
         {
             if (Time.time >= _nextDeviceScanAt)
             {
@@ -586,7 +601,11 @@ namespace Vulps.GrowAGarden.Flight
             if (!_boostDevice.isValid) return;
             if (!_boostDevice.TryGetFeatureValue(CommonUsages.primaryButton, out bool down)) return;
 
-            if (down && !_boostWasDown) Boost();
+            if (down && !_boostWasDown)
+            {
+                if (_flying) Boost();
+                else _jumpPressedAt = Time.time;
+            }
             _boostWasDown = down;
         }
 
@@ -629,7 +648,7 @@ namespace Vulps.GrowAGarden.Flight
 
             if (grounded)
             {
-                Logger.Info($"Report() '{gameObject.name}' — GROUNDED at {_root.position} | {drift}");
+                Logger.Info($"Report() '{gameObject.name}' — GROUNDED at {_root.position} | {drift} | {Body()}");
                 return;
             }
 
@@ -639,6 +658,17 @@ namespace Vulps.GrowAGarden.Flight
                 $"vert={local.y:F2} fwd={local.z:F2} y={_root.position.y:F1} " +
                 $"trough={_model.TroughDescent:F1}m lastBonus={_model.LastTroughBonus:F1} " +
                 $"flapSpent={_flapSpent} coast={_coasting} trim={_handPitchOffset:F1} | {drift} | {Arms()}");
+        }
+
+        /// <summary>
+        /// The player's size for the log, to find which signal follows avatar scale before the take-off
+        /// reach is scaled by it: the body capsule's height, Root's scale, the head above Root, and the arms.
+        /// </summary>
+        private string Body()
+        {
+            string capsule = PlayerManager.TryGetLocalBody(out _, out _, out float height) ? $"{height:F2}" : "none";
+            float head = _head != null ? _head.position.y - _root.position.y : 0f;
+            return $"body capsule={capsule} rootScale={_root.lossyScale.y:F2} head={head:F2} | {Arms()}";
         }
 
         /// <summary>The hands' reach, drop and axes for the log; a 2D player has none.</summary>

@@ -457,13 +457,19 @@ hears them.
 
 ## The rework
 
-**Status (2026-11-09):** proposed, not built (Vulps: "don't build the flight rework yet").
+**Status (2026-11-12):** the jump take-off is built on `main`, compiles clean, untested in-world. The size
+thresholds are instrumented, not built.
 
 - **A jump to take off.** Flight starts only on a jump, or when the player is already falling; arms out while
   walking off a step, or arriving somewhere by teleport, no longer flies. Everywhere, not only in the tutorial
-  (Vulps). Somnium's jump is not an event we can hear (`PollBoostButton`), so the jump is either the controller's
-  primary button read directly, as the boost is, or a rise of the body we see ourselves.
-- **Thresholds that follow the player's size.** Small avatars, and small people, cannot clear the take-off reach
+  (Vulps). Somnium's jump is not an event we can hear, so the jump is the controller's primary button read
+  directly (`PollJumpButton`, A on the right hand, the same button as the boost). A press while not flying opens
+  `_jumpTakeOffWindow` (1 s): leaving the ground with both arms out inside it takes off. With no jump, a player off
+  the ground for `_fallTakeOffSeconds` (0.6 s) is falling, and arms out takes off then; a step down is over well
+  inside that. In flight the same press boosts. Each take-off logs `TakeOffOn()` with its cause, `a jump` or
+  `a fall`.
+- **Thresholds that follow the player's size.** Instrumented: every grounded `Report()` and every take-off logs
+  `body capsule=… rootScale=… head=…` and the arms' reach, the measurements asked for below. Small avatars, and small people, cannot clear the take-off reach
   (`_armExtension` 0.55 m; also `_armRetract` 0.40 m and `_armDrop` 0.45 m), and the tutorial tells them to scale
   up. The bridge cannot read avatar scale (`ISomniumPlayerScale` has only `SetHeight`). The likeliest signal is the
   body capsule's height (`Root`'s `CharacterController`, which follows the headset in VR): scale all three by
